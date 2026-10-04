@@ -12,7 +12,7 @@ export async function resolveStore(db:D1Database,userId:string){
   // Owners keep their existing store even if a stale invite also exists.
   const own=await db.prepare('SELECT owner,data,version,updated_at FROM stores WHERE owner=?').bind(userId).first<any>();
   if(own){own.data=JSON.stringify(await hydrateAttendance(db,userId,JSON.parse(own.data)));return {row:own,owner:userId,access:'owner' as const};}
-  const linked=await db.prepare("SELECT stores.owner,stores.data,stores.version,stores.updated_at FROM stores, jsonb_array_elements(coalesce(stores.data::jsonb->'_members','[]'::jsonb)) AS m(value) WHERE (m.value->>'userId')=? LIMIT 1").bind(userId).first<any>();
+  const linked=await db.prepare("SELECT owner,data,version,updated_at FROM stores WHERE try_jsonb(data)->'_members' @> jsonb_build_array(jsonb_build_object('userId',CAST(? AS text))) LIMIT 1").bind(userId).first<any>();
   if(!linked)return null;
   const data=await hydrateAttendance(db,linked.owner,JSON.parse(linked.data));linked.data=JSON.stringify(data);
   const member=data._members?.find((m:any)=>m.userId===userId),employee=data.employees?.find((e:any)=>e.id===member?.employeeId);
@@ -45,7 +45,7 @@ export async function accountApi(request:Request,env:Env){
   if(request.method==='GET'){const v:any=view(data);
    if(linked?.access==='owner'){const rows=await env.DB.prepare('SELECT n.id,n.kind,n.title,n.body,n.effective_at,c.agreed_at FROM service_notices n LEFT JOIN service_notice_consents c ON c.notice_id=n.id AND c.user_id=? WHERE n.effective_at>=? ORDER BY n.effective_at').bind(id,new Date(Date.now()-90*86400000).toISOString().slice(0,10)).all<any>();v.serviceNotices=rows.results.map((r:any)=>({id:r.id,kind:r.kind,title:r.title,body:r.body,effectiveAt:r.effective_at,agreedAt:r.agreed_at||null}))}
    // 작업 057: 나에게 넘겨진 가게(이메일 확인된 계정만)
-   if(email&&v.user.emailVerified&&linked?.access!=='owner'){const rows=await env.DB.prepare("SELECT owner,data FROM stores WHERE lower(data::jsonb#>>'{_account,transfer,toEmail}')=lower(?)").bind(email).all<any>();v.transferOffers=rows.results.map((r:any)=>{const d=JSON.parse(r.data);return Date.parse(d._account.transfer.expiresAt)>Date.now()?{owner:r.owner,storeName:d.store?.name||'',fromEmail:d._account.transfer.fromEmail||'',expiresAt:d._account.transfer.expiresAt}:null}).filter(Boolean)}
+   if(email&&v.user.emailVerified&&linked?.access!=='owner'){const rows=await env.DB.prepare("SELECT owner,data FROM stores WHERE lower(try_jsonb(data)#>>'{_account,transfer,toEmail}')=lower(?)").bind(email).all<any>();v.transferOffers=rows.results.map((r:any)=>{const d=JSON.parse(r.data);return Date.parse(d._account.transfer.expiresAt)>Date.now()?{owner:r.owner,storeName:d.store?.name||'',fromEmail:d._account.transfer.fromEmail||'',expiresAt:d._account.transfer.expiresAt}:null}).filter(Boolean)}
    return json(v)}
   if(request.method!=='POST')return json({error:'이 방법으로는 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},405);
   if(request.headers.get('origin')!==new URL(request.url).origin)return json({error:'요청 출처를 확인할 수 없습니다.'},403);

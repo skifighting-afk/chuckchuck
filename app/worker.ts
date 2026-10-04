@@ -155,7 +155,7 @@ async function join(request:Request,env:Env,userId:string){
  if(userId.startsWith('native:')&&request.headers.get('oai-authenticated-user-email-verified')!=='true')return json({error:'이메일 가입 직원은 가게 코드로 합류를 신청하고 사장님의 수락을 받아 주세요.'},403);
  if(invite.expires<Date.now()||!email||email!==invite.email)return json({error:'초대받은 이메일 계정으로 로그인해 주세요. 초대는 7일간 유효합니다.'},403);
  if(userId===row.owner)return json({error:'사장님 계정으로는 직원 초대를 받을 수 없어요. 직원 계정으로 로그인해 주세요.'},400);
- const existing=await env.DB.prepare("SELECT stores.owner FROM stores, jsonb_array_elements(coalesce(stores.data::jsonb->'_members','[]'::jsonb)) AS m(value) WHERE (m.value->>'userId')=? LIMIT 1").bind(userId).first<any>();
+ const existing=await env.DB.prepare("SELECT owner FROM stores WHERE try_jsonb(data)->'_members' @> jsonb_build_array(jsonb_build_object('userId',CAST(? AS text))) LIMIT 1").bind(userId).first<any>();
  const own=await env.DB.prepare('SELECT owner FROM stores WHERE owner=?').bind(userId).first<any>();if(own)return json({error:'이미 사장님 매장이 연결된 계정입니다. 다른 직원 계정을 사용해 주세요.'},409);
  if(data._account&&!canWrite(data._account))return json({error:'이 가게의 체험이 끝나 지금은 초대를 받을 수 없어요. 사장님께 알려 주세요.'},403);
  if(existing)return json({error:'이미 가게에 연결된 계정이에요. 로그인하면 바로 가게로 들어가요.'},409);
