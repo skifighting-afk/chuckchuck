@@ -205,51 +205,56 @@ PASS 18. bad token cannot fall through to forged identity headers
 PASS 19. public anon key is not a login
 PASS 20. logout succeeds
 PASS 21. logged out session is revoked
-PASS 22. unverified HQ email never grants admin
-PASS 23. registration without consent rejected
-PASS 24. registration stores consent versions and time
-PASS 25. current consent not asked again
-PASS 26. changed terms version asks consent again
-PASS 27. re-consent requires explicit agree
-PASS 28. re-consent requires login
-PASS 29. re-consent recorded
-PASS 30. store creation requires processing agreement
-PASS 31. native owner creates their own store
-PASS 32. processing agreement version and time stored with store
-PASS 33. owner publishes join conditions
-PASS 34. rest exceeding shift rejected
-PASS 35. fixed term requires end date
-PASS 36. impossible contract date rejected
-PASS 37. normal owner save preserves contract setup
-PASS 38. employee cannot alter employer conditions
-PASS 39. impossible employee start date rejected
-PASS 40. employee sees employer contract draft with own details
-PASS 41. contract review required before apply
-PASS 42. confirmed employee application is submitted
-PASS 43. pending employee cannot access store
-PASS 44. pending employee can inspect own submitted draft
-PASS 45. owner sees profile and review timestamp
-PASS 46. owner can update future join conditions
-PASS 47. outdated contract acknowledgement cannot be approved
-PASS 48. employee can recover by withdrawing outdated application
-PASS 49. employee can confirm revised contract and reapply
-PASS 50. owner approves employee
-PASS 51. approved employee reaches own screen
-PASS 52. approved conditions reach wage and contract
-PASS 53. contract review does not pretend to be signed
-PASS 54. missing email service does not pretend to send
-PASS 55. recovery link returns to this site reset screen
-PASS 56. recovery does not reveal unknown accounts
-PASS 57. cross origin authentication mutation rejected
-PASS 58. recovery token changes password
-PASS 59. old password no longer works
-PASS 60. new password works
-PASS 61. password recovery revokes previous sessions
-PASS 62. recovery link proves email ownership
-PASS 63. invalid or expired recovery token rejected
-PASS 64. expired sessions denied
-PASS 65. repeated authentication requests limited
-65/65 passed
+PASS 22. device list answers (null when auth schema unreadable)
+PASS 23. sessions needs login
+PASS 24. other device stays signed in after local logout
+PASS 25. logout everywhere succeeds
+PASS 26. every device signed out
+PASS 27. unverified HQ email never grants admin
+PASS 28. registration without consent rejected
+PASS 29. registration stores consent versions and time
+PASS 30. current consent not asked again
+PASS 31. changed terms version asks consent again
+PASS 32. re-consent requires explicit agree
+PASS 33. re-consent requires login
+PASS 34. re-consent recorded
+PASS 35. store creation requires processing agreement
+PASS 36. native owner creates their own store
+PASS 37. processing agreement version and time stored with store
+PASS 38. owner publishes join conditions
+PASS 39. rest exceeding shift rejected
+PASS 40. fixed term requires end date
+PASS 41. impossible contract date rejected
+PASS 42. normal owner save preserves contract setup
+PASS 43. employee cannot alter employer conditions
+PASS 44. impossible employee start date rejected
+PASS 45. employee sees employer contract draft with own details
+PASS 46. contract review required before apply
+PASS 47. confirmed employee application is submitted
+PASS 48. pending employee cannot access store
+PASS 49. pending employee can inspect own submitted draft
+PASS 50. owner sees profile and review timestamp
+PASS 51. owner can update future join conditions
+PASS 52. outdated contract acknowledgement cannot be approved
+PASS 53. employee can recover by withdrawing outdated application
+PASS 54. employee can confirm revised contract and reapply
+PASS 55. owner approves employee
+PASS 56. approved employee reaches own screen
+PASS 57. approved conditions reach wage and contract
+PASS 58. contract review does not pretend to be signed
+PASS 59. missing email service does not pretend to send
+PASS 60. recovery link returns to this site reset screen
+PASS 61. recovery does not reveal unknown accounts
+PASS 62. cross origin authentication mutation rejected
+PASS 63. recovery token changes password
+PASS 64. old password no longer works
+PASS 65. new password works
+PASS 66. password recovery revokes previous sessions
+PASS 67. recovery link proves email ownership
+PASS 68. invalid or expired recovery token rejected
+PASS 69. expired sessions denied
+PASS 70. repeated authentication requests limited
+70/70 passed
 
 ── check-personal-access
 1. PASS employee record contains only self
@@ -847,7 +852,7 @@ PASS 36. 2026-03-31: no attendance in the future
 PASS: 체험 화면 숫자(급여·명세서·임금대장 합계).
 
 ── check-error-messages
-PASS: 오류 문구 317개 모두 다음 행동 안내 포함.
+PASS: 오류 문구 319개 모두 다음 행동 안내 포함.
 PASS: 오류 번호·로그 개인정보 제거.
 
 ── check-attendance-table
