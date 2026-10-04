@@ -63,6 +63,7 @@ await step('작업 048: 근무표 반복 등록 → 템플릿 저장 → 다음 
  await owner.getByRole('button',{name:'템플릿',exact:true}).click();await owner.fill('label:has-text("새 템플릿 이름") input','평일 기본');await owner.click('button:has-text("이번 주 저장")');await owner.getByText('이번 주 근무를 템플릿으로 저장했어요.').waitFor();await owner.click('[role=dialog] button:has-text("닫기")');
  await owner.locator('input[aria-label="근무표 날짜"]').fill(new Date(Date.now()+9*3600000+35*86400000).toISOString().slice(0,10));
  await owner.getByRole('button',{name:'템플릿',exact:true}).click();await owner.locator('.template-list button:has-text("이 주에 붙이기")').first().click();await owner.getByText(/템플릿 '평일 기본'으로 근무 \d+개를 넣었어요/).waitFor();
+ await owner.evaluate(()=>{window.print=()=>{}});await owner.click('button:has-text("인쇄 (A4 가로)")');await owner.emulateMedia({media:'print'});const cells=await owner.locator('.print-sheet tbody td div').count();if(!cells)throw Error('인쇄용 근무표가 비어 있어요');await owner.emulateMedia({media:'screen'});
 });
 await step('작업 050: 직원이 근무 가능 시간 제출 → 사장님 초안 화면에서 확인',async()=>{
  await staff.goto(B+'/app',{waitUntil:'networkidle'});await staff.click('button:has-text("휴가·공지")');await staff.click('button:has-text("근무 요청")');
