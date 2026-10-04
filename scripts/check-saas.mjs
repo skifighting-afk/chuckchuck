@@ -1,16 +1,15 @@
 import assert from 'node:assert/strict';
-import {DatabaseSync} from 'node:sqlite';
 import {seed} from '../lib/model.ts';
 import {api} from '../dist/server/index.js';
-const db=new DatabaseSync(':memory:');db.exec('CREATE TABLE stores(owner TEXT PRIMARY KEY,data TEXT,version INTEGER,updated_at TEXT)');
-const DB={prepare(sql){let args=[];return {bind(...v){args=v;return this},async first(){return db.prepare(sql).get(...args)},async run(){return {meta:{changes:Number(db.prepare(sql).run(...args).changes)}}}}}};
-async function call(user,path,body,method){const r=await api(new Request('https://test.local'+path,{method:method||(body?'POST':'GET'),headers:{origin:'https://test.local',...(user?{'oai-authenticated-user-id':user,'oai-authenticated-user-email':user+'@example.com'}:{})},...(body?{body:JSON.stringify(body)}:{})}),{DB});return {status:r.status,data:await r.json()}}
+import {authedTest} from './test-auth.mjs';import {closeAll} from './test-db.mjs';
+const T=await authedTest({domain:'example.com'}),{q,headersFor,id}=T,env=T.env,DB=env.DB;
+async function call(user,path,body,method){const r=await api(new Request('https://test.local'+path,{method:method||(body?'POST':'GET'),headers:{origin:'https://test.local',...(await headersFor(user))},...(body?{body:JSON.stringify(body)}:{})}),env);return {status:r.status,data:await r.json()}}
 const account=(u,b)=>call(u,'/api/account',b),store=(u,b,m)=>call(u,'/api/store',b,m),ops=(u,b)=>call(u,'/api/operations',b);
 const setup=(plan,storeSlots)=>({action:'onboard',storeName:'테스트 매장',branchName:'본점',ownerName:'테스트 사장',plan,storeSlots,acknowledged:true});
 assert.equal((await account('')).status,401);assert.equal((await account('free',setup('free'))).status,201);
 let a=(await account('free')).data;assert.equal(a.account.status,'free');assert.equal(a.account.trialEndsAt,null);assert.equal(a.account.monthlyPrice,0);
 let st=(await store('free')).data;assert.equal(st.state.employees.length,0);assert.equal(st.state.legacy,undefined);
-db.prepare('INSERT INTO stores VALUES(?,?,?,?)').run('legacy',JSON.stringify(seed()),1,new Date().toISOString());const fixture=(await store('legacy')).data.state;
+await q('INSERT INTO stores VALUES(?,?,?,?)',id('legacy'),JSON.stringify(seed()),1,new Date().toISOString()).run();const fixture=(await store('legacy')).data.state;
 const employee=(i,branchId='branch-main')=>({...structuredClone(fixture.employees[0]),id:'test-'+i,name:'예시'+i,email:'test'+i+'@example.invalid',phone:'010-0000-0000',branchId,leaveBalance:5,status:'재직',contract:{...fixture.employees[0].contract,employer:'사장',workplace:'테스트'}});
 st.state.employees=[0,1,2].map(i=>employee(i));let r=await store('free',{state:st.state,version:st.version},'PUT');assert.equal(r.status,200,JSON.stringify(r));st=r.data;
 assert.equal((await store('free',{state:{...st.state,employees:[...st.state.employees,employee(3)]},version:st.version},'PUT')).status,400);
@@ -25,7 +24,7 @@ assert.equal((await store('free',{state:{...st.state,employees:[...st.state.empl
 assert.equal((await account('free',{action:'changePlan',plan:'free'})).status,409);
 let op=(await ops('free')).data;r=await ops('free',{action:'requestLeave',version:op.version,employeeId:'test-0',start:'2026-10-01',end:'2026-10-01',days:1,kind:'연차',reason:'휴식'});assert.equal(r.status,200,JSON.stringify(r));op=r.data;const leave=op.leaves[0];r=await ops('free',{action:'reviewLeave',version:op.version,id:leave.id,approve:true,comment:'확인'});assert.equal(r.status,200);assert.equal(r.data.employees[0].leaveBalance,4);assert.equal((await ops('free',{action:'reviewLeave',version:r.data.version,id:leave.id,approve:true,comment:'다시'})).status,409);
 assert.equal((await account('other',setup('free'))).status,201);assert.equal((await store('other')).data.state.employees.length,0);assert.equal((await ops('other')).data.notices.length,0);
-assert.equal((await account('other',{action:'changePlan',plan:'starter'})).status,200);let raw=JSON.parse(db.prepare('SELECT data FROM stores WHERE owner=?').get('other').data);raw._account.trialEndsAt='2020-01-01T00:00:00.000Z';db.prepare('UPDATE stores SET data=? WHERE owner=?').run(JSON.stringify(raw),'other');
+assert.equal((await account('other',{action:'changePlan',plan:'starter'})).status,200);let raw=JSON.parse((await q('SELECT data FROM stores WHERE owner=?',id('other')).first()).data);raw._account.trialEndsAt='2020-01-01T00:00:00.000Z';await q('UPDATE stores SET data=? WHERE owner=?',JSON.stringify(raw),id('other')).run();
 st=(await store('other')).data;assert.equal((await store('other',{state:st.state,version:st.version},'PUT')).status,403);assert.equal((await account('other',{action:'changePlan',plan:'team'})).status,403);assert.equal((await account('other',{action:'changePlan',plan:'free'})).status,200);assert.equal((await account('other',{action:'changePlan',plan:'team'})).status,403);st=(await store('other')).data;assert.equal((await store('other',{state:st.state,version:st.version},'PUT')).status,200);
 st=(await store('free')).data;
 const shift={id:'s1',employeeId:'test-0',date:'2026-10-01',start:'09:00',end:'17:00',breakMinutes:60};
@@ -34,3 +33,4 @@ shift.date='2026-10-02';assert.equal((await store('free',{state:{...st.state,shi
 assert.equal((await store('free',{state:{...st.state,shifts:[shift]},version:st.version},'PUT')).status,200);
 console.log('PASS: approved leave blocks shifts; overlapping shifts blocked.');
 console.log('PASS: free account, blank tenant, per-store 3/10 limits, free core notice, paid feature guards, pricing 3 stores, trial unchanged/no repeat, downgrade capacity protection, no payment, leave balance once, tenant isolation, expired→free restores writes.');
+await closeAll();

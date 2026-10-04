@@ -1,11 +1,10 @@
 import assert from 'node:assert/strict';
-import {DatabaseSync} from 'node:sqlite';
 import {api} from '../dist/server/index.js';
+import {authedTest} from './test-auth.mjs';import {closeAll} from './test-db.mjs';
 // Each synthetic request happens one second later, rather than depending on machine speed.
 const RealDate=Date;let clock=RealDate.now();globalThis.Date=class extends RealDate{constructor(...args){super(...(args.length?args:[clock]))}static now(){return clock}};
-const db=new DatabaseSync(':memory:');db.exec('CREATE TABLE stores(owner TEXT PRIMARY KEY,data TEXT,version INTEGER,updated_at TEXT)');
-const DB={prepare(sql){let a=[];return {bind(...v){a=v;return this},async first(){return db.prepare(sql).get(...a)},async all(){return {results:db.prepare(sql).all(...a)}},async run(){return {meta:{changes:Number(db.prepare(sql).run(...a).changes)}}}}}};
-async function call(user,route,body,method){clock+=1000;const r=await api(new Request('https://qa.local'+route,{method:method||(body?'POST':'GET'),headers:{origin:'https://qa.local','oai-authenticated-user-id':user,'oai-authenticated-user-email':user+'@example.invalid'},...(body?{body:JSON.stringify(body)}:{})}),{DB});return {status:r.status,data:await r.json()}}
+const {env,headersFor}=await authedTest();
+async function call(user,route,body,method){clock+=1000;const r=await api(new Request('https://qa.local'+route,{method:method||(body?'POST':'GET'),headers:{origin:'https://qa.local',...(await headersFor(user))},...(body?{body:JSON.stringify(body)}:{})}),env);return {status:r.status,data:await r.json()}}
 let failures=0,n=0;function test(name,value){n++;console.log(`${value?'PASS':'FAIL'} ${n}. ${name}`);if(!value)failures++;}
 await call('owner','/api/account',{action:'onboard',storeName:'검수',branchName:'본점',ownerName:'대표',plan:'multi',storeSlots:2,acknowledged:true});
 let state=(await call('owner','/api/store')).data;
@@ -46,3 +45,4 @@ test('rotation invalidates old QR',(await attendance('in',token)).status===403);
 test('rotated QR works',(await attendance('in',new URL(issued.data.attendanceQrUrl).searchParams.get('attendanceQr'))).status===200);
 test('owner manual correction path retained',(await attendance('out',undefined,'owner')).status===200);
 console.log(`${n-failures}/${n} passed`);if(failures)process.exitCode=1;
+globalThis.Date=RealDate;await closeAll();

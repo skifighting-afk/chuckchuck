@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict';
-import {DatabaseSync} from 'node:sqlite';
 import {api} from '../dist/server/index.js';
-const db=new DatabaseSync(':memory:');db.exec('CREATE TABLE stores(owner TEXT PRIMARY KEY,data TEXT,version INTEGER,updated_at TEXT)');
-const DB={prepare(sql){let args=[];return{bind(...a){args=a;return this},async first(){return db.prepare(sql).get(...args)},async all(){return{results:db.prepare(sql).all(...args)}},async run(){return{meta:{changes:Number(db.prepare(sql).run(...args).changes)}}}}}};
+import {authedTest} from './test-auth.mjs';import {closeAll} from './test-db.mjs';
+const T=await authedTest({domain:'example.invalid'}),{q,headersFor,id}=T,env=T.env,DB=env.DB;
 let n=0;function ok(label,value,expected=true){assert.deepEqual(value,expected,label);console.log(`${++n}. PASS ${label}`)}
-async function call(user,path='/api/store',body,method){const r=await api(new Request('https://qa.local'+path,{method:method||(body?'POST':'GET'),headers:{origin:'https://qa.local',...(user?{'oai-authenticated-user-id':user,'oai-authenticated-user-email':user+'@example.invalid'}:{})},...(body?{body:JSON.stringify(body)}:{})}),{DB});return{status:r.status,body:await r.json()}}
+async function call(user,path='/api/store',body,method){const r=await api(new Request('https://qa.local'+path,{method:method||(body?'POST':'GET'),headers:{origin:'https://qa.local',...(await headersFor(user))},...(body?{body:JSON.stringify(body)}:{})}),env);return{status:r.status,body:await r.json()}}
 await call('boss','/api/account',{action:'onboard',storeName:'개인 화면 검수',branchName:'본점',ownerName:'가상대표',plan:'multi',storeSlots:2,acknowledged:true});
 const owner=(await call('boss')).body;
 await call('boss','/api/staff-join',{action:'code',branchId:'branch-main',version:owner.version});
@@ -14,9 +13,9 @@ for(const [user,name]of[['self','본인검수'],['peer','타인검수'],['foreig
  const j=(await call('boss','/api/staff-join')).body;
  await call('boss','/api/staff-join',{action:'review',id:j.requests.find(r=>r.status==='pending').id,approve:true,version:j.version});
 }
-const read=()=>JSON.parse(db.prepare('SELECT data FROM stores WHERE owner=?').get('boss').data);
-const save=d=>db.prepare('UPDATE stores SET data=?,version=version+1 WHERE owner=?').run(JSON.stringify(d),'boss');
-let d=read();const [a,b,c]=['self','peer','foreign'].map(u=>d._members.find(m=>m.userId===u).employeeId);
+const read=async()=>JSON.parse((await q('SELECT data FROM stores WHERE owner=?',id('boss')).first()).data);
+const save=d=>q('UPDATE stores SET data=?,version=version+1 WHERE owner=?',JSON.stringify(d),id('boss')).run();
+let d=await read();const [a,b,c]=['self','peer','foreign'].map(u=>d._members.find(m=>m.userId===id(u)).employeeId);
 d.branches.push({id:'foreign-branch',name:'다른지점검수',address:''});d.employees.find(e=>e.id===c).branchId='foreign-branch';
 for(const e of d.employees){e.status='재직';e.notes='사장전용메모';e.wage=13000;}
 d.shifts=[a,b,c].map((id,i)=>({id:'shift-'+i,employeeId:id,date:'2026-09-23',start:'09:00',end:'18:00',breakMinutes:60}));
@@ -27,7 +26,7 @@ const payRows=d.employees.map(e=>({employeeId:e.id,name:e.name,net:104000,gross:
 d.payrollRuns={'2026-09:branch-main':{month:'2026-09',branch:'branch-main',locked:true,payDate:'2026-09-25',rows:payRows,actor:{name:'사장내부정보'},extra:'타인검수'},draft:{month:'2026-10',branch:'branch-main',locked:false,rows:payRows}};
 d.legacy={employees:d.employees};d.settings.accountantEmail='private-accountant@example.invalid';
 d._operations={leaves:d.employees.map((e,i)=>({id:'leave-'+i,employeeId:e.id,name:e.name,status:'승인 대기'})),notices:[{id:'n1',title:'본점 공지',body:'내 매장 공지',branchId:'branch-main',reads:[],author:'대표'},{id:'n2',title:'전체 공지',body:'전체 매장 공지',branchId:'all',reads:[],author:'대표'},{id:'n3',title:'다른지점검수',body:'비공개',branchId:'foreign-branch',reads:[],author:'대표'}]};
-save(d);
+await save(d);
 let self=(await call('self')).body;
 ok('employee record contains only self',self.state.employees.map(e=>e.id),[a]);
 ok('own schedule retained, colleagues excluded',self.state.shifts.map(s=>s.employeeId),[a]);
@@ -54,13 +53,13 @@ ok('own-branch and whole-store notices remain',ops.notices.map(x=>x.id),['n1','n
 ok('owner retains all staff',(await call('boss')).body.state.employees.length,3);
 ok('owner retains all schedules',(await call('boss')).body.state.shifts.length,3);
 // Check the same projection after a successful write, not just the GET path.
-d=read();d.payrollRuns={};d.requests=[];d._attendanceQr={'branch-main':'synthetic-qr'};save(d);
+d=await read();d.payrollRuns={};d.requests=[];d._attendanceQr={'branch-main':'synthetic-qr'};await save(d);
 self=(await call('self')).body;
 const clock=await call('self','/api/store',{action:'attendance',employeeId:a,kind:'in',qrToken:'synthetic-qr',version:self.version});
 ok('own QR attendance still records',clock.status,200);
 ok('mutation response also excludes colleagues',clock.body.state.employees.map(e=>e.id),[a]);
 // Personal manager screens are own-only; delegated branch work stays separate.
-d=read();d.employees.find(e=>e.id===a).access='중간관리자';d.employees.find(e=>e.id===a).managerPermissions=['schedule'];save(d);
+d=await read();d.employees.find(e=>e.id===a).access='중간관리자';d.employees.find(e=>e.id===a).managerPermissions=['schedule'];await save(d);
 const personalManager=(await call('self')).body;
 ok('manager personal view stays own-only',personalManager.state.employees.map(e=>e.id),[a]);
 const manager=(await call('self','/api/manager')).body;
@@ -68,8 +67,9 @@ ok('delegated manager sees assigned branch schedules',manager.shifts.map(s=>s.em
 ok('delegated manager cannot see foreign branch',!JSON.stringify(manager).includes(c));
 ok('manager has no other employee pay data',!JSON.stringify(manager).includes('wage'));
 ok('manager personal endpoint cannot correct colleague',(await call('self','/api/store',{action:'request',id:'attendance-1',version:personalManager.version})).status,403);
-d=read();d.employees.find(e=>e.id===a).managerPermissions=[];save(d);
+d=await read();d.employees.find(e=>e.id===a).managerPermissions=[];await save(d);
 ok('revoked schedule permission removes branch schedules',(await call('self','/api/manager')).body.shifts,[]);
-d=read();d.employees.find(e=>e.id===a).status='퇴사';save(d);
+d=await read();d.employees.find(e=>e.id===a).status='퇴사';await save(d);
 ok('retired employee loses personal access',(await call('self')).status,403);
 console.log(`${n}/${n} personal access checks passed`);
+await closeAll();

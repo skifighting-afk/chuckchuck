@@ -1,40 +1,40 @@
 import assert from 'node:assert/strict';
-import {DatabaseSync} from 'node:sqlite';
-import {readFileSync} from 'node:fs';
 import {api} from '../dist/server/index.js';
 import {digest} from '../lib/password.ts';
-const db=new DatabaseSync(':memory:');for(const f of ['0000_worried_moondragon','0002_native_auth','0003_verified_contracts','0004_app_documents'])db.exec(readFileSync('drizzle/'+f+'.sql','utf8'));
-const DB={prepare(sql){let a=[];return{bind(...v){a=v;return this},async first(){return db.prepare(sql).get(...a)},async all(){return{results:db.prepare(sql).all(...a)}},async run(){return{meta:{changes:Number(db.prepare(sql).run(...a).changes)}}}}},async batch(statements){db.exec('BEGIN');try{const r=[];for(const s of statements)r.push(await s.run());db.exec('COMMIT');return r}catch(e){db.exec('ROLLBACK');throw e}}};
+import {authedTest} from './test-auth.mjs';import {closeAll} from './test-db.mjs';
+const T=await authedTest(),{q,auth}=T,base=T.env,DB=base.DB;
 const password='Synthetic test password 2026!',mail=[];let failMail=false,number=0;
 const originalFetch=globalThis.fetch;globalThis.fetch=async(url,options)=>{assert.equal(url,'https://api.resend.com/emails');const b=JSON.parse(options.body);assert.ok(b.to[0].endsWith('@example.invalid'));mail.push({body:b,key:options.headers['Idempotency-Key']});return Response.json(failMail?{message:'test failure'}:{id:'synthetic-mail-'+mail.length},{status:failMail?503:200})};
-const configured={DB,RESEND_API_KEY:'synthetic-only',EMAIL_FROM:'test@example.invalid'};
-async function call(path,body,cookie='',env={DB},extra={}){const r=await api(new Request('https://qa.local'+path,{method:body?'POST':'GET',headers:{origin:'https://qa.local',cookie,...extra},...(body?{body:JSON.stringify(body)}:{})}),env);return{status:r.status,data:r.headers.get('content-type')?.includes('json')?await r.json():await r.text(),cookie:r.headers.get('set-cookie')?.split(';')[0],headers:r.headers}}
+const configured={...base,RESEND_API_KEY:'synthetic-only',EMAIL_FROM:'test@example.invalid'};
+async function call(path,body,token='',env=base,extra={}){const r=await api(new Request('https://qa.local'+path,{method:body?'POST':'GET',headers:{origin:'https://qa.local',...(token?{authorization:'Bearer '+token}:{}),...extra},...(body?{body:JSON.stringify(body)}:{})}),env);return{status:r.status,data:r.headers.get('content-type')?.includes('json')?await r.json():await r.text(),headers:r.headers}}
 function ok(name,value){assert.ok(value,name);console.log(`PASS ${++number}. ${name}`)}
 const register=async(email,name,role)=>call('/api/auth',{action:'register',email,name,role,password});
-const owner=(await register('owner@example.invalid','가상 대표','owner')).cookie,staff=(await register('staff@example.invalid','가상 직원','employee')).cookie,other=(await register('other@example.invalid','다른 직원','employee')).cookie;
+const tokenOf=r=>{assert.equal(r.status,200,JSON.stringify(r.data));return r.data.session.access_token};
+const owner=tokenOf(await register('owner@example.invalid','가상 대표','owner')),staff=tokenOf(await register('staff@example.invalid','가상 직원','employee')),other=tokenOf(await register('other@example.invalid','다른 직원','employee'));
 ok('email configuration status is honest',(await call('/api/auth',null,staff)).data.mailReady===false);
 ok('verification requires authenticated account',(await call('/api/auth',{action:'sendVerification'},'',configured)).status===401);
 ok('unconfigured verification is not marked sent',(await call('/api/auth',{action:'sendVerification'},staff)).status===503&&mail.length===0);
 let r=await call('/api/auth',{action:'sendVerification'},staff,configured);ok('verification email is sent through provider adapter',r.status===200&&mail.length===1);
 const verifyUrl=mail[0].body.text.split('\n').at(-1),token=new URL(verifyUrl).hash.slice(7);ok('verification token is in fragment, not request query',new URL(verifyUrl).search===''&&token.length===64);
-ok('verification token is stored hashed',!!db.prepare('SELECT token_hash FROM auth_verifications WHERE token_hash=?').get(await digest(token)));
+ok('verification token is stored hashed',!!await q('SELECT token_hash FROM auth_verifications WHERE token_hash=?',await digest(token)).first());
 ok('repeated send is rate limited',(await call('/api/auth',{action:'sendVerification'},staff,configured)).status===429);
-ok('visiting status does not consume emailed token',!!db.prepare('SELECT token_hash FROM auth_verifications').get());
+ok('visiting status does not consume emailed token',!!await q('SELECT token_hash FROM auth_verifications').first());
 ok('verification proof confirms correct email',(await call('/api/auth',{action:'verifyEmail',token},'',configured)).status===200);
 ok('verified state appears on existing session',(await call('/api/auth',null,staff)).data.verified===true);
 ok('verification token cannot be reused',(await call('/api/auth',{action:'verifyEmail',token},'',configured)).status===400);
-await call('/api/auth',{action:'sendVerification'},owner,configured);const bossToken=new URL(mail.at(-1).body.text.split('\n').at(-1)).hash.slice(7);db.prepare('UPDATE auth_verifications SET expires_at=0 WHERE token_hash=?').run(await digest(bossToken));
+await call('/api/auth',{action:'sendVerification'},owner,configured);const bossToken=new URL(mail.at(-1).body.text.split('\n').at(-1)).hash.slice(7);await q('UPDATE auth_verifications SET expires_at=0 WHERE token_hash=?',await digest(bossToken)).run();
 ok('expired verification proof rejected',(await call('/api/auth',{action:'verifyEmail',token:bossToken},'',configured)).status===400);
-db.prepare('UPDATE auth_users SET email_verified=1 WHERE email=?').run('owner@example.invalid');
-failMail=true;r=await call('/api/auth',{action:'sendVerification'},other,configured);ok('provider failure has no usable verification token',r.status===503&&!db.prepare('SELECT * FROM auth_verifications WHERE email=?').get('other@example.invalid'));failMail=false;
-await call('/api/auth',{action:'recover',email:'staff@example.invalid'},'',configured);const resetUrl=new URL(mail.at(-1).body.text.split('\n').at(-1));ok('recovery mail uses fragment token and idempotency key',resetUrl.search==='?mode=reset'&&resetUrl.hash.startsWith('#token=')&&mail.at(-1).key.startsWith('recover-'));
+await q('UPDATE app_users SET email_verified=1 WHERE email=?','owner@example.invalid').run();
+failMail=true;r=await call('/api/auth',{action:'sendVerification'},other,configured);ok('provider failure has no usable verification token',r.status===503&&!await q('SELECT * FROM auth_verifications WHERE email=?','other@example.invalid').first());failMail=false;
+// 비밀번호 찾기 메일은 이제 Supabase Auth가 보낸다(앱의 Resend 발송 아님). 돌아올 주소가 이 사이트의 재설정 화면인지 확인.
+{const before=mail.length;const r=await call('/api/auth',{action:'recover',email:'staff@example.invalid'},'',configured);const rec=auth.calls.filter(c=>c.path==='/recover').at(-1);ok('recovery mail is delegated to Supabase Auth with same-site reset link',r.status===200&&mail.length===before&&rec.body.email==='staff@example.invalid'&&new URLSearchParams(rec.search).get('redirect_to')==='https://qa.local/login?mode=reset');}
 await call('/api/account',{action:'onboard',storeName:'가상 계약 검수',branchName:'본점',ownerName:'가상 대표',plan:'starter',acknowledged:true},owner);
 let codeState=(await call('/api/staff-join',null,owner)).data;await call('/api/staff-join',{action:'code',branchId:'branch-main',version:codeState.version},owner);codeState=(await call('/api/staff-join',null,owner)).data;
 await call('/api/staff-join',{action:'apply',code:codeState.codes[0].code,name:'가상 직원',phone:'01000000000',profile:{address:'가상 주소',joined:'2026-09-23',note:'테스트'}},staff);
 codeState=(await call('/api/staff-join',null,owner)).data;assert.equal((await call('/api/staff-join',{action:'review',approve:true,id:codeState.requests[0].id,version:codeState.version},owner)).status,200);
-const ownerId=db.prepare('SELECT id FROM auth_users WHERE email=?').get('owner@example.invalid').id;
-function fixture(fn){const raw=JSON.parse(db.prepare('SELECT data FROM stores WHERE owner=?').get(ownerId).data);fn(raw);db.prepare('UPDATE stores SET data=?,version=version+1 WHERE owner=?').run(JSON.stringify(raw),ownerId)}
-fixture(raw=>{const e=raw.employees[0];e.wage=13000;e.weeklyHours=40;e.contract={...e.contract,employer:'가상 대표',workplace:'가상 매장',duties:'홀 업무',workDays:'월~금',start:'09:00',end:'18:00',breakMinutes:60,holiday:'일요일',leave:'관계 법령에 따름'};});
+const ownerId=(await q('SELECT id FROM app_users WHERE email=?','owner@example.invalid').first()).id;
+async function fixture(fn){const raw=JSON.parse((await q('SELECT data FROM stores WHERE owner=?',ownerId).first()).data);fn(raw);await q('UPDATE stores SET data=?,version=version+1 WHERE owner=?',JSON.stringify(raw),ownerId).run()}
+await fixture(raw=>{const e=raw.employees[0];e.wage=13000;e.weeklyHours=40;e.contract={...e.contract,employer:'가상 대표',workplace:'가상 매장',duties:'홀 업무',workDays:'월~금',start:'09:00',end:'18:00',breakMinutes:60,holiday:'일요일',leave:'관계 법령에 따름'};});
 let list=(await call('/api/contracts',null,owner)).data;ok('owner sees linked employee and paid contract access',list.canCreate&&list.employees[0].linked);
 const employeeId=list.employees[0].id,document=list.employees[0].draft.replace(/\[[^\]]+\]/g,'가상 검수용 기재사항')+'\n이 문서는 자동화 검수만을 위한 가상 문서이며 실제 고용 계약이 아닙니다.';
 const create={action:'create',employeeId,text:document,name:'가상 대표',password,consent:true};
@@ -56,15 +56,15 @@ ok('owner cannot sign on behalf of employee',(await call('/api/contracts',sign,o
 ok('different document hash rejected',(await call('/api/contracts',{...sign,documentHash:'changed'},staff)).status===409);
 ok('employee consent cannot be skipped',(await call('/api/contracts',{...sign,consent:false},staff)).status===400);
 ok('stale version rejected',(await call('/api/contracts',{...sign,version:0},staff)).status===409);
-fixture(raw=>{raw.employees[0].wage=14000});ok('changed work conditions block old contract signature',(await call('/api/contracts',sign,staff)).status===409);
-fixture(raw=>{raw.employees[0].wage=13000});
-db.prepare('UPDATE auth_users SET email_verified=0 WHERE email=?').run('staff@example.invalid');ok('unverified employee cannot sign',(await call('/api/contracts',sign,staff)).status===400);db.prepare('UPDATE auth_users SET email_verified=1 WHERE email=?').run('staff@example.invalid');
+await fixture(raw=>{raw.employees[0].wage=14000});ok('changed work conditions block old contract signature',(await call('/api/contracts',sign,staff)).status===409);
+await fixture(raw=>{raw.employees[0].wage=13000});
+await q('UPDATE app_users SET email_verified=0 WHERE email=?','staff@example.invalid').run();ok('unverified employee cannot sign',(await call('/api/contracts',sign,staff)).status===400);await q('UPDATE app_users SET email_verified=1 WHERE email=?','staff@example.invalid').run();
 r=await call('/api/contracts',sign,staff);ok('both signatures commit without pretending email sent',r.status===200);
 detail=(await call('/api/contracts?id='+id,null,staff)).data.envelope;ok('unconfigured delivery is marked setup required',detail.status==='signed'&&detail.delivery_status==='setup_required');
 const signedStore=(await call('/api/store',null,staff)).data;ok('signed status reaches employee current contract',signedStore.state.employees.find(e=>e.id===employeeId).contract.status==='체결 완료');
 ok('repeated signature is rejected',(await call('/api/contracts',{...sign,version:detail.version},staff)).status===403);
 ok('signed request cannot be withdrawn',(await call('/api/contracts',{action:'withdraw',id,version:detail.version,reason:'test'},owner)).status===403);
-let protectedSnapshot=false;try{db.prepare('UPDATE contract_envelopes SET document_json=? WHERE id=?').run('{}',id)}catch{protectedSnapshot=true}ok('database prevents changing signed document snapshot',protectedSnapshot);
+let protectedSnapshot=false;try{await q('UPDATE contract_envelopes SET document_json=? WHERE id=?','{}',id).run()}catch{protectedSnapshot=true}ok('database prevents changing signed document snapshot',protectedSnapshot);
 failMail=true;await call('/api/contracts',{action:'deliver',id,version:detail.version},owner,configured);detail=(await call('/api/contracts?id='+id,null,staff)).data.envelope;ok('failed email is not marked delivered',detail.delivery_status==='failed');failMail=false;
 await call('/api/contracts',{action:'deliver',id,version:detail.version},owner,configured);detail=(await call('/api/contracts?id='+id,null,staff)).data.envelope;ok('provider acceptance is distinct from employee receipt',detail.delivery_status==='accepted'&&!detail.received_at);
 ok('copy email contains actual immutable signed HTML',Buffer.from(mail.at(-1).body.attachments[0].content,'base64').toString('utf8').includes(detail.document_hash)&&mail.at(-1).key==='contract-copy-'+id);
@@ -74,11 +74,11 @@ ok('employee receipt requires explicit checkbox',(await call('/api/contracts',{a
 await call('/api/contracts',{action:'receipt',id,version:detail.version,confirmed:true},staff);detail=(await call('/api/contracts?id='+id,null,staff)).data.envelope;ok('employee can record receipt',!!detail.received_at&&!!detail.received_by);
 const events=(await call('/api/contracts?id='+id,null,owner)).data.events;ok('signature and delivery history retained',events.length>=6&&events[0].status==='waiting');
 r=await call('/api/contracts?id='+id+'&download=1',null,staff);ok('download contains both names, timestamps and hash',r.status===200&&r.data.includes('가상 대표')&&r.data.includes('가상 직원')&&r.data.includes(detail.document_hash)&&r.headers.get('content-disposition').startsWith('attachment'));
-fixture(raw=>{raw.employees[0].status='퇴사';raw._members=[]});ok('former employee can retain previously signed copy',(await call('/api/contracts?id='+id+'&download=1',null,staff)).status===200);
-fixture(raw=>{raw._account.plan='free'});ok('free plan cannot create new electronic contract',(await call('/api/contracts',create,owner)).status===403);ok('free plan retains old copies',(await call('/api/contracts?id='+id+'&download=1',null,owner)).status===200);
-ok('cross origin contract mutation rejected',(await call('/api/contracts',create,owner,{DB},{origin:'https://bad.invalid'})).status===403);
+await fixture(raw=>{raw.employees[0].status='퇴사';raw._members=[]});ok('former employee can retain previously signed copy',(await call('/api/contracts?id='+id+'&download=1',null,staff)).status===200);
+await fixture(raw=>{raw._account.plan='free'});ok('free plan cannot create new electronic contract',(await call('/api/contracts',create,owner)).status===403);ok('free plan retains old copies',(await call('/api/contracts?id='+id+'&download=1',null,owner)).status===200);
+ok('cross origin contract mutation rejected',(await call('/api/contracts',create,owner,base,{origin:'https://bad.invalid'})).status===403);
 
-const documentAction=(action,cookie=staff,extra={})=>call('/api/documents',{kind:'contract',id,action,...extra},cookie);
+const documentAction=(action,token=staff,extra={})=>call('/api/documents',{kind:'contract',id,action,...extra},token);
 ok('outsider cannot read image document',(await call('/api/documents?kind=contract&id='+id,null,other)).status===404);
 ok('owner cannot mark employee download',(await documentAction('download',owner)).status===403);
 ok('save confirmation requires prior download',(await documentAction('saved')).status===409);
@@ -86,30 +86,31 @@ ok('employee view records receipt separately',(await documentAction('view')).dat
 ok('download request does not pretend saved',!(await documentAction('download')).data.activity.saved_at);
 ok('explicit employee save is recorded',(await documentAction('saved')).data.activity.saved_at);
 ok('owner sees employee document activity',(await call('/api/contracts?id='+id,null,owner)).data.envelope.activity.saved_at);
-const staffId=db.prepare('SELECT id FROM auth_users WHERE email=?').get('staff@example.invalid').id;
-fixture(raw=>{raw._account.plan='multi';raw.employees[0].status='재직';raw._members=[{employeeId,userId:staffId}];raw.payrollRuns={'2026-09:branch-main':{locked:true,month:'2026-09',payDate:'2026-09-25',revision:1,rows:[{employeeId,name:'Synthetic staff',earnings:[{name:'Base',amount:100,formula:'1 x 100'}],deductions:[],gross:100,deduction:0,net:100}]}}});
+const staffId=(await q('SELECT id FROM app_users WHERE email=?','staff@example.invalid').first()).id;
+await fixture(raw=>{raw._account.plan='multi';raw.employees[0].status='재직';raw._members=[{employeeId,userId:staffId}];raw.payrollRuns={'2026-09:branch-main':{locked:true,month:'2026-09',payDate:'2026-09-25',revision:1,rows:[{employeeId,name:'Synthetic staff',earnings:[{name:'Base',amount:100,formula:'1 x 100'}],deductions:[],gross:100,deduction:0,net:100}]}}});
 const send={action:'send',runKey:'2026-09:branch-main',employeeId};
 ok('employee cannot send payroll',(await call('/api/documents',send,staff)).status===403);
 ok('owner sends locked payslip in app',(await call('/api/documents',send,owner)).status===200);
-ok('repeat send idempotent',(await call('/api/documents',send,owner)).status===200&&db.prepare('SELECT COUNT(*) AS n FROM payslip_documents').get().n===1);
+ok('repeat send idempotent',(await call('/api/documents',send,owner)).status===200&&(await q('SELECT COUNT(*) AS n FROM payslip_documents').first()).n===1);
 const slips=(await call('/api/documents',null,staff)).data.documents;
 ok('employee sees own sent payroll',slips.length===1&&slips[0].document.text.includes('100'));
 ok('outsider sees no payroll',(await call('/api/documents',null,other)).data.documents.length===0);
 ok('outsider cannot fetch payroll by id',(await call('/api/documents?id='+slips[0].id,null,other)).status===404);
-fixture(raw=>{raw.payrollRuns[send.runKey].locked=false});
+await fixture(raw=>{raw.payrollRuns[send.runKey].locked=false});
 ok('unlocked payroll cannot send',(await call('/api/documents',send,owner)).status===409);
-fixture(raw=>{raw.payrollRuns[send.runKey].locked=true;raw.payrollRuns[send.runKey].revision=2});
-ok('revised payroll sends a new immutable copy',(await call('/api/documents',send,owner)).status===200&&db.prepare('SELECT COUNT(*) AS n FROM payslip_documents').get().n===2);
+await fixture(raw=>{raw.payrollRuns[send.runKey].locked=true;raw.payrollRuns[send.runKey].revision=2});
+ok('revised payroll sends a new immutable copy',(await call('/api/documents',send,owner)).status===200&&(await q('SELECT COUNT(*) AS n FROM payslip_documents').first()).n===2);
 ok('new revision has independent pending download',(await call('/api/documents',null,staff)).data.documents.every(d=>!d.activity.saved_at));
-ok('cross origin document action denied',(await call('/api/documents',{kind:'contract',id,action:'view'},staff,{DB},{origin:'https://bad.invalid'})).status===403);
+ok('cross origin document action denied',(await call('/api/documents',{kind:'contract',id,action:'view'},staff,base,{origin:'https://bad.invalid'})).status===403);
 
 const appRequest=await call('/api/contracts',create,owner);ok('new contract revision can be requested',appRequest.status===201);
 const appId=appRequest.data.id,appDetail=(await call('/api/contracts?id='+appId,null,staff)).data.envelope;
 ok('unsigned contract image is blocked',(await call('/api/documents?kind=contract&id='+appId,null,staff)).status===409);
-db.prepare('UPDATE auth_users SET email_verified=0 WHERE email=?').run('staff@example.invalid');
+await q('UPDATE app_users SET email_verified=0 WHERE email=?','staff@example.invalid').run();
 const mailCount=mail.length;
 ok('in-app signing works with password without email service',(await call('/api/contracts',{...sign,id:appId,version:appDetail.version,documentHash:appDetail.document_hash,deliveryMethod:'app'},staff)).status===200);
 ok('app signing sends no email',mail.length===mailCount);
 const appSigned=(await call('/api/contracts?id='+appId,null,staff)).data.envelope;
 ok('app signature preserves truthful email verification state',appSigned.employeeSignature.emailVerified===false&&appSigned.delivery_status==='app_ready');
 globalThis.fetch=originalFetch;console.log(`${number}/${number} passed; no external email or real signatures sent.`);
+await closeAll();

@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict';
-import {DatabaseSync} from 'node:sqlite';
 import worker,{api} from '../dist/server/index.js';
-const db=new DatabaseSync(':memory:');db.exec('CREATE TABLE stores(owner TEXT PRIMARY KEY,data TEXT,version INTEGER,updated_at TEXT)');
-const DB={prepare(sql){let a=[];return {bind(...v){a=v;return this},async first(){return db.prepare(sql).get(...a)},async all(){return {results:db.prepare(sql).all(...a)}},async run(){return {meta:{changes:Number(db.prepare(sql).run(...a).changes)}}}}}};
+import {authedTest} from './test-auth.mjs';import {closeAll} from './test-db.mjs';
+const T=await authedTest({domain:'example.com'}),{q,headersFor}=T,env=T.env,DB=env.DB,userId=T.id;
 let passed=0;function ok(label,actual,expected){assert.deepEqual(actual,expected,label);console.log(`${++passed}. PASS ${label}`)}
-async function call(user,path,body,method){const r=await api(new Request('https://test.local'+path,{method:method||(body?'POST':'GET'),headers:{origin:'https://test.local',...(user?{'oai-authenticated-user-id':user,'oai-authenticated-user-email':user+'@example.com'}:{})},...(body?{body:JSON.stringify(body)}:{})}),{DB});return {status:r.status,data:await r.json()}}
+async function call(user,path,body,method){const r=await api(new Request('https://test.local'+path,{method:method||(body?'POST':'GET'),headers:{origin:'https://test.local',...(await headersFor(user))},...(body?{body:JSON.stringify(body)}:{})}),env);return {status:r.status,data:await r.json()}}
 const account=(u,b)=>call(u,'/api/account',b),join=(u,b)=>call(u,'/api/staff-join',b),store=(u,b,m)=>call(u,'/api/store',b,m);
 for(const p of ['/app','/signup?plan=free','/employee?code=example','/staff-requests','/app/','/start','/try','/account']){const r=await worker.fetch(new Request('https://test.local'+p),{DB,ASSETS:{fetch:async r=>new Response(new URL(r.url).pathname,{status:new URL(r.url).pathname==='/'?200:404})}});ok('entry route '+p,r.status,200)}
 ok('unknown route stays 404',(await worker.fetch(new Request('https://test.local/missing'),{DB,ASSETS:{fetch:async()=>new Response('',{status:404})}})).status,404);
@@ -51,4 +50,4 @@ ok('manager can post branch notice',(await call('staff','/api/manager',{action:'
 boss=await store('boss');boss.data.state.employees[0].managerPermissions=[];await store('boss',{state:boss.data.state,version:boss.data.version},'PUT');manager=await call('staff','/api/manager');
 ok('revoked permission blocked immediately',(await call('staff','/api/manager',{action:'postNotice',version:manager.data.version,title:'test',body:'test'})).status,403);
 console.log(`Entry/join/contracts/manager checks: ${passed} passed`);
-
+await closeAll();

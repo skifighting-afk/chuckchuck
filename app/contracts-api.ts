@@ -96,5 +96,5 @@ export async function contractsApi(request:Request,env:Env){
    await deliver(env,row);return json({ok:true,message:'사본 발송 상태를 확인해 주세요.'});
   }
   return json({error:'지원하지 않는 요청이에요.'},400);
- }catch(e){return json({error:e instanceof Error&&!/D1|SQLITE|constraint|database/i.test(e.message)?e.message:'계약 처리를 완료하지 못했어요. 새로 확인해 주세요.'},400)}
+ }catch(e){return json({error:e instanceof Error&&e.name!=='PostgresError'&&!/D1|SQLITE|constraint|database/i.test(e.message)?e.message:'계약 처리를 완료하지 못했어요. 새로 확인해 주세요.'},400)}
 }

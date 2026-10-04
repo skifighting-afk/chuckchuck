@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict';
-import {DatabaseSync} from 'node:sqlite';
 import worker,{api} from '../dist/server/index.js';
-const db=new DatabaseSync(':memory:');db.exec('CREATE TABLE stores(owner TEXT PRIMARY KEY,data TEXT,version INTEGER,updated_at TEXT)');
-const DB={prepare(sql){let a=[];return {bind(...v){a=v;return this},async first(){return db.prepare(sql).get(...a)},async all(){return {results:db.prepare(sql).all(...a)}},async run(){return {meta:{changes:Number(db.prepare(sql).run(...a).changes)}}}}}};
+import {authedTest} from './test-auth.mjs';import {closeAll} from './test-db.mjs';
+const T=await authedTest({domain:'example.com'}),{q,headersFor}=T,env=T.env,DB=env.DB,userId=T.id;
 let passed=0;function ok(label,actual,expected){assert.deepEqual(actual,expected,label);console.log(`${++passed}. PASS ${label}`)}
-async function call(user,path,body,method){const r=await api(new Request('https://test.local'+path,{method:method||(body?'POST':'GET'),headers:{origin:'https://test.local',...(user?{'oai-authenticated-user-id':user,'oai-authenticated-user-email':user+'@example.com'}:{})},...(body?{body:JSON.stringify(body)}:{})}),{DB});return {status:r.status,data:await r.json()}}
+async function call(user,path,body,method){const r=await api(new Request('https://test.local'+path,{method:method||(body?'POST':'GET'),headers:{origin:'https://test.local',...(await headersFor(user))},...(body?{body:JSON.stringify(body)}:{})}),env);return {status:r.status,data:await r.json()}}
 const account=(u,b)=>call(u,'/api/account',b),join=(u,b)=>call(u,'/api/staff-join',b),store=(u,b,m)=>call(u,'/api/store',b,m);
 for(const p of ['/app','/signup?plan=free','/employee?code=example','/staff-requests','/app/','/start','/try','/account']){const r=await worker.fetch(new Request('https://test.local'+p),{DB,ASSETS:{fetch:async r=>new Response(new URL(r.url).pathname,{status:new URL(r.url).pathname==='/'?200:404})}});ok('entry route '+p,r.status,200)}
 ok('unknown route stays 404',(await worker.fetch(new Request('https://test.local/missing'),{DB,ASSETS:{fetch:async()=>new Response('',{status:404})}})).status,404);
@@ -62,19 +61,20 @@ ok('apply again after withdrawal',(await join('staff2',{action:'apply',code,name
 j=await join('boss');ok('owner accepts reapplied employee',(await join('boss',{action:'review',id:j.data.requests[0].id,approve:true,version:j.data.version})).status,200);
 boss=await store('boss');const second=boss.data.state.employees.find(x=>x.email==='staff2@example.com').id;
 boss.data.state.employees[0].managerPermissions=['attendance','leave'];await store('boss',{state:boss.data.state,version:boss.data.version},'PUT');
-function fixture(fn){const r=db.prepare('SELECT data FROM stores WHERE owner=?').get('boss'),d=JSON.parse(r.data);fn(d);db.prepare('UPDATE stores SET data=?,version=version+1 WHERE owner=?').run(JSON.stringify(d),'boss')}
-fixture(d=>{d.attendance=[{id:'morning',employeeId:second,start:'2026-09-20T00:00:00.000Z',end:'2026-09-20T04:00:00.000Z',breakMinutes:30,breakStart:null},{id:'evening',employeeId:second,start:'2026-09-20T08:00:00.000Z',end:'2026-09-20T13:00:00.000Z',breakMinutes:30,breakStart:null}];});
+async function fixture(fn){const r=await q('SELECT data FROM stores WHERE owner=?',userId('boss')).first(),d=JSON.parse(r.data);fn(d);await q('UPDATE stores SET data=?,version=version+1 WHERE owner=?',JSON.stringify(d),userId('boss')).run()}
+await fixture(d=>{d.attendance=[{id:'morning',employeeId:second,start:'2026-09-20T00:00:00.000Z',end:'2026-09-20T04:00:00.000Z',breakMinutes:30,breakStart:null},{id:'evening',employeeId:second,start:'2026-09-20T08:00:00.000Z',end:'2026-09-20T13:00:00.000Z',breakMinutes:30,breakStart:null}];});
 const request=async(end)=>store('staff2',{action:'request',id:'morning',start:'2026-09-20T00:00:00.000Z',end,breakMinutes:30,reason:'시간 정정',version:(await store('staff2')).data.version});
 ok('overlapping correction blocked',(await request('2026-09-20T09:00:00.000Z')).status,400);
 ok('valid correction submitted',(await request('2026-09-20T05:00:00.000Z')).status,200);
 ok('duplicate pending correction blocked',(await request('2026-09-20T05:00:00.000Z')).status,400);
 manager=await call('staff','/api/manager');const correction=manager.data.corrections[0].id;
 ok('manager sees colleague request',manager.data.corrections.length,1);
-fixture(d=>{d.payrollRuns.test={locked:true,month:'2026-09',rows:[{employeeId:second}]};});
+await fixture(d=>{d.payrollRuns.test={locked:true,month:'2026-09',rows:[{employeeId:second}]};});
 manager=await call('staff','/api/manager');ok('manager cannot alter finalized payroll',(await call('staff','/api/manager',{action:'reviewCorrection',id:correction,approve:true,version:manager.data.version})).status,409);
-fixture(d=>{d.payrollRuns={};});manager=await call('staff','/api/manager');
+await fixture(d=>{d.payrollRuns={};});manager=await call('staff','/api/manager');
 ok('manager approves valid correction',(await call('staff','/api/manager',{action:'reviewCorrection',id:correction,approve:true,version:manager.data.version})).status,200);
 ok('employee sees updated end',(await store('staff2')).data.state.attendance.find(a=>a.id==='morning').end,'2026-09-20T05:00:00.000Z');
 manager=await call('staff','/api/manager');ok('approval cannot repeat',(await call('staff','/api/manager',{action:'reviewCorrection',id:correction,approve:true,version:manager.data.version})).status,403);
 ok('employee sees approval status',(await store('staff2')).data.state.requests[0].status,'승인');
 console.log('Scenario checks: '+passed+' passed');
+await closeAll();
