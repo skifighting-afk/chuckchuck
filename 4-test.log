@@ -510,6 +510,9 @@ PASS 44. minor 8h day flagged
 PASS 45. minor night work flagged
 PASS 46. documents checked: no document warning
 PASS: 18세 미만 직원 보호 점검.
+PASS 47. this year rates are registered (update lib/pay-rules.ts RATES — see docs/RATES-UPDATE.md)
+PASS 48. unregistered year warns on payroll
+PASS: 요율 연간 갱신 경고.
 
 ── check-claims
 PASS: 과장·허위 문구 검사 (화면·홈페이지).
