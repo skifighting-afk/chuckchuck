@@ -675,6 +675,11 @@ PASS 118. absent week: no 주휴 + week listed
 PASS 119. owner can accept as 개근
 PASS 120. approved leave day is not absence
 PASS: 주휴 개근 판단.
+PASS 121. monthly 40h → 209h
+PASS 122. daily wage ÷ contract hours
+PASS 123. monthly worker overtime 3h at 통상시급 10,000
+PASS 124. monthly wage already includes 주휴
+PASS: 일급·월급 통상시급.
 
 ── check-claims
 PASS: 과장·허위 문구 검사 (화면·홈페이지).
