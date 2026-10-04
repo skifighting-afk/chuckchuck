@@ -105,3 +105,11 @@ ok('minor 8h day flagged',iss.some(w=>w.includes('하루 7시간')));
 ok('minor night work flagged',iss.some(w=>w.includes('밤 10시')));
 ok('documents checked: no document warning',!iss.some(w=>w.includes('제66조')));
 console.log('PASS: 18세 미만 직원 보호 점검.');
+// 작업 030: 요율 연간 갱신 경고
+const {hasRatesFor}=await import('../lib/pay-rules.ts');
+const now=new Date(Date.now()+9*3600000),thisYear=now.getUTCFullYear();
+ok('this year rates are registered (update lib/pay-rules.ts RATES — see docs/RATES-UPDATE.md)',hasRatesFor(thisYear));
+if(now.getUTCMonth()===11&&!hasRatesFor(thisYear+1))console.log(`WARN: ${thisYear+1}년 최저임금·4대보험 요율을 lib/pay-rules.ts에 추가해야 해요 (docs/RATES-UPDATE.md).`);
+team.attendance=[];Object.assign(e,{wage:20000,payType:'시급',taxMode:'직접 입력'});
+ok('unregistered year warns on payroll',calculate(team,'2099-01').find(x=>x.employeeId===e.id).warnings.some(w=>w.includes('2099년')));
+console.log('PASS: 요율 연간 갱신 경고.');

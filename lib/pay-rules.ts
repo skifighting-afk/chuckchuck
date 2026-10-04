@@ -12,6 +12,8 @@ export const RATES: Record<number, {pension: number; health: number; care: numbe
   // 국민연금 9.5%의 절반, 건강보험 7.19%의 절반, 장기요양 = 건강보험료 × 13.14%(0.9448% ÷ 7.19%), 고용보험(실업급여) 0.9%
   2026: {pension: 0.0475, health: 0.03595, care: 0.1314, employment: 0.009, minimumWage: 10320},
 };
+/** 그해 요율이 등록돼 있는지(없으면 가장 가까운 이전 해 요율로 계산하고 경고한다) */
+export const hasRatesFor = (year: number) => !!RATES[year];
 export const ratesFor = (year: number) => RATES[year] || RATES[Math.max(...Object.keys(RATES).map(Number).filter(y => y <= year))] || RATES[2026];
 
 type Record_ = {start: string; end: string | null; breakMinutes: number};
