@@ -886,7 +886,7 @@ PASS 36. 2026-03-31: no attendance in the future
 PASS: 체험 화면 숫자(급여·명세서·임금대장 합계).
 
 ── check-error-messages
-PASS: 오류 문구 329개 모두 다음 행동 안내 포함.
+PASS: 오류 문구 338개 모두 다음 행동 안내 포함.
 PASS: 오류 번호·로그 개인정보 제거.
 
 ── check-attendance-table
@@ -963,6 +963,29 @@ PASS: 대타·교대 요청·수락·승인·충돌 차단.
 17. PASS owner deletes
 18. PASS unused image removed
 PASS: 매장 매뉴얼(작성 권한·지점 범위·사진 검사·확인 표시·정리).
+
+── check-transfer
+1. PASS employee cannot start transfer
+2. PASS store name must match
+3. PASS password required
+4. PASS cannot transfer to self
+5. PASS transfer requested
+6. PASS owner sees pending
+7. PASS heir sees offer
+8. PASS unrelated user sees nothing
+9. PASS wrong account cannot accept
+10. PASS owner of another store cannot accept
+11. PASS heir password checked
+12. PASS heir accepts
+13. PASS heir now owns store with staff
+14. PASS attendance moved
+15. PASS contract moved, body unchanged
+16. PASS owner change still blocked outside transfer
+17. PASS old owner left store
+18. PASS employee still linked
+19. PASS audit has transfer
+20. PASS offer gone after accept
+PASS: 가게 대표 넘기기.
 
 > chuckchuck@0.1.0 check:function
 > node scripts/check-supabase-function.mjs
