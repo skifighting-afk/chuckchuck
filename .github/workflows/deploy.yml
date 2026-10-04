@@ -210,10 +210,17 @@ jobs:
           EXPECT_SHA: ${{ github.sha }}
         run: |
           set -o pipefail
-          npm install --prefix /tmp/pw --no-audit --no-fund playwright@1.56.0 >/dev/null
+          npm install --prefix /tmp/pw --no-audit --no-fund playwright@1.56.0 axe-core@4 >/dev/null
           ln -sfn /tmp/pw/node_modules node_modules
           /tmp/pw/node_modules/.bin/playwright install --with-deps chromium >/dev/null
           node scripts/smoke-prod.mjs 2>&1 | tee ci-logs/13-smoke.log
+      - name: 접근성 점검 (axe + 48px·12px·대비 기준)
+        if: steps.fresh.outputs.ok == 'yes' && steps.cfg.outputs.supabase == 'yes'
+        env:
+          SMOKE_URL: ${{ steps.origin.outputs.primary }}
+        run: |
+          set -o pipefail
+          node scripts/a11y-check.mjs 2>&1 | tee ci-logs/14-a11y.log
       - name: 점검 실패 화면 보관
         if: failure()
         run: cp smoke-failure.png ci-logs/13-smoke-failure.png 2>/dev/null || true
