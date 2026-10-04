@@ -2,3 +2,7 @@
 > chuckchuck@0.1.0 check
 > tsc --noEmit
 
+lib/demo.ts(26,46): error TS2322: Type '{ status: "적용 제외"; reason: string; } | { status: "가입"; reason: string; }' is not assignable to type '{ status: "확인 필요"; reason: string; }'.
+  Type '{ status: "적용 제외"; reason: string; }' is not assignable to type '{ status: "확인 필요"; reason: string; }'.
+    Types of property 'status' are incompatible.
+      Type '"적용 제외"' is not assignable to type '"확인 필요"'.

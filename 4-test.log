@@ -638,6 +638,45 @@ PASS: 과장·허위 문구 검사 (화면·홈페이지).
 28. PASS sent payslips stay immutable outside store purge
 28/28 passed
 
+── check-demo
+PASS 1. 2026-10-04: demo state passes the store schema
+PASS 2. 2026-10-04: only synthetic contacts
+PASS 3. 2026-10-04: last month confirmed with today's calculation
+PASS 4. 2026-10-04: every row adds up (gross, deductions, net)
+PASS 5. 2026-10-04: 35-hour weekly worker gets 주휴수당
+PASS 6. 2026-10-04: 12-hour weekend worker gets no 주휴수당
+PASS 7. 2026-10-04: insured worker has 4대보험 lines
+PASS 8. 2026-10-04: excluded part-timer only has 고용보험
+PASS 9. 2026-10-04: payslips have every required item
+PASS 10. 2026-10-04: wage ledger total equals payroll total
+PASS 11. 2026-10-04: one person still at work today
+PASS 12. 2026-10-04: no attendance in the future
+PASS 13. 2026-02-15: demo state passes the store schema
+PASS 14. 2026-02-15: only synthetic contacts
+PASS 15. 2026-02-15: last month confirmed with today's calculation
+PASS 16. 2026-02-15: every row adds up (gross, deductions, net)
+PASS 17. 2026-02-15: 35-hour weekly worker gets 주휴수당
+PASS 18. 2026-02-15: 12-hour weekend worker gets no 주휴수당
+PASS 19. 2026-02-15: insured worker has 4대보험 lines
+PASS 20. 2026-02-15: excluded part-timer only has 고용보험
+PASS 21. 2026-02-15: payslips have every required item
+PASS 22. 2026-02-15: wage ledger total equals payroll total
+PASS 23. 2026-02-15: one person still at work today
+PASS 24. 2026-02-15: no attendance in the future
+PASS 25. 2026-03-31: demo state passes the store schema
+PASS 26. 2026-03-31: only synthetic contacts
+PASS 27. 2026-03-31: last month confirmed with today's calculation
+PASS 28. 2026-03-31: every row adds up (gross, deductions, net)
+PASS 29. 2026-03-31: 35-hour weekly worker gets 주휴수당
+PASS 30. 2026-03-31: 12-hour weekend worker gets no 주휴수당
+PASS 31. 2026-03-31: insured worker has 4대보험 lines
+PASS 32. 2026-03-31: excluded part-timer only has 고용보험
+PASS 33. 2026-03-31: payslips have every required item
+PASS 34. 2026-03-31: wage ledger total equals payroll total
+PASS 35. 2026-03-31: one person still at work today
+PASS 36. 2026-03-31: no attendance in the future
+PASS: 체험 화면 숫자(급여·명세서·임금대장 합계).
+
 > chuckchuck@0.1.0 check:function
 > node scripts/check-supabase-function.mjs
 
