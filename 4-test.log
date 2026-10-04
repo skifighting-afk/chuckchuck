@@ -557,7 +557,7 @@ PASS 15. health 3.595%
 PASS 16. long-term care 13.14% of health premium, floored to 10 won
 PASS 17. employment 0.9%
 PASS 18. only enrolled insurances are deducted
-PASS 19. base + weekly holiday + night premium in earnings
+PASS 19. base + weekly holiday + 추석(9/24) holiday + night premium in earnings
 PASS 20. insurance deductions added
 PASS 21. income tax from 간이세액표 when salary is above the 0원 band
 PASS 22. manual entry replaces the automatic line
@@ -665,6 +665,12 @@ PASS 110. pension cap 6,370,000 / 6,590,000
 PASS 111. pension base truncates below 1,000
 PASS 112. health employee cap 4,591,740
 PASS: 4대보험 상·하한.
+PASS 113. holiday 10h = 8h×50% + 2h×100%
+PASS 114. holiday hours not also counted as overtime
+PASS 115. under 5: no holiday premium + note
+PASS 116. labor day is a holiday even under 5
+PASS 117. 2026 has 21 public holiday entries incl. 6/3 election
+PASS: 휴일근로 가산.
 
 ── check-claims
 PASS: 과장·허위 문구 검사 (화면·홈페이지).
