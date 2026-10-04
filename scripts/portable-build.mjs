@@ -40,6 +40,7 @@ await build({input:'lib/wage-ledger.ts',output:{file:'dist/server/wage-ledger.js
 await build({input:'lib/demo.ts',output:{file:'dist/server/demo.js',format:'esm',minify:false}});
 await build({input:'lib/labor-guide.ts',output:{file:'dist/server/labor-guide.js',format:'esm',minify:false}});
 await build({input:'lib/labor-estimate.ts',output:{file:'dist/server/labor-estimate.js',format:'esm',minify:false}});
+await build({input:'lib/income-tax.ts',output:{file:'dist/server/income-tax.js',format:'esm',minify:false}});
 // Supabase Edge Function (Deno). postgres 드라이버는 Deno가 npm:에서 직접 받는다.
 await build({input:'supabase/functions/api/entry.ts',external:[/^npm:/],output:{file:'supabase/functions/api/index.js',format:'esm',minify:false}});
 console.log('척척사장봇 화면·서버 함수 빌드 완료');

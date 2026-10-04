@@ -59,7 +59,7 @@ team.attendance=sep.map((a,i)=>({id:'a'+i,employeeId:e.id,...a,breakStart:null})
 const row=calculate(team,'2026-09').find(x=>x.employeeId===e.id);
 ok('base + weekly holiday + night premium in earnings',row.earnings.map(x=>x.name).join(',')==='기본급,주휴수당,야간근로 가산');
 ok('insurance deductions added',['국민연금','건강보험','장기요양보험','고용보험'].every(n=>row.deductions.some(d=>d.name===n)));
-ok('income tax left for manual entry',row.warnings.some(w=>w.includes('간이세액표')));
+{const it=row.deductions.find(d=>d.name==='근로소득세'),lt=row.deductions.find(d=>d.name==='지방소득세');const g=row.gross;ok('income tax from 간이세액표 when salary is above the 0원 band',g<770000?!it:(!!it&&lt.amount===Math.floor(it.amount*0.1/10)*10&&it.formula.includes('간이세액표')));}
 team.adjustments['2026-09:'+e.id]={earnings:[{name:'주휴수당',amount:300000,formula:'사장님 직접 입력'}],deductions:[],note:''};
 const manual=calculate(team,'2026-09').find(x=>x.employeeId===e.id);
 ok('manual entry replaces the automatic line',manual.earnings.filter(x=>x.name==='주휴수당').length===1&&manual.earnings.find(x=>x.name==='주휴수당').amount===300000);
@@ -248,4 +248,20 @@ console.log('PASS: 요율 연간 갱신 경고.');
  t.adjustments['2026-10:p1'].earnings[0].amount=250000;row=calculate(t,'2026-10').find(r=>r.employeeId==='p1');
  ok('tax-free over 200,000 warns',row.warnings.some(w=>w.includes('비과세')));
  console.log('PASS: 수습 감액·비과세 수당.');
+}
+
+// 작업 023: 근로소득 간이세액표(2026.2.27 개정) 표 값 그대로
+{
+ const {incomeTax}=await import('../dist/server/income-tax.js');
+ ok('3,000천원 1명 = 74,350 / 지방 7,430',incomeTax(3000000,2026,1).incomeTax===74350&&incomeTax(3000000,2026,1).localTax===7430);
+ ok('3,010천원 3명 = 31,940 (같은 구간)',incomeTax(3010000,2026,3).incomeTax===31940);
+ ok('5,000천원 2명 = 306,710',incomeTax(5000000,2026,2).incomeTax===306710);
+ ok('월 76만원 이하는 0',incomeTax(760000,2026,1).incomeTax===0);
+ ok('자녀 1명 20,830 공제',incomeTax(5000000,2026,2,1).incomeTax===306710-20830);
+ ok('자녀 3명 45,830+33,330 공제',incomeTax(5000000,2026,4,3).incomeTax===Math.floor((219100-45830-33330)/10)*10);
+ ok('80% 선택',incomeTax(3000000,2026,1,0,80).incomeTax===Math.floor(74350*0.8/10)*10);
+ ok('1천만원 정확히 = 표 맨 끝 값',incomeTax(10000000,2026,1).incomeTax===1507400);
+ ok('1,200만원(1천만원 초과 구간) = 기준 + 2백만×98%×35% + 25,000',incomeTax(12000000,2026,1).incomeTax===Math.floor((1507400+25000+2000000*0.98*0.35)/10)*10);
+ ok('가족 12명 = 11명 − (10명−11명)',incomeTax(10000000,2026,12).incomeTax===Math.floor((960840-(990840-960840))/10)*10);
+ console.log('PASS: 근로소득 간이세액표.');
 }

@@ -24,3 +24,10 @@
 - `lib/labor-guide.ts`의 `LABOR_GUIDE_YEAR`를 새 해로 바꾸면 최저임금·4대보험 안내 문구가 RATES의 숫자로 바뀐다.
 - 공식 링크가 열리는지 확인하고 `LABOR_GUIDE_CHECKED`를 확인한 날로 바꾼다.
 - 점검(`check-pay-rules`)이 안내 숫자와 급여 계산 요율이 같은지 확인한다.
+
+## 근로소득 간이세액표 (작업 023)
+1. 새 해 표가 고시되면(소득세법 시행령 별표2 개정) 공식 PDF 주소로 Actions → "공식 자료 가져오기" 실행(name: `income-tax-YYYY`).
+2. `data-import` 브랜치의 `income-tax-YYYY.txt`를 읽어 `data/income-tax-YYYY.json`으로 변환(구간 연속·세액 단조 증가 확인, 2026년은 646구간).
+3. `lib/income-tax.ts`의 `TABLES`에 연도 추가, 1천만원 초과 구간 식·자녀 공제액도 별표 1~4호 문구대로 확인.
+4. `check-pay-rules`에 표 값 몇 개를 그대로 넣어 점검.
+- 2026년 자료: 소득세법 시행령 [별표 2] <개정 2026. 2. 27.>, PDF sha256 `fe06a5938f009fefed59ec04deaeba1dfa073f7a8a3c651859f0d44124cea07e`.
