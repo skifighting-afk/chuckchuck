@@ -2,15 +2,6 @@ Pushing config to project: chuckchuck (mklluxpngagiechnfaxe)
 Comparison scope: api, auth, database, pooler, realtime, storage
 Remote API config is up to date.
 Remote DB config is up to date.
-Updating Auth service with config:
-auth.minimum_password_length [update]
-  local:  8
-  remote: 6
-
-auth.password_requirements [local-only]
-  local:  ""
-  remote: (not returned)
-
-Do you want to push auth config to remote? [y/N] y
+Remote Auth config is up to date.
 Remote Storage config is up to date.
 Note: 9 remote properties are not declared in supabase/config.toml and were left unchanged (config push no longer resets undeclared properties to their defaults; run `supabase config diff` to inspect).
