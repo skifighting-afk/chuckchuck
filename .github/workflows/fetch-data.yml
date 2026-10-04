@@ -10,6 +10,10 @@ on:
       name:
         description: 저장 이름(영문)
         required: true
+      type:
+        description: 파일 형식(pdf 또는 hwp)
+        required: false
+        default: pdf
 permissions:
   contents: write
 jobs:
@@ -21,15 +25,17 @@ jobs:
         env:
           URL: ${{ inputs.url }}
           NAME: ${{ inputs.name }}
+          TYPE: ${{ inputs.type || 'pdf' }}
         run: |
           set -euo pipefail
           case "$NAME" in *[!a-z0-9-]*) echo "이름은 영문 소문자·숫자·-만"; exit 1;; esac
-          sudo apt-get install -y poppler-utils >/dev/null
+          case "$TYPE" in pdf|hwp) ;; *) echo "형식은 pdf 또는 hwp"; exit 1;; esac
           mkdir -p /tmp/out
-          curl -sSfL --max-filesize 30000000 -o /tmp/out/$NAME.pdf "$URL"
-          sha256sum /tmp/out/$NAME.pdf > /tmp/out/$NAME.sha256
+          curl -sSfL --max-filesize 30000000 -o /tmp/out/$NAME.$TYPE "$URL"
+          sha256sum /tmp/out/$NAME.$TYPE > /tmp/out/$NAME.sha256
           echo "$URL" > /tmp/out/$NAME.source
-          pdftotext -layout /tmp/out/$NAME.pdf /tmp/out/$NAME.txt
+          if [ "$TYPE" = pdf ]; then sudo apt-get install -y poppler-utils >/dev/null; pdftotext -layout /tmp/out/$NAME.pdf /tmp/out/$NAME.txt
+          else pip install --quiet pyhwp six >/dev/null 2>&1; hwp5txt /tmp/out/$NAME.hwp > /tmp/out/$NAME.txt; fi
           wc -l /tmp/out/$NAME.txt
       - name: data-import 브랜치에 올리기
         run: |
