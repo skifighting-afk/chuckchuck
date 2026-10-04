@@ -35,7 +35,8 @@ jobs:
           sha256sum /tmp/out/$NAME.$TYPE > /tmp/out/$NAME.sha256
           echo "$URL" > /tmp/out/$NAME.source
           if [ "$TYPE" = pdf ]; then sudo apt-get install -y poppler-utils >/dev/null; pdftotext -layout /tmp/out/$NAME.pdf /tmp/out/$NAME.txt
-          else pip install --quiet pyhwp six >/dev/null 2>&1; hwp5txt /tmp/out/$NAME.hwp > /tmp/out/$NAME.txt; fi
+          else pip install --quiet pyhwp six lxml >/dev/null 2>&1; hwp5html --output /tmp/html /tmp/out/$NAME.hwp
+            python3 -c "import html.parser,sys,re;t=[];P=type('P',(html.parser.HTMLParser,),{'handle_data':lambda s,d:t.append(d),'handle_starttag':lambda s,g,a:t.append('\n' if g in('p','tr','br') else (' | ' if g=='td' else ''))});P().feed(open('/tmp/html/index.xhtml',encoding='utf-8').read());print(re.sub(r'\n\s*\n+','\n',''.join(t)))" > /tmp/out/$NAME.txt; fi
           wc -l /tmp/out/$NAME.txt
       - name: data-import 브랜치에 올리기
         run: |
