@@ -502,6 +502,14 @@ PASS 37. missing duties and holiday are named
 PASS 38. fixed-term needs an end date
 PASS 39. part-time needs weekly hours
 PASS: 근로계약서 필수 기재사항 검사.
+PASS 40. age from birth month
+PASS 41. adults get no minor warnings
+PASS 42. minor without documents is reminded
+PASS 43. under 15 needs an employment permit
+PASS 44. minor 8h day flagged
+PASS 45. minor night work flagged
+PASS 46. documents checked: no document warning
+PASS: 18세 미만 직원 보호 점검.
 
 > chuckchuck@0.1.0 check:function
 > node scripts/check-supabase-function.mjs
