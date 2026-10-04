@@ -1,0 +1,8 @@
+16:32:41 새 화면 확인 01d989e
+16:33:09 가입·가게 만들기 OK
+16:33:13 로그아웃 OK
+16:33:57 점검 계정 삭제 완료
+배포 후 점검 실패: locator.waitFor: Timeout 20000ms exceeded.
+Call log:
+  - waiting for getByText('점검가게 kmhlw3').first() to be visible
+

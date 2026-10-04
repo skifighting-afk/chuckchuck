@@ -645,7 +645,7 @@ PASS 92. probation 90% only before end date (10-15)
 PASS 93. all hours inside probation at 90%
 PASS 94. contract under 1 year: no probation discount + warning
 PASS 95. simple labor: no probation discount
-PASS 96. tax-free meal excluded from insurance base
+PASS 96. tax-free meal excluded from insurance base (pension floor 410,000 from 2026-07)
 PASS 97. tax-free over 200,000 warns
 PASS: 수습 감액·비과세 수당.
 PASS 98. 3,000천원 1명 = 74,350 / 지방 7,430
@@ -659,6 +659,12 @@ PASS 105. 1천만원 정확히 = 표 맨 끝 값
 PASS 106. 1,200만원(1천만원 초과 구간) = 기준 + 2백만×98%×35% + 25,000
 PASS 107. 가족 12명 = 11명 − (10명−11명)
 PASS: 근로소득 간이세액표.
+PASS 108. pension floor 400,000 before July 2026
+PASS 109. pension floor 410,000 from July 2026
+PASS 110. pension cap 6,370,000 / 6,590,000
+PASS 111. pension base truncates below 1,000
+PASS 112. health employee cap 4,591,740
+PASS: 4대보험 상·하한.
 
 ── check-claims
 PASS: 과장·허위 문구 검사 (화면·홈페이지).
