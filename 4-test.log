@@ -793,7 +793,7 @@ PASS 36. 2026-03-31: no attendance in the future
 PASS: 체험 화면 숫자(급여·명세서·임금대장 합계).
 
 ── check-error-messages
-PASS: 오류 문구 286개 모두 다음 행동 안내 포함.
+PASS: 오류 문구 314개 모두 다음 행동 안내 포함.
 PASS: 오류 번호·로그 개인정보 제거.
 
 ── check-attendance-table
@@ -846,6 +846,27 @@ PASS: 대타·교대 요청·수락·승인·충돌 차단.
 30. PASS invalid time rejected
 31. PASS colleague cannot see it
 32. PASS owner sees it
+
+── check-manual
+1. PASS anonymous blocked
+2. PASS employee cannot upload
+3. PASS fake PNG rejected
+4. PASS svg rejected
+5. PASS image uploaded
+6. PASS empty step rejected
+7. PASS unknown image rejected
+8. PASS owner saves manual
+9. PASS employee sees own branch + all
+10. PASS other branch sees only all
+11. PASS employee loads image
+12. PASS other branch cannot load image
+13. PASS employee marks read
+14. PASS employee cannot edit
+15. PASS owner sees read count
+16. PASS store save keeps manuals
+17. PASS owner deletes
+18. PASS unused image removed
+PASS: 매장 매뉴얼(작성 권한·지점 범위·사진 검사·확인 표시·정리).
 
 > chuckchuck@0.1.0 check:function
 > node scripts/check-supabase-function.mjs
