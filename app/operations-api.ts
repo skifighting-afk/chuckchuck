@@ -2,6 +2,9 @@ import {resolveStore} from './saas-api';
 import {serverError} from '../lib/errors';
 import {trialStatus,canWrite,hasFeature} from '../lib/plans';
 import {z} from 'zod';
+import {leaveBalanceFor,unusedLeavePay} from '../lib/annual-leave';
+import {ordinaryHourly} from '../lib/team-model';
+const kstToday=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date());
 const json=(v:unknown,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store'}});
 const date=z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(v=>!isNaN(Date.parse(v))&&new Date(v).toISOString().slice(0,10)===v);
 const leaveSchema=z.object({employeeId:z.string().max(100),start:date,end:date,kind:z.enum(['연차','무급휴가']),days:z.number().min(.5).max(31).multipleOf(.5),reason:z.string().trim().min(1).max(500)}).refine(v=>v.end>=v.start&&(+new Date(v.end)-+new Date(v.start))/86400000<31&&v.days<=(+new Date(v.end)-+new Date(v.start))/86400000+1,'휴가 날짜와 차감 일수를 확인해 주세요.');
@@ -12,7 +15,9 @@ export async function operationsApi(request:Request,env:{DB:D1Database}){
  const linked=await resolveStore(env.DB,userId);if(!linked)return json({error:'먼저 가게를 등록해 주세요.'},409);if(linked.access==='revoked')return json({error:'이 기능을 쓸 권한이 없어요. 사장님께 확인해 주세요.'},403);
  const {row,access}=linked,data=JSON.parse(row.data),ops=data._operations||{leaves:[],notices:[]};
  const self=data.employees.find((e:any)=>e.id===data._members?.find((m:any)=>m.userId===userId)?.employeeId);
- const view=()=>({version:row.version,access,selfId:self?.id||null,employees:data.employees.filter((e:any)=>access==='owner'||e.id===self?.id).map((e:any)=>({id:e.id,name:e.name,branchId:e.branchId,leaveBalance:e.leaveBalance})),branches:access==='owner'?data.branches:data.branches.filter((b:any)=>b.id===self?.branchId),leaves:ops.leaves.filter((l:any)=>access==='owner'||l.employeeId===self?.id),notices:ops.notices.filter((n:any)=>access==='owner'||n.branchId==='all'||n.branchId===self?.branchId).map((n:any)=>({id:n.id,title:n.title,body:n.body,branchId:n.branchId,createdAt:n.createdAt,author:n.author,read:n.reads.includes(userId),...(access==='owner'?{readCount:n.reads.length}:{})}))});
+ const fivePlus=!!data.settings?.fivePlus,asOf=kstToday();
+ const accrual=(e:any)=>{const r=leaveBalanceFor(e,ops.leaves.filter((l:any)=>l.employeeId===e.id),asOf,fivePlus);let hourly=0;try{hourly=ordinaryHourly(e).hourly}catch{};return {eligible:r.eligible,reason:r.reason,earned:r.earned,used:r.used,remaining:r.remaining,next:r.next,grants:r.grants.length,unusedPay:r.eligible?unusedLeavePay(r.remaining,hourly):0}};
+ const view=()=>({fivePlus,version:row.version,access,selfId:self?.id||null,employees:data.employees.filter((e:any)=>access==='owner'||e.id===self?.id).map((e:any)=>({id:e.id,name:e.name,branchId:e.branchId,leaveBalance:e.leaveBalance,joined:e.joined,accrual:accrual(e)})),branches:access==='owner'?data.branches:data.branches.filter((b:any)=>b.id===self?.branchId),leaves:ops.leaves.filter((l:any)=>access==='owner'||l.employeeId===self?.id),notices:ops.notices.filter((n:any)=>access==='owner'||n.branchId==='all'||n.branchId===self?.branchId).map((n:any)=>({id:n.id,title:n.title,body:n.body,branchId:n.branchId,createdAt:n.createdAt,author:n.author,read:n.reads.includes(userId),...(access==='owner'?{readCount:n.reads.length}:{})}))});
  if(request.method==='GET')return json(view());
  if(request.method!=='POST')return json({error:'이 방법으로는 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},405);
  if(request.headers.get('origin')!==new URL(request.url).origin)return json({error:'요청 출처를 확인할 수 없습니다.'},403);
@@ -42,6 +47,12 @@ export async function operationsApi(request:Request,env:{DB:D1Database}){
  }else if(b.action==='cancelLeave'){
   const l=ops.leaves.find((l:any)=>l.id===b.id);if(!l||l.status!=='승인 대기')return json({error:'이미 처리된 신청은 취소할 수 없어요. 바꾸려면 새로 신청해 주세요.'},409);
   if(access!=='owner'&&l.employeeId!==self?.id)return json({error:'본인이 낸 신청만 취소할 수 있어요.'},403);l.status='취소';label='휴가 신청 취소';target=l.name;
+ }else if(b.action==='syncLeave'){
+  if(access!=='owner')return json({error:'연차 반영은 사장님만 할 수 있어요.'},403);
+  if(!fivePlus)return json({error:'상시 근로자 5명 이상 사업장으로 설정한 뒤 반영할 수 있어요. 설정에서 바꿀 수 있어요.'},400);
+  const list=data.employees.filter((e:any)=>e.status!=='퇴사'&&(b.employeeId==='all'||e.id===b.employeeId));if(!list.length)return json({error:'반영할 재직 직원이 없어요. 직원 목록을 새로고침해 주세요.'},400);
+  const changed:string[]=[];for(const e of list){const a=accrual(e);if(a.eligible&&a.remaining!==e.leaveBalance){e.leaveBalance=Math.min(100,a.remaining);changed.push(e.name)}}
+  label='연차 자동 계산 반영';target=changed.join(', ')||'변경 없음';b.comment='입사일 기준 발생분 − 승인된 연차';
  }else if(b.action==='postNotice'){
   if(access!=='owner')return json({error:'공지는 사장님이나 공지 권한을 받은 매니저만 등록할 수 있어요.'},403);
   const parsed=noticeSchema.safeParse(b);if(!parsed.success)return json({error:'제목과 내용을 확인해 주세요.'},400);const n=parsed.data;

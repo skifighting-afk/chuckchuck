@@ -27,6 +27,12 @@ assert.equal((await account('free',{action:'changePlan',plan:'gold'})).status,40
 await price('pro',2);st=(await store('free')).data;st.state.branches.push({id:'branch-2',name:'2호점',address:''});st.state.employees.push(employee(20,'branch-2'));r=await store('free',{state:st.state,version:st.version},'PUT');assert.equal(r.status,200,JSON.stringify(r).slice(0,200));st=r.data;
 assert.equal((await account('free',{action:'changePlan',plan:'basic',storeSlots:1})).status,409);
 let op=(await ops('free')).data;r=await ops('free',{action:'requestLeave',version:op.version,employeeId:'test-0',start:'2026-10-01',end:'2026-10-01',days:1,kind:'연차',reason:'휴식'});assert.equal(r.status,200,JSON.stringify(r));op=r.data;const leave=op.leaves[0];r=await ops('free',{action:'reviewLeave',version:op.version,id:leave.id,approve:true,comment:'확인'});assert.equal(r.status,200);assert.equal(r.data.employees[0].leaveBalance,4);
+// 작업 029: 연차 자동 계산 — 5명 미만이면 반영 불가, 5명 이상이면 입사일 기준 발생분 − 승인 연차로 맞춘다
+op=r.data;assert.equal(op.employees[0].accrual.eligible,false);assert.equal((await ops('free',{action:'syncLeave',version:op.version,employeeId:'all'})).status,400);
+st=(await store('free')).data;st.state.settings.fivePlus=true;st.state.employees[0].joined='2026-01-01';st.state.employees[0].weeklyHours=40;r=await store('free',{state:st.state,version:st.version},'PUT');assert.equal(r.status,200,JSON.stringify(r).slice(0,300));
+op=(await ops('free')).data;const ac=op.employees[0].accrual;assert.equal(ac.eligible,true);assert.equal(ac.used,1);assert.equal(ac.remaining,ac.earned-1);
+r=await ops('free',{action:'syncLeave',version:op.version,employeeId:'test-0'});assert.equal(r.status,200,JSON.stringify(r));assert.equal(r.data.employees[0].leaveBalance,ac.remaining);
+console.log('PASS: 연차 자동 계산 반영.');
 // 베이직은 QR 없이 앱 버튼으로 출퇴근, 프로는 QR 필요(체험이 끝난 뒤 기준)
 assert.equal((await account('other',setup('basic'))).status,201);assert.equal((await store('other')).data.state.employees.length,0);assert.equal((await ops('other')).data.notices.length,0);
 let raw=JSON.parse((await q('SELECT data FROM stores WHERE owner=?',id('other')).first()).data);raw._account.status='active';await q('UPDATE stores SET data=? WHERE owner=?',JSON.stringify(raw),id('other')).run();

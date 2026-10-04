@@ -340,3 +340,26 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('window is previous month',JSON.stringify(lastMonthWindow('2026-10-05'))===JSON.stringify({from:'2026-09-05',to:'2026-10-05'}));
  console.log('PASS: 상시 근로자 수.');
 }
+
+// 작업 029: 연차 자동 발생(근로기준법 제60조)
+{
+ const {annualLeave,leaveBalanceFor,unusedLeavePay}=await import('../dist/server/annual-leave.js');
+ const e={joined:'2026-01-15',weeklyHours:40};
+ ok('5명 미만은 미적용',!annualLeave(e,'2026-10-05',false).eligible);
+ ok('주 15시간 미만 미적용',!annualLeave({...e,weeklyHours:14},'2026-10-05',true).eligible);
+ ok('1년 미만: 개근 개월마다 1일 (1/15 입사 → 10/5까지 8일)',annualLeave(e,'2026-10-05',true).earned===8);
+ ok('입사 1개월 되는 날 1일 발생',annualLeave(e,'2026-02-14',true).earned===0&&annualLeave(e,'2026-02-15',true).earned===1);
+ ok('1년 미만 최대 11일',annualLeave(e,'2027-01-14',true).earned===11);
+ const y1=annualLeave(e,'2027-01-15',true);ok('1년 되는 날 15일 추가(월 개근분 11일은 각 1년 동안 유효)',y1.earned===26&&y1.grants.filter(g=>g.kind==='월 개근').length===11);
+ ok('월 개근분은 발생 1년 뒤 소멸',annualLeave(e,'2027-02-15',true).earned===15+10);
+ ok('3년차 16일',annualLeave({joined:'2020-03-01',weeklyHours:40},'2023-03-01',true).earned===16);
+ ok('21년차 25일 상한',annualLeave({joined:'2000-03-01',weeklyHours:40},'2026-03-01',true).earned===25);
+ ok('주 20시간은 비례(1년차 7.5일)',annualLeave({joined:'2025-03-01',weeklyHours:20},'2026-03-01',true).grants.find(g=>g.kind==='1년 근속').days===7.5);
+ ok('말일 입사: 1/31 → 2/28 발생',annualLeave({joined:'2026-01-31',weeklyHours:40},'2026-02-28',true).earned===1);
+ ok('다음 발생 예정',JSON.stringify(annualLeave(e,'2026-10-05',true).next)===JSON.stringify({at:'2026-10-15',days:1}));
+ const b=leaveBalanceFor(e,[{kind:'연차',status:'승인',start:'2026-05-01',days:2},{kind:'연차',status:'반려',start:'2026-06-01',days:1},{kind:'무급휴가',status:'승인',start:'2026-06-02',days:1}],'2026-10-05',true);
+ ok('승인된 연차만 차감',b.used===2&&b.remaining===6);
+ ok('퇴사자는 퇴사일 기준',annualLeave({...e,status:'퇴사',endDate:'2026-04-20'},'2026-10-05',true).earned===3);
+ ok('미사용 연차수당 = 일수 × 8시간 × 통상시급',unusedLeavePay(6,10320)===495360);
+ console.log('PASS: 연차 자동 발생.');
+}
