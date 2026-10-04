@@ -50,3 +50,4 @@ next-env.d.ts
 smoke-failure.png
 supabase/functions/.env.local
 e2e-failure-*.png
+tsconfig.tsbuildinfo
