@@ -603,6 +603,12 @@ PASS 54. ledger csv has BOM and per-item columns
 PASS 55. ledger csv neutralizes formulas
 PASS 56. csv cell escapes leading minus and quotes
 PASS: 임금대장(근로기준법 제48조, 시행령 제27조).
+PASS 57. guide year has registered rates
+PASS 58. guide shows the same minimum wage as payroll
+PASS 59. guide shows monthly minimum (209h)
+PASS 60. guide shows the same insurance rates as payroll
+PASS 61. every guide item links an official https source
+PASS: 근로기준 안내 숫자·출처.
 
 ── check-claims
 PASS: 과장·허위 문구 검사 (화면·홈페이지).
