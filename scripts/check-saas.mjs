@@ -60,4 +60,9 @@ r=await account('free',{action:'taxInvoiceRequest',month:'2026-10'});assert.equa
 assert.equal((await account('free',{action:'taxInvoiceRequest',month:'2026-10'})).status,409,'duplicate month');
 assert.ok(r.data.account.notice,'trial notice present');
 console.log('PASS: 세금계산서 정보·발행 요청.');
+// 작업 041: 기간제 만료 30일 전 안내 메일 준비(한 번만)
+{const raw=JSON.parse((await q('SELECT data FROM stores WHERE owner=?',id('free')).first()).data);raw.employees[0].status='재직';raw.employees[0].endDate=new Date(Date.now()+9*3600000+10*86400000).toISOString().slice(0,10);await q('UPDATE stores SET data=?,version=version+1 WHERE owner=?',JSON.stringify(raw),id('free')).run();}
+await account('free');await account('free');
+{const box=JSON.parse((await q('SELECT data FROM stores WHERE owner=?',id('free')).first()).data)._outbox.filter(m=>m.key.startsWith('expiry:'));assert.equal(box.length,1,'one reminder');assert.equal(box[0].status,'발송 대기');assert.ok(box[0].subject.includes('기간제 계약'));}
+console.log('PASS: 기간제 만료 안내 메일 준비.');
 await closeAll();
