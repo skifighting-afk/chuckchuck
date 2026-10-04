@@ -189,3 +189,23 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('conflict finder sees overnight overlap',!!findShiftConflict([{id:'1',employeeId:'e',date:'2026-10-01',start:'22:00',end:'06:00',breakMinutes:0},{id:'2',employeeId:'e',date:'2026-10-02',start:'05:00',end:'09:00',breakMinutes:0}]));
  console.log('PASS: 근무표 반복·복사·템플릿.');
 }
+
+// 작업 046: 지각·조퇴·미출근·예정 외 출근
+{
+ const {checkDay,summarize}=await import('../lib/attendance-check.ts');
+ const iso=(d,hm)=>new Date(`${d}T${hm}:00+09:00`).toISOString();
+ const shifts=[{id:'s1',employeeId:'a',date:'2026-10-05',start:'09:00',end:'14:00'},{id:'s2',employeeId:'b',date:'2026-10-05',start:'10:00',end:'15:00'},{id:'s3',employeeId:'c',date:'2026-10-05',start:'22:00',end:'06:00'},{id:'s4',employeeId:'d',date:'2026-10-05',start:'09:00',end:'13:00'}];
+ const att=[{id:'1',employeeId:'a',start:iso('2026-10-05','09:12'),end:iso('2026-10-05','13:40')},{id:'2',employeeId:'b',start:iso('2026-10-05','10:03'),end:iso('2026-10-05','15:02')},{id:'3',employeeId:'c',start:iso('2026-10-05','21:58'),end:iso('2026-10-06','06:00')},{id:'4',employeeId:'e',start:iso('2026-10-05','11:00'),end:null}];
+ const now=Date.parse('2026-10-06T12:00:00+09:00');
+ let f=checkDay('2026-10-05',shifts,att,'normal',now);const k=x=>f.filter(y=>y.employeeId===x).map(y=>y.kind+(y.minutes??'')).join();
+ ok('late 12m and early 20m flagged',k('a')==='지각12,조퇴20');
+ ok('within 5m tolerance is normal',k('b')==='');
+ ok('overnight shift matched',k('c')==='');
+ ok('no record after shift end = 미출근',k('d')==='미출근');
+ ok('record without shift = 예정 외 출근',k('e')==='예정 외 출근');
+ f=checkDay('2026-10-05',shifts,att,'lenient',now);ok('lenient 10m still flags 12m late',f.some(x=>x.employeeId==='a'&&x.kind==='지각'));
+ f=checkDay('2026-10-05',shifts,att,'strict',now);ok('strict flags 3m late',f.some(x=>x.employeeId==='b'&&x.kind==='지각'&&x.minutes===3));
+ ok('future shift not yet 미출근',!checkDay('2026-10-05',shifts,[],'normal',Date.parse('2026-10-05T08:00:00+09:00')).some(x=>x.kind==='미출근'));
+ ok('summary counts',summarize(checkDay('2026-10-05',shifts,att,'normal',now)).지각===1);
+ console.log('PASS: 지각·조퇴·미출근 표시.');
+}
