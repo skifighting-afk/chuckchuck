@@ -628,6 +628,16 @@ PASS 78. template keeps weekday
 PASS 79. template applies only to active employees
 PASS 80. conflict finder sees overnight overlap
 PASS: 근무표 반복·복사·템플릿.
+PASS 81. late 12m and early 20m flagged
+PASS 82. within 5m tolerance is normal
+PASS 83. overnight shift matched
+PASS 84. no record after shift end = 미출근
+PASS 85. record without shift = 예정 외 출근
+PASS 86. lenient 10m still flags 12m late
+PASS 87. strict flags 3m late
+PASS 88. future shift not yet 미출근
+PASS 89. summary counts
+PASS: 지각·조퇴·미출근 표시.
 
 ── check-claims
 PASS: 과장·허위 문구 검사 (화면·홈페이지).
