@@ -39,26 +39,28 @@ export type Line = {name: string; amount: number; formula: string};
 
 /**
  * 시급 직원의 한 달 법정수당.
- * - 주휴수당: 월~일 한 주 실근무 15시간 이상이면 min(주 시간, 40) ÷ 40 × 8 × 시급. 그 주의 일요일이 속한 달에 지급.
+ * - 주휴수당: 한 주(월~일, 설정에 따라 일~토) 실근무 15시간 이상이면 min(주 시간, 40) ÷ 40 × 8 × 시급. 그 주의 일요일이 속한 달에 지급.
  * - 연장 가산(5인 이상): 하루 8시간 초과분 + (주 40시간 초과분 − 이미 센 하루 초과분) × 시급 × 50%
  * - 야간 가산(5인 이상): 22~06시 근무 × 시급 × 50%
  * records에는 앞뒤 달 기록이 섞여 있어도 된다(주 경계 계산용).
  */
-export function allowances(records: Record_[], month: string, wage: number, fivePlus: boolean) {
+export function allowances(records: Record_[], month: string, wage: number, fivePlus: boolean, weekStart: 'mon' | 'sun' = 'mon') {
+  // 주 시작요일: 월요일(기본) 또는 일요일. 주휴는 그 주의 마지막 날이 속한 달에 지급.
+  const weekOf = (d: string) => weekStart === 'sun' ? plusDays(monday(plusDays(d, 1)), -1) : monday(d);
   const byDay = new Map<string, {worked: number; night: number}>();
   for (const a of records) { if (!a.end) continue; const d = kday(a.start), s = splitRecord(a), cur = byDay.get(d) || {worked: 0, night: 0}; cur.worked += s.worked; cur.night += s.night; byDay.set(d, cur); }
   const weeks = new Map<string, {hours: number; dailyOt: number}>();
   let night = 0, dailyOt = 0;
   for (const [d, v] of byDay) {
-    const w = weeks.get(monday(d)) || {hours: 0, dailyOt: 0}, ot = Math.max(0, v.worked - 8);
-    w.hours += v.worked; w.dailyOt += ot; weeks.set(monday(d), w);
+    const w = weeks.get(weekOf(d)) || {hours: 0, dailyOt: 0}, ot = Math.max(0, v.worked - 8);
+    w.hours += v.worked; w.dailyOt += ot; weeks.set(weekOf(d), w);
     if (d.startsWith(month)) { night += v.night; dailyOt += ot; }
   }
   let juhu = 0, juhuWeeks = 0, weeklyOt = 0;
   const notes: string[] = [];
-  for (const [mon, w] of weeks) {
-    const sunday = plusDays(mon, 6);
-    if (!sunday.startsWith(month)) continue;
+  for (const [first, w] of weeks) {
+    const last = plusDays(first, 6);
+    if (!last.startsWith(month)) continue;
     if (w.hours >= 15) { juhu += Math.min(w.hours, 40) / 40 * 8 * wage; juhuWeeks++; }
     weeklyOt += Math.max(0, w.hours - w.dailyOt - 40);
   }

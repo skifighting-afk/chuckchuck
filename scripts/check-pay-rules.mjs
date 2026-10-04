@@ -209,3 +209,15 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('summary counts',summarize(checkDay('2026-10-05',shifts,att,'normal',now)).지각===1);
  console.log('PASS: 지각·조퇴·미출근 표시.');
 }
+
+// 주 시작요일(일요일) 설정: 일~토로 묶어 주휴 계산
+{
+ const kst2=(day,hm)=>new Date(`${day}T${hm}:00+09:00`).toISOString();
+ // 2026-10-04(일) 8시간, 10-05(월)~10-08(목) 각 2시간 → 월요일 시작이면 두 주로 갈려 각 15시간 미만, 일요일 시작이면 한 주 16시간
+ const recs=[['2026-10-04','09:00','17:00'],...['05','06','07','08'].map(d=>['2026-10-'+d,'09:00','11:00'])].map(([d,s,e])=>({start:kst2(d,s),end:kst2(d,e),breakMinutes:0}));
+ const mon=allowances(recs,'2026-10',10320,false,'mon').lines.find(l=>l.name==='주휴수당');
+ const sun=allowances(recs,'2026-10',10320,false,'sun').lines.find(l=>l.name==='주휴수당');
+ ok('week start Monday splits the week (no 주휴)',!mon);
+ ok('week start Sunday groups Sun–Sat (주휴 16h)',sun&&sun.amount===Math.round(16/40*8*10320));
+ console.log('PASS: 주 시작요일.');
+}
