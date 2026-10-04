@@ -9,7 +9,7 @@ const ORDER=[1,2,3,4,5,6,0];
 export function ScheduleDraft({s,es,branch,week,busy,update,done}:{s:Team,es:Member[],branch:string,week:string,busy:boolean,update:(s:Team,close?:boolean)=>Promise<any>,done:(msg:string)=>void}){
  const [avail,setAvail]=useState<Record<string,{slots:Slot[],note:string,updatedAt:string}>|null>(null),[err,setErr]=useState('');
  const all:any[]=(s as any).staffingNeeds||[],[rows,setRows]=useState<Need[]>(all.filter(n=>!n.branchId||n.branchId===branch).map(({branchId,...n})=>n));
- useEffect(()=>{fetch('/api/operations').then(r=>r.json().then(d=>{if(!r.ok)throw Error(d.error);setAvail(d.availability||{})})).catch(e=>setErr(e.message||'근무 가능 시간을 불러오지 못했어요. 다시 열어 주세요.'))},[]);
+ useEffect(()=>{fetch('/api/operations').then(r=>r.json().then(d=>{if(!r.ok)throw Error((d as any).error);setAvail((d as any).availability||{})})).catch(e=>setErr(e.message||'근무 가능 시간을 불러오지 못했어요. 다시 열어 주세요.'))},[]);
  const staff=es.filter(e=>e.status!=='퇴사'),ids=new Set(staff.map(e=>e.id));
  const leaves=((s as any).approvedLeaves||[]).filter((l:any)=>ids.has(l.employeeId));
  const valid=rows.every(r=>/^\d\d:\d\d$/.test(r.start)&&/^\d\d:\d\d$/.test(r.end)&&r.start!==r.end&&r.count>=1);
