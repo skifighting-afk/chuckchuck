@@ -69,6 +69,30 @@ ok('manager has no other employee pay data',!JSON.stringify(manager).includes('w
 ok('manager personal endpoint cannot correct colleague',(await call('self','/api/store',{action:'request',id:'attendance-1',version:personalManager.version})).status,403);
 d=await read();d.employees.find(e=>e.id===a).managerPermissions=[];await save(d);
 ok('revoked schedule permission removes branch schedules',(await call('self','/api/manager')).body.shifts,[]);
+// 작업 059: 모든 서버 경로 전수 점검 — 직원·외부인·익명이 남의 개인정보를 받지 못하고, 사장님 전용 동작을 못 한다.
+{
+ d=await read();const peerEmp=d.employees.find(e=>e.id===b);peerEmp.phone='010-PEER-0000';peerEmp.address='타인주소비밀';peerEmp.wage=77777;peerEmp.email='peer-secret@example.invalid';await save(d);
+ await call('stranger','/api/account',{action:'onboard',storeName:'남의가게',branchName:'본점',ownerName:'남사장',plan:'free',acknowledged:true});
+ const secrets=['010-PEER-0000','타인주소비밀','peer-secret@example.invalid','사장전용메모','private-accountant@example.invalid','사장내부정보',b,c];
+ const routes=['/api/store','/api/account','/api/operations','/api/documents','/api/documents?kind=payslip','/api/contracts','/api/manager','/api/staff-join','/api/evidence?leave=leave-1','/api/evidence?leave=leave-0','/api/admin','/api/auth','/api/join'];
+ for(const route of routes){
+  const anon=await call('',route);
+  if(route!=='/api/auth')ok(`anonymous blocked: ${route}`,[401,403,404,405].includes(anon.status));
+  for(const who of ['self','stranger','outsider']){
+   const r=await call(who,route);const text=JSON.stringify(r.body);
+   // 위임받은 매니저는 같은 지점 직원의 이름·ID만 받는다(근무표 배정용). 연락처·주소·임금·다른 지점 직원은 안 된다.
+   const allowed=route==='/api/manager'&&who==='self'?[b]:[];
+   ok(`${who} sees no colleague secrets: ${route}`,secrets.filter(x=>text.includes(x)&&!allowed.includes(x)),[]);
+  }
+ }
+ const ownerOnly=[['/api/store',{action:'finalize',month:'2026-10',branch:'branch-main',payDate:'2026-10-25'}],['/api/store',{action:'reopen',key:'2026-09:branch-main',reason:'x'}],['/api/store',{action:'invite',id:b}],['/api/store',{action:'attendanceQr',branchId:'branch-main'}],['/api/staff-join',{action:'code',branchId:'branch-main'}],['/api/documents',{action:'send',runKey:'2026-09:branch-main',employeeId:b}],['/api/account',{action:'changePlan',plan:'multi'}],['/api/contracts',{action:'create',employeeId:b,text:'x'.repeat(300),consent:true,name:'x'}]];
+ for(const [route,body] of ownerOnly){
+  // 직원(self)은 사장님 전용 동작을 못 한다. 다른 가게 사장님(stranger)은 자기 가게 설정은 바꿀 수 있지만, 이 가게의 직원·급여를 건드리는 동작은 실패해야 한다.
+  const targetsThisStore=JSON.stringify(body).includes(b)||JSON.stringify(body).includes('2026-09:branch-main');
+  for(const who of targetsThisStore?['self','stranger']:['self']){const r=await call(who,route,body);ok(`${who} cannot run owner action ${body.action} on ${route}`,r.status>=400);}
+ }
+ const after=JSON.stringify(await read());ok('owner data unchanged by refused actions',after.includes('010-PEER-0000')&&!after.includes('"locked":true,"month":"2026-10"'));
+}
 d=await read();d.employees.find(e=>e.id===a).status='퇴사';await save(d);
 ok('retired employee loses personal access',(await call('self')).status,403);
 console.log(`${n}/${n} personal access checks passed`);
