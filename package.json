@@ -24,7 +24,7 @@
     "react-dom": "19.2.6",
     "sonner": "^2.0.8",
     "tailwind-merge": "3.6.0",
-    "zod": "^3.25.76"
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "4.20260515.1",
