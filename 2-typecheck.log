@@ -2,3 +2,5 @@
 > chuckchuck@0.1.0 check
 > tsc --noEmit
 
+app/withdraw.tsx(8,77): error TS18046: 'd' is of type 'unknown'.
+app/withdraw.tsx(8,97): error TS18046: 'd' is of type 'unknown'.
