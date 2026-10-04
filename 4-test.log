@@ -989,14 +989,16 @@ PASS: 오류 번호·로그 개인정보 제거.
 26. PASS owner cancels
 27. PASS cancel leaves shift unchanged
 PASS: 대타·교대 요청·수락·승인·충돌 차단.
-28. PASS employee submits availability
-29. PASS own availability visible
-30. PASS invalid time rejected
-31. PASS colleague cannot see it
-32. PASS owner sees it
-33. PASS unread list names branch staff
-34. PASS reader moves to read list
-35. PASS staff do not see who read
+28. PASS mirror matches after swaps
+29. PASS mirror follows deletion
+30. PASS employee submits availability
+31. PASS own availability visible
+32. PASS invalid time rejected
+33. PASS colleague cannot see it
+34. PASS owner sees it
+35. PASS unread list names branch staff
+36. PASS reader moves to read list
+37. PASS staff do not see who read
 
 ── check-manual
 1. PASS anonymous blocked
@@ -1033,13 +1035,14 @@ PASS: 매장 매뉴얼(작성 권한·지점 범위·사진 검사·확인 표�
 11. PASS heir password checked
 12. PASS heir accepts
 13. PASS heir now owns store with staff
-14. PASS attendance moved
-15. PASS contract moved, body unchanged
-16. PASS owner change still blocked outside transfer
-17. PASS old owner left store
-18. PASS employee still linked
-19. PASS audit has transfer
-20. PASS offer gone after accept
+14. PASS shift mirror moved
+15. PASS attendance moved
+16. PASS contract moved, body unchanged
+17. PASS owner change still blocked outside transfer
+18. PASS old owner left store
+19. PASS employee still linked
+20. PASS audit has transfer
+21. PASS offer gone after accept
 PASS: 가게 대표 넘기기.
 
 ── check-rate-limit
