@@ -11,6 +11,7 @@ const json=(data:any,status=200)=>Response.json(data,{status,headers:{'Cache-Con
 const goodEmail=(v:unknown)=>typeof v==='string'&&v.length<=254&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 const bearer=(r:Request)=>{const m=/^Bearer\s+(.+)$/i.exec(r.headers.get('authorization')||'');return m?m[1].trim():'';};
 
+const deviceName=(ua:string)=>{const os=/iPhone|iPad/.test(ua)?'iPhone·iPad':/Android/.test(ua)?'Android':/Mac OS X/.test(ua)?'Mac':/Windows/.test(ua)?'Windows':/Linux/.test(ua)?'Linux':'알 수 없는 기기',br=/SamsungBrowser/.test(ua)?'삼성 인터넷':/Edg\//.test(ua)?'Edge':/Chrome\//.test(ua)?'Chrome':/Safari\//.test(ua)?'Safari':/Firefox\//.test(ua)?'Firefox':'';return br?os+' · '+br:os};
 /** Supabase Auth(GoTrue) 호출. admin=true면 service role 키를 쓴다. */
 async function gotrue(env:Env,path:string,init:{method?:string,body?:any,token?:string,admin?:boolean}={}){
  if(!env.SUPABASE_URL||!env.SUPABASE_ANON_KEY)throw Error('SUPABASE_URL/SUPABASE_ANON_KEY 설정이 필요해요.');
@@ -60,8 +61,16 @@ export async function nativeAuth(request:Request,env:Env){
   const raw=await request.text();if(raw.length>5000)return json({error:'입력 내용이 너무 깁니다.'},413);
   let b:any;try{b=JSON.parse(raw)}catch{return json({error:'입력 내용을 확인해 주세요.'},400)}if(!b||typeof b!=='object')return json({error:'입력 내용을 확인해 주세요.'},400);const email=typeof b.email==='string'?b.email.trim().toLowerCase():'';
   if(b.action==='logout'||b.action==='legacy'){
-   const token=bearer(request);if(token&&token!==env.SUPABASE_ANON_KEY)await gotrue(env,'/logout',{method:'POST',token}).catch(()=>null);
+   // 작업 060: 기본은 이 기기만, everywhere=true면 모든 기기에서 로그아웃
+   const token=bearer(request);if(token&&token!==env.SUPABASE_ANON_KEY)await gotrue(env,'/logout?scope='+(b.everywhere===true?'global':'local'),{method:'POST',token}).catch(()=>null);
    return json({ok:true,session:null});
+  }
+  if(b.action==='sessions'){
+   const token=bearer(request);if(!token||token===env.SUPABASE_ANON_KEY)return json({error:'로그인이 필요해요.'},401);
+   const me=await gotrue(env,'/user',{token}).catch(()=>null);const authId=(me as any)?.data?.id;if(!(me as any)?.ok||!authId)return json({error:'다시 로그인해 주세요.'},401);
+   try{const rows=await env.DB.prepare('SELECT created_at,updated_at,user_agent FROM auth.sessions WHERE user_id=? ORDER BY updated_at DESC LIMIT 20').bind(authId).all<any>();
+    return json({sessions:(rows.results||[]).map((r:any)=>({createdAt:r.created_at,lastUsedAt:r.updated_at||r.created_at,device:deviceName(r.user_agent||'')}))})}
+   catch{return json({sessions:null})}
   }
   const ip=(request.headers.get('x-forwarded-for')||'').split(',')[0].trim()||request.headers.get('cf-connecting-ip')||'local';
   await env.DB.prepare('DELETE FROM auth_limits WHERE expires_at<?').bind(Date.now()).run();

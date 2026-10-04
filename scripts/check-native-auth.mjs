@@ -33,6 +33,13 @@ r=await call('/api/account',null,'forged-token',{'oai-authenticated-user-id':'ow
 r=await call('/api/account',null,env.SUPABASE_ANON_KEY);test('public anon key is not a login',r.status===401);
 r=await call('/api/auth',{action:'logout'},current);test('logout succeeds',r.status===200&&r.data.session===null);
 r=await call('/api/account',null,current);test('logged out session is revoked',r.status===401);
+// 작업 060: 기본 로그아웃은 이 기기만, 모든 기기 로그아웃은 전부
+r=await call('/api/auth',{action:'sessions'},staffToken);test('device list answers (null when auth schema unreadable)',r.status===200&&(r.data.sessions===null||Array.isArray(r.data.sessions)));
+test('sessions needs login',(await call('/api/auth',{action:'sessions'})).status===401);
+r=await call('/api/account',null,staffToken);test('other device stays signed in after local logout',r.status!==401);
+r=await call('/api/auth',{action:'login',email:'staff@example.invalid',password});const second=tokenOf(r);
+r=await call('/api/auth',{action:'logout',everywhere:true},second);test('logout everywhere succeeds',r.status===200);
+test('every device signed out',(await call('/api/account',null,staffToken)).status===401&&(await call('/api/account',null,second)).status===401);
 r=await call('/api/auth',{action:'register',agree:true,email:'hq@example.invalid',password,name:'검수',role:'owner'});const sameHq=tokenOf(r);
 r=await call('/api/admin',null,sameHq);test('unverified HQ email never grants admin',r.status===403);
 r=await call('/api/auth',{action:'register',agree:true,email:'owner@example.invalid',password,name:'검수 대표',role:'owner'});const ownerToken=tokenOf(r);

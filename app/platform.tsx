@@ -1,3 +1,4 @@
+import {DeviceSessions} from './devices';
 import {ContractsDesk} from './contracts-desk';
 import {VerifyEmail} from './verify-email';
 import {AuthForm} from './auth-form';
@@ -30,7 +31,7 @@ export default function Platform(){
  if(path==='/admin/login')return <Shell><main className="native-auth-wrap"><AuthForm role="owner" next="/admin" account={null} admin/></main></Shell>;
  if(path==='/admin')return <Shell><AdminDesk/></Shell>;
  if(path==='/verify-email')return <Shell><VerifyEmail/></Shell>;
- if(path==='/withdraw')return <Shell><Withdraw/></Shell>;
+ if(path==='/withdraw')return <Shell><DeviceSessions/><Withdraw/></Shell>;
  if(path==='/calculator')return <Shell><Calculator/></Shell>;
  if(path==='/logout')return <Logout/>;
  if(path==='/start')return <Start/>;
@@ -78,4 +79,4 @@ function Policy({privacy}:{privacy:boolean}){return <Shell><main className="saas
 
 function Start(){return <Shell><main className="saas-account" style={{maxWidth:900}}><h1>어떤 일을 하시나요?</h1><p>내 역할을 고르면 필요한 화면으로 안내해 드려요.</p><div className="account-grid role-grid"><section className="auth-card role-card"><Store aria-hidden="true"/><h2>사장님</h2><p>우리 가게 직원과 근무표, 급여를 관리해요.</p><a className="saas-primary" href="/signup?role=owner&plan=free">사장님으로 무료 시작</a><a className="saas-secondary" href="/login?role=owner">사장님 로그인</a></section><section className="auth-card role-card"><Users aria-hidden="true"/><h2>직원</h2><p>일하는 가게에 합류하고 내 출퇴근과 급여를 확인해요.</p><a className="saas-primary" href="/employee">직원으로 가입하기</a><a className="saas-secondary" href="/login?role=employee">직원 로그인</a></section></div><p className="t-gap"><a className="saas-secondary" href="/demo">가입 없이 먼저 체험하기 →</a></p><p><a className="saas-secondary" href="/calculator">주휴수당·인건비 계산기 →</a></p><small>앱 설치 없이 · 사장님 가입에 초대 불필요 · 직원은 사장님 수락 후 연결</small></main></Shell>}
 
-function Logout(){const [error,setError]=useState('');useEffect(()=>{fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'logout'})}).then(r=>{if(!r.ok)throw Error();location.replace(new URLSearchParams(location.search).get('next')==='/admin/login'?'/admin/login':'/login')}).catch(()=>setError('로그아웃하지 못했어요. 연결을 확인하고 다시 시도해 주세요.'))},[]);return <Shell><main className="auth-card"><h1>{error||'로그아웃하고 있어요'}</h1>{error&&<button onClick={()=>location.reload()}>다시 시도</button>}</main></Shell>}
+function Logout(){const [error,setError]=useState('');useEffect(()=>{fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'logout',everywhere:new URLSearchParams(location.search).get('everywhere')==='1'})}).then(r=>{if(!r.ok)throw Error();location.replace(new URLSearchParams(location.search).get('next')==='/admin/login'?'/admin/login':'/login')}).catch(()=>setError('로그아웃하지 못했어요. 연결을 확인하고 다시 시도해 주세요.'))},[]);return <Shell><main className="auth-card"><h1>{error||'로그아웃하고 있어요'}</h1>{error&&<button onClick={()=>location.reload()}>다시 시도</button>}</main></Shell>}
