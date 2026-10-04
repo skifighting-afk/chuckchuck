@@ -12,7 +12,7 @@ create table if not exists attendance_records (
   owner text not null,
   id text not null,
   employee_id text not null,
-  start_at text not null,
+  start_at text collate "C" not null,  -- ISO 시각 문자열: 글자 순서 = 시간 순서(C 정렬)
   record jsonb not null,
   primary key (owner, id)
 );
@@ -31,7 +31,7 @@ begin
   -- 배열에 없는 기록 지우기(범위 안에서만)
   delete from attendance_records r
    where r.owner = new.owner
-     and (since is null or r.start_at >= since)
+     and (since is null or r.start_at >= since collate "C")
      and not exists (select 1 from jsonb_array_elements(arr) e where e->>'id' = r.id);
   -- 새 기록·바뀐 기록 넣기
   insert into attendance_records(owner, id, employee_id, start_at, record)

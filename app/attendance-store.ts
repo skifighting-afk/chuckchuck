@@ -15,7 +15,7 @@ export function attendanceSince(data: any, now = Date.now()) {
 }
 
 export async function loadAttendance(db: D1Database, owner: string, from?: string, to?: string) {
-  const rows = (await db.prepare('SELECT record FROM attendance_records WHERE owner=? AND start_at>=? AND start_at<? ORDER BY start_at, id').bind(owner, from || '', to || '￿').all<any>()).results;
+  const rows = (await db.prepare('SELECT record FROM attendance_records WHERE owner=? AND start_at>=CAST(? AS text) COLLATE "C" AND start_at<CAST(? AS text) COLLATE "C" ORDER BY start_at, id').bind(owner, from || '', to || '9999').all<any>()).results;
   return rows.map(r => parse(r.record));
 }
 
