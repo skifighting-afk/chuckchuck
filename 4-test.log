@@ -701,6 +701,13 @@ PASS 140. 승인된 연차만 차감
 PASS 141. 퇴사자는 퇴사일 기준
 PASS 142. 미사용 연차수당 = 일수 × 8시간 × 통상시급
 PASS: 연차 자동 발생.
+PASS 143. 월요일 2명: 가능 시간을 다 덮는 a·c (b는 14시까지라 제외)
+PASS 144. 화요일: c는 주 5.5시간 상한이라 a
+PASS 145. 토요일 밤샘 근무도 가능 시간이 덮으면 배정
+PASS 146. 모두 채움
+PASS 147. 이미 있는 근무는 인원에 포함, 휴가자는 제외 → 못 채운 1명
+PASS 148. 적게 일한 직원부터
+PASS: 근무 가능 시간 초안.
 
 ── check-claims
 PASS: 과장·허위 문구 검사 (화면·홈페이지).
@@ -776,7 +783,7 @@ PASS 36. 2026-03-31: no attendance in the future
 PASS: 체험 화면 숫자(급여·명세서·임금대장 합계).
 
 ── check-error-messages
-PASS: 오류 문구 283개 모두 다음 행동 안내 포함.
+PASS: 오류 문구 286개 모두 다음 행동 안내 포함.
 PASS: 오류 번호·로그 개인정보 제거.
 
 ── check-attendance-table
@@ -824,6 +831,11 @@ PASS: 오류 번호·로그 개인정보 제거.
 26. PASS owner cancels
 27. PASS cancel leaves shift unchanged
 PASS: 대타·교대 요청·수락·승인·충돌 차단.
+28. PASS employee submits availability
+29. PASS own availability visible
+30. PASS invalid time rejected
+31. PASS colleague cannot see it
+32. PASS owner sees it
 
 > chuckchuck@0.1.0 check:function
 > node scripts/check-supabase-function.mjs

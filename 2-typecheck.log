@@ -2,3 +2,5 @@
 > chuckchuck@0.1.0 check
 > tsc --noEmit
 
+app/schedule-draft.tsx(12,89): error TS18046: 'd' is of type 'unknown'.
+app/schedule-draft.tsx(12,107): error TS18046: 'd' is of type 'unknown'.
