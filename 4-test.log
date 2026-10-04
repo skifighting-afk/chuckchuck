@@ -381,6 +381,7 @@ PASS 12. busy camera explains retry
 PASS: 연차 자동 계산 반영.
 PASS: approved leave blocks shifts; overlapping shifts blocked.
 PASS: 요금제(베이직·프로 지점 구간 요금, VAT 포함, 직원 수 제한 없음, 30일 체험, 6·12개월 할인, QR은 프로, 체험 종료 후 조회만, 예전 무료 고객 보호).
+PASS: 세금계산서 정보·발행 요청.
 
 ── check-simple-join
 1. PASS owner creates short code
@@ -782,6 +783,16 @@ PASS 181. 이메일 앞 한 글자만
 PASS 182. 주소는 시·구까지만
 PASS 183. 빈 값은 빈 값
 PASS: 연락처 가리기.
+PASS 184. 체험 10일 남음은 안내 없음
+PASS 185. 7일 전 안내
+PASS 186. 1일 전 안내
+PASS 187. 체험 끝
+PASS 188. 월 중간 프로 전환: 남은 16일분 차액
+PASS 189. 내리면 차감(음수)
+PASS 190. 12개월 중 90일 사용 환불
+PASS 191. 기간 다 쓰면 환불 0
+PASS 192. 사업자번호 검증
+PASS: 체험 안내·차액·환불·사업자번호.
 
 ── check-claims
 PASS: 과장·허위 문구 검사 (화면·홈페이지).
@@ -857,7 +868,7 @@ PASS 36. 2026-03-31: no attendance in the future
 PASS: 체험 화면 숫자(급여·명세서·임금대장 합계).
 
 ── check-error-messages
-PASS: 오류 문구 319개 모두 다음 행동 안내 포함.
+PASS: 오류 문구 325개 모두 다음 행동 안내 포함.
 PASS: 오류 번호·로그 개인정보 제거.
 
 ── check-attendance-table
