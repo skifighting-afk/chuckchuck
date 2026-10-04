@@ -641,6 +641,13 @@ PASS: 지각·조퇴·미출근 표시.
 PASS 90. week start Monday splits the week (no 주휴)
 PASS 91. week start Sunday groups Sun–Sat (주휴 16h)
 PASS: 주 시작요일.
+PASS 92. probation 90% only before end date (10-15)
+PASS 93. all hours inside probation at 90%
+PASS 94. contract under 1 year: no probation discount + warning
+PASS 95. simple labor: no probation discount
+PASS 96. tax-free meal excluded from insurance base
+PASS 97. tax-free over 200,000 warns
+PASS: 수습 감액·비과세 수당.
 
 ── check-claims
 PASS: 과장·허위 문구 검사 (화면·홈페이지).
