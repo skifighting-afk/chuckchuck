@@ -11,8 +11,10 @@ const axeSource=axePath&&existsSync(axePath)?readFileSync(axePath,'utf8'):null;
 const pages=['/start','/signup?role=owner','/login?role=owner','/employee','/demo?screen=home','/demo?screen=employees','/demo?screen=attendance','/demo?screen=schedule','/demo?screen=payroll','/demo?screen=contracts','/demo?role=employee'];
 const problems=[];
 const browser=await chromium.launch(process.env.PW_CHROMIUM?{executablePath:process.env.PW_CHROMIUM}:{});
+// 화면의 보안 정책(CSP)이 점검 도구 주입을 막으므로, 점검 브라우저에서만 끈다.
+const ctx=await browser.newContext({bypassCSP:true});
 for(const width of [390,1280])for(const path of pages){
- const p=await browser.newPage({viewport:{width,height:900}});
+ const p=await ctx.newPage();await p.setViewportSize({width,height:900});
  await p.goto(BASE+path,{waitUntil:'networkidle'});await p.waitForTimeout(600);
  const where=`${width}px ${path}`;
  if(axeSource){
