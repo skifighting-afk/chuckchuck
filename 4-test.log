@@ -607,6 +607,17 @@ PASS 59. guide shows monthly minimum (209h)
 PASS 60. guide shows the same insurance rates as payroll
 PASS 61. every guide item links an official https source
 PASS: 근로기준 안내 숫자·출처.
+PASS 62. calc weekly hours and 주휴 (20h → 4h)
+PASS 63. calc monthly = week × 4.345
+PASS 64. under 15h no 주휴
+PASS 65. 5+ overtime (2h×5 + 0) and night 50%
+PASS 66. under 5 no premiums
+PASS 67. employee insurance uses payroll rates
+PASS 68. employer adds stability 0.25% and industrial
+PASS 69. under 60h/month pension·health excluded
+PASS 70. 3.3% = 3% + 0.3% each floored
+PASS 71. below minimum wage flagged
+PASS: 인건비 계산기.
 
 ── check-claims
 PASS: 과장·허위 문구 검사 (화면·홈페이지).
