@@ -48,5 +48,10 @@ manager=await call('staff','/api/manager');ok('unassigned approval blocked',(awa
 ok('manager can post branch notice',(await call('staff','/api/manager',{action:'postNotice',version:manager.data.version,title:'테스트 공지',body:'가상 검수'})).status,200);
 boss=await store('boss');boss.data.state.employees[0].managerPermissions=[];await store('boss',{state:boss.data.state,version:boss.data.version},'PUT');manager=await call('staff','/api/manager');
 ok('revoked permission blocked immediately',(await call('staff','/api/manager',{action:'postNotice',version:manager.data.version,title:'test',body:'test'})).status,403);
+// 작업 055: 권한 이력·회수 즉시 반영
+let audit=(await store('boss')).data.audit.map(a=>a.action);ok('grant recorded',audit.includes('매니저 권한 부여'),true);ok('permission change recorded',audit.includes('매니저 권한 변경'),true);
+boss=await store('boss');boss.data.state.employees[0].access='직원';await store('boss',{state:boss.data.state,version:boss.data.version},'PUT');
+const last=(await store('boss')).data.audit.filter(a=>a.action==='매니저 권한 회수').at(-1);ok('revoke recorded with before/after',[last?.before?.access,last?.after?.access],['중간관리자','직원']);
+ok('revoked manager loses manager API immediately',(await call('staff','/api/manager')).status,403);
 console.log(`Entry/join/contracts/manager checks: ${passed} passed`);
 await closeAll();
