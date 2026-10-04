@@ -1,2 +1,6 @@
 Connecting to remote database...
-Remote database is up to date.
+Do you want to push these migrations to the remote database?
+ • 20261005040000_service_notices.sql
+ [Y/n] 
+Applying migration 20261005040000_service_notices.sql...
+Finished supabase db push.
