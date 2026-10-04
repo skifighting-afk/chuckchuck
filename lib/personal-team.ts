@@ -21,6 +21,6 @@ export function personalTeam(state:Team,selfId:string):Team{
    }])),
   requests:state.requests.filter(r=>r.before?.employeeId===selfId&&r.after?.employeeId===selfId)
    .map(r=>({...r,reviewer:r.reviewer?{name:r.reviewer.name}:undefined})),
-  settings:{accountantName:'',accountantEmail:'',autoPayslip:false,autoContract:false,autoAccountant:false,employerName:''}
+  settings:{accountantName:'',accountantEmail:'',autoPayslip:false,autoContract:false,autoAccountant:false,employerName:'',fivePlus:false}
  };
 }

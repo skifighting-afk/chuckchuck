@@ -40,7 +40,7 @@ export async function accountApi(request:Request,env:Env){
    state.store={name:b.storeName.trim(),branch:b.branchName.trim()};
    state.branches=[{id:'branch-main',name:b.branchName.trim(),address:''}];
    state.employees=[];state.shifts=[];state.attendance=[];state.adjustments={};state.payrollRuns={};state.requests=[];delete state.legacy;
-   state.settings={accountantName:'',accountantEmail:'',autoPayslip:false,autoContract:false,autoAccountant:false,employerName:b.ownerName.trim()};
+   state.settings={accountantName:'',accountantEmail:'',autoPayslip:false,autoContract:false,autoAccountant:false,employerName:b.ownerName.trim(),fivePlus:false};
    const now=new Date().toISOString();
    const next={...state,_account:{industry:b.industry||null,plan:b.plan,storeSlots:b.plan==='multi'?Math.max(2,Math.min(10,Math.floor(Number(b.storeSlots)||2))):1,status:b.plan==='free'?'free':'trialing',createdAt:now,trialEndsAt:b.plan==='free'?null:new Date(Date.now()+TRIAL_DAYS*86400000).toISOString(),trialUsed:b.plan!=='free',acknowledgedAt:now,noticeVersion:'prelaunch-2026-09',autoRenew:false},_audit:[],_outbox:[],_members:[],_invitations:[]};
    const result=await env.DB.prepare('INSERT OR IGNORE INTO stores(owner,data,version,updated_at) VALUES(?,?,?,?)').bind(id,JSON.stringify(next),1,now).run();
