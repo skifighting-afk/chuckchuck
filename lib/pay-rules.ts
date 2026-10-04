@@ -44,15 +44,19 @@ export type Line = {name: string; amount: number; formula: string};
  * - 야간 가산(5인 이상): 22~06시 근무 × 시급 × 50%
  * records에는 앞뒤 달 기록이 섞여 있어도 된다(주 경계 계산용).
  */
-export function allowances(records: Record_[], month: string, wage: number, fivePlus: boolean, weekStart: 'mon' | 'sun' = 'mon') {
+export function allowances(records: Record_[], month: string, wage: number, fivePlus: boolean, weekStart: 'mon' | 'sun' = 'mon', holidays: Map<string, string> = new Map()) {
   // 주 시작요일: 월요일(기본) 또는 일요일. 주휴는 그 주의 마지막 날이 속한 달에 지급.
   const weekOf = (d: string) => weekStart === 'sun' ? plusDays(monday(plusDays(d, 1)), -1) : monday(d);
   const byDay = new Map<string, {worked: number; night: number}>();
   for (const a of records) { if (!a.end) continue; const d = kday(a.start), s = splitRecord(a), cur = byDay.get(d) || {worked: 0, night: 0}; cur.worked += s.worked; cur.night += s.night; byDay.set(d, cur); }
   const weeks = new Map<string, {hours: number; dailyOt: number}>();
-  let night = 0, dailyOt = 0;
+  let night = 0, dailyOt = 0, hol8 = 0, holOver = 0;
+  const holNames = new Set<string>();
   for (const [d, v] of byDay) {
-    const w = weeks.get(weekOf(d)) || {hours: 0, dailyOt: 0}, ot = Math.max(0, v.worked - 8);
+    const w = weeks.get(weekOf(d)) || {hours: 0, dailyOt: 0, holiday: 0};
+    // 휴일근로(작업 025): 8시간 이내 50%, 초과 100% 가산. 같은 시간을 연장 가산과 겹쳐 세지 않도록 주 시간 계산에서는 뺀다(주휴 판단에는 넣음).
+    if (holidays.has(d)) { (w as any).holiday = ((w as any).holiday || 0) + v.worked; w.hours += v.worked; weeks.set(weekOf(d), w); if (d.startsWith(month)) { night += v.night; hol8 += Math.min(8, v.worked); holOver += Math.max(0, v.worked - 8); holNames.add(holidays.get(d)!); } continue; }
+    const ot = Math.max(0, v.worked - 8);
     w.hours += v.worked; w.dailyOt += ot; weeks.set(weekOf(d), w);
     if (d.startsWith(month)) { night += v.night; dailyOt += ot; }
   }
@@ -62,15 +66,17 @@ export function allowances(records: Record_[], month: string, wage: number, five
     const last = plusDays(first, 6);
     if (!last.startsWith(month)) continue;
     if (w.hours >= 15) { juhu += Math.min(w.hours, 40) / 40 * 8 * wage; juhuWeeks++; }
-    weeklyOt += Math.max(0, w.hours - w.dailyOt - 40);
+    weeklyOt += Math.max(0, w.hours - ((w as any).holiday || 0) - w.dailyOt - 40);
   }
   const lines: Line[] = [];
   if (juhu > 0) lines.push({name: '주휴수당', amount: Math.round(juhu), formula: `주 15시간 이상 ${juhuWeeks}주 · min(주 시간, 40) ÷ 40 × 8시간 × ${won(wage)}원 (개근 여부 확인)`});
   if (fivePlus) {
     const ot = dailyOt + weeklyOt;
     if (ot > 0) lines.push({name: '연장근로 가산', amount: Math.round(ot * wage * 0.5), formula: `${ot.toFixed(2)}시간(하루 8시간·주 40시간 초과) × ${won(wage)}원 × 50%`});
+    const holPay = hol8 * wage * 0.5 + holOver * wage;
+    if (holPay > 0) lines.push({name: '휴일근로 가산', amount: Math.round(holPay), formula: `${hol8.toFixed(2)}시간 × ${won(wage)}원 × 50%${holOver ? ` + 8시간 초과 ${holOver.toFixed(2)}시간 × ${won(wage)}원 × 100%` : ''} (${[...holNames].join('·')})`});
     if (night > 0) lines.push({name: '야간근로 가산', amount: Math.round(night * wage * 0.5), formula: `${night.toFixed(2)}시간(22~06시) × ${won(wage)}원 × 50%`});
-  } else if (dailyOt + weeklyOt + night > 0) notes.push('상시 5인 미만으로 설정되어 연장·야간 가산수당을 넣지 않았어요.');
+  } else if (dailyOt + weeklyOt + night + hol8 + holOver > 0) notes.push('상시 5인 미만으로 설정되어 연장·야간·휴일 가산수당을 넣지 않았어요.');
   return {lines, notes, night, overtime: dailyOt + weeklyOt};
 }
 

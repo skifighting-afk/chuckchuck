@@ -57,7 +57,7 @@ team.settings.fivePlus=true;
 const e=team.employees[0];Object.assign(e,{payType:'시급',wage:14000,autoPay:true,income:'근로소득',taxMode:'4대보험 자동',insurances:all});
 team.attendance=sep.map((a,i)=>({id:'a'+i,employeeId:e.id,...a,breakStart:null}));team.adjustments={};
 const row=calculate(team,'2026-09').find(x=>x.employeeId===e.id);
-ok('base + weekly holiday + night premium in earnings',row.earnings.map(x=>x.name).join(',')==='기본급,주휴수당,야간근로 가산');
+ok('base + weekly holiday + 추석(9/24) holiday + night premium in earnings',row.earnings.map(x=>x.name).join(',')==='기본급,주휴수당,휴일근로 가산,야간근로 가산');
 ok('insurance deductions added',['국민연금','건강보험','장기요양보험','고용보험'].every(n=>row.deductions.some(d=>d.name===n)));
 {const it=row.deductions.find(d=>d.name==='근로소득세'),lt=row.deductions.find(d=>d.name==='지방소득세');const g=row.gross;ok('income tax from 간이세액표 when salary is above the 0원 band',g<770000?!it:(!!it&&lt.amount===Math.floor(it.amount*0.1/10)*10&&it.formula.includes('간이세액표')));}
 team.adjustments['2026-09:'+e.id]={earnings:[{name:'주휴수당',amount:300000,formula:'사장님 직접 입력'}],deductions:[],note:''};
@@ -276,4 +276,19 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('pension base truncates below 1,000',p(2345678,'2026-08')===Math.floor(2345000*0.0475/10)*10);
  ok('health employee cap 4,591,740',insuranceLines(200000000,2026,all2,'2026-08').find(l=>l.name==='건강보험').amount===4591740);
  console.log('PASS: 4대보험 상·하한.');
+}
+
+// 작업 025: 휴일근로 가산(5명 이상) — 8시간 이내 50%, 초과 100%, 연장과 겹쳐 세지 않음
+{
+ const {holidaysFor}=await import('../lib/holidays.ts');
+ const k=(d,hm)=>new Date(`${d}T${hm}:00+09:00`).toISOString();
+ const rec=[{start:k('2026-10-09','09:00'),end:k('2026-10-09','20:00'),breakMinutes:60}]; // 한글날 10시간
+ const h=holidaysFor(2026,true);
+ let a=allowances(rec,'2026-10',10000,true,'mon',h);const line=a.lines.find(l=>l.name==='휴일근로 가산');
+ ok('holiday 10h = 8h×50% + 2h×100%',line&&line.amount===8*10000*0.5+2*10000&&line.formula.includes('한글날'));
+ ok('holiday hours not also counted as overtime',!a.lines.some(l=>l.name==='연장근로 가산'));
+ a=allowances(rec,'2026-10',10000,false,'mon',holidaysFor(2026,false));ok('under 5: no holiday premium + note',!a.lines.length&&a.notes.some(n=>n.includes('휴일')));
+ ok('labor day is a holiday even under 5',holidaysFor(2026,false).has('2026-05-01')&&!holidaysFor(2026,false).has('2026-10-09'));
+ ok('2026 has 21 public holiday entries incl. 6/3 election',holidaysFor(2026,true).size===22&&holidaysFor(2026,true).get('2026-06-03')==='전국동시지방선거');
+ console.log('PASS: 휴일근로 가산.');
 }
