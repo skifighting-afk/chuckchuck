@@ -13,6 +13,7 @@ import {staffJoinApi} from './staff-join-api';
 import {accountApi,resolveStore} from './saas-api';
 import {plans,trialStatus,isPlan,canWrite,capacityError,hasFeature} from '../lib/plans';
 import {evidenceApi} from './evidence-api';
+import {manualApi} from './manual-api';
 import {exportApi} from './export-api';
 import {withdrawApi,processDeletions} from './withdraw-api';
 import {operationsApi} from './operations-api';
@@ -36,6 +37,7 @@ export async function api(request:Request,env:Env){
  if(path==='/api/staff-join')return staffJoinApi(request,env);
  if(path==='/api/account')return accountApi(request,env);
  if(path==='/api/evidence')return evidenceApi(request,env);
+ if(path==='/api/manual')return manualApi(request,env);
  if(path==='/api/export')return exportApi(request,env);
  if(path==='/api/withdraw')return withdrawApi(request,env);
  if(path==='/api/operations')return operationsApi(request,env);
@@ -107,7 +109,7 @@ export async function api(request:Request,env:Env){
  default:fail('지원하지 않는 작업입니다.');
  }
  delete (state as any).approvedLeaves;const checked=teamSchema.safeParse(state);if(!checked.success)return json({error:checked.error.issues[0].message},400);
- const data=JSON.stringify({...checked.data,_attendanceQr:raw?._attendanceQr,_hq:raw?._hq,_joinTerms:raw?._joinTerms,_joinCodes:raw?._joinCodes,_joinApplications:raw?._joinApplications,_account:raw?._account,_operations:raw?._operations,_attendanceFrom:raw?._attendanceFrom,_audit:audit,_outbox:outbox,_invitations:invitations,_members:members}),updatedAt=new Date().toISOString();
+ const data=JSON.stringify({...checked.data,_attendanceQr:raw?._attendanceQr,_hq:raw?._hq,_joinTerms:raw?._joinTerms,_joinCodes:raw?._joinCodes,_joinApplications:raw?._joinApplications,_account:raw?._account,_operations:raw?._operations,_manuals:raw?._manuals,_attendanceFrom:raw?._attendanceFrom,_audit:audit,_outbox:outbox,_invitations:invitations,_members:members}),updatedAt=new Date().toISOString();
  const q=version===0?env.DB.prepare('INSERT OR IGNORE INTO stores(owner,data,version,updated_at) VALUES(?,?,?,?)').bind(owner,data,1,updatedAt):env.DB.prepare('UPDATE stores SET data=?,version=?,updated_at=? WHERE owner=? AND version=?').bind(data,version+1,updatedAt,owner,version);
  if(!(await q.run()).meta.changes)return json({error:'동시에 변경된 내용이 있습니다. 새로고침해 주세요.'},409);
  if(b.action==='send'){

@@ -71,6 +71,16 @@ await step('작업 050: 직원이 근무 가능 시간 제출 → 사장님 초�
  await owner.goto(B+'/app?screen=schedule',{waitUntil:'networkidle'});await owner.click('button:has-text("가능 시간으로 초안")');await owner.getByText('근무 가능 시간 낸 직원 1/1명').waitFor();await owner.getByText('토 09:00~18:00').waitFor();await owner.click('[role=dialog] button:has-text("닫기")');
  await staff.goto(B+'/app',{waitUntil:'networkidle'});
 });
+await step('매장 매뉴얼: 사장님이 사진과 함께 작성 → 직원이 바로 확인',async()=>{
+ await owner.goto(B+'/app?screen=manual',{waitUntil:'networkidle'});await owner.click('button:has-text("새 매뉴얼")');
+ await owner.fill('label:has-text("제목") input','마감 청소 순서');await owner.fill('label:has-text("1단계") textarea','바닥을 쓸고 대걸레로 닦아요');
+ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==','base64');
+ await owner.locator('.manual-upload input[type=file]').first().setInputFiles({name:'floor.png',mimeType:'image/png',buffer:png});await owner.locator('.manual-steps img.manual-img').waitFor();
+ await owner.click('button:has-text("저장하고 직원에게 보이기")');await owner.getByText('매뉴얼을 저장했어요').waitFor();
+ await staff.goto(B+'/app',{waitUntil:'networkidle'});await staff.click('button:has-text("매뉴얼")');await staff.click('button:has-text("마감 청소 순서")');
+ await staff.getByText('바닥을 쓸고 대걸레로 닦아요').waitFor();await staff.locator('.manual-view img.manual-img').waitFor();await staff.getByText('확인함').waitFor();
+ await staff.goto(B+'/app',{waitUntil:'networkidle'});
+});
 await step('매장 QR로 출근·퇴근 (QR 없이 누르면 기록 안 됨)',async()=>{
  await staff.click('button:has-text("출근")');await staff.getByText('출근 전에 매장 QR을 찍어 주세요').waitFor();await staff.click('text=취소 · 기록하지 않기');
  await owner.goto(B+'/app?screen=attendance',{waitUntil:'networkidle'});await owner.locator('button:has-text("출퇴근 QR")').first().click();
