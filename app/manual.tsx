@@ -24,7 +24,7 @@ export function StoreManual({branchId}:{branchId?:string}){
  const load=()=>call().then(setData).catch(e=>setError(e.message));
  useEffect(()=>{load()},[]);
  const run=async(b:any,done?:string)=>{setBusy(true);setError('');setMsg('');try{const d=await call({...b,version:data.version});setData(d);if(done){setMsg(done);setEdit(null)}}catch(e){setError((e as Error).message)}finally{setBusy(false)}};
- if(!data)return <section className="panel t-panelbody"><p>{error||'매뉴얼을 불러오고 있어요.'}</p></section>;
+ if(!data)return <section className="panel t-panelbody"><p role={error?'alert':undefined}>{error||'매뉴얼을 불러오고 있어요.'}</p>{error&&<Btn onClick={()=>{setError('');load()}}>다시 불러오기</Btn>}</section>;
  const list:Manual[]=data.manuals.filter((m:Manual)=>!branchId||!data.owner||m.branchId==='all'||m.branchId===branchId);
  const branchName=(id:string)=>id==='all'?'전체 지점':data.branches.find((b:any)=>b.id===id)?.name||'';
  async function upload(i:number,file?:File|null){if(!file)return;setBusy(true);setError('');try{const img=await shrinkImage(file);const r=await call({action:'image',...img});const steps=edit.steps.slice();steps[i]={...steps[i],imageId:r.id};setEdit({...edit,steps})}catch(e){setError((e as Error).message)}finally{setBusy(false)}}

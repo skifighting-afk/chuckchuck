@@ -28,6 +28,7 @@ await step('가게 만들기 (요금 고르기·처리위탁 동의·30일 체�
  await owner.fill('#store-name','점검식당');await owner.fill('#owner-name',OWNER.name);await owner.locator('.industry-picker label').first().click();await owner.click('text=다음으로 →');
  for(const b of await owner.getByRole('checkbox').all())await b.click();
  await owner.click('text=30일 무료 체험 시작');await owner.waitForURL(/\/app/);await owner.getByText('점검식당').first().waitFor();
+ await owner.goto(B+'/app?screen=payroll',{waitUntil:'networkidle'});await owner.getByText('아직 직원이 없어요').waitFor();
 });
 await step('가입용 근로조건 정하고 가입 링크 만들기',async()=>{
  await owner.goto(B+'/staff-requests',{waitUntil:'networkidle'});
