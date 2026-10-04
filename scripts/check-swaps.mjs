@@ -61,4 +61,10 @@ me=(await ops('amy')).body;r=await ops('amy',{action:'setAvailability',version:m
 ok('invalid time rejected',(await ops('amy',{action:'setAvailability',version:r.body.version,slots:[{weekday:9,start:'09:00',end:'18:00'}]})).status,400);
 ok('colleague cannot see it',Object.keys((await ops('ben')).body.availability).length,0);
 ok('owner sees it',(await ops('boss')).body.availability[A].note,'평일 오전');
+// 작업 095: 공지 읽음 확인
+o=(await ops('boss')).body;r=await ops('boss',{action:'postNotice',version:o.version,title:'본점 공지',body:'내일 휴무',branchId:'branch-main'});const nid=r.body.notices.at(-1).id;
+ok('unread list names branch staff',r.body.notices.at(-1).unread.sort(),['벤','에이미','캣'].sort());
+me=(await ops('amy')).body;await ops('amy',{action:'readNotice',version:me.version,id:nid});
+const nn=(await ops('boss')).body.notices.find(x=>x.id===nid);ok('reader moves to read list',[nn.readers,nn.unread.includes('에이미')],[['에이미'],false]);
+ok('staff do not see who read','readers' in (await ops('ben')).body.notices.find(x=>x.id===nid),false);
 await closeAll();
