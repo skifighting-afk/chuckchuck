@@ -167,3 +167,25 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('below minimum wage flagged',estimateLabor({wage:9000,dailyHours:5,days:4,year:2026}).belowMinimum);
  console.log('PASS: 인건비 계산기.');
 }
+
+// 작업 048: 근무표 반복·복사·템플릿
+{
+ const {repeatShifts,copyWeek,weekToTemplate,applyTemplate,findShiftConflict,MAX_REPEAT}=await import('../lib/schedule-tools.ts');
+ let n=0;const id=()=>'n'+(n++);
+ const base={employeeId:'e1',start:'09:00',end:'14:00',breakMinutes:30};
+ const existing=[{id:'x',employeeId:'e1',date:'2026-10-07',start:'10:00',end:'12:00',breakMinutes:0}];
+ let p=repeatShifts(base,'2026-10-05',[1,3,5],1,existing,id);// 월·수·금, 2026-10-05는 월요일
+ ok('repeat counts Mon/Wed/Fri for one month',p.made.length+p.skipped.length===14&&p.made.every(s=>[1,3,5].includes(new Date(s.date+'T00:00:00Z').getUTCDay())));
+ ok('repeat skips day with overlapping shift',p.skipped.includes('2026-10-07')&&!p.made.some(s=>s.date==='2026-10-07'));
+ ok('repeat never exceeds cap',repeatShifts(base,'2026-01-01',[0,1,2,3,4,5,6],24,[],id).made.length===MAX_REPEAT);
+ ok('repeated shifts do not conflict',findShiftConflict([...existing,...p.made])===null);
+ const week=[{id:'a',employeeId:'e1',date:'2026-09-28',start:'09:00',end:'14:00',breakMinutes:30},{id:'b',employeeId:'e2',date:'2026-10-02',start:'22:00',end:'06:00',breakMinutes:60}];
+ let c=copyWeek([...week,...existing],'2026-09-28','2026-10-05',id);
+ ok('copy week moves dates by 7 days',c.made.map(s=>s.date).sort().join()==='2026-10-05,2026-10-09');
+ c=copyWeek([...week,{id:'y',employeeId:'e2',date:'2026-10-09',start:'23:00',end:'23:30',breakMinutes:0}],'2026-09-28','2026-10-05',id);
+ ok('copy week skips overlapping overnight shift',c.skipped.length===1&&c.made.length===1);
+ const t=weekToTemplate(week,'2026-09-28');ok('template keeps weekday',t.length===2&&t[0].weekday===1&&t[1].weekday===5);
+ const a=applyTemplate(t,'2026-10-12',[],new Set(['e1']),id);ok('template applies only to active employees',a.made.length===1&&a.made[0].date==='2026-10-12');
+ ok('conflict finder sees overnight overlap',!!findShiftConflict([{id:'1',employeeId:'e',date:'2026-10-01',start:'22:00',end:'06:00',breakMinutes:0},{id:'2',employeeId:'e',date:'2026-10-02',start:'05:00',end:'09:00',breakMinutes:0}]));
+ console.log('PASS: 근무표 반복·복사·템플릿.');
+}

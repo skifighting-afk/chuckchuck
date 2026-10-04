@@ -52,6 +52,18 @@ await step('사장님이 합류 신청 수락 → 직원 화면 열림',async()=
  await owner.click('text=새 신청 확인');await owner.getByText(STAFF.email).first().waitFor();await owner.click('text=수락하기');await owner.getByText('신청을 처리했어요').waitFor();
  await staff.click('text=사장님이 수락했는지 확인하기');await staff.click('text=내 직원 화면 열기 →');await staff.getByText(`안녕하세요, ${STAFF.name}님`).waitFor();
 });
+await step('작업 048: 근무표 반복 등록 → 템플릿 저장 → 다음 주에 붙이기',async()=>{
+ await owner.goto(B+'/app?screen=schedule',{waitUntil:'networkidle'});await owner.click('button:has-text("주간 · 7일 한눈에")');
+ await owner.click('button:has-text("근무 추가")');
+ await owner.check('label.repeat-toggle input');
+ for(const d of ['월','화','수','목','금']){const box=owner.locator('.repeat-days label',{hasText:d}).locator('input');if(!await box.isChecked())await box.check({force:true})}
+ const preview=await owner.locator('.repeat-preview').innerText();if(!/\d+회/.test(preview))throw Error('반복 미리보기 없음: '+preview);
+ await owner.click('button:has-text("반복 일정 저장")');await owner.getByText(/근무 \d+회를 등록했어요/).waitFor();
+ const before=JSON.parse((await srv.db.q('SELECT data FROM stores LIMIT 1').first()).data).shifts.length;if(before<15)throw Error('반복 등록 수가 적어요: '+before);
+ await owner.click('button:has-text("템플릿")');await owner.fill('label:has-text("새 템플릿 이름") input','평일 기본');await owner.click('button:has-text("이번 주 저장")');await owner.getByText('이번 주 근무를 템플릿으로 저장했어요.').waitFor();await owner.click('[role=dialog] button:has-text("닫기")');
+ await owner.locator('input[aria-label="근무표 날짜"]').fill(new Date(Date.now()+9*3600000+35*86400000).toISOString().slice(0,10));
+ await owner.click('button:has-text("템플릿")');await owner.locator('.template-list button:has-text("이 주에 붙이기")').first().click();await owner.getByText(/템플릿 '평일 기본'으로 근무 \d+개를 넣었어요/).waitFor();
+});
 await step('매장 QR로 출근·퇴근 (QR 없이 누르면 기록 안 됨)',async()=>{
  await staff.click('button:has-text("출근")');await staff.getByText('출근 전에 매장 QR을 찍어 주세요').waitFor();await staff.click('text=취소 · 기록하지 않기');
  await owner.goto(B+'/app?screen=attendance',{waitUntil:'networkidle'});await owner.locator('button:has-text("출퇴근 QR")').first().click();

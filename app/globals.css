@@ -206,3 +206,7 @@ summary{cursor:pointer;padding-block:4px}
 .t-sidebar-note small{font-size:12px}
 .notice.limits-note{display:block}.limits-note p{margin:0 0 6px;line-height:1.7}.limits-note p:last-child{margin:0}
 .join-pay{border:1px solid #cddfd5;border-radius:12px;padding:14px 16px;margin:12px 0}.join-pay legend{font-weight:700;padding:0 6px}.join-pay p{margin:0 0 8px}
+.repeat-box{border:1px solid #cddfd5;border-radius:12px;padding:12px 14px;margin:12px 0;display:grid;gap:10px}.repeat-toggle{display:flex;align-items:center;gap:8px;font-weight:700;min-height:44px}.repeat-toggle input{width:22px;height:22px;accent-color:#12634b}
+.repeat-days{display:flex;gap:6px;flex-wrap:wrap}.repeat-days label{display:grid;place-items:center;width:48px;height:48px;border:1px solid #ccd9d1;border-radius:50%;cursor:pointer;font-weight:700;background:#fff}.repeat-days label.selected{background:#12634b;color:#fff;border-color:#12634b}.repeat-days input{position:absolute;opacity:0;width:1px;height:1px}
+.repeat-months{display:flex;align-items:center;gap:8px}.repeat-preview{margin:0;color:#12634b}.template-list{list-style:none;padding:0;margin:12px 0;display:grid;gap:10px}.template-list li{border:1px solid #cddfd5;border-radius:12px;padding:12px;display:grid;gap:6px}
+.repeat-days label:focus-within{outline:3px solid #2f6f4f;outline-offset:2px}

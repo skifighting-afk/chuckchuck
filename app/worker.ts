@@ -20,6 +20,7 @@ import {extendAttendance} from './attendance-store';
 type Env=AuthEnv&{HQ_ADMIN_EMAIL?:string,HQ_NATIVE_USER_ID?:string,DB:D1Database,ASSETS?:{fetch:(r:Request)=>Promise<Response>},RESEND_API_KEY?:string,EMAIL_FROM?:string};
 const json=(v:unknown,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store'}});
 import {same} from '../lib/same';
+import {findShiftConflict} from '../lib/schedule-tools';
 const esc=(s:any)=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
 export function slipText(row:any,month:string,date:string,store:string){return payslipText(store,month,date,row)}
 export async function api(request:Request,env:Env){
@@ -85,7 +86,7 @@ export async function api(request:Request,env:Env){
   for(const e of next.employees){const prev=state.employees.find(x=>x.id===e.id);if(!same(e.contract.signedAt,prev?.contract.signedAt??null)||!same(e.contract.signedBy,prev?.contract.signedBy??null)||e.contract.status==='체결 완료'&&prev?.contract.status!=='체결 완료')fail('체결 기록은 계약서 화면에서 별도로 등록해 주세요.');if(!prev&&(!e.email||!e.phone||!e.contract.workplace||!e.contract.employer))fail('신규 직원의 이메일·연락처·근무장소·사업주를 입력해 주세요.');if(prev?.contract.status==='체결 완료'&&(!same(prev.contract,e.contract)||contractText(state,prev)!==contractText(next,e)))fail('체결된 계약은 먼저 변경 계약 작성을 시작해 주세요.');}
   if(!hasFeature(raw?._account,'contracts'))for(const e of next.employees){const prev=state.employees.find(x=>x.id===e.id);const baseline=prev?.contract||newMember(e.branchId).contract;const detailed=(v:any)=>{const {workplace,employer,...rest}=v;return rest};if(!same(detailed(e.contract),detailed(baseline)))fail('근로계약서 작성은 베이직부터 이용할 수 있어요.');}
   if(!same(state.employees,next.employees))log('직원 정보 변경','직원 관리',state.employees,next.employees,b.reason||'정보 등록·변경');
-  if(!same(state.shifts,next.shifts)){for(const shift of next.shifts){if(raw?._operations?.leaves?.some((l:any)=>l.status==='승인'&&l.employeeId===shift.employeeId&&shift.date>=l.start&&shift.date<=l.end))fail('승인된 휴가 날짜에는 근무를 등록할 수 없습니다.');const start=Date.parse(shift.date+'T'+shift.start+':00+09:00'),end=Date.parse(shift.date+'T'+shift.end+':00+09:00')+(shift.end<=shift.start?86400000:0);if(next.shifts.some(other=>{if(other.id===shift.id||other.employeeId!==shift.employeeId)return false;const os=Date.parse(other.date+'T'+other.start+':00+09:00'),oe=Date.parse(other.date+'T'+other.end+':00+09:00')+(other.end<=other.start?86400000:0);return start<oe&&end>os}))fail('같은 직원의 근무시간이 겹칩니다. 날짜와 시간을 확인해 주세요.');}}
+  if(!same(state.shifts,next.shifts)){for(const shift of next.shifts){if(raw?._operations?.leaves?.some((l:any)=>l.status==='승인'&&l.employeeId===shift.employeeId&&shift.date>=l.start&&shift.date<=l.end))fail('승인된 휴가 날짜에는 근무를 등록할 수 없습니다.');}if(findShiftConflict(next.shifts as any))fail('같은 직원의 근무시간이 겹칩니다. 날짜와 시간을 확인해 주세요.');}
   if(!same(state.shifts,next.shifts))log('스케줄 변경','근무 스케줄',state.shifts,next.shifts);
   if(!same(state.settings,next.settings))log('설정 변경','설정',state.settings,next.settings);
   if(!same(state.adjustments,next.adjustments))log('급여 항목 변경','급여',state.adjustments,next.adjustments);
