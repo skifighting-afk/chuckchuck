@@ -221,3 +221,31 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('week start Sunday groups Sun–Sat (주휴 16h)',sun&&sun.amount===Math.round(16/40*8*10320));
  console.log('PASS: 주 시작요일.');
 }
+
+// 수습 감액·비과세 수당
+{
+ const {newMember,probation}=await import('../dist/server/team-model.js');
+ const kst3=(day,hm)=>new Date(`${day}T${hm}:00+09:00`).toISOString();
+ const t=normalizeTeam(null);delete t.legacy;t.employees=[];t.attendance=[];t.shifts=[];t.adjustments={};t.payrollRuns={};
+ const m={...newMember(),id:'p1',name:'수습',joined:'2026-09-15',employment:'기간의 정함 없음',payType:'시급',wage:11000,autoPay:false,taxMode:'직접 입력',status:'재직',probation:{months:1,rate:0.9}};
+ t.employees=[m];
+ t.attendance=[['2026-10-10'],['2026-10-20']].map(([d],i)=>({id:'pa'+i,employeeId:'p1',start:kst3(d,'09:00'),end:kst3(d,'13:00'),breakMinutes:0,breakStart:null}));
+ let row=calculate(t,'2026-10').find(r=>r.employeeId==='p1');
+ ok('probation 90% only before end date (10-15)',row.earnings[0].amount===Math.round(4*11000*0.9+4*11000)&&probation(m).until==='2026-10-15');
+ t.attendance[0].start=kst3('2026-10-10','09:00');t.employees[0].joined='2026-10-01';
+ row=calculate(t,'2026-10').find(r=>r.employeeId==='p1');
+ ok('all hours inside probation at 90%',row.earnings[0].amount===Math.round(8*11000*0.9)&&row.earnings[0].formula.includes('수습'));
+ t.employees[0]={...t.employees[0],employment:'기간제',endDate:'2026-12-31'};row=calculate(t,'2026-10').find(r=>r.employeeId==='p1');
+ ok('contract under 1 year: no probation discount + warning',row.earnings[0].amount===8*11000&&row.warnings.some(w=>w.includes('1년 이상')));
+ t.employees[0]={...t.employees[0],employment:'기간의 정함 없음',probation:{months:1,rate:0.9,simpleLabor:true}};row=calculate(t,'2026-10').find(r=>r.employeeId==='p1');
+ ok('simple labor: no probation discount',row.earnings[0].amount===8*11000&&row.warnings.some(w=>w.includes('단순노무')));
+ // 비과세 식대는 4대보험 기준에서 빠진다
+ t.employees[0]={...t.employees[0],probation:undefined,taxMode:'4대보험 자동',income:'근로소득',insurances:Object.fromEntries(['국민연금','건강보험','장기요양','고용보험','산재보험'].map(n=>[n,{status:'가입',reason:''}]))};
+ t.adjustments['2026-10:p1']={earnings:[{name:'식대',amount:200000,formula:'월 정액',taxFree:true}],deductions:[],note:''};
+ row=calculate(t,'2026-10').find(r=>r.employeeId==='p1');
+ const pension=row.deductions.find(d=>d.name==='국민연금');
+ ok('tax-free meal excluded from insurance base',pension.amount===Math.floor((row.gross-200000)*0.0475/10)*10&&row.gross===8*11000+200000);
+ t.adjustments['2026-10:p1'].earnings[0].amount=250000;row=calculate(t,'2026-10').find(r=>r.employeeId==='p1');
+ ok('tax-free over 200,000 warns',row.warnings.some(w=>w.includes('비과세')));
+ console.log('PASS: 수습 감액·비과세 수당.');
+}
