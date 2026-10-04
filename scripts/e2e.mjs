@@ -120,7 +120,7 @@ await step('작업 052: 안드로이드 휴대폰에서 매장 QR 사진으로 �
  await ctx.close();
 });
 await step('급여 확정 (지급일·확인 체크)',async()=>{
- await owner.goto(B+'/app?screen=payroll',{waitUntil:'networkidle'});await owner.click('button:has-text("급여 검토·확정")');await owner.getByText(/마감 전 확인/).waitFor();
+ await owner.goto(B+'/app?screen=payroll',{waitUntil:'networkidle'});await owner.locator('button:has-text("계산 근거")').first().click();await owner.getByText(/출퇴근 기록 \d+건/).waitFor();await owner.locator('.basis-line').first().click();await owner.locator('.basis-detail').first().waitFor();await owner.click('[role=dialog] button:has-text("닫기")');await owner.click('button:has-text("급여 검토·확정")');await owner.getByText(/마감 전 확인/).waitFor();
  await owner.check('label:has-text("수당·공제·근무 누락") input');await owner.click('button:has-text("급여 확정")');await owner.getByText('급여 확정 · 잠금').first().waitFor();
  const pay=await owner.locator('table').first().innerText();if(!/[1-9][\d,]*원/.test(pay))throw Error('확정 급여가 0원이에요: '+pay.slice(0,200));
 });
