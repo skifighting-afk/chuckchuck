@@ -399,6 +399,7 @@ PASS: 연차 자동 계산 반영.
 PASS: approved leave blocks shifts; overlapping shifts blocked.
 PASS: 요금제(베이직·프로 지점 구간 요금, VAT 포함, 직원 수 제한 없음, 30일 체험, 6·12개월 할인, QR은 프로, 체험 종료 후 조회만, 예전 무료 고객 보호).
 PASS: 세금계산서 정보·발행 요청.
+PASS: 기간제 만료 안내 메일 준비.
 
 ── check-simple-join
 1. PASS owner creates short code
