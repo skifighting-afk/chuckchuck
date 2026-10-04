@@ -135,3 +135,16 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('csv cell escapes leading minus and quotes',csvCell('-1')==='"\'-1"'&&csvCell('a"b')==='"a""b"');
  console.log('PASS: 임금대장(근로기준법 제48조, 시행령 제27조).');
 }
+
+// 작업 098: 근로기준 안내가 급여 계산 요율과 같은 숫자를 쓰는지
+{
+ const {laborGuide,laborSources,LABOR_GUIDE_YEAR}=await import('../dist/server/labor-guide.js');
+ const {RATES}=await import('../lib/pay-rules.ts');const r=RATES[LABOR_GUIDE_YEAR];
+ const text=laborGuide.map(x=>x.join(' ')).join('\n');
+ ok('guide year has registered rates',!!r);
+ ok('guide shows the same minimum wage as payroll',text.includes(r.minimumWage.toLocaleString('ko-KR')+'원'));
+ ok('guide shows monthly minimum (209h)',text.includes((r.minimumWage*209).toLocaleString('ko-KR')+'원'));
+ ok('guide shows the same insurance rates as payroll',['4.75%','3.595%','13.14%','0.9%'].every(v=>text.includes(v))&&Math.abs(r.pension-0.0475)<1e-9);
+ ok('every guide item links an official https source',laborGuide.every(x=>/^https:\/\/(www\.)?([a-z0-9]+\.)*(go\.kr|or\.kr)\//.test(laborSources[x[3]]||'')));
+ console.log('PASS: 근로기준 안내 숫자·출처.');
+}

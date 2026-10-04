@@ -1,5 +1,15 @@
-export const laborSources={insurance:'https://www.4insure.or.kr/',law:'https://www.law.go.kr/법령/근로기준법',contract:'https://www.moel.go.kr/mainpop2.do',slip:'https://www.moel.go.kr/news/cardinfo/view.do?bbs_seq=20230500426',delivery:'https://1350.moel.go.kr/rtmview.do?id=1000308076',retirement:'https://1350.moel.go.kr/home/hp/retirementpaycal/retirementpaycal.jsp',retireLaw:'https://www.law.go.kr/법령/근로자퇴직급여보장법',tax:'https://d.nts.go.kr/nts/cm/cntnts/cntntsView.do?cntntsId=238925&mi=40349',income:'https://j.nts.go.kr/nts/cm/cntnts/cntntsView.do?cntntsId=8165&mi=6769',small:'https://www.moel.go.kr/news/cardinfo/view.do?bbs_seq=20220500493',weekly:'https://1350.moel.go.kr/rtmview.do?id=1000261283'};
+// 작업 098: 근로기준 안내 (2026년 기준). 숫자는 급여 계산과 같은 표(lib/pay-rules.ts RATES)에서 가져온다.
+// 링크 확인일: LABOR_GUIDE_CHECKED. 해마다 요율을 추가할 때 이 안내도 함께 확인한다(docs/RATES-UPDATE.md).
+import {RATES} from './pay-rules';
+export const LABOR_GUIDE_YEAR=2026;
+export const LABOR_GUIDE_CHECKED='2026-10-04';
+const r=RATES[LABOR_GUIDE_YEAR];
+const pct=(v:number,d=2)=>(v*100).toFixed(d).replace(/\.?0+$/,'')+'%';
+const wonOf=(n:number)=>Math.round(n).toLocaleString('ko-KR')+'원';
+export const laborSources={insurance:'https://www.4insure.or.kr/',law:'https://www.law.go.kr/법령/근로기준법',contract:'https://www.moel.go.kr/mainpop2.do',slip:'https://www.moel.go.kr/news/cardinfo/view.do?bbs_seq=20230500426',minimum:'https://www.moel.go.kr/news/enews/report/enewsView.do?news_seq=18144',delivery:'https://1350.moel.go.kr/rtmview.do?id=1000308076',retirement:'https://1350.moel.go.kr/home/hp/retirementpaycal/retirementpaycal.jsp',retireLaw:'https://www.law.go.kr/법령/근로자퇴직급여보장법',tax:'https://d.nts.go.kr/nts/cm/cntnts/cntntsView.do?cntntsId=238925&mi=40349',income:'https://j.nts.go.kr/nts/cm/cntnts/cntntsView.do?cntntsId=8165&mi=6769',small:'https://www.moel.go.kr/news/cardinfo/view.do?bbs_seq=20220500493',weekly:'https://1350.moel.go.kr/rtmview.do?id=1000261283'};
 export const laborGuide=[
+['급여·공제',`${LABOR_GUIDE_YEAR}년 최저임금`,`${LABOR_GUIDE_YEAR}년 최저임금은 시간급 ${wonOf(r.minimumWage)}입니다. 주 40시간(주휴 포함 월 209시간) 기준 월 환산액은 ${wonOf(r.minimumWage*209)}입니다. 수습 3개월 감액은 1년 이상 계약이고 단순노무직이 아닐 때만 가능하므로 따로 확인하세요.`,'minimum'],
+['급여·공제',`${LABOR_GUIDE_YEAR}년 4대보험 근로자 부담률`,`국민연금 ${pct(r.pension)}, 건강보험 ${pct(r.health,3)}, 장기요양보험은 건강보험료의 ${pct(r.care)}, 고용보험(실업급여) ${pct(r.employment,1)}입니다. 사업주는 같은 몫에 고용안정·직업능력개발 보험료와 산재보험료를 더 냅니다. 국민연금은 기준소득월액 상·하한이 있어요.`,'insurance'],
 ['입사·근로계약','계약 형태와 필수 기재사항','기간의 정함 없음·기간제·단시간·일용 등 실제 근로조건을 기준으로 작성합니다. 임금, 소정근로시간, 휴일·휴가 등을 명확히 하고 계약서 사본을 근로자에게 교부합니다.','contract'],
 ['입사·근로계약','계약 변경·갱신·수습','시급·업무·근무시간 변경은 새 조건과 적용일을 기록하세요. 수습이라는 명칭만으로 모든 권리가 제외되는 것은 아닙니다. 계약 종료일과 갱신 여부를 별도로 확인하세요.','law'],
 ['입사·근로계약','기간제·단시간·일용·용역 구분','계약서 제목이나 3.3% 공제 여부만으로 근로자 여부를 결정하지 않습니다. 업무 지휘·감독 등 실제 관계와 소득 성격을 함께 검토하세요.','income'],
@@ -7,7 +17,7 @@ export const laborGuide=[
 ['근무·휴가','주휴일·주휴수당','주 소정근로시간과 소정근로일 개근 여부 등 적용 요건을 확인합니다. 통상 4주 평균 주 15시간 이상인지도 검토해야 합니다. 단순 출퇴근 합계만으로 자동 확정하지 않습니다.','weekly'],
 ['근무·휴가','연장·야간·휴일근로','상시 근로자 수, 근로 형태, 실제 근로시간에 따라 가산수당 적용을 검토합니다. 중복 가산·야간 시간대·휴일의 구분을 확인하고 계산 근거를 기록하세요.','law'],
 ['근무·휴가','연차·휴가·휴직','상시 인원과 근속·출근율 등 적용 조건을 확인합니다. 법정 기준과 회사의 별도 약정을 구분하여 관리하세요. 출산·육아 관련 권리는 해당 특별법도 확인합니다.','law'],
-['급여·공제','최저임금·임금 지급','해당 연도의 최저임금, 임금 산입 항목, 정기 지급일을 확인하세요. 본 서비스의 임금 입력값이 자동으로 적법성을 보장하지는 않습니다.','contract'],
+['급여·공제','최저임금·임금 지급','최저임금 산입 항목과 매월 1회 이상 정기 지급일을 지켜야 합니다. 해마다 바뀌는 최저임금은 위 항목과 급여 화면 경고로 확인하세요. 본 서비스의 임금 입력값이 자동으로 적법성을 보장하지는 않습니다.','contract'],
 ['급여·공제','급여명세서 기재·교부','직원을 특정할 정보, 지급일, 임금 총액, 기본급과 수당 등 항목별 금액·계산방법, 공제 항목·금액을 기재합니다. 이메일 교부가 가능하며 반송 등 도달 실패도 확인해야 합니다.','slip'],
 ['급여·공제','이메일 교부·수신 주소','가입 시 본인이 확인한 이메일을 사용하세요. 발송 접수와 실제 도달은 구분합니다. 반송·실패 시 재교부하고 발송 기록을 보존하세요.','delivery'],
 ['급여·공제','근로소득·사업소득·3.3%','원천징수 대상 인적용역 사업소득의 3.3%에는 지방소득세가 포함됩니다. 실제 고용관계가 있는 근로소득과 구분하고 적용 여부를 확인한 뒤 선택하세요.','tax'],
@@ -18,5 +28,5 @@ export const laborGuide=[
 ['사업장 기준','5인 미만·이상 사업장','모든 규정이 사업장 규모에 따라 동일하게 적용되는 것은 아닙니다. 소규모 사업장에도 계약·휴게·주휴·퇴직급여 등 적용되는 규정이 있습니다.','small'],
 ['사업장 기준','연소자·외국인·모성보호','연령·체류자격·업무 제한, 출산·육아 보호 등 별도 규정과 서류가 필요한지 확인하세요. 일반 계약 양식 하나로 모든 근로 형태를 처리하지 않습니다.','law'],
 ['사업장 기준','기록 보존·개인정보·분쟁 대응','계약·임금·근태 변경 기록을 보존하고 필요한 사람에게만 접근을 허용하세요. 분쟁 시 실제 사실관계와 공식 법령을 기준으로 전문가에게 확인하세요.','law']
-] as const;
+] as [string,string,string,keyof typeof laborSources][];
 
