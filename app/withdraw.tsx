@@ -5,7 +5,7 @@ import {ExportStore} from './limits-note';
 export function Withdraw(){
  const [info,setInfo]=useState<any>(null),[signedIn,setSignedIn]=useState<boolean|null>(null),[password,setPassword]=useState(''),[confirm,setConfirm]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[done,setDone]=useState('');
  const load=()=>fetch('/api/account').then(r=>r.ok?r.json():null).then(setInfo).catch(()=>setInfo(null));
- useEffect(()=>{fetch('/api/auth').then(r=>r.json()).then(d=>{setSignedIn(!!d.authenticated);if(d.authenticated)load()}).catch(()=>setSignedIn(false))},[]);
+ useEffect(()=>{fetch('/api/auth').then(r=>r.json()).then((d:any)=>{setSignedIn(!!d.authenticated);if(d.authenticated)load()}).catch(()=>setSignedIn(false))},[]);
  if(signedIn===false)return <main className="auth-card withdraw"><h1>회원 탈퇴</h1><p>탈퇴하려면 먼저 로그인해 주세요.</p><a className="saas-primary" href="/login?next=/withdraw">로그인</a></main>;
  const owner=info?.access==='owner'&&info?.onboarded,deletion=info?.account?.deletion;
  async function post(body:any){setBusy(true);setError('');try{const r=await fetch('/api/withdraw',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const d:any=await r.json();if(!r.ok)throw Error(d.error);return d}catch(e){setError(e instanceof Error?e.message:'처리하지 못했어요.');return null}finally{setBusy(false)}}
