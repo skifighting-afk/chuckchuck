@@ -393,3 +393,24 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('empty input refused',(()=>{try{imagesToPdf([]);return false}catch{return true}})());
  console.log('PASS: PDF 저장.');
 }
+
+// 작업 096·097·035: 오늘 할 일, 월말 마감 체크리스트, 지급일 경고
+{
+ const {todayTasks,monthChecklist,payDateIssue}=await import('../dist/server/close-check.js');
+ const s=normalizeTeam(null);const e0=s.employees[0],e1=s.employees[1],b=e0.branchId;
+ for(const e of s.employees){e.status='재직';e.contract.status='체결 완료';e.income='근로소득';for(const k of Object.keys(e.insurances))e.insurances[k]={status:'가입',reason:''};e.payType='시급';e.wage=11000;e.email='x'+e.id+'@ex.invalid';}
+ s.attendance=[{id:'a1',employeeId:e0.id,start:'2026-10-03T00:00:00.000Z',end:null,breakMinutes:0,breakStart:null}];
+ s.requests=[{id:'r',status:'승인 대기',before:{id:'a1',employeeId:e1.id,start:'2026-10-02T00:00:00.000Z'},after:{start:'2026-10-02T00:00:00.000Z'}}];
+ e1.contract.status='서명 대기';e1.endDate='2026-10-20';
+ const t=todayTasks(s,b,'2026-10-05',{pendingLeaves:2,pendingSwaps:1,unsentPayslips:3});const c=k=>t.find(x=>x.key===k)?.count||0;
+ ok('오늘 할 일: 정정·휴가·대타·퇴근 누락·계약·명세서·만료',c('corrections')===1&&c('leaves')===2&&c('swaps')===1&&c('clockout')===1&&c('contracts')===1&&c('payslips')===3&&c('ending')===1);
+ ok('오늘 출근 중인 사람은 퇴근 누락이 아님',todayTasks(s,b,'2026-10-03').every(x=>x.key!=='clockout'));
+ ok('0건 항목은 숨김',todayTasks(s,b,'2026-10-05').every(x=>x.count>0));
+ e0.wage=10000;const m=monthChecklist(s,b,'2026-10','2026-10-08',{pendingLeavesInMonth:1});const g=k=>m.find(x=>x.key===k);
+ ok('마감: 퇴근 누락·정정·휴가·최저시급·계약 확인 필요',!g('clockout').ok&&!g('corrections').ok&&!g('leaves').ok&&!g('minwage').ok&&g('minwage').detail.includes(e0.name)&&!g('contract').ok&&g('insurance').ok);
+ ok('마감: 지급일 평일이면 통과',g('paydate').ok);
+ ok('지급일 토요일 경고',payDateIssue('2026-10-10').includes('토요일'));
+ ok('지급일 공휴일(개천절) 경고',payDateIssue('2026-10-09').includes('한글날')||payDateIssue('2026-10-03').includes('개천절'));
+ ok('지급일 평일은 문제 없음',payDateIssue('2026-10-08')==='');
+ console.log('PASS: 오늘 할 일·월말 마감·지급일.');
+}

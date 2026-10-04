@@ -71,6 +71,10 @@ await step('작업 050: 직원이 근무 가능 시간 제출 → 사장님 초�
  await owner.goto(B+'/app?screen=schedule',{waitUntil:'networkidle'});await owner.click('button:has-text("가능 시간으로 초안")');await owner.getByText('근무 가능 시간 낸 직원 1/1명').waitFor();await owner.getByText('토 09:00~18:00').waitFor();await owner.click('[role=dialog] button:has-text("닫기")');
  await staff.goto(B+'/app',{waitUntil:'networkidle'});
 });
+await step('작업 096: 사장님 홈에 오늘 할 일',async()=>{
+ await owner.goto(B+'/app',{waitUntil:'networkidle'});await owner.getByRole('heading',{name:/오늘 할 일/}).waitFor();
+ const text=await owner.locator('.today-tasks').innerText();if(!/근로계약서 미체결|처리할 일이 없어요/.test(text))throw Error('오늘 할 일 내용 이상: '+text);
+});
 await step('매장 매뉴얼: 사장님이 사진과 함께 작성 → 직원이 바로 확인',async()=>{
  await owner.goto(B+'/app?screen=manual',{waitUntil:'networkidle'});await owner.click('button:has-text("새 매뉴얼")');
  await owner.fill('label:has-text("제목") input','마감 청소 순서');await owner.fill('label:has-text("1단계") textarea','바닥을 쓸고 대걸레로 닦아요');
@@ -115,7 +119,7 @@ await step('작업 052: 안드로이드 휴대폰에서 매장 QR 사진으로 �
  await ctx.close();
 });
 await step('급여 확정 (지급일·확인 체크)',async()=>{
- await owner.goto(B+'/app?screen=payroll',{waitUntil:'networkidle'});await owner.click('button:has-text("급여 검토·확정")');
+ await owner.goto(B+'/app?screen=payroll',{waitUntil:'networkidle'});await owner.click('button:has-text("급여 검토·확정")');await owner.getByText(/마감 전 확인/).waitFor();
  await owner.check('label:has-text("수당·공제·근무 누락") input');await owner.click('button:has-text("급여 확정")');await owner.getByText('급여 확정 · 잠금').first().waitFor();
  const pay=await owner.locator('table').first().innerText();if(!/[1-9][\d,]*원/.test(pay))throw Error('확정 급여가 0원이에요: '+pay.slice(0,200));
 });
