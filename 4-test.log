@@ -959,7 +959,7 @@ PASS 36. 2026-03-31: no attendance in the future
 PASS: 체험 화면 숫자(급여·명세서·임금대장 합계).
 
 ── check-error-messages
-PASS: 오류 문구 346개 모두 다음 행동 안내 포함.
+PASS: 오류 문구 352개 모두 다음 행동 안내 포함.
 PASS: 오류 번호·로그 개인정보 제거.
 
 ── check-attendance-table
@@ -1065,6 +1065,21 @@ PASS: 가게 대표 넘기기.
 
 ── check-rate-limit
 PASS: 요청 제한(계정당 저장 분당 300, IP당 분당 600).
+
+── check-push
+1. PASS RFC 8291 예시와 같은 암호문
+2. PASS VAPID 서명이 공개키로 검증됨
+3. PASS VAPID aud는 푸시 서버 주소
+4. PASS 키가 없으면 공개키 없음
+5. PASS 키가 없으면 구독 거부
+6. PASS http 주소 구독 거부
+7. PASS 구독 저장
+8. PASS 내 기기 1대
+9. PASS 휴가 결과 알림 1건 전송
+10. PASS 암호화 본문과 VAPID 머리말
+11. PASS 기기에서 풀린 알림 내용
+12. PASS 만료된 구독은 지움
+PASS: 웹 푸시.
 
 > chuckchuck@0.1.0 check:function
 > node scripts/check-supabase-function.mjs
