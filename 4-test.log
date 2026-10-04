@@ -359,6 +359,7 @@ PASS 12. busy camera explains retry
 12/12 passed
 
 ── check-saas
+PASS: 연차 자동 계산 반영.
 PASS: approved leave blocks shifts; overlapping shifts blocked.
 PASS: 요금제(베이직·프로 지점 구간 요금, VAT 포함, 직원 수 제한 없음, 30일 체험, 6·12개월 할인, QR은 프로, 체험 종료 후 조회만, 예전 무료 고객 보호).
 
@@ -684,6 +685,22 @@ PASS 125. average 4.8 but 5+ days ≥ half → 5명 이상
 PASS 126. average 5.2 but under-5 days ≥ half → 5명 미만
 PASS 127. window is previous month
 PASS: 상시 근로자 수.
+PASS 128. 5명 미만은 미적용
+PASS 129. 주 15시간 미만 미적용
+PASS 130. 1년 미만: 개근 개월마다 1일 (1/15 입사 → 10/5까지 8일)
+PASS 131. 입사 1개월 되는 날 1일 발생
+PASS 132. 1년 미만 최대 11일
+PASS 133. 1년 되는 날 15일 추가(월 개근분 11일은 각 1년 동안 유효)
+PASS 134. 월 개근분은 발생 1년 뒤 소멸
+PASS 135. 3년차 16일
+PASS 136. 21년차 25일 상한
+PASS 137. 주 20시간은 비례(1년차 7.5일)
+PASS 138. 말일 입사: 1/31 → 2/28 발생
+PASS 139. 다음 발생 예정
+PASS 140. 승인된 연차만 차감
+PASS 141. 퇴사자는 퇴사일 기준
+PASS 142. 미사용 연차수당 = 일수 × 8시간 × 통상시급
+PASS: 연차 자동 발생.
 
 ── check-claims
 PASS: 과장·허위 문구 검사 (화면·홈페이지).
@@ -759,7 +776,7 @@ PASS 36. 2026-03-31: no attendance in the future
 PASS: 체험 화면 숫자(급여·명세서·임금대장 합계).
 
 ── check-error-messages
-PASS: 오류 문구 262개 모두 다음 행동 안내 포함.
+PASS: 오류 문구 265개 모두 다음 행동 안내 포함.
 PASS: 오류 번호·로그 개인정보 제거.
 
 ── check-attendance-table
