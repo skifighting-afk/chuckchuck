@@ -139,6 +139,7 @@ PASS 10 correction-input cases: KST, invalid dates/hours, valid, reversed, overn
 Entry/join/contracts/manager checks: 51 passed
 
 ── check-evidence
+PASS expired evidence and login-limit rows are purged; unexpired rows stay.
 PASS evidence auth, owner/self only, tenant isolation, origin, consent, signature, size, quota, expiry and deletion.
 
 ── check-final-qa
