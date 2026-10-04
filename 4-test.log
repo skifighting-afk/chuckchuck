@@ -497,6 +497,11 @@ PASS 33. 3h shift needs no break
 PASS 34. attendance shortfalls counted
 PASS 35. payroll warns about short breaks
 PASS: 휴게시간 법정 기준 경고.
+PASS 36. complete contract has nothing missing
+PASS 37. missing duties and holiday are named
+PASS 38. fixed-term needs an end date
+PASS 39. part-time needs weekly hours
+PASS: 근로계약서 필수 기재사항 검사.
 
 > chuckchuck@0.1.0 check:function
 > node scripts/check-supabase-function.mjs
