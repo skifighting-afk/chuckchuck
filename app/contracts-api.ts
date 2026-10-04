@@ -66,7 +66,7 @@ export async function contractsApi(request:Request,env:Env){
    const d=JSON.parse(row.document_json);
    if(b.documentHash!==row.document_hash||await digest(row.document_json)!==row.document_hash)return json({error:'문서가 일치하지 않아요. 새로 확인해 주세요.'},409);
    if(b.consent!==true||b.name?.trim()!==d.employeeName.trim()||!['app','email','paper'].includes(b.deliveryMethod))return json({error:'본인 성명과 계약 동의, 사본 받는 방법을 확인해 주세요.'},400);
-   const identity=await confirmSigner(request,env,b.password,b.deliveryMethod!=='app');
+   const identity=await confirmSigner(request,env,b.password,b.deliveryMethod==='email');
    if(identity.email.toLowerCase()!==d.employeeEmail.toLowerCase())return json({error:'계약서 이메일과 로그인 이메일이 달라요. 사장님께 다시 요청해 주세요.'},409);
    if(!linked||linked.owner!==row.owner_id||linked.access==='revoked')return json({error:'매장 소속을 다시 확인해 주세요.'},403);
    const e=team!.employees.find(e=>e.id===row.employee_id);if(!e||await digest(source(e))!==d.sourceHash)return json({error:'직원 정보나 근로조건이 바뀌었어요. 사장님이 기존 요청을 철회하고 새로 보내야 해요.'},409);

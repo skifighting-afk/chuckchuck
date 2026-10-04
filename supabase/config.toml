@@ -1,0 +1,7 @@
+# supabase CLI 설정. 실제 프로젝트는 GitHub Actions에서 SUPABASE_PROJECT_REF로 연결한다.
+project_id = "chuckchuck"
+
+[functions.api]
+# 로그인 토큰은 함수 안(app/auth-api.ts)에서 직접 확인한다. CORS 사전 요청(OPTIONS)이 통과하려면 꺼 둬야 한다.
+verify_jwt = false
+entrypoint = "./functions/api/index.js"

@@ -1,7 +1,7 @@
 import {mailReady} from '../lib/mail';
 import {adminProjection,summarizeStore,adminOverview,filterAdminStores} from '../lib/admin-overview';
 export type AdminEnv={DB:D1Database,HQ_ADMIN_EMAIL?:string,HQ_NATIVE_USER_ID?:string,RESEND_API_KEY?:string,EMAIL_FROM?:string};
-export function isHQ(request:Request,env:AdminEnv){const id=request.headers.get('oai-authenticated-user-id'),email=request.headers.get('oai-authenticated-user-email')?.trim().toLowerCase();if(!id)return false;if(id.startsWith('native:'))return !!env.HQ_NATIVE_USER_ID&&id===env.HQ_NATIVE_USER_ID;return !!env.HQ_ADMIN_EMAIL&&email===env.HQ_ADMIN_EMAIL.trim().toLowerCase()}
+export function isHQ(request:Request,env:AdminEnv){const id=request.headers.get('oai-authenticated-user-id'),email=request.headers.get('oai-authenticated-user-email')?.trim().toLowerCase(),verified=request.headers.get('oai-authenticated-user-email-verified')==='true';if(!id)return false;if(env.HQ_NATIVE_USER_ID&&id===env.HQ_NATIVE_USER_ID)return true;return !!env.HQ_ADMIN_EMAIL&&verified&&email===env.HQ_ADMIN_EMAIL.trim().toLowerCase()}
 const json=(data:any,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 export async function adminApi(request:Request,env:AdminEnv){
  if(!isHQ(request,env))return json({error:'본사 운영 계정만 이용할 수 있습니다.'},403);

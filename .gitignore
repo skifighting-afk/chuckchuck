@@ -45,3 +45,5 @@ next-env.d.ts
 /outputs/
 /work/
 /node_modules
+/supabase/functions/api/index.js
+/supabase/.temp

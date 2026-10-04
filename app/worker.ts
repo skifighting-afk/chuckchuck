@@ -2,7 +2,7 @@ import {documentsApi} from './documents-api';
 import {normalizeJoinCode} from '../lib/join-code';
 import {contractsApi} from './contracts-api';
 import {personalTeam} from '../lib/personal-team';
-import {nativeAuth,withNativeIdentity} from './auth-api';
+import {nativeAuth,withNativeIdentity,type AuthEnv} from './auth-api';
 import {adminApi,isHQ} from './admin-api';
 import {correctionError} from '../lib/attendance-review';
 import {teamSchema,normalizeTeam,calculate,contractText,kdate,attendanceSchema,newMember} from '../lib/team-model';
@@ -12,7 +12,7 @@ import {accountApi,resolveStore} from './saas-api';
 import {plans,trialStatus,isPlan,canWrite,capacityError,hasFeature} from '../lib/plans';
 import {evidenceApi} from './evidence-api';
 import {operationsApi} from './operations-api';
-type Env={HQ_ADMIN_EMAIL?:string,HQ_NATIVE_USER_ID?:string,DB:D1Database,ASSETS:{fetch:(r:Request)=>Promise<Response>},RESEND_API_KEY?:string,EMAIL_FROM?:string};
+type Env=AuthEnv&{HQ_ADMIN_EMAIL?:string,HQ_NATIVE_USER_ID?:string,DB:D1Database,ASSETS?:{fetch:(r:Request)=>Promise<Response>},RESEND_API_KEY?:string,EMAIL_FROM?:string};
 const json=(v:unknown,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store'}});
 const same=(a:any,b:any)=>JSON.stringify(a)===JSON.stringify(b);
 const esc=(s:any)=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
@@ -20,8 +20,7 @@ export function slipText(row:any,month:string,date:string,store:string){return [
 export async function api(request:Request,env:Env){
  const path=new URL(request.url).pathname;
  if(path==='/api/auth')return nativeAuth(request,env);
- // HQ uses its existing platform identity independently of customer email sessions.
- if(path==='/api/admin')return adminApi(isHQ(request,env)?request:await withNativeIdentity(request,env),env);
+ if(path==='/api/admin')return adminApi(await withNativeIdentity(request,env),env);
  request=await withNativeIdentity(request,env);
  if(path==='/api/documents')return documentsApi(request,env);
  if(path==='/api/contracts')return contractsApi(request,env);
@@ -113,9 +112,9 @@ export default {async fetch(request:Request,env:Env){
  // browser URL/query so onboarding, staff links and account routing still work.
  if(['GET','HEAD'].includes(request.method)&&appRoutes.has(url.pathname.replace(/\/$/,'')||'/')){
   url.pathname='/';url.search='';
-  return env.ASSETS.fetch(new Request(url,request));
+  return env.ASSETS!.fetch(new Request(url,request));
  }
- return env.ASSETS.fetch(request);
+ return env.ASSETS!.fetch(request);
 }};
 async function hashToken(token:string){return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token)))).map(n=>n.toString(16).padStart(2,'0')).join('')}
 async function join(request:Request,env:Env,userId:string){

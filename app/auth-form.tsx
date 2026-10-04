@@ -1,7 +1,7 @@
 import {useRef,useState} from 'react';
 import {ArrowRight,Eye,EyeOff} from 'lucide-react';
 export function AuthForm({role,next,account,admin=false}:{role:'owner'|'employee',next:string,account:any,admin?:boolean}){
- const employee=role==='employee',query=new URLSearchParams(location.search),reset=query.get('reset')||(query.get('mode')==='reset'?new URLSearchParams(location.hash.slice(1)).get('token'):null);
+ const employee=role==='employee',query=new URLSearchParams(location.search),reset=query.get('reset')||(query.get('mode')==='reset'?(new URLSearchParams(location.hash.slice(1)).get('access_token')||new URLSearchParams(location.hash.slice(1)).get('token')):null);
  const [mode,setMode]=useState<'login'|'register'|'recover'|'reset'>(reset?'reset':location.pathname==='/signup'||location.pathname==='/employee'||query.get('mode')==='signup'?'register':'login');
  const [email,setEmail]=useState(''),[name,setName]=useState(''),[password,setPassword]=useState(''),[visible,setVisible]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState(''),[other,setOther]=useState(false);const lock=useRef(false);
  const change=(value:typeof mode)=>{setMode(value);setError('');setMessage('');setPassword('')};
