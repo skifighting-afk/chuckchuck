@@ -5,9 +5,13 @@ import {Scanner} from '@tailwindcss/oxide';
 import {readFile,writeFile,mkdir,copyFile} from 'node:fs/promises';
 import path from 'node:path';
 
-const supabaseUrl=process.env.SUPABASE_URL||'http://localhost:54321';
-const anonKey=process.env.SUPABASE_ANON_KEY||'local-anon-key';
-if(process.env.CI&&process.env.REQUIRE_SUPABASE_CONFIG&&(!process.env.SUPABASE_URL||!process.env.SUPABASE_ANON_KEY))throw Error('SUPABASE_URL과 SUPABASE_ANON_KEY(저장소 Variables)가 필요해요.');
+import {existsSync,readFileSync} from 'node:fs';
+const fileConfig=existsSync('deploy.config.json')?JSON.parse(readFileSync('deploy.config.json','utf8')):{};
+const pick=k=>process.env[k]||fileConfig[k]||'';
+const supabaseUrl=pick('SUPABASE_URL')||'http://localhost:54321';
+const anonKey=pick('SUPABASE_ANON_KEY')||'local-anon-key';
+const appDomain=pick('APP_DOMAIN');
+if(process.env.CI&&process.env.REQUIRE_SUPABASE_CONFIG&&(!pick('SUPABASE_URL')||!pick('SUPABASE_ANON_KEY')))throw Error('SUPABASE_URL과 SUPABASE_ANON_KEY(저장소 Variables)가 필요해요.');
 
 await mkdir('dist/client',{recursive:true});
 await copyFile('lib/vendor/noble-hashes/LICENSE','dist/client/noble-hashes-LICENSE.txt');
@@ -21,7 +25,7 @@ const html='<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta nam
 await writeFile('dist/client/index.html',html);
 await writeFile('dist/client/404.html',html); // GitHub Pages: 모든 주소를 화면 앱으로
 await writeFile('dist/client/.nojekyll','');
-if(process.env.APP_DOMAIN)await writeFile('dist/client/CNAME',process.env.APP_DOMAIN.trim()+'\n');
+if(appDomain)await writeFile('dist/client/CNAME',appDomain.trim()+'\n');
 
 // 테스트가 불러 쓰는 서버 묶음
 await mkdir('dist/server',{recursive:true});
