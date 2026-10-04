@@ -594,6 +594,15 @@ PASS: 18세 미만 직원 보호 점검.
 PASS 47. this year rates are registered (update lib/pay-rules.ts RATES — see docs/RATES-UPDATE.md)
 PASS 48. unregistered year warns on payroll
 PASS: 요율 연간 갱신 경고.
+PASS 49. ledger only includes requested period
+PASS 50. ledger filters by branch
+PASS 51. ledger has 시행령 27조 items
+PASS 52. ledger extracts overtime and night hours
+PASS 53. ledger marks reopened month
+PASS 54. ledger csv has BOM and per-item columns
+PASS 55. ledger csv neutralizes formulas
+PASS 56. csv cell escapes leading minus and quotes
+PASS: 임금대장(근로기준법 제48조, 시행령 제27조).
 
 ── check-claims
 PASS: 과장·허위 문구 검사 (화면·홈페이지).
