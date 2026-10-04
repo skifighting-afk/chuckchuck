@@ -1,3 +1,4 @@
+import {authLimit} from './auth-api';
 import {documentsApi} from './documents-api';
 import {serverError,reportError} from '../lib/errors';
 import {payslipText} from '../lib/payslip';
@@ -31,8 +32,13 @@ export async function api(request:Request,env:Env){
  // 작업 056: 기한이 지난 탈퇴 예약을 로그인·계정 요청 때 조금씩 마무리한다.
  if(path==='/api/auth'||path==='/api/account')await processDeletions(env).catch(e=>{reportError('withdraw-purge',e);return 0});
  if(path==='/api/auth')return nativeAuth(request,env);
- if(path==='/api/admin')return adminApi(await withNativeIdentity(request,env),env);
  request=await withNativeIdentity(request,env);
+ // 작업 078: 모든 서버 경로 요청 제한 — IP당 분당 600회, 계정당 저장 요청 분당 300회(로그인 경로는 따로 더 엄격)
+ {const ip=(request.headers.get('x-forwarded-for')||'').split(',')[0].trim()||request.headers.get('cf-connecting-ip')||'',uid=request.headers.get('oai-authenticated-user-id');
+  const slow=()=>Response.json({error:'요청이 너무 많아요. 1분 뒤 다시 시도해 주세요.',code:'RATE_LIMITED'},{status:429,headers:{'Retry-After':'60','Cache-Control':'no-store'}});
+  if(ip&&!await authLimit(env as any,'api-ip:'+ip,600,60000))return slow();
+  if(uid&&request.method!=='GET'&&!await authLimit(env as any,'api-user:'+uid,300,60000))return slow();}
+ if(path==='/api/admin')return adminApi(request,env);
  if(path==='/api/documents')return documentsApi(request,env);
  if(path==='/api/contracts')return contractsApi(request,env);
  if(path==='/api/manager')return managerApi(request,env);
