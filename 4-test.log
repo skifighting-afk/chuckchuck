@@ -618,6 +618,16 @@ PASS 69. under 60h/month pension·health excluded
 PASS 70. 3.3% = 3% + 0.3% each floored
 PASS 71. below minimum wage flagged
 PASS: 인건비 계산기.
+PASS 72. repeat counts Mon/Wed/Fri for one month
+PASS 73. repeat skips day with overlapping shift
+PASS 74. repeat never exceeds cap
+PASS 75. repeated shifts do not conflict
+PASS 76. copy week moves dates by 7 days
+PASS 77. copy week skips overlapping overnight shift
+PASS 78. template keeps weekday
+PASS 79. template applies only to active employees
+PASS 80. conflict finder sees overnight overlap
+PASS: 근무표 반복·복사·템플릿.
 
 ── check-claims
 PASS: 과장·허위 문구 검사 (화면·홈페이지).
