@@ -718,6 +718,15 @@ PASS 151. startxref points to xref
 PASS 152. every xref offset points to its object
 PASS 153. empty input refused
 PASS: PDF 저장.
+PASS 154. 오늘 할 일: 정정·휴가·대타·퇴근 누락·계약·명세서·만료
+PASS 155. 오늘 출근 중인 사람은 퇴근 누락이 아님
+PASS 156. 0건 항목은 숨김
+PASS 157. 마감: 퇴근 누락·정정·휴가·최저시급·계약 확인 필요
+PASS 158. 마감: 지급일 평일이면 통과
+PASS 159. 지급일 토요일 경고
+PASS 160. 지급일 공휴일(개천절) 경고
+PASS 161. 지급일 평일은 문제 없음
+PASS: 오늘 할 일·월말 마감·지급일.
 
 ── check-claims
 PASS: 과장·허위 문구 검사 (화면·홈페이지).
