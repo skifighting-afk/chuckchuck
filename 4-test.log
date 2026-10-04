@@ -146,7 +146,11 @@ PASS 10 correction-input cases: KST, invalid dates/hours, valid, reversed, overn
 48. PASS unassigned approval blocked
 49. PASS manager can post branch notice
 50. PASS revoked permission blocked immediately
-Entry/join/contracts/manager checks: 50 passed
+51. PASS grant recorded
+52. PASS permission change recorded
+53. PASS revoke recorded with before/after
+54. PASS revoked manager loses manager API immediately
+Entry/join/contracts/manager checks: 54 passed
 
 ── check-evidence
 PASS expired evidence and login-limit rows are purged; unexpired rows stay.
@@ -395,7 +399,17 @@ PASS: 요금제(베이직·프로 지점 구간 요금, VAT 포함, 직원 수 �
 19. PASS previous code preserved as alias
 20. PASS previous shared link still finds correct store
 21. PASS new short code finds same store
-21/21 simple join checks passed
+22. PASS pause join
+23. PASS paused code refuses preview
+24. PASS paused code refuses apply
+25. PASS resumed code works
+26. PASS bad period rejected
+27. PASS 7-day expiry set
+28. PASS expired code refused
+29. PASS renew gives new code without expiry
+30. PASS old code stops after renew
+31. PASS new code works
+31/31 simple join checks passed
 
 ── check-simulation
 1. PASS entry route /app
@@ -833,7 +847,7 @@ PASS 36. 2026-03-31: no attendance in the future
 PASS: 체험 화면 숫자(급여·명세서·임금대장 합계).
 
 ── check-error-messages
-PASS: 오류 문구 316개 모두 다음 행동 안내 포함.
+PASS: 오류 문구 317개 모두 다음 행동 안내 포함.
 PASS: 오류 번호·로그 개인정보 제거.
 
 ── check-attendance-table
