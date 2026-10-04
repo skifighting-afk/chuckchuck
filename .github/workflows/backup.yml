@@ -1,0 +1,68 @@
+# 작업 006: 매일 새벽 DB 백업 (한국 시간 04:20)
+# - Supabase DB를 스키마·데이터로 내려받아 암호화(AES-256, 비밀번호 = 저장소 비밀값 BACKUP_PASSPHRASE)한 뒤
+#   Actions 보관 파일로 7일간 둔다. 저장소가 공개라서 암호화 없이 올리지 않는다(비밀값이 없으면 건너뜀).
+# - 복구 연습: docs/backup.md
+name: DB 백업
+on:
+  schedule:
+    - cron: '20 19 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: backup
+  cancel-in-progress: false
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: 준비물 확인
+        id: cfg
+        run: |
+          missing=""
+          for v in SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD SUPABASE_PROJECT_REF; do [ -z "${!v}" ] && missing="$missing $v"; done
+          if [ -n "$missing" ]; then echo "ok=no" >> "$GITHUB_OUTPUT"; echo "::error::백업할 수 없어요 — 저장소 비밀값이 없어요:$missing"; exit 1; fi
+          echo "ok=yes" >> "$GITHUB_OUTPUT"
+          # 암호화 비밀번호가 없으면 내려받기만 확인하고 파일은 버린다(공개 저장소에 평문을 올리지 않음).
+          if [ -z "$BACKUP_PASSPHRASE" ]; then echo "enc=no" >> "$GITHUB_OUTPUT"; echo "::warning::BACKUP_PASSPHRASE가 없어 백업 파일을 보관하지 않았어요. 내려받기 점검만 했어요 (docs/backup.md)"; else echo "enc=yes" >> "$GITHUB_OUTPUT"; fi
+      - uses: supabase/setup-cli@v1
+        if: steps.cfg.outputs.ok == 'yes'
+        with:
+          version: latest
+      - name: 내려받기
+        if: steps.cfg.outputs.ok == 'yes'
+        run: |
+          set -euo pipefail
+          supabase link --project-ref "$SUPABASE_PROJECT_REF" -p "$SUPABASE_DB_PASSWORD" >/dev/null
+          mkdir -p backup
+          supabase db dump --linked -p "$SUPABASE_DB_PASSWORD" -f backup/schema.sql
+          supabase db dump --linked -p "$SUPABASE_DB_PASSWORD" --data-only --use-copy -f backup/data.sql
+          supabase db dump --linked -p "$SUPABASE_DB_PASSWORD" --data-only --use-copy -s auth -f backup/auth-data.sql
+          ls -la backup
+          wc -l backup/*.sql
+          # 내용이 비었으면 실패로 본다(DB 연결 문제를 놓치지 않게).
+          [ -s backup/schema.sql ] && grep -q "app_users" backup/schema.sql
+      - name: 암호화
+        if: steps.cfg.outputs.enc == 'yes'
+        run: |
+          set -euo pipefail
+          stamp=$(TZ=Asia/Seoul date +%Y-%m-%d)
+          tar -czf - -C backup . | openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:BACKUP_PASSPHRASE -out "chukchuk-db-$stamp.tar.gz.enc"
+          rm -rf backup
+          sha256sum chukchuk-db-*.enc | tee checksum.txt
+          echo "STAMP=$stamp" >> "$GITHUB_ENV"
+      - uses: actions/upload-artifact@v4
+        if: steps.cfg.outputs.enc == 'yes'
+        with:
+          name: db-backup-${{ env.STAMP }}
+          path: |
+            chukchuk-db-*.enc
+            checksum.txt
+          retention-days: 7
+          if-no-files-found: error
