@@ -116,14 +116,15 @@ export async function nativeAuth(request:Request,env:Env){
  }catch{return json({error:'계정 처리를 완료하지 못했어요. 잠시 뒤 다시 시도해 주세요.'},500)}
 }
 
-export async function confirmSigner(request:Request,env:Env,password:unknown){
+export async function confirmSigner(request:Request,env:Env,password:unknown,requireVerified=true){
  const id=request.headers.get('oai-authenticated-user-id'),email=request.headers.get('oai-authenticated-user-email');
  if(!id||!email)throw Error('로그인한 계정으로 서명해 주세요.');
  if(id.startsWith('native:')){
   if(!await authLimit(env,'signer:'+id,10,15*60000))throw Error('시도가 많아요. 15분 뒤 다시 서명해 주세요.');
   const user=await env.DB.prepare('SELECT * FROM auth_users WHERE id=?').bind(id).first<any>();
-  if(!user?.email_verified)throw Error('계약서 서명 전에 내 이메일을 확인해 주세요.');
+  if(!user)throw Error('로그인 계정을 확인해 주세요.');
+  if(requireVerified&&!user.email_verified)throw Error('계약서 서명 전에 내 이메일을 확인해 주세요.');
   if(typeof password!=='string'||password.length>128||!equalHash(await passwordHash(password,user.salt),user.password_hash))throw Error('현재 비밀번호를 확인해 주세요.');
  }
- return {userId:id,email,authMethod:id.startsWith('native:')?'email-password':'platform-account',emailVerified:true};
+ return {userId:id,email,authMethod:id.startsWith('native:')?'email-password':'platform-account',emailVerified:!id.startsWith('native:')||request.headers.get('oai-authenticated-user-email-verified')==='true'};
 }

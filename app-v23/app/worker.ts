@@ -1,3 +1,4 @@
+import {documentsApi} from './documents-api';
 import {normalizeJoinCode} from '../lib/join-code';
 import {contractsApi} from './contracts-api';
 import {personalTeam} from '../lib/personal-team';
@@ -22,6 +23,7 @@ export async function api(request:Request,env:Env){
  // HQ uses its existing platform identity independently of customer email sessions.
  if(path==='/api/admin')return adminApi(isHQ(request,env)?request:await withNativeIdentity(request,env),env);
  request=await withNativeIdentity(request,env);
+ if(path==='/api/documents')return documentsApi(request,env);
  if(path==='/api/contracts')return contractsApi(request,env);
  if(path==='/api/manager')return managerApi(request,env);
  if(path==='/api/staff-join')return staffJoinApi(request,env);
