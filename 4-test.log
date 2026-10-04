@@ -776,7 +776,7 @@ PASS 36. 2026-03-31: no attendance in the future
 PASS: 체험 화면 숫자(급여·명세서·임금대장 합계).
 
 ── check-error-messages
-PASS: 오류 문구 265개 모두 다음 행동 안내 포함.
+PASS: 오류 문구 283개 모두 다음 행동 안내 포함.
 PASS: 오류 번호·로그 개인정보 제거.
 
 ── check-attendance-table
@@ -794,6 +794,36 @@ PASS: 오류 번호·로그 개인정보 제거.
 12. PASS export includes every attendance record
 13. PASS store purge removes attendance records
 13/13 passed
+
+── check-swaps
+1. PASS employee sees only own upcoming shifts
+2. PASS colleagues exclude self and other branch
+3. PASS past shift rejected
+4. PASS cannot request others shift
+5. PASS open 대타 request
+6. PASS status 구하는 중
+7. PASS duplicate blocked
+8. PASS other branch cannot see it
+9. PASS overlapping colleague blocked
+10. PASS requester cannot take own
+11. PASS ben accepts
+12. PASS waiting approval
+13. PASS employee cannot approve
+14. PASS owner approves
+15. PASS shift moved to ben
+16. PASS audit logged
+17. PASS targeted 교대
+18. PASS non-target cannot accept
+19. PASS 교대 needs my shift
+20. PASS ben already works sa at overlapping time
+21. PASS ben accepts 교대
+22. PASS changed shift cannot be approved
+23. PASS owner approves 교대
+24. PASS shifts exchanged
+25. PASS owner assigns
+26. PASS owner cancels
+27. PASS cancel leaves shift unchanged
+PASS: 대타·교대 요청·수락·승인·충돌 차단.
 
 > chuckchuck@0.1.0 check:function
 > node scripts/check-supabase-function.mjs
