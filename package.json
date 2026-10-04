@@ -11,7 +11,8 @@
     "check": "tsc --noEmit",
     "test": "node scripts/check-model.mjs",
     "check:function": "node scripts/check-supabase-function.mjs",
-    "e2e": "SUPABASE_URL=http://localhost:8790 SUPABASE_ANON_KEY=anon-test-key APP_DOMAIN= node scripts/portable-build.mjs && node scripts/e2e.mjs"
+    "e2e": "SUPABASE_URL=http://localhost:8790 SUPABASE_ANON_KEY=anon-test-key APP_DOMAIN= node scripts/portable-build.mjs && node scripts/e2e.mjs",
+    "mobile": "node scripts/mobile-check.mjs"
   },
   "dependencies": {
     "class-variance-authority": "0.7.1",
