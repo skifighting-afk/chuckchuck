@@ -79,8 +79,18 @@ PASS 14. valid QR clock out
 PASS 15. reopening QR keeps printed token
 PASS 16. rotation invalidates old QR
 PASS 17. rotated QR works
-PASS 18. owner manual correction path retained
-18/18 passed
+PASS 18. owner turns on moving QR
+PASS 19. employee cannot open live QR
+PASS 20. live QR not available for static branch
+PASS 21. live token shape
+PASS 22. printed QR rejected in moving mode
+PASS 23. forged live token rejected
+PASS 24. live token works right away
+PASS 25. live token photographed 90s ago rejected
+PASS 26. fresh live token works
+PASS 27. back to printed QR
+PASS 28. owner manual correction path retained
+28/28 passed
 
 ── check-correction-input
 PASS 10 correction-input cases: KST, invalid dates/hours, valid, reversed, overnight, excessive break, missing reason, active shift, missing start
@@ -823,7 +833,7 @@ PASS 36. 2026-03-31: no attendance in the future
 PASS: 체험 화면 숫자(급여·명세서·임금대장 합계).
 
 ── check-error-messages
-PASS: 오류 문구 314개 모두 다음 행동 안내 포함.
+PASS: 오류 문구 316개 모두 다음 행동 안내 포함.
 PASS: 오류 번호·로그 개인정보 제거.
 
 ── check-attendance-table
