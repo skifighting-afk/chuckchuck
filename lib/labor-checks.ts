@@ -51,3 +51,44 @@ export function contractMissing(e: ContractMember) {
   if (blank(e.email)) out.push('직원 이메일');
   return out;
 }
+
+/** 기준일에 만 나이(생년월만 아는 경우 그 달 1일생으로 보고 계산). 생년월이 없으면 null */
+export function ageAt(birthMonth: string | undefined, day: string) {
+  if (!birthMonth || !/^\d{4}-\d{2}$/.test(birthMonth)) return null;
+  const [by, bm] = birthMonth.split('-').map(Number), [y, m] = day.slice(0, 7).split('-').map(Number);
+  return y - by - (m < bm ? 1 : 0);
+}
+
+/**
+ * 18세 미만 직원(연소자) 점검. 근로기준법
+ * - 제64조: 15세 미만은 고용노동부 장관의 취직인허증이 있어야 한다.
+ * - 제66조: 가족관계기록사항 증명서와 친권자(후견인) 동의서를 사업장에 갖춰 두어야 한다.
+ * - 제69조: 1일 7시간, 1주 35시간을 넘지 못한다(당사자 합의 시 1일 1시간, 1주 5시간 한도 연장).
+ * - 제70조제2항: 오후 10시~오전 6시 근로와 휴일 근로는 본인 동의와 고용노동부 장관 인가가 있어야 한다.
+ */
+export function minorIssues(
+  e: {birthMonth?: string; minorDocs?: boolean},
+  records: {start: string; end: string | null; breakMinutes: number}[],
+  refDay: string,
+) {
+  const age = ageAt(e.birthMonth, refDay);
+  if (age === null || age >= 18) return [];
+  const out: string[] = [];
+  if (age < 15) out.push('15세 미만 직원은 고용노동부의 취직인허증이 있어야 해요(근로기준법 제64조).');
+  if (!e.minorDocs) out.push('18세 미만 직원은 가족관계증명서와 친권자 동의서를 갖춰 두어야 해요(제66조). 확인했으면 직원 정보에서 체크해 주세요.');
+  const KST = 9 * 3600000, byDay = new Map<string, number>(), byWeek = new Map<string, number>();
+  let night = 0;
+  for (const a of records) {
+    if (!a.end) continue;
+    const s = +new Date(a.start), t = +new Date(a.end), hours = Math.max(0, (t - s) / 3600000 - (a.breakMinutes || 0) / 60);
+    const d = new Date(s + KST).toISOString().slice(0, 10), wd = (new Date(d + 'T00:00:00Z').getUTCDay() + 6) % 7;
+    const mon = new Date(+new Date(d + 'T00:00:00Z') - wd * 86400000).toISOString().slice(0, 10);
+    byDay.set(d, (byDay.get(d) || 0) + hours); byWeek.set(mon, (byWeek.get(mon) || 0) + hours);
+    for (let m = s; m < t; m += 60000) { const h = new Date(m + KST).getUTCHours(); if (h >= 22 || h < 6) { night++; break; } }
+  }
+  const longDays = [...byDay.values()].filter(h => h > 7).length, longWeeks = [...byWeek.values()].filter(h => h > 35).length;
+  if (longDays) out.push(`하루 7시간을 넘긴 날이 ${longDays}일 있어요. 18세 미만은 하루 7시간이 기준이고, 합의해도 1시간까지만 늘릴 수 있어요(제69조).`);
+  if (longWeeks) out.push(`주 35시간을 넘긴 주가 ${longWeeks}주 있어요. 합의해도 5시간까지만 늘릴 수 있어요(제69조).`);
+  if (night) out.push(`밤 10시~오전 6시 근무가 ${night}건 있어요. 18세 미만은 본인 동의와 고용노동부 인가가 있어야 해요(제70조).`);
+  return out;
+}

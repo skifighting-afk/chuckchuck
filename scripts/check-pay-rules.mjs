@@ -93,3 +93,15 @@ ok('missing duties and holiday are named',contractMissing({...full,contract:{...
 ok('fixed-term needs an end date',contractMissing({...full,employment:'기간제',endDate:''}).includes('근로계약기간(종료일)'));
 ok('part-time needs weekly hours',contractMissing({...full,employment:'단시간',weeklyHours:0}).includes('주 소정근로시간'));
 console.log('PASS: 근로계약서 필수 기재사항 검사.');
+// 작업 037: 연소자 보호 (근로기준법 제64·66·69·70조)
+const {minorIssues,ageAt}=await import('../lib/labor-checks.ts');
+ok('age from birth month',ageAt('2009-11','2026-10-04')===16&&ageAt('2008-10','2026-10-04')===18&&ageAt('',' ')===null);
+ok('adults get no minor warnings',minorIssues({birthMonth:'1990-01'},[],'2026-09-01').length===0);
+ok('minor without documents is reminded',minorIssues({birthMonth:'2010-03'},[],'2026-09-01').some(w=>w.includes('제66조')));
+ok('under 15 needs an employment permit',minorIssues({birthMonth:'2012-05',minorDocs:true},[],'2026-09-01').some(w=>w.includes('취직인허증')));
+const teen=[shift('2026-09-07','09:00','18:00',60),shift('2026-09-08','18:00','23:00',0)];
+const iss=minorIssues({birthMonth:'2010-03',minorDocs:true},teen,'2026-09-01');
+ok('minor 8h day flagged',iss.some(w=>w.includes('하루 7시간')));
+ok('minor night work flagged',iss.some(w=>w.includes('밤 10시')));
+ok('documents checked: no document warning',!iss.some(w=>w.includes('제66조')));
+console.log('PASS: 18세 미만 직원 보호 점검.');
