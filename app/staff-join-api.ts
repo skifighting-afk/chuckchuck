@@ -4,6 +4,7 @@ import {resolveStore} from './saas-api';
 import {newMember,teamSchema} from '../lib/team-model';
 import {capacityError,canWrite,hasFeature} from '../lib/plans';
 const reply=(data:any,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
+const codeClosed=(c:any)=>c?.paused?'사장님이 지금 가입 신청을 받지 않도록 해 두었어요. 사장님께 확인해 주세요.':c?.expiresAt&&c.expiresAt<new Date().toISOString()?'가입 링크 기간이 끝났어요. 사장님께 새 링크를 받아 주세요.':'';
 export async function staffJoinApi(request:Request,env:{DB:D1Database}){
  const uid=request.headers.get('oai-authenticated-user-id'),email=request.headers.get('oai-authenticated-user-email')?.toLowerCase();
  if(!uid||!email)return reply({error:'본인 계정으로 로그인해 주세요.'},401);
@@ -24,7 +25,7 @@ export async function staffJoinApi(request:Request,env:{DB:D1Database}){
   if(!b.code)return reply({error:'가게 코드를 다시 확인해 주세요.'},400);
   const row=await env.DB.prepare("SELECT owner,data,version FROM stores WHERE EXISTS (SELECT 1 FROM jsonb_array_elements(coalesce(stores.data::jsonb->'_joinCodes','[]'::jsonb)) AS c(value) WHERE (c.value->>'code')=? OR (c.value->>'legacyCode')=?) LIMIT 1").bind(b.code,b.code).first<any>();
   if(!row)return reply({error:'가게 코드를 찾지 못했어요. 사장님께 확인해 주세요.'},404);
-  const d=JSON.parse(row.data),code=d._joinCodes.find((x:any)=>x.code===b.code||x.legacyCode===b.code),branch=d.branches.find((x:any)=>x.id===code.branchId);
+  const d=JSON.parse(row.data),code=d._joinCodes.find((x:any)=>x.code===b.code||x.legacyCode===b.code),branch=d.branches.find((x:any)=>x.id===code.branchId);if(codeClosed(code))return reply({error:codeClosed(code)},410);
   if(!branch)return reply({error:'지금 운영하지 않는 가게예요. 사장님께 새 가입 주소를 받아 주세요.'},409);
   const terms=hasFeature(d._account,'contracts')?(d._joinTerms||[]).find((x:any)=>x.branchId===branch.id):null;
   const profile=b.profile?joinProfileSchema.parse(b.profile):null;
@@ -47,7 +48,7 @@ export async function staffJoinApi(request:Request,env:{DB:D1Database}){
   if(typeof b.name!=='string'||!b.name.trim()||b.name.length>80||typeof b.phone!=='string'||!b.phone.trim()||b.phone.length>30||!/^[0-9+() -]{8,30}$/.test(b.phone)||b.phone.replace(/\D/g,'').length<8)return reply({error:'이름과 연락처를 입력해 주세요.'},400);
   const row=await env.DB.prepare("SELECT owner,data,version FROM stores WHERE EXISTS (SELECT 1 FROM jsonb_array_elements(coalesce(stores.data::jsonb->'_joinCodes','[]'::jsonb)) AS c(value) WHERE (c.value->>'code')=? OR (c.value->>'legacyCode')=?) LIMIT 1").bind(b.code,b.code).first<any>();
   if(!row)return reply({error:'사용할 수 없는 가게 코드입니다. 사장님께 확인해 주세요.'},404);
-  const d=JSON.parse(row.data),code=d._joinCodes.find((x:any)=>x.code===b.code||x.legacyCode===b.code);
+  const d=JSON.parse(row.data),code=d._joinCodes.find((x:any)=>x.code===b.code||x.legacyCode===b.code);if(codeClosed(code))return reply({error:codeClosed(code)},410);
   if(!d.branches.some((x:any)=>x.id===code.branchId))return reply({error:'지금 운영하지 않는 지점이에요. 지점을 다시 골라 주세요.'},409);
   const items=d._joinApplications||[],prev=items.find((x:any)=>x.userId===uid);
   if(prev?.status==='pending')return reply({ok:true,status:'pending'});
@@ -74,6 +75,10 @@ export async function staffJoinApi(request:Request,env:{DB:D1Database}){
   if(!d.branches.some((x:any)=>x.id===b.branchId))return reply({error:'지점을 확인해 주세요.'},400);
   const existing=(d._joinCodes||[]).find((x:any)=>x.branchId===b.branchId);
   if(!existing||existing.code.length!==8){assignedCode=newJoinCode();d._joinCodes=[...(d._joinCodes||[]).filter((x:any)=>x.branchId!==b.branchId),{branchId:b.branchId,code:assignedCode,...(existing?{legacyCode:existing.code}:{})}];}
+  // 작업 058: 새 코드로 바꾸기(이전 링크 즉시 중지), 받기 멈춤/다시 받기, 기간 설정
+  else if(b.renew===true){assignedCode=newJoinCode();d._joinCodes=d._joinCodes.map((x:any)=>x.branchId===b.branchId?{branchId:b.branchId,code:assignedCode,...(x.expiresAt?{expiresAt:x.expiresAt}:{})}:x);}
+  if(typeof b.paused==='boolean'||b.days!==undefined){if(b.days!==undefined&&![0,7,30].includes(b.days))return reply({error:'기간은 7일, 30일, 제한 없음 중에서 골라 주세요.'},400);d._joinCodes=d._joinCodes.map((x:any)=>{if(x.branchId!==b.branchId)return x;const y={...x};if(typeof b.paused==='boolean')y.paused=b.paused;if(b.days!==undefined){if(b.days)y.expiresAt=new Date(Date.now()+b.days*86400000).toISOString();else delete y.expiresAt}return y});}
+  if(b.renew===true||typeof b.paused==='boolean'||b.days!==undefined)d._audit=[...(d._audit||[]),{id:crypto.randomUUID(),at:new Date().toISOString(),actor:{id:uid,name:email,email},action:b.renew?'가입 링크 새로 발급':typeof b.paused==='boolean'?(b.paused?'가입 신청 받기 멈춤':'가입 신청 다시 받기'):'가입 링크 기간 변경',target:b.branchId,before:null,after:{days:b.days??null},reason:''}].slice(-1000);
  }else if(b.action==='review'){
   const a=d._joinApplications?.find((x:any)=>x.id===b.id&&x.status==='pending');
   if(!a||typeof b.approve!=='boolean')return reply({error:'처리할 신청을 찾지 못했어요. 목록을 새로고침해 주세요.'},409);

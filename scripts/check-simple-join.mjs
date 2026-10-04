@@ -33,5 +33,20 @@ ok('old code becomes 8 characters',owner.codes[0].code.length,8);
 ok('previous code preserved as alias',owner.codes[0].legacyCode,oldCode);
 ok('previous shared link still finds correct store',(await join('new-staff',{action:'preview',code:oldCode})).data.storeName,'가상가게');
 ok('new short code finds same store',(await join('new-staff',{action:'preview',code:owner.codes[0].code})).data.storeName,'가상가게');
+// 작업 058: 가입 링크 멈춤·기간·새 코드
+owner=(await join('owner')).data;let cur=owner.codes[0].code;
+ok('pause join',(await join('owner',{action:'code',branchId:'branch-main',paused:true,version:owner.version})).status,200);
+ok('paused code refuses preview',(await join('late-staff',{action:'preview',code:cur})).status,410);
+ok('paused code refuses apply',(await join('late-staff',{action:'apply',code:cur,name:'늦은직원',phone:'01011112222'})).status,410);
+owner=(await join('owner')).data;await join('owner',{action:'code',branchId:'branch-main',paused:false,version:owner.version});
+ok('resumed code works',(await join('late-staff',{action:'preview',code:cur})).status,200);
+owner=(await join('owner')).data;ok('bad period rejected',(await join('owner',{action:'code',branchId:'branch-main',days:3,version:owner.version})).status,400);
+await join('owner',{action:'code',branchId:'branch-main',days:7,version:owner.version});owner=(await join('owner')).data;ok('7-day expiry set',Math.abs(Date.parse(owner.codes[0].expiresAt)-Date.now()-7*86400000)<60000);
+{const r=await q('SELECT data FROM stores WHERE owner=?',id('owner')).first();const d=JSON.parse(r.data);d._joinCodes[0].expiresAt='2020-01-01T00:00:00.000Z';await q('UPDATE stores SET data=?,version=version+1 WHERE owner=?',JSON.stringify(d),id('owner')).run();}
+ok('expired code refused',(await join('late-staff',{action:'preview',code:cur})).status,410);
+owner=(await join('owner')).data;await join('owner',{action:'code',branchId:'branch-main',days:0,renew:true,version:owner.version});owner=(await join('owner')).data;
+ok('renew gives new code without expiry',owner.codes[0].code!==cur&&!owner.codes[0].expiresAt&&!owner.codes[0].legacyCode);
+ok('old code stops after renew',(await join('late-staff',{action:'preview',code:cur})).status,404);
+ok('new code works',(await join('late-staff',{action:'preview',code:owner.codes[0].code})).status,200);
 console.log(`${n}/${n} simple join checks passed`);
 await closeAll();
