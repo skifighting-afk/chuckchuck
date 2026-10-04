@@ -381,3 +381,15 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('적게 일한 직원부터',draftFromAvailability([{weekday:2,start:'09:00',end:'15:00',count:1,breakMinutes:30}],av,W,[{id:'y',employeeId:'a',date:'2026-10-05',start:'09:00',end:'15:00',breakMinutes:30}],staff,[],nid).made[0].employeeId==='c');
  console.log('PASS: 근무 가능 시간 초안.');
 }
+
+// PDF 저장(이미지 페이지 → A4 PDF)
+{
+ const {imagesToPdf}=await import('../lib/pdf.ts');
+ const jpeg=new Uint8Array([0xff,0xd8,0xff,0xd9]);const out=new TextDecoder('latin1').decode(imagesToPdf([{jpeg,width:1240,height:1754},{jpeg,width:1240,height:1754}],'합본'));
+ ok('PDF header/trailer',out.startsWith('%PDF-1.4')&&out.trimEnd().endsWith('%%EOF'));
+ ok('two pages',(out.match(/\/Type \/Page /g)||[]).length===2&&out.includes('/Count 2'));
+ const xref=Number(out.match(/startxref\n(\d+)/)[1]);ok('startxref points to xref',out.slice(xref,xref+4)==='xref');
+ const offs=[...out.slice(xref).matchAll(/(\d{10}) 00000 n/g)].map(m=>Number(m[1]));ok('every xref offset points to its object',offs.every((o,i)=>out.slice(o).startsWith((i+1)+' 0 obj')));
+ ok('empty input refused',(()=>{try{imagesToPdf([]);return false}catch{return true}})());
+ console.log('PASS: PDF 저장.');
+}
