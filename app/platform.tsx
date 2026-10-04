@@ -1,4 +1,6 @@
 import {DeviceSessions} from './devices';
+import {TextSizeToggle,applyTextSize} from './text-size';
+applyTextSize();
 import {ContractsDesk} from './contracts-desk';
 import {VerifyEmail} from './verify-email';
 import {AuthForm} from './auth-form';
@@ -50,7 +52,7 @@ export default function Platform(){
  if(!account.onboarded&&(qrEntry||account.user.role==='employee'))return <Shell><StaffJoin returnTo={qrEntry||"/app"}/></Shell>;
  if(!account.onboarded)return <Onboarding onDone={()=>location.assign('/app')} email={account.user.email} initial={planId(query.get('plan'))||'pro'}/>;
  if(path==='/signup'||path==='/account')return <Account data={account} reload={reload}/>;
- return <>{account.storeClosingAt&&<div className="closing-banner" role="status">{account.access==='owner'?<>탈퇴를 예약해 {new Date(account.storeClosingAt).toLocaleDateString('ko-KR')}에 가게 데이터가 삭제돼요. 지금은 읽기 전용이에요. <a href="/withdraw">예약 취소</a></>:<>이 가게는 {new Date(account.storeClosingAt).toLocaleDateString('ko-KR')}에 서비스에서 삭제될 예정이에요. 그 전에 <a href="/contracts">내 근로계약서와 임금명세서</a>를 내려받아 두세요.</>}</div>}<div className="account-strip"><a href="/account"><Store size={15}/>{account.storeName}<span>{account.access==='owner'?'계정·요금제':'내 계정'}</span></a>{account.hq&&<a href="/admin">본사 관리</a>}<span>{account.access==='employee'?'직원 계정':account.access==='manager'?'매니저 계정':account.account?.status==='active'?'이용 중':account.account?.status==='trialing'?`무료 체험 · ${Math.max(0,Math.ceil((+new Date(account.account.trialEndsAt)-Date.now())/86400000))}일 남음`:account.account?.status==='expired'||account.account?.status==='cancelled'?'체험 종료 · 조회 가능':'사전 운영'}</span><a href={account.user.authMethod==='email'?'/logout':signOut} target="_top"><LogOut size={14}/>로그아웃</a></div><TeamApp/></>;
+ return <>{account.storeClosingAt&&<div className="closing-banner" role="status">{account.access==='owner'?<>탈퇴를 예약해 {new Date(account.storeClosingAt).toLocaleDateString('ko-KR')}에 가게 데이터가 삭제돼요. 지금은 읽기 전용이에요. <a href="/withdraw">예약 취소</a></>:<>이 가게는 {new Date(account.storeClosingAt).toLocaleDateString('ko-KR')}에 서비스에서 삭제될 예정이에요. 그 전에 <a href="/contracts">내 근로계약서와 임금명세서</a>를 내려받아 두세요.</>}</div>}<div className="account-strip"><a href="/account"><Store size={15}/>{account.storeName}<span>{account.access==='owner'?'계정·요금제':'내 계정'}</span></a>{account.hq&&<a href="/admin">본사 관리</a>}<span>{account.access==='employee'?'직원 계정':account.access==='manager'?'매니저 계정':account.account?.status==='active'?'이용 중':account.account?.status==='trialing'?`무료 체험 · ${Math.max(0,Math.ceil((+new Date(account.account.trialEndsAt)-Date.now())/86400000))}일 남음`:account.account?.status==='expired'||account.account?.status==='cancelled'?'체험 종료 · 조회 가능':'사전 운영'}</span><TextSizeToggle/><a href={account.user.authMethod==='email'?'/logout':signOut} target="_top"><LogOut size={14}/>로그아웃</a></div><TeamApp/></>;
 }
 function ConsentGate({onDone}:{onDone:()=>Promise<void>}){
  // 작업 016: 약관·처리방침이 바뀌었거나 동의 기록이 없는 계정은 다시 동의해야 계속 쓸 수 있다.
