@@ -581,7 +581,11 @@ PASS 83. unsigned contract image is blocked
 PASS 84. in-app signing works with password without email service
 PASS 85. app signing sends no email
 PASS 86. app signature preserves truthful email verification state
-86/86 passed; no external email or real signatures sent.
+PASS 87. no change right after signing
+PASS 88. phone-only change is not a term change
+PASS 89. wage change detected with before/after
+PASS 90. change note has no blank brackets
+90/90 passed; no external email or real signatures sent.
 
 ── check-pay-rules
 PASS 1. overnight shift worked hours
