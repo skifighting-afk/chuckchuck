@@ -27,6 +27,7 @@ ok('owner of another store cannot accept',(await call('other','/api/account',{ac
 ok('heir password checked',(await call('heir','/api/account',{action:'transferAccept',owner:id('boss'),password:'nope'})).status,400);
 r=await call('heir','/api/account',{action:'transferAccept',owner:id('boss'),password:TEST_PASSWORD});ok('heir accepts',r.status,200);
 const st=await call('heir','/api/store');ok('heir now owns store with staff',[st.status,st.body.access,st.body.state.employees.length],[200,'owner',1]);
+ok('shift mirror moved',Number((await q('SELECT count(*) AS n FROM shift_records WHERE owner=?',id('boss')).first()).n)===0&&Number((await q('SELECT shift_mirror_drift(?) AS n',id('heir')).first()).n)===0);
 ok('attendance moved',Number((await q('SELECT count(*) AS n FROM attendance_records WHERE owner=?',id('heir')).first()).n),1);
 ok('contract moved, body unchanged',(await q("SELECT owner_id,document_json FROM contract_envelopes WHERE id='c1'").first()),{owner_id:id('heir'),document_json:'{}'});
 let blocked=false;try{await q("UPDATE contract_envelopes SET owner_id='x' WHERE id='c1'").run()}catch{blocked=true}ok('owner change still blocked outside transfer',blocked);
