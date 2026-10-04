@@ -13,6 +13,11 @@ additional_redirect_urls = ["env(APP_ORIGIN_PRIMARY)/login", "env(APP_ORIGIN_PRI
 # 가입은 앱 서버(/api/auth)를 통해서만 받는다. 서버는 관리자 권한으로 계정을 만든다.
 enable_signup = false
 jwt_expiry = 3600
+# 작업 077: 비밀번호 규칙을 앱(lib/password.ts validPassword)과 맞춘다.
+# 앱 규칙: 8~128자, 같은 글자 반복·12345678·password 같은 쉬운 조합 금지. Supabase는 최소 길이만 같은 값으로 강제한다.
+# (비밀번호 재설정은 Supabase로 바로 가지 않고 앱 서버 /api/auth를 거쳐 앱 규칙이 먼저 적용된다.)
+minimum_password_length = 8
+password_requirements = ""
 
 [auth.email]
 enable_signup = true
