@@ -1,6 +1,7 @@
 // 작업 071: 사장님이 가게 데이터 전체를 한 파일(JSON)로 내려받는다.
 // 근로기준법 제42조 보존 서류(근로계약서, 임금명세서, 출퇴근·근무 기록)를 사장님이 직접 보관할 수 있게 하는 것이 목적이다.
 import {resolveStore} from './saas-api';
+import {serverError} from '../lib/errors';
 
 const json = (v: unknown, status = 200) => Response.json(v, {status, headers: {'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff'}});
 // 화면 동작용 비밀값(출퇴근 QR 토큰, 초대 링크 해시)은 내보내지 않는다.
@@ -35,7 +36,7 @@ export async function exportApi(request: Request, env: {DB: D1Database}) {
     await env.DB.prepare('UPDATE app_users SET last_export_at=? WHERE id=?').bind(new Date().toISOString(), uid).run();
     const day = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
     return new Response(JSON.stringify(body, null, 2), {headers: {'Content-Type': 'application/json; charset=utf-8', 'Content-Disposition': `attachment; filename="chukchuk-export-${day}.json"`, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff'}});
-  } catch {
-    return json({error: '데이터를 모으지 못했어요. 잠시 뒤 다시 시도해 주세요.'}, 500);
+  } catch (e) {
+    return serverError('export', e, '데이터를 모으지 못했어요. 잠시 뒤 다시 시도해 주세요.');
   }
 }

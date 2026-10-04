@@ -1,4 +1,5 @@
 import {documentsApi} from './documents-api';
+import {serverError,reportError} from '../lib/errors';
 import {payslipText} from '../lib/payslip';
 import {normalizeJoinCode} from '../lib/join-code';
 import {contractsApi} from './contracts-api';
@@ -23,7 +24,7 @@ export function slipText(row:any,month:string,date:string,store:string){return p
 export async function api(request:Request,env:Env){
  const path=new URL(request.url).pathname;
  // 작업 056: 기한이 지난 탈퇴 예약을 로그인·계정 요청 때 조금씩 마무리한다.
- if(path==='/api/auth'||path==='/api/account')await processDeletions(env).catch(()=>0);
+ if(path==='/api/auth'||path==='/api/account')await processDeletions(env).catch(e=>{reportError('withdraw-purge',e);return 0});
  if(path==='/api/auth')return nativeAuth(request,env);
  if(path==='/api/admin')return adminApi(await withNativeIdentity(request,env),env);
  request=await withNativeIdentity(request,env);
@@ -108,7 +109,7 @@ export async function api(request:Request,env:Env){
   for(let attempt=0;attempt<4;attempt++){const latest=await env.DB.prepare('SELECT data,version FROM stores WHERE owner=?').bind(owner).first<any>();const d=JSON.parse(latest.data);const target=d._outbox.find((x:any)=>x.id===m.id);Object.assign(target,{status,providerId,processedAt:new Date().toISOString()});const saved=await env.DB.prepare('UPDATE stores SET data=?,version=?,updated_at=? WHERE owner=? AND version=?').bind(JSON.stringify(d),latest.version+1,new Date().toISOString(),owner,latest.version).run();if(saved.meta.changes)return json({...result(),state:normalizeTeam(d),audit:d._audit,outbox:d._outbox,version:latest.version+1});}return json({error:'발송 결과를 새로고침하여 확인해 주세요. 중복 전송하지 마세요.'},409);
  }
  return json(result());
- }catch(error){return json({error:error instanceof Error&&error.name!=='PostgresError'&&!/D1|SQLITE|constraint|database|relation|syntax/i.test(error.message)?error.message:'처리하지 못했습니다. 새로고침한 뒤 다시 시도해 주세요.'},400)}
+ }catch(error){return error instanceof Error&&error.name!=='PostgresError'&&!/D1|SQLITE|constraint|database|relation|syntax/i.test(error.message)?json({error:error.message},400):serverError('store',error,'처리하지 못했어요. 새로고침한 뒤 다시 시도해 주세요.',400)}
 }
 const appRoutes=new Set(['/admin','/admin/login','/','/app','/signup','/login','/account','/start','/demo','/try','/terms','/privacy','/employee','/staff-requests','/logout','/verify-email','/contracts','/manager']);
 export default {async fetch(request:Request,env:Env){

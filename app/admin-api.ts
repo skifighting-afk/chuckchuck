@@ -1,4 +1,5 @@
 import {mailReady} from '../lib/mail';
+import {serverError} from '../lib/errors';
 import {adminProjection,summarizeStore,adminOverview,filterAdminStores} from '../lib/admin-overview';
 export type AdminEnv={DB:D1Database,HQ_ADMIN_EMAIL?:string,HQ_NATIVE_USER_ID?:string,RESEND_API_KEY?:string,EMAIL_FROM?:string};
 export function isHQ(request:Request,env:AdminEnv){const id=request.headers.get('oai-authenticated-user-id'),email=request.headers.get('oai-authenticated-user-email')?.trim().toLowerCase(),verified=request.headers.get('oai-authenticated-user-email-verified')==='true';if(!id)return false;if(env.HQ_NATIVE_USER_ID&&id===env.HQ_NATIVE_USER_ID)return true;return !!env.HQ_ADMIN_EMAIL&&verified&&email===env.HQ_ADMIN_EMAIL.trim().toLowerCase()}
@@ -22,5 +23,5 @@ export async function adminApi(request:Request,env:AdminEnv){
  if(row.version!==b.version)return json({error:'매장 내용이 바뀌었습니다. 새로 확인한 뒤 저장해 주세요.'},409);
  const d=JSON.parse(row.data),now=new Date().toISOString();d._hq={status:b.status,note:b.note.trim(),history:[...(d._hq?.history||[]),{at:now,status:b.status,actor:request.headers.get('oai-authenticated-user-id')}].slice(-100)};
  const result=await env.DB.prepare('UPDATE stores SET data=?,version=version+1,updated_at=? WHERE owner=? AND version=?').bind(JSON.stringify(d),now,b.id,row.version).run();return result.meta.changes?json({ok:true}):json({error:'동시 변경이 있습니다. 새로 확인해 주세요.'},409);
- }catch{return json({error:'운영 정보를 불러오지 못했어요. 잠시 뒤 다시 시도해 주세요.'},400)}
+ }catch(e){return serverError('admin',e,'운영 정보를 불러오지 못했어요. 잠시 뒤 다시 시도해 주세요.')}
 }

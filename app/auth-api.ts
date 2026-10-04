@@ -2,6 +2,7 @@
 // 1) 요청의 Supabase 토큰을 확인해 기존 코드가 쓰던 oai-authenticated-user-* 헤더로 바꿔 주고
 // 2) 화면의 /api/auth 요청(가입·로그인·비밀번호 찾기·이메일 확인)을 Supabase Auth로 중계한다.
 import {digest,randomToken,validPassword} from '../lib/password';
+import {serverError,reportError} from '../lib/errors';
 import {mailReady,sendMail} from '../lib/mail';
 import {LEGAL,consentCurrent} from '../lib/legal';
 export type AuthEnv={DB:D1Database,SUPABASE_URL?:string,SUPABASE_ANON_KEY?:string,SUPABASE_SERVICE_ROLE_KEY?:string,RESEND_API_KEY?:string,EMAIL_FROM?:string,AUTH_FETCH?:typeof fetch};
@@ -136,7 +137,7 @@ export async function nativeAuth(request:Request,env:Env){
    return json({ok:true,role:user.role,emailVerified:!!user.email_verified,session:session(login.data)});
   }
   return json({error:'이 방법으로는 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},400);
- }catch{return json({error:'계정 처리를 완료하지 못했어요. 잠시 뒤 다시 시도해 주세요.'},500)}
+ }catch(e){return serverError('auth',e,'계정 처리를 완료하지 못했어요. 잠시 뒤 다시 시도해 주세요.')}
 }
 
 /** 서명 직전 본인 확인: 현재 비밀번호를 다시 확인하고, 이메일 확인 여부를 사실대로 기록한다. */

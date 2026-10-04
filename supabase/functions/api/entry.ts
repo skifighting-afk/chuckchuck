@@ -3,6 +3,7 @@
 import postgres from 'npm:postgres@3.4.5';
 import {api} from '../../../app/worker';
 import {PgD1,pgTypes} from '../../../lib/pg-d1';
+import {reportError} from '../../../lib/errors';
 
 declare const Deno: {env: {get(name: string): string | undefined}; serve(handler: (req: Request) => Promise<Response> | Response): unknown};
 const read = (name: string) => Deno.env.get(name) || undefined;
@@ -55,7 +56,7 @@ Deno.serve(async (req: Request) => {
     out.set('Strict-Transport-Security', 'max-age=31536000');
     return new Response(res.body, {status: res.status, headers: out});
   } catch (error) {
-    console.error(error);
-    return Response.json({error: '서버에서 요청을 처리하지 못했어요. 잠시 뒤 다시 시도해 주세요.'}, {status: 500, headers: cors});
+    const id = reportError('entry ' + req.method + ' ' + path, error);
+    return Response.json({error: `서버에서 요청을 처리하지 못했어요. 잠시 뒤 다시 시도해 주세요. 계속되면 오류 번호 ${id}를 알려 주세요.`, errorId: id}, {status: 500, headers: cors});
   }
 });

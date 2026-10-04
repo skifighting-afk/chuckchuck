@@ -1,4 +1,5 @@
 import {resolveStore} from './saas-api';
+import {serverError,reportError} from '../lib/errors';
 import {canWrite,hasFeature} from '../lib/plans';
 const json=(v:unknown,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 export async function evidenceApi(request:Request,env:{DB:D1Database}){
@@ -28,5 +29,5 @@ export async function evidenceApi(request:Request,env:{DB:D1Database}){
  const expiry=new Date(Date.now()+30*86400000).toISOString();
  const result=await env.DB.prepare('INSERT INTO leave_evidence (id,owner,leave_id,employee_id,mime,body,bytes,created_at,expires_at) SELECT ?,?,?,?,?,?,?,?,? WHERE (SELECT COUNT(*) FROM leave_evidence WHERE owner=? AND leave_id=?)<3 AND (SELECT COUNT(*) FROM leave_evidence WHERE owner=?)<100').bind(crypto.randomUUID(),linked.owner,leaveId,leave.employeeId,b.mime,b.body,binary.length,now,expiry,linked.owner,leaveId,linked.owner).run();
  return result.meta.changes?json({ok:true}):json({error:'파일은 신청당 3개, 가게 전체 100개까지 올릴 수 있어요. 필요 없는 파일을 지운 뒤 다시 올려 주세요.'},409);
- }catch{return json({error:'증빙을 처리하지 못했어요. 잠시 뒤 다시 시도해 주세요.'},500)}
+ }catch(e){return serverError('evidence',e,'증빙을 처리하지 못했어요. 잠시 뒤 다시 시도해 주세요.')}
 }

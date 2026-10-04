@@ -1,4 +1,5 @@
 import {resolveStore} from './saas-api';
+import {serverError} from '../lib/errors';
 import {trialStatus,canWrite,hasFeature} from '../lib/plans';
 import {z} from 'zod';
 const json=(v:unknown,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store'}});
@@ -54,5 +55,5 @@ export async function operationsApi(request:Request,env:{DB:D1Database}){
  data._operations=ops;data._audit=[...(data._audit||[]),{id:crypto.randomUUID(),at:now,actor,action:label,target,before:null,after:{id:b.id||null},reason:b.comment||b.reason||''}];
  const result=await env.DB.prepare('UPDATE stores SET data=?,version=?,updated_at=? WHERE owner=? AND version=?').bind(JSON.stringify(data),row.version+1,now,linked.owner,row.version).run();
  if(!result.meta.changes)return json({error:'동시 변경이 있습니다. 새로고침해 주세요.'},409);row.version++;return json(view());
- }catch(e){console.error('Operations request failed',e instanceof Error?e.name:'Unknown');return json({error:'정보를 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.'},500)}
+ }catch(e){return serverError('operations',e,'정보를 처리하지 못했어요. 잠시 뒤 다시 시도해 주세요.')}
 }

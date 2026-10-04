@@ -3,6 +3,7 @@
 //   그 사이에는 가게가 읽기 전용이 되고, 사장님은 언제든 취소할 수 있다. 법정 보존 서류(근로기준법 제42조)는 사장님이 내려받은 파일로 보관한다.
 // - 직원·매니저: 가게와의 연결을 끊고 로그인 계정을 바로 지운다. 가게 쪽 근무·급여 기록과 계약서는 사장님의 보존 서류로 남는다.
 import {confirmSigner,deleteAuthUser,type AuthEnv} from './auth-api';
+import {serverError,reportError} from '../lib/errors';
 import {resolveStore} from './saas-api';
 
 export const WITHDRAW_GRACE_DAYS = 30;
@@ -76,5 +77,5 @@ export async function withdrawApi(request:Request,env:AuthEnv){
  let b:any;try{b=JSON.parse(raw)}catch{return json({error:'요청을 확인해 주세요.'},400)}
  if(!b||!['withdraw','cancelWithdraw'].includes(b.action))return json({error:'이 작업은 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},400);
  try{return await withdrawAction(request,env,b,await resolveStore(env.DB,id))}
- catch{return json({error:'탈퇴를 처리하지 못했어요. 잠시 뒤 다시 시도해 주세요.'},500)}
+ catch(e){return serverError('withdraw',e,'탈퇴를 처리하지 못했어요. 잠시 뒤 다시 시도해 주세요.')}
 }

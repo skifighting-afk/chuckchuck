@@ -1,4 +1,5 @@
 import {resolveStore} from './saas-api';
+import {serverError,reportError} from '../lib/errors';
 import {hasFeature,canWrite} from '../lib/plans';
 import {payslipText} from '../lib/payslip';
 const json=(v:any,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store'}});
@@ -72,5 +73,5 @@ export async function documentsApi(request:Request,env:{DB:D1Database}){
  const column=({view:'viewed_at',download:'download_requested_at',saved:'saved_at'} as any)[b.action];
  await env.DB.prepare(`INSERT INTO document_activity(kind,document_id,${column}) VALUES(?,?,?) ON CONFLICT(kind,document_id) DO UPDATE SET ${column}=COALESCE(document_activity.${column},excluded.${column})`).bind(kind,id,new Date().toISOString()).run();
  return json({ok:true,activity:await documentActivity(env.DB,kind,id)});
- }catch{return json({error:'문서를 처리하지 못했어요. 잠시 뒤 다시 확인해 주세요.'},500)}
+ }catch(e){return serverError('documents',e,'문서를 처리하지 못했어요. 잠시 뒤 다시 확인해 주세요.')}
 }

@@ -1,4 +1,5 @@
 import {isIndustry,industryName} from '../lib/industries';
+import {serverError} from '../lib/errors';
 import {isHQ} from './admin-api';
 import {normalizeTeam} from '../lib/team-model';
 import {LEGAL,consentCurrent} from '../lib/legal';
@@ -70,5 +71,5 @@ export async function accountApi(request:Request,env:Env){
   data._audit=[...(data._audit||[]),{id:crypto.randomUUID(),at:new Date().toISOString(),actor:{id,name:email,email},action:b.action==='endTrial'?'체험 종료':'체험 요금제 변경',target:'이용권',before:null,after:{plan:data._account.plan,status:trialStatus(data._account)},reason:'계정 관리'}];
   const saved=await env.DB.prepare('UPDATE stores SET data=?,version=?,updated_at=? WHERE owner=? AND version=?').bind(JSON.stringify(data),linked.row.version+1,new Date().toISOString(),id,linked.row.version).run();
   return saved.meta.changes?json(view(data)):json({error:'다른 변경이 있습니다. 새로고침해 주세요.'},409);
- }catch(error){console.error('Account request failed',error instanceof Error?error.name:'Unknown');return json({error:'계정 정보를 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.'},500)}
+ }catch(error){return serverError('account',error,'계정 정보를 처리하지 못했어요. 잠시 뒤 다시 시도해 주세요.')}
 }

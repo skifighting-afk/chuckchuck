@@ -1,4 +1,5 @@
 import {documentActivity} from './documents-api';
+import {serverError} from '../lib/errors';
 import {resolveStore} from './saas-api';
 import {contractMissing} from '../lib/labor-checks';
 import {authLimit,confirmSigner} from './auth-api';
@@ -97,5 +98,5 @@ export async function contractsApi(request:Request,env:Env){
    await deliver(env,row);return json({ok:true,message:'사본 발송 상태를 확인해 주세요.'});
   }
   return json({error:'이 방법으로는 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},400);
- }catch(e){return json({error:e instanceof Error&&e.name!=='PostgresError'&&!/D1|SQLITE|constraint|database/i.test(e.message)?e.message:'계약 처리를 완료하지 못했어요. 새로 확인해 주세요.'},400)}
+ }catch(e){return e instanceof Error&&e.name!=='PostgresError'&&!/D1|SQLITE|constraint|database/i.test(e.message)?json({error:e.message},400):serverError('contracts',e,'계약 처리를 완료하지 못했어요. 새로고침해서 확인해 주세요.',400)}
 }
