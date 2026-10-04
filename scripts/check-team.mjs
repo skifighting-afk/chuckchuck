@@ -27,7 +27,7 @@ r=await request(null,{user:'worker'});assert.equal(r.d.access,'manager');assert.
 assert.equal((await request({action:'finalize',version:staffVersion},{user:'worker'})).status,403);
 await request();const before=state.attendance[0];r=await request({action:'request',id:before.id,start:before.start,end:before.end,breakMinutes:45,reason:'휴게 기록 정정',version:staffVersion},{user:'worker'});assert.equal(r.status,200,JSON.stringify(r));const rid=r.d.state.requests[0].id;
 assert.equal((await request({action:'review',id:rid,approve:true,version:r.d.version},{user:'worker'})).status,403);
-await request();assert.equal(state.attendance[0].breakMinutes,before.breakMinutes);r=await request({action:'review',id:rid,approve:true});assert.equal(r.status,200);assert.equal(state.attendance[0].breakMinutes,45);assert.equal(state.requests[0].actor.name,'김민지');assert.equal(state.requests[0].reviewer.id,id('owner'));
+await request();assert.equal(state.attendance[0].breakMinutes,before.breakMinutes);r=await request({action:'review',id:rid,approve:true});assert.equal(r.status,200,JSON.stringify(r.d));assert.equal(state.attendance[0].breakMinutes,45);assert.equal(state.requests[0].actor.name,'김민지');assert.equal(state.requests[0].reviewer.id,id('owner'));
 const month=before.start.slice(0,7);r=await request({action:'finalize',month,branch:'branch-main',payDate:month+'-25'});assert.equal(r.status,200,JSON.stringify(r));assert.equal(r.d.outbox.length,6);assert.equal(r.d.emailConnected,false);const mail=r.d.outbox.find(x=>x.to==='worker@example.com');
 assert.equal((await request({action:'send',id:mail.id})).status,400);
 assert.equal((await request({action:'request',id:before.id,start:before.start,end:before.end,breakMinutes:30,reason:'변경'})).status,400);

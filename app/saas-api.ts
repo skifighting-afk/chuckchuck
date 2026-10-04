@@ -2,6 +2,7 @@ import {isIndustry,industryName} from '../lib/industries';
 import {serverError} from '../lib/errors';
 import {isHQ} from './admin-api';
 import {normalizeTeam} from '../lib/team-model';
+import {hydrateAttendance} from './attendance-store';
 import {LEGAL,consentCurrent} from '../lib/legal';
 import {plans,isPlan,TRIAL_DAYS,trialStatus,planLimits,monthlyPrice,capacityError} from '../lib/plans';
 type Env={DB:D1Database,HQ_ADMIN_EMAIL?:string,HQ_NATIVE_USER_ID?:string};
@@ -9,10 +10,11 @@ const json=(v:unknown,status=200)=>Response.json(v,{status,headers:{'Cache-Contr
 export async function resolveStore(db:D1Database,userId:string){
   // Owners keep their existing store even if a stale invite also exists.
   const own=await db.prepare('SELECT owner,data,version,updated_at FROM stores WHERE owner=?').bind(userId).first<any>();
-  if(own)return {row:own,owner:userId,access:'owner' as const};
+  if(own){own.data=JSON.stringify(await hydrateAttendance(db,userId,JSON.parse(own.data)));return {row:own,owner:userId,access:'owner' as const};}
   const linked=await db.prepare("SELECT stores.owner,stores.data,stores.version,stores.updated_at FROM stores, jsonb_array_elements(coalesce(stores.data::jsonb->'_members','[]'::jsonb)) AS m(value) WHERE (m.value->>'userId')=? LIMIT 1").bind(userId).first<any>();
   if(!linked)return null;
-  const data=JSON.parse(linked.data),member=data._members?.find((m:any)=>m.userId===userId),employee=data.employees?.find((e:any)=>e.id===member?.employeeId);
+  const data=await hydrateAttendance(db,linked.owner,JSON.parse(linked.data));linked.data=JSON.stringify(data);
+  const member=data._members?.find((m:any)=>m.userId===userId),employee=data.employees?.find((e:any)=>e.id===member?.employeeId);
   if(!employee||employee.status==='퇴사')return {row:linked,owner:linked.owner,access:'revoked' as const};
   return {row:linked,owner:linked.owner,access:employee.access==='중간관리자'?'manager' as const:'employee' as const};
 }

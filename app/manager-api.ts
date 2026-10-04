@@ -1,3 +1,4 @@
+import {same} from '../lib/same';
 import {correctionError} from '../lib/attendance-review';
 import {resolveStore} from './saas-api';
 import {shiftSchema,kdate} from '../lib/team-model';
@@ -27,7 +28,7 @@ export async function managerApi(request:Request,env:{DB:D1Database}){
  }else if(b.action==='reviewCorrection'){
   const r=d.requests.find((r:any)=>r.id===b.id&&r.status==='승인 대기');if(!r||!ids.has(r.before.employeeId)||(r.actor.id===uid||r.before.employeeId===self.id))return json({error:'다른 지점 직원이나 본인 요청은 승인할 수 없어요. 사장님께 승인을 부탁해 주세요.'},403);
   if(typeof b.approve!=='boolean')return json({error:'처리를 선택해 주세요.'},400);
-  if(b.approve){const conflict=correctionError(d.attendance,r.before,r.after);if(conflict)return json({error:conflict},409);const current=d.attendance.find((a:any)=>a.id===r.before.id);if(JSON.stringify(current)!==JSON.stringify(r.before))return json({error:'그 사이 기록이 바뀌었어요. 새로고침한 뒤 다시 요청해 주세요.'},409);
+  if(b.approve){const conflict=correctionError(d.attendance,r.before,r.after);if(conflict)return json({error:conflict},409);const current=d.attendance.find((a:any)=>a.id===r.before.id);if(!same(current,r.before))return json({error:'그 사이 기록이 바뀌었어요. 새로고침한 뒤 다시 요청해 주세요.'},409);
    if(Object.values(d.payrollRuns).some((p:any)=>p.locked&&[kdate(r.before.start).slice(0,7),kdate(r.after.start).slice(0,7)].includes(p.month)&&p.rows.some((e:any)=>e.employeeId===r.before.employeeId)))return json({error:'급여가 확정된 기간이에요. 사장님께 확정 해제를 요청해 주세요.'},409);
    d.attendance=d.attendance.map((a:any)=>a.id===r.before.id?r.after:a);
   }before=r.before;after=b.approve?r.after:r.before;r.status=b.approve?'승인':'반려';r.reviewer=actor;r.reviewedAt=now;target=r.id;

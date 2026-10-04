@@ -1,6 +1,7 @@
 // 작업 071: 사장님이 가게 데이터 전체를 한 파일(JSON)로 내려받는다.
 // 근로기준법 제42조 보존 서류(근로계약서, 임금명세서, 출퇴근·근무 기록)를 사장님이 직접 보관할 수 있게 하는 것이 목적이다.
 import {resolveStore} from './saas-api';
+import {loadAttendance} from './attendance-store';
 import {serverError} from '../lib/errors';
 
 const json = (v: unknown, status = 200) => Response.json(v, {status, headers: {'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff'}});
@@ -16,6 +17,9 @@ export async function exportApi(request: Request, env: {DB: D1Database}) {
     if (linked?.access !== 'owner') return json({error: '사장님만 가게 데이터를 내려받을 수 있어요.'}, 403);
     const data = JSON.parse(linked.row.data);
     for (const k of INTERNAL) delete data[k];
+    // 작업 045: 화면용으로 붙인 최근 기록 대신 보관 중인 출퇴근 기록 전체
+    data.attendance = await loadAttendance(env.DB, uid);
+    delete data._attendanceFrom;
     const contracts = (await env.DB.prepare('SELECT * FROM contract_envelopes WHERE owner_id=? ORDER BY created_at').bind(uid).all<any>()).results;
     const events = (await env.DB.prepare('SELECT e.envelope_id,e.version,e.status,e.recorded_at,e.record_json FROM contract_events e JOIN contract_envelopes c ON c.id=e.envelope_id WHERE c.owner_id=? ORDER BY e.id').bind(uid).all<any>()).results;
     const payslips = (await env.DB.prepare('SELECT id,employee_id,run_key,revision,document_json,created_at FROM payslip_documents WHERE owner_id=? ORDER BY created_at').bind(uid).all<any>()).results;
