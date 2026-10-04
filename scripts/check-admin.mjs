@@ -44,5 +44,14 @@ list=await call('hq','/api/admin');ok('support memo kept after biz check',list.d
 const log=(await call('hq','/api/admin?log=1')).data.log;ok('views and actions logged',['가게 목록 열람','사업자 확인 처리','가게 상세 메모 저장'].every(a=>log.some(l=>l.action===a)),true);
 ok('log records filters',log.some(l=>l.detail?.filters?.biz==='수동 확인'),true);
 ok('customer cannot read HQ log',(await call('customer','/api/admin?log=1')).status,403);
+// 작업 066: 가격·약관 변경 고지
+const soon=new Date(Date.now()+10*86400000).toISOString().slice(0,10),later=new Date(Date.now()+40*86400000).toISOString().slice(0,10);
+ok('notice under 30 days refused',(await call('hq','/api/admin',{action:'serviceNotice',kind:'가격',title:'인상',body:'베이직 인상',effectiveAt:soon})).status,400);
+ok('customer cannot post notice',(await call('customer','/api/admin',{action:'serviceNotice',kind:'가격',title:'인상',body:'x',effectiveAt:later})).status,403);
+const posted=await call('hq','/api/admin',{action:'serviceNotice',kind:'가격',title:'요금 조정',body:'베이직 1지점 월 요금 변경',effectiveAt:later});ok('notice posted',posted.status,200);
+let acct=(await call('customer','/api/account')).data;ok('owner sees unagreed notice',acct.serviceNotices.map(n=>[n.title,n.agreedAt]),[['요금 조정',null]]);
+ok('owner agrees',(await call('customer','/api/account',{action:'agreeNotice',id:posted.data.id})).status,200);
+acct=(await call('customer','/api/account')).data;ok('agreement recorded',!!acct.serviceNotices[0].agreedAt,true);
+ok('HQ sees agreed count',(await call('hq','/api/admin?notices=1')).data.notices[0].agreed,1);
 console.log('HQ/capacity checks: '+count+' passed');
 await closeAll();

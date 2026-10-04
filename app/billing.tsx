@@ -31,3 +31,9 @@ export function TaxInvoice({a,reload}:{a:any,reload:()=>Promise<void>}){
   {a.invoiceRequests?.length>0&&<ul className="invoice-list">{a.invoiceRequests.slice().reverse().map((r:any)=><li key={r.id}>{r.month} · {r.status} · {new Date(r.at).toLocaleDateString('ko-KR')}</li>)}</ul>}
  </section>
 }
+/** 작업 066: 가격·약관 변경 고지와 동의 */
+export function ServiceNotices({notices}:{notices?:any[]}){
+ const [done,setDone]=useState<string[]>([]),[err,setErr]=useState('');
+ const list=(notices||[]).filter(n=>!n.agreedAt&&!done.includes(n.id));if(!list.length)return null;
+ return <div className="service-notice" role="status">{list.map(n=><details key={n.id}><summary><b>{n.kind} 변경 안내</b> · {n.title} · {n.effectiveAt}부터</summary><p>{n.body}</p><p className="saas-fine">시행일 전에 동의하지 않으시면 언제든 해지하실 수 있어요. 해지해도 기록 내려받기는 계속 돼요.</p><button className="saas-primary" onClick={async()=>{setErr('');try{await post({action:'agreeNotice',id:n.id});setDone([...done,n.id])}catch(e){setErr((e as Error).message)}}}>내용을 확인했고 동의해요</button></details>)}{err&&<p className="saas-error" role="alert">{err}</p>}</div>
+}

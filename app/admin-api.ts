@@ -11,6 +11,7 @@ export async function adminApi(request:Request,env:AdminEnv){
  try{
  if(request.method==='GET'){
  const params=new URL(request.url).searchParams,now=Date.now();
+ if(params.get('notices')==='1'){const rows=await env.DB.prepare('SELECT n.id,n.kind,n.title,n.effective_at,n.created_at,(SELECT count(*) FROM service_notice_consents c WHERE c.notice_id=n.id)::int AS agreed FROM service_notices n ORDER BY n.created_at DESC LIMIT 50').all<any>();return json({notices:rows.results})}
  if(params.get('log')==='1'){await env.DB.prepare("DELETE FROM hq_access_log WHERE at<?").bind(new Date(now-366*86400000).toISOString()).run();const rows=await env.DB.prepare('SELECT at,actor,action,target,detail FROM hq_access_log ORDER BY id DESC LIMIT 200').all<any>();return json({log:rows.results.map((r:any)=>({...r,detail:typeof r.detail==='string'?JSON.parse(r.detail):r.detail}))})}
  const rows=await env.DB.prepare(adminProjection).all<any>();
  const stores=rows.results.map((row:any)=>summarizeStore(row,now)),filtered=filterAdminStores(stores,params);
@@ -22,6 +23,13 @@ export async function adminApi(request:Request,env:AdminEnv){
  if(request.method!=='POST')return json({error:'이 방법으로는 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},405);
  if(request.headers.get('origin')!==new URL(request.url).origin)return json({error:'요청 출처를 확인해 주세요.'},403);
  const raw=await request.text();if(raw.length>6000)return json({error:'입력이 너무 깁니다.'},413);const b=JSON.parse(raw);
+ if(b.action==='serviceNotice'){
+  // 작업 066: 가격·약관 변경은 시행 30일 전까지 고지
+  if(!['가격','약관'].includes(b.kind)||typeof b.title!=='string'||!b.title.trim()||b.title.length>100||typeof b.body!=='string'||!b.body.trim()||b.body.length>3000||typeof b.effectiveAt!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(b.effectiveAt))return json({error:'종류·제목·내용·시행일을 확인해 주세요.'},400);
+  if(Date.parse(b.effectiveAt+'T00:00:00+09:00')-Date.now()<30*86400000)return json({error:'시행일은 오늘부터 30일 뒤 이후로 정해 주세요.'},400);
+  const nid=crypto.randomUUID();await env.DB.prepare('INSERT INTO service_notices(id,kind,title,body,effective_at,created_at,created_by) VALUES(?,?,?,?,?,?,?)').bind(nid,b.kind,b.title.trim(),b.body.trim(),b.effectiveAt,new Date().toISOString(),actor).run();
+  await audit('서비스 변경 고지',nid,{kind:b.kind,effectiveAt:b.effectiveAt});return json({ok:true,id:nid});
+ }
  if(b.action==='bizCheck'){
   // 작업 012: 사업자 확인 수동 처리(사유 기록)
   if(typeof b.id!=='string'||!['확인 전','수동 확인','불일치'].includes(b.status)||typeof b.reason!=='string'||!b.reason.trim()||b.reason.length>500)return json({error:'확인 상태와 사유를 입력해 주세요.'},400);

@@ -43,6 +43,7 @@ export async function accountApi(request:Request,env:Env){
   const contractsThisMonth=linked?.access==='owner'?Number((await env.DB.prepare('SELECT count(*)::int AS n FROM contract_envelopes WHERE owner_id=? AND created_at>=?').bind(id,monthStart).first<any>())?.n||0):0;
   const view=(d:any)=>({hq:isHQ(request,env),consentRequired,legal:{terms:LEGAL.terms.version,privacy:LEGAL.privacy.version},user:{email,authMethod:id.startsWith('native:')?'email':'chatgpt',role:request.headers.get('oai-authenticated-user-native-role')||'owner',emailVerified:!id.startsWith('native:')||request.headers.get('oai-authenticated-user-email-verified')==='true'},onboarded:!!d,access:linked?.access||'owner',storeName:d?.store?.name||'',industry:d?._account?.industry||null,industryName:industryName(d?._account?.industry),storeClosingAt:d?._account?.deletion?.purgeAt||null,account:linked&&linked.access!=='owner'?null:d?accountView(d._account,contractsThisMonth):null,usage:linked&&linked.access!=='owner'?null:d?{employees:d.employees.filter((e:any)=>e.status!=='퇴사').length,branches:d.branches?.length||1,perBranch:d.branches.map((b:any)=>({id:b.id,name:b.name,employees:d.employees.filter((e:any)=>e.branchId===b.id&&e.status!=='퇴사').length}))}:null,billing:{enabled:false,reason:'사업자 정보와 결제 서비스 연결을 준비하고 있어요. 지금은 결제되지 않아요.'}});
   if(request.method==='GET'){const v:any=view(data);
+   if(linked?.access==='owner'){const rows=await env.DB.prepare('SELECT n.id,n.kind,n.title,n.body,n.effective_at,c.agreed_at FROM service_notices n LEFT JOIN service_notice_consents c ON c.notice_id=n.id AND c.user_id=? WHERE n.effective_at>=? ORDER BY n.effective_at').bind(id,new Date(Date.now()-90*86400000).toISOString().slice(0,10)).all<any>();v.serviceNotices=rows.results.map((r:any)=>({id:r.id,kind:r.kind,title:r.title,body:r.body,effectiveAt:r.effective_at,agreedAt:r.agreed_at||null}))}
    // 작업 057: 나에게 넘겨진 가게(이메일 확인된 계정만)
    if(email&&v.user.emailVerified&&linked?.access!=='owner'){const rows=await env.DB.prepare("SELECT owner,data FROM stores WHERE lower(data::jsonb#>>'{_account,transfer,toEmail}')=lower(?)").bind(email).all<any>();v.transferOffers=rows.results.map((r:any)=>{const d=JSON.parse(r.data);return Date.parse(d._account.transfer.expiresAt)>Date.now()?{owner:r.owner,storeName:d.store?.name||'',fromEmail:d._account.transfer.fromEmail||'',expiresAt:d._account.transfer.expiresAt}:null}).filter(Boolean)}
    return json(v)}
@@ -72,6 +73,11 @@ export async function accountApi(request:Request,env:Env){
    const result=await env.DB.prepare('INSERT OR IGNORE INTO stores(owner,data,version,updated_at) VALUES(?,?,?,?)').bind(id,JSON.stringify(next),1,now).run();
    if(!result.meta.changes)return json({error:'이미 매장이 생성되었습니다. 새로고침해 주세요.'},409);
    return json(view(next),201);
+  }
+  if(b.action==='agreeNotice'){
+   if(linked?.access!=='owner')return json({error:'변경 안내 동의는 사장님 계정에서 해 주세요.'},403);
+   const n=await env.DB.prepare('SELECT id FROM service_notices WHERE id=?').bind(typeof b.id==='string'?b.id:'').first();if(!n)return json({error:'안내를 찾을 수 없어요. 새로고침해 주세요.'},404);
+   await env.DB.prepare('INSERT INTO service_notice_consents(notice_id,user_id,agreed_at) VALUES(?,?,?) ON CONFLICT DO NOTHING').bind(b.id,id,new Date().toISOString()).run();return json({ok:true});
   }
   if(b.action==='transferAccept'){
    // 작업 057: 넘겨받는 쪽 확인(이메일 확인된 계정 + 비밀번호)
