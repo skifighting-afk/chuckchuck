@@ -1,0 +1,17 @@
+# 작업 087: main이 아닌 브랜치에 올리면 타입 검사만 빠르게(배포 없음). 오류는 줄 단위 알림(annotation)으로 남는다.
+name: 타입 검사
+on:
+  push:
+    branches-ignore: [main, ci-status, data-import, gh-pages]
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  tsc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22}
+      - run: npm ci --no-audit --no-fund >/dev/null
+      - name: tsc
+        run: npx tsc --noEmit --pretty false | sed -E 's/^([^(]+)\(([0-9]+),([0-9]+)\): error (TS[0-9]+): (.*)$/::error file=\1,line=\2,col=\3::\4 \5/'; exit ${PIPESTATUS[0]}
