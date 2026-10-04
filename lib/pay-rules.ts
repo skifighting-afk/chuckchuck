@@ -35,6 +35,9 @@ export const kday = (iso: string) => new Date(+new Date(iso) + KST).toISOString(
 export function monday(day: string) { const d = new Date(day + 'T00:00:00Z'), w = (d.getUTCDay() + 6) % 7; d.setUTCDate(d.getUTCDate() - w); return d.toISOString().slice(0, 10); }
 const plusDays = (day: string, n: number) => { const d = new Date(day + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 
+/** 주 묶음 키(그 주 첫날) */
+export const weekKeyOf = (d: string, weekStart: 'mon' | 'sun' = 'mon') => weekStart === 'sun' ? plusDays(monday(plusDays(d, 1)), -1) : monday(d);
+
 export type Line = {name: string; amount: number; formula: string};
 
 /**
@@ -44,7 +47,7 @@ export type Line = {name: string; amount: number; formula: string};
  * - 야간 가산(5인 이상): 22~06시 근무 × 시급 × 50%
  * records에는 앞뒤 달 기록이 섞여 있어도 된다(주 경계 계산용).
  */
-export function allowances(records: Record_[], month: string, wage: number, fivePlus: boolean, weekStart: 'mon' | 'sun' = 'mon', holidays: Map<string, string> = new Map()) {
+export function allowances(records: Record_[], month: string, wage: number, fivePlus: boolean, weekStart: 'mon' | 'sun' = 'mon', holidays: Map<string, string> = new Map(), skipJuhu: Set<string> = new Set()) {
   // 주 시작요일: 월요일(기본) 또는 일요일. 주휴는 그 주의 마지막 날이 속한 달에 지급.
   const weekOf = (d: string) => weekStart === 'sun' ? plusDays(monday(plusDays(d, 1)), -1) : monday(d);
   const byDay = new Map<string, {worked: number; night: number}>();
@@ -65,7 +68,8 @@ export function allowances(records: Record_[], month: string, wage: number, five
   for (const [first, w] of weeks) {
     const last = plusDays(first, 6);
     if (!last.startsWith(month)) continue;
-    if (w.hours >= 15) { juhu += Math.min(w.hours, 40) / 40 * 8 * wage; juhuWeeks++; }
+    if (w.hours >= 15 && skipJuhu.has(first)) notes.push(`${first} 주는 근무표의 근무일에 결근이 있어 주휴수당을 넣지 않았어요(개근 아님). 사장님이 인정하면 수당·공제에서 '개근 인정'을 눌러 주세요.`);
+    else if (w.hours >= 15) { juhu += Math.min(w.hours, 40) / 40 * 8 * wage; juhuWeeks++; }
     weeklyOt += Math.max(0, w.hours - ((w as any).holiday || 0) - w.dailyOt - 40);
   }
   const lines: Line[] = [];

@@ -292,3 +292,22 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('2026 has 21 public holiday entries incl. 6/3 election',holidaysFor(2026,true).size===22&&holidaysFor(2026,true).get('2026-06-03')==='전국동시지방선거');
  console.log('PASS: 휴일근로 가산.');
 }
+
+// 작업 026: 주휴 개근 판단
+{
+ const k=(d,hm)=>new Date(`${d}T${hm}:00+09:00`).toISOString();
+ const t=normalizeTeam(null);delete t.legacy;t.adjustments={};t.payrollRuns={};
+ const e=t.employees[0];Object.assign(e,{payType:'시급',wage:10000,autoPay:true,taxMode:'직접 입력'});t.employees=[e];
+ // 2026-09-07(월)~09-11(금) 근무표 5일, 4시간씩. 하루(09-09) 결근.
+ const days=['2026-09-07','2026-09-08','2026-09-09','2026-09-10','2026-09-11'];
+ t.shifts=days.map((d,i)=>({id:'s'+i,employeeId:e.id,date:d,start:'09:00',end:'13:00',breakMinutes:0}));
+ t.attendance=days.filter(d=>d!=='2026-09-09').map((d,i)=>({id:'a'+i,employeeId:e.id,start:k(d,'09:00'),end:k(d,'13:00'),breakMinutes:0,breakStart:null}));
+ // 16시간이라 원래 주휴 대상
+ let row=calculate(t,'2026-09').find(r=>r.employeeId===e.id);
+ ok('absent week: no 주휴 + week listed',!row.earnings.some(x=>x.name==='주휴수당')&&row.juhuSkipped.includes('2026-09-07')&&row.warnings.some(w=>w.includes('개근')));
+ t.adjustments['2026-09:'+e.id]={earnings:[],deductions:[],note:'',juhuKeep:['2026-09-07']};
+ row=calculate(t,'2026-09').find(r=>r.employeeId===e.id);ok('owner can accept as 개근',row.earnings.some(x=>x.name==='주휴수당'));
+ t.adjustments={};t.approvedLeaves=[{employeeId:e.id,start:'2026-09-09',end:'2026-09-09'}];
+ row=calculate(t,'2026-09').find(r=>r.employeeId===e.id);ok('approved leave day is not absence',row.earnings.some(x=>x.name==='주휴수당'));
+ console.log('PASS: 주휴 개근 판단.');
+}
