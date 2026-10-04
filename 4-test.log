@@ -910,6 +910,9 @@ PASS: 대타·교대 요청·수락·승인·충돌 차단.
 30. PASS invalid time rejected
 31. PASS colleague cannot see it
 32. PASS owner sees it
+33. PASS unread list names branch staff
+34. PASS reader moves to read list
+35. PASS staff do not see who read
 
 ── check-manual
 1. PASS anonymous blocked
