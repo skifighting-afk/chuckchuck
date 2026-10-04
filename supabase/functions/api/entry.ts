@@ -47,6 +47,12 @@ Deno.serve(async (req: Request) => {
     const res = await api(new Request(base + path + url.search, {method: req.method, headers, body}), env as any);
     const out = new Headers(res.headers);
     for (const [k, v] of Object.entries(cors)) out.set(k, v);
+    // 작업 074: 서버 응답 보안 헤더
+    if (!out.has('Cache-Control')) out.set('Cache-Control', 'no-store');
+    out.set('X-Content-Type-Options', 'nosniff');
+    out.set('Referrer-Policy', 'no-referrer');
+    out.set('X-Frame-Options', 'DENY');
+    out.set('Strict-Transport-Security', 'max-age=31536000');
     return new Response(res.body, {status: res.status, headers: out});
   } catch (error) {
     console.error(error);

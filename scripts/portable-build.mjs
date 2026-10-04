@@ -21,7 +21,11 @@ const css=await compile(await readFile('app/globals.css','utf8'),{base:path.reso
 const scanner=new Scanner({sources:[{base:path.resolve('.'),pattern:'{app,components,hooks}/**/*.{ts,tsx}',negated:false}]});
 await writeFile('dist/client/app.css',css.build(scanner.scan()));
 for(const f of ['cheokcheoki-guide.png','favicon.svg','cheokcheoki-welcome.png'])await copyFile('public/'+f,'dist/client/'+f);
-const html='<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>척척사장봇 · 직원 관리</title><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#185b45"><meta name="description" content="입사부터 출퇴근, 급여와 계약까지. 함께 일하는 사람을 위한 매장 관리."><link rel="icon" href="/favicon.svg"><link rel="stylesheet" href="/app.css"></head><body><div id="root"></div><script type="module" src="/app.js"></script></body></html>';
+// 작업 074: GitHub Pages는 응답 헤더를 못 바꾸므로 보안 정책을 HTML meta로 넣는다.
+// 화면은 자기 파일만 불러오고, 서버(Supabase)에만 연결한다. 카메라(QR) 영상과 QR·명세서 이미지(data:, blob:)는 허용.
+const supabaseOrigin=new URL(supabaseUrl).origin;
+const csp=["default-src 'self'","script-src 'self'","style-src 'self' 'unsafe-inline'","img-src 'self' data: blob:","media-src 'self' blob: mediastream:","font-src 'self' data:",`connect-src 'self' ${supabaseOrigin}`,"object-src 'none'","base-uri 'self'","form-action 'self'","worker-src 'self' blob:"].join('; ');
+const html='<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="'+csp+'"><meta name="referrer" content="strict-origin-when-cross-origin"><title>척척사장봇 · 직원 관리</title><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#185b45"><meta name="description" content="입사부터 출퇴근, 급여와 계약까지. 함께 일하는 사람을 위한 매장 관리."><link rel="icon" href="/favicon.svg"><link rel="stylesheet" href="/app.css"></head><body><div id="root"></div><script type="module" src="/app.js"></script></body></html>';
 await writeFile('dist/client/index.html',html);
 await writeFile('dist/client/404.html',html); // GitHub Pages: 모든 주소를 화면 앱으로
 await writeFile('dist/client/.nojekyll','');
