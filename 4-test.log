@@ -680,6 +680,10 @@ PASS 122. daily wage ÷ contract hours
 PASS 123. monthly worker overtime 3h at 통상시급 10,000
 PASS 124. monthly wage already includes 주휴
 PASS: 일급·월급 통상시급.
+PASS 125. average 4.8 but 5+ days ≥ half → 5명 이상
+PASS 126. average 5.2 but under-5 days ≥ half → 5명 미만
+PASS 127. window is previous month
+PASS: 상시 근로자 수.
 
 ── check-claims
 PASS: 과장·허위 문구 검사 (화면·홈페이지).
