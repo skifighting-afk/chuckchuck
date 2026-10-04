@@ -74,3 +74,14 @@ ok('payslip shows employee number',slip.includes('직원번호: '+employeeNumber
 ok('night premium line carries its hours',/^야간근로 가산: .*\d+\.\d+시간/m.test(slip));
 ok('missing items are detected',payslipMissing(slip.replace(/^직원번호: .*$/m,'')).includes('직원번호'));
 console.log('PASS: 법정수당(주휴·연장·야간)·4대보험 자동 계산.');
+// 작업 047: 휴게시간 법정 기준(근로기준법 제54조)
+const {shiftBreakIssue,attendanceBreakShortfalls,requiredBreak}=await import('../lib/labor-checks.ts');
+ok('8h work needs 60 min break',requiredBreak(480)===60&&requiredBreak(479)===30&&requiredBreak(239)===0);
+ok('9-18 with 60 min break is fine',shiftBreakIssue('09:00','18:00',60)===null);
+ok('9-17:30 with 30 min break is short (8h work)',/60분/.test(shiftBreakIssue('09:00','17:30',30)||''));
+ok('overnight 22-03 without break is short (5h work)',/30분/.test(shiftBreakIssue('22:00','03:00',0)||''));
+ok('3h shift needs no break',shiftBreakIssue('10:00','13:00',0)===null);
+ok('attendance shortfalls counted',attendanceBreakShortfalls([shift('2026-09-07','09:00','18:00',0),shift('2026-09-08','09:00','18:00',60),{start:'x',end:null,breakMinutes:0}])===1);
+team.attendance=[{id:'b1',employeeId:e.id,...shift('2026-09-07','09:00','18:00',0),breakStart:null}];team.adjustments={};
+ok('payroll warns about short breaks',calculate(team,'2026-09').find(x=>x.employeeId===e.id).warnings.some(w=>w.includes('휴게시간')));
+console.log('PASS: 휴게시간 법정 기준 경고.');
