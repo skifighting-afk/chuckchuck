@@ -22,11 +22,12 @@ PASS: migration, auth, forged identity headers, origin, conflicts, owner isolati
 12. PASS stale save denied
 13. PASS internal memo absent in customer payload
 14. PASS customer save preserves HQ memo
-15. PASS free three employees save
-16. PASS fourth employee capacity dialog code
-17. PASS over limit never persists
-18. PASS checkout cannot fake payment
-HQ/capacity checks: 18 passed
+15. PASS three employees save
+16. PASS no employee limit (fourth employee saves)
+17. PASS branch over chosen count gets capacity code
+18. PASS over branch count never persists
+19. PASS checkout cannot fake payment
+HQ/capacity checks: 19 passed
 
 ── check-admin-overview
 1. PASS HQ can open while stray session cookie exists
@@ -38,11 +39,11 @@ HQ/capacity checks: 18 passed
 7. PASS new shops last30days
 8. PASS trial statuses correct
 9. PASS queue counts correct
-10. PASS trial price uses purchased branch slots
+10. PASS trial price uses chosen branch count (pro 2~3지점)
 11. PASS unknown payments not fabricated
 12. PASS PII not returned
 13. PASS salary fields not returned
-14. PASS capacity store count
+14. PASS no employee capacity limit
 15. PASS industry counts
 16. PASS plan filtering
 17. PASS overview independent of filter
@@ -115,29 +116,27 @@ PASS 10 correction-input cases: KST, invalid dates/hours, valid, reversed, overn
 28. PASS employee access
 29. PASS wage set by owner on approval
 30. PASS employee cannot change account
-31. PASS free contract confirmation blocked
-32. PASS free contract queue blocked
-33. PASS ordinary save preserves joins
-34. PASS join code survives save
-35. PASS staff stays linked
-36. PASS second request
-37. PASS reject request
-38. PASS rejected cannot access
-39. PASS rejected own status
-40. PASS retry after rejection
-41. PASS upgrade starter
-42. PASS paid contract queue allowed
-43. PASS employee cannot use manager API
-44. PASS owner delegates manager duties
-45. PASS manager permission selection
-46. PASS manager payload hides wage
-47. PASS manager cannot grant own roles
-48. PASS manager cannot manage foreign employee
-49. PASS delegated manager adds shift
-50. PASS unassigned approval blocked
-51. PASS manager can post branch notice
-52. PASS revoked permission blocked immediately
-Entry/join/contracts/manager checks: 52 passed
+31. PASS ordinary save preserves joins
+32. PASS join code survives save
+33. PASS staff stays linked
+34. PASS second request
+35. PASS reject request
+36. PASS rejected cannot access
+37. PASS rejected own status
+38. PASS retry after rejection
+39. PASS upgrade starter
+40. PASS paid contract queue allowed
+41. PASS employee cannot use manager API
+42. PASS owner delegates manager duties
+43. PASS manager permission selection
+44. PASS manager payload hides wage
+45. PASS manager cannot grant own roles
+46. PASS manager cannot manage foreign employee
+47. PASS delegated manager adds shift
+48. PASS unassigned approval blocked
+49. PASS manager can post branch notice
+50. PASS revoked permission blocked immediately
+Entry/join/contracts/manager checks: 50 passed
 
 ── check-evidence
 PASS expired evidence and login-limit rows are purged; unexpired rows stay.
@@ -361,7 +360,7 @@ PASS 12. busy camera explains retry
 
 ── check-saas
 PASS: approved leave blocks shifts; overlapping shifts blocked.
-PASS: free account, blank tenant, per-store 3/10 limits, free core notice, paid feature guards, pricing 3 stores, trial unchanged/no repeat, downgrade capacity protection, no payment, leave balance once, tenant isolation, expired→free restores writes.
+PASS: 요금제(베이직·프로 지점 구간 요금, VAT 포함, 직원 수 제한 없음, 30일 체험, 6·12개월 할인, QR은 프로, 체험 종료 후 조회만, 예전 무료 고객 보호).
 
 ── check-simple-join
 1. PASS owner creates short code
@@ -417,44 +416,42 @@ PASS: free account, blank tenant, per-store 3/10 limits, free core notice, paid 
 27. PASS employee access
 28. PASS wage set by owner on approval
 29. PASS employee cannot change account
-30. PASS free contract confirmation blocked
-31. PASS free contract queue blocked
-32. PASS ordinary save preserves joins
-33. PASS join code survives save
-34. PASS staff stays linked
-35. PASS second request
-36. PASS reject request
-37. PASS rejected cannot access
-38. PASS rejected own status
-39. PASS retry after rejection
-40. PASS upgrade starter
-41. PASS paid contract queue allowed
-42. PASS employee cannot use manager API
-43. PASS owner delegates manager duties
-44. PASS manager permission selection
-45. PASS manager payload hides wage
-46. PASS manager cannot grant own roles
-47. PASS manager cannot manage foreign employee
-48. PASS delegated manager adds shift
-49. PASS unassigned approval blocked
-50. PASS manager can post branch notice
-51. PASS revoked permission blocked immediately
-52. PASS stranger cannot withdraw application
-53. PASS employee withdraws pending application
-54. PASS withdrawn status visible
-55. PASS withdraw twice blocked
-56. PASS apply again after withdrawal
-57. PASS owner accepts reapplied employee
-58. PASS overlapping correction blocked
-59. PASS valid correction submitted
-60. PASS duplicate pending correction blocked
-61. PASS manager sees colleague request
-62. PASS manager cannot alter finalized payroll
-63. PASS manager approves valid correction
-64. PASS employee sees updated end
-65. PASS approval cannot repeat
-66. PASS employee sees approval status
-Scenario checks: 66 passed
+30. PASS ordinary save preserves joins
+31. PASS join code survives save
+32. PASS staff stays linked
+33. PASS second request
+34. PASS reject request
+35. PASS rejected cannot access
+36. PASS rejected own status
+37. PASS retry after rejection
+38. PASS upgrade starter
+39. PASS paid contract queue allowed
+40. PASS employee cannot use manager API
+41. PASS owner delegates manager duties
+42. PASS manager permission selection
+43. PASS manager payload hides wage
+44. PASS manager cannot grant own roles
+45. PASS manager cannot manage foreign employee
+46. PASS delegated manager adds shift
+47. PASS unassigned approval blocked
+48. PASS manager can post branch notice
+49. PASS revoked permission blocked immediately
+50. PASS stranger cannot withdraw application
+51. PASS employee withdraws pending application
+52. PASS withdrawn status visible
+53. PASS withdraw twice blocked
+54. PASS apply again after withdrawal
+55. PASS owner accepts reapplied employee
+56. PASS overlapping correction blocked
+57. PASS valid correction submitted
+58. PASS duplicate pending correction blocked
+59. PASS manager sees colleague request
+60. PASS manager cannot alter finalized payroll
+61. PASS manager approves valid correction
+62. PASS employee sees updated end
+63. PASS approval cannot repeat
+64. PASS employee sees approval status
+Scenario checks: 64 passed
 
 ── check-verified-contracts
 PASS 1. email configuration status is honest
@@ -506,8 +503,8 @@ PASS 46. employee can record receipt
 PASS 47. signature and delivery history retained
 PASS 48. download contains both names, timestamps and hash
 PASS 49. former employee can retain previously signed copy
-PASS 50. free plan cannot create new electronic contract
-PASS 51. free plan retains old copies
+PASS 50. ended trial cannot create new electronic contract
+PASS 51. ended trial retains old copies
 PASS 52. cross origin contract mutation rejected
 PASS 53. outsider cannot read image document
 PASS 54. owner cannot mark employee download
@@ -685,7 +682,7 @@ PASS 36. 2026-03-31: no attendance in the future
 PASS: 체험 화면 숫자(급여·명세서·임금대장 합계).
 
 ── check-error-messages
-PASS: 오류 문구 263개 모두 다음 행동 안내 포함.
+PASS: 오류 문구 262개 모두 다음 행동 안내 포함.
 PASS: 오류 번호·로그 개인정보 제거.
 
 ── check-attendance-table
