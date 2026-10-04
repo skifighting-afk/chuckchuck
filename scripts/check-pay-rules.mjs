@@ -552,3 +552,16 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('2024년(표 없음)도 2026 표',incomeTax(3000000,2024,1).incomeTax===incomeTax(3000000,2026,1).incomeTax);
  console.log('PASS: 세액표 연도 대체.');
 }
+
+// 작업 093: 알림톡 템플릿·발송 뼈대
+{
+ const {TEMPLATES,renderTemplate,sendAlimtalk}=await import('../lib/alimtalk.ts');
+ ok('템플릿 6종, 변수 모두 본문에 있음',Object.values(TEMPLATES).length===6&&Object.values(TEMPLATES).every(t=>t.vars.every(v=>t.text.includes('#{'+v+'}'))));
+ ok('변수 채우기',renderTemplate('CLOCKOUT_MISSING',{이름:'김민지',날짜:'10월 4일'}).startsWith('김민지님, 10월 4일'));
+ ok('변수 빠지면 오류',(()=>{try{renderTemplate('PAYSLIP_SENT',{이름:'a'});return false}catch{return true}})());
+ ok('키가 없으면 보내지 않음',(await sendAlimtalk({},'01012345678','CONTRACT_SIGN',{이름:'a',가게:'b'})).status==='not_configured');
+ let sent=null;const env={KAKAO_SENDER_KEY:'k',ALIMTALK_API_KEY:'x',ALIMTALK_ENDPOINT:'https://example.invalid/send'};
+ ok('잘못된 번호 거부',(await sendAlimtalk(env,'02-123','CONTRACT_SIGN',{이름:'a',가게:'b'},async()=>{throw Error('no')})).status==='invalid_phone');
+ ok('설정되면 대행사로 전송',(await sendAlimtalk(env,'010-1234-5678','CONTRACT_SIGN',{이름:'a',가게:'b'},async(u,o)=>{sent=JSON.parse(o.body);return new Response('{}',{status:200})})).status==='accepted'&&sent.to==='01012345678'&&sent.templateCode==='CONTRACT_SIGN');
+ console.log('PASS: 알림톡 뼈대.');
+}
