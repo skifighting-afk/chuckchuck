@@ -326,3 +326,17 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('monthly wage already includes 주휴',!row.earnings.some(x=>x.name==='주휴수당'));
  console.log('PASS: 일급·월급 통상시급.');
 }
+
+// 작업 028: 상시 근로자 수
+{
+ const {headcount,lastMonthWindow}=await import('../lib/headcount.ts');
+ const k=(d)=>new Date(`${d}T09:00:00+09:00`).toISOString();
+ const att=(d,n)=>Array.from({length:n},(_,i)=>({employeeId:'e'+i,start:k(d)}));
+ // 10일 가동: 6명 6일 + 3명 4일 → 연인원 48 ÷ 10 = 4.8명, 5명 이상인 날 6일(1/2 이상) → 5명 이상
+ let a=[...['01','02','03','04','05','06'].flatMap(d=>att('2026-09-'+d,6)),...['07','08','09','10'].flatMap(d=>att('2026-09-'+d,3))];
+ let h=headcount(a,'2026-09-01','2026-10-01');ok('average 4.8 but 5+ days ≥ half → 5명 이상',h.average===4.8&&h.fivePlus);
+ a=[...['01','02','03','04'].flatMap(d=>att('2026-09-'+d,7)),...['05','06','07','08','09','10'].flatMap(d=>att('2026-09-'+d,4))];
+ h=headcount(a,'2026-09-01','2026-10-01');ok('average 5.2 but under-5 days ≥ half → 5명 미만',h.average===5.2&&!h.fivePlus);
+ ok('window is previous month',JSON.stringify(lastMonthWindow('2026-10-05'))===JSON.stringify({from:'2026-09-05',to:'2026-10-05'}));
+ console.log('PASS: 상시 근로자 수.');
+}
