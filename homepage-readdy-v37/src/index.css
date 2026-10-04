@@ -1,0 +1,522 @@
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-body: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --font-heading: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --font-label: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+
+  /* background — warm off-white (hue 130) */
+  --background-50: 0.993 0.003 130;
+  --background-100: 0.974 0.006 130;
+  --background-200: 0.945 0.008 130;
+  --background-300: 0.904 0.010 130;
+  --background-400: 0.845 0.011 130;
+  --background-500: 0.770 0.012 130;
+  --background-600: 0.660 0.013 130;
+  --background-700: 0.545 0.014 130;
+  --background-800: 0.430 0.015 130;
+  --background-900: 0.320 0.016 130;
+  --background-950: 0.235 0.017 130;
+
+  /* foreground — graphite (hue 250) */
+  --foreground-50: 0.976 0.003 250;
+  --foreground-100: 0.955 0.004 250;
+  --foreground-200: 0.915 0.006 250;
+  --foreground-300: 0.855 0.008 250;
+  --foreground-400: 0.720 0.010 250;
+  --foreground-500: 0.585 0.012 250;
+  --foreground-600: 0.470 0.013 250;
+  --foreground-700: 0.385 0.014 250;
+  --foreground-800: 0.305 0.016 250;
+  --foreground-900: 0.262 0.017 250;
+  --foreground-950: 0.222 0.018 250;
+
+  /* primary — deep green (hue 162) */
+  --primary-50: 0.972 0.020 162;
+  --primary-100: 0.940 0.038 162;
+  --primary-200: 0.885 0.062 162;
+  --primary-300: 0.805 0.088 162;
+  --primary-400: 0.675 0.095 162;
+  --primary-500: 0.475 0.088 162;
+  --primary-600: 0.415 0.078 162;
+  --primary-700: 0.350 0.068 162;
+  --primary-800: 0.290 0.058 162;
+  --primary-900: 0.240 0.048 162;
+  --primary-950: 0.180 0.038 162;
+
+  /* accent — fresh lime (hue 121) */
+  --accent-50: 0.983 0.030 121;
+  --accent-100: 0.966 0.058 121;
+  --accent-200: 0.946 0.092 121;
+  --accent-300: 0.928 0.128 121;
+  --accent-400: 0.918 0.152 121;
+  --accent-500: 0.905 0.168 121;
+  --accent-600: 0.855 0.165 121;
+  --accent-700: 0.760 0.150 121;
+  --accent-800: 0.655 0.130 121;
+  --accent-900: 0.545 0.108 121;
+  --accent-950: 0.435 0.086 121;
+
+  /* secondary — muted stone (hue 85) */
+  --secondary-50: 0.978 0.004 85;
+  --secondary-100: 0.955 0.008 85;
+  --secondary-200: 0.910 0.014 85;
+  --secondary-300: 0.850 0.018 85;
+  --secondary-400: 0.750 0.021 85;
+  --secondary-500: 0.635 0.022 85;
+  --secondary-600: 0.545 0.020 85;
+  --secondary-700: 0.455 0.018 85;
+  --secondary-800: 0.370 0.016 85;
+  --secondary-900: 0.285 0.014 85;
+  --secondary-950: 0.205 0.012 85;
+}
+
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 96px;
+  }
+
+  body {
+    background-color: oklch(var(--background-50));
+    color: oklch(var(--foreground-950));
+    font-family: var(--font-body);
+    font-feature-settings: "tnum" 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.022em;
+  }
+
+  ::selection {
+    background-color: oklch(var(--accent-500) / 0.45);
+    color: oklch(var(--foreground-950));
+  }
+
+  :focus-visible {
+    outline: 2px solid oklch(var(--primary-500));
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+}
+
+@layer utilities {
+  .font-heading { font-family: var(--font-heading); }
+  .font-label { font-family: var(--font-label); }
+
+  .text-balance { text-wrap: balance; }
+  .text-pretty { text-wrap: pretty; }
+
+  .hairline { border-color: oklch(var(--foreground-950) / 0.10); }
+
+  .tabular { font-variant-numeric: tabular-nums; }
+}
+
+/* ---- Scroll reveal (progressive enhancement: only hides when JS is ready) ---- */
+.js [data-reveal] {
+  opacity: 0;
+  transform: translateY(18px);
+}
+
+.js [data-reveal].is-visible {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.55s cubic-bezier(0.22, 0.61, 0.36, 1),
+    transform 0.55s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.js [data-reveal="fade"].is-visible { transition-duration: 0.5s; }
+.js [data-reveal="left"] { transform: translateX(-22px); }
+.js [data-reveal="right"] { transform: translateX(22px); }
+.js [data-reveal="scale"] { transform: scale(0.97); }
+
+/* ---- Progress line / step motion ---- */
+.panel-enter {
+  animation: panelIn 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* ---- Check pop (척척 체크가 하나씩 찍히는 움직임) ---- */
+.check-pop {
+  animation: checkPop 0.42s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+@keyframes checkPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.55);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.12);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes panelIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.step-line-fill {
+  transition: height 0.6s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.panel-swap {
+  transition:
+    opacity 0.5s cubic-bezier(0.22, 0.61, 0.36, 1),
+    transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* ---- Word highlight (flow statement) ---- */
+.flow-word {
+  color: oklch(var(--foreground-500));
+  transition: color 0.45s ease;
+}
+.flow-word.is-on {
+  color: oklch(var(--foreground-950));
+}
+
+/* ---- 척척이 캐릭터: 첫 등장 500ms + hover 3도 기울임 (무한 반복 없음) ---- */
+.char-in {
+  animation: charIn 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+@keyframes charIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.char-tilt {
+  transition: transform 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.char-tilt:hover {
+  transform: rotate(3deg);
+}
+
+/* ---- 말풍선 꼬리 ---- */
+.speech-bubble::after {
+  content: "";
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  width: 11px;
+  height: 11px;
+  background-color: oklch(var(--background-50));
+  border-right: 1px solid oklch(var(--background-200));
+  border-bottom: 1px solid oklch(var(--background-200));
+  transform: translateX(-50%) rotate(45deg);
+}
+
+/* ---- 브랜드 제품체험 모션 (180–400ms · 자동 반복 없음 · 글자는 항상 읽힘) ---- */
+.js .bm-rise {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+.bm.is-play .bm-rise {
+  animation: bmRise 320ms cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  animation-delay: calc(var(--bm-i, 0) * 70ms);
+}
+
+@keyframes bmRise {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* 일간 근무표: 근무 막대가 화면에 들어올 때 자라난다 */
+.js .bm-bar {
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+.bm.is-play .bm-bar {
+  animation: bmBarGrow 300ms cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  animation-delay: calc(var(--bm-i, 0) * 90ms);
+}
+
+@keyframes bmBarGrow {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* 시작 3단계 연결선: 화면에 들어올 때 한 번 왼쪽에서 오른쪽으로 흐른다 */
+.js .bm-flow-line {
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+.bm.is-play .bm-flow-line {
+  animation: bmFlow 900ms cubic-bezier(0.25, 0.7, 0.3, 1) forwards;
+}
+
+@keyframes bmFlow {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.js .bm-check-path {
+  stroke-dashoffset: var(--bm-len, 20);
+}
+
+.bm.is-play .bm-check-path {
+  animation: bmCheckDraw 360ms cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+
+@keyframes bmCheckDraw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* 단계 전환: 글자는 그대로 보이고 자리만 살짝 이동 */
+.bm-step {
+  animation: bmStep 260ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+@keyframes bmStep {
+  from {
+    transform: translateY(8px);
+  }
+  to {
+    transform: none;
+  }
+}
+
+/* ---- 척척이 장식 모션 (주기적·아주 살짝 · 동일 박자 동시 움직임 없음) ---- */
+/* 72px 척척이: 7~9초 주기로 아주 살짝 고개를 끄덕인다 */
+.bm.is-play .mg-nod {
+  animation: mgNod 8s cubic-bezier(0.33, 0, 0.2, 1) infinite;
+}
+
+@keyframes mgNod {
+  0%, 4% {
+    transform: none;
+  }
+  6.5% {
+    transform: translateY(2px) rotate(-2.6deg);
+  }
+  9% {
+    transform: translateY(-1px) rotate(1.4deg);
+  }
+  12%, 100% {
+    transform: none;
+  }
+}
+
+/* 시간 막대 장식: 주기적으로 자라났다 부드럽게 돌아간다 (5.5s) */
+.js .mg-grow {
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+.bm.is-play .mg-grow {
+  animation: mgGrow 5.5s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+}
+
+@keyframes mgGrow {
+  0% {
+    transform: scaleX(0);
+  }
+  12% {
+    transform: scaleX(1);
+  }
+  70% {
+    transform: scaleX(1);
+  }
+  88%, 100% {
+    transform: scaleX(0);
+  }
+}
+
+/* 출근 체크(6s)·급여 검토선(7s) 장식: 주기적으로 선이 그어진다 */
+.js .mg-draw,
+.js .mg-draw-line {
+  stroke-dashoffset: var(--mg-len, 15);
+}
+
+.bm.is-play .mg-draw {
+  animation: mgDraw 6s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+}
+
+.bm.is-play .mg-draw-line {
+  animation: mgDraw 7s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+}
+
+@keyframes mgDraw {
+  0% {
+    stroke-dashoffset: var(--mg-len, 15);
+  }
+  8% {
+    stroke-dashoffset: 0;
+  }
+  62% {
+    stroke-dashoffset: 0;
+  }
+  82%, 100% {
+    stroke-dashoffset: var(--mg-len, 15);
+  }
+}
+
+/* ---- 최종 CTA 척척이: 느린 3px 호흡 ---- */
+.char-breath {
+  animation: charBreath 6s ease-in-out infinite;
+}
+
+@keyframes charBreath {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+/* ---- 우리 가게 요약 카드의 작은 척척이: 더 느린 잔잔한 부유(다른 박자) ---- */
+.char-float {
+  animation: charFloat 7s ease-in-out infinite;
+}
+
+@keyframes charFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2.5px);
+  }
+}
+
+/* ---- 척척이 안내 말풍선 (왼쪽 꼬리) ---- */
+.mg-bubble::before {
+  content: "";
+  position: absolute;
+  left: -6px;
+  top: 50%;
+  width: 11px;
+  height: 11px;
+  background-color: oklch(var(--background-50));
+  border-left: 1px solid oklch(var(--background-200));
+  border-bottom: 1px solid oklch(var(--background-200));
+  transform: translateY(-50%) rotate(45deg);
+}
+
+/* 70대 사장님을 위한 "글씨 크게 보기" (사이트 전체 · 푸터에서만 조작) */
+.text-large {
+  zoom: 1.12;
+}
+
+/* ---- 움직임 끄기 (사용자가 직접 끈 상태 · 저장됨) ---- */
+.motion-off .bm-rise {
+  opacity: 1 !important;
+  transform: none !important;
+}
+.motion-off .bm-bar {
+  transform: none !important;
+}
+.motion-off .bm-check-path {
+  stroke-dashoffset: 0 !important;
+}
+.motion-off .bm-step {
+  animation: none !important;
+}
+.motion-off .mg-nod,
+.motion-off .mg-grow,
+.motion-off .mg-draw,
+.motion-off .mg-draw-line,
+.motion-off .char-breath,
+.motion-off .char-float,
+.motion-off .bm-flow-line {
+  animation: none !important;
+}
+.motion-off .mg-grow {
+  transform: none !important;
+}
+.motion-off .mg-draw,
+.motion-off .mg-draw-line {
+  stroke-dashoffset: 0 !important;
+}
+.motion-off .bm-flow-line {
+  transform: none !important;
+}
+.motion-off [data-reveal] {
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
+}
+.motion-off *,
+.motion-off *::before,
+.motion-off *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+
+  .bm-rise { opacity: 1 !important; transform: none !important; }
+  .bm-flow-line { transform: none !important; }
+  .mg-grow { transform: none !important; }
+  .mg-draw,
+  .mg-draw-line { stroke-dashoffset: 0 !important; }
+  .bm-check-path { stroke-dashoffset: 0 !important; }
+  .bm-step { animation: none !important; }
+  .mg-nod,
+  .char-breath,
+  .char-float { animation: none !important; }
+
+  .js [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .char-tilt:hover {
+    transform: none !important;
+  }
+
+  .step-line-fill,
+  .panel-swap,
+  .flow-word {
+    transition: none !important;
+  }
+
+  .flow-word { color: oklch(var(--foreground-900)); }
+
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

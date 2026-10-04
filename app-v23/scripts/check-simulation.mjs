@@ -1,0 +1,80 @@
+import assert from 'node:assert/strict';
+import {DatabaseSync} from 'node:sqlite';
+import worker,{api} from '../dist/server/index.js';
+const db=new DatabaseSync(':memory:');db.exec('CREATE TABLE stores(owner TEXT PRIMARY KEY,data TEXT,version INTEGER,updated_at TEXT)');
+const DB={prepare(sql){let a=[];return {bind(...v){a=v;return this},async first(){return db.prepare(sql).get(...a)},async all(){return {results:db.prepare(sql).all(...a)}},async run(){return {meta:{changes:Number(db.prepare(sql).run(...a).changes)}}}}}};
+let passed=0;function ok(label,actual,expected){assert.deepEqual(actual,expected,label);console.log(`${++passed}. PASS ${label}`)}
+async function call(user,path,body,method){const r=await api(new Request('https://test.local'+path,{method:method||(body?'POST':'GET'),headers:{origin:'https://test.local',...(user?{'oai-authenticated-user-id':user,'oai-authenticated-user-email':user+'@example.com'}:{})},...(body?{body:JSON.stringify(body)}:{})}),{DB});return {status:r.status,data:await r.json()}}
+const account=(u,b)=>call(u,'/api/account',b),join=(u,b)=>call(u,'/api/staff-join',b),store=(u,b,m)=>call(u,'/api/store',b,m);
+for(const p of ['/app','/signup?plan=free','/employee?code=example','/staff-requests','/app/','/start','/try','/account']){const r=await worker.fetch(new Request('https://test.local'+p),{DB,ASSETS:{fetch:async r=>new Response(new URL(r.url).pathname,{status:new URL(r.url).pathname==='/'?200:404})}});ok('entry route '+p,r.status,200)}
+ok('unknown route stays 404',(await worker.fetch(new Request('https://test.local/missing'),{DB,ASSETS:{fetch:async()=>new Response('',{status:404})}})).status,404);
+ok('anonymous denied',(await join('')).status,401);
+ok('free store creation',(await account('boss',{action:'onboard',storeName:'테스트',branchName:'본점',ownerName:'대표',plan:'free',acknowledged:true})).status,201);
+let j=await join('boss');ok('owner role',j.data.owner,true);
+ok('make shared code',(await join('boss',{action:'code',branchId:'branch-main',version:j.data.version})).status,200);
+j=await join('boss');const code=j.data.codes[0].code;ok('one branch code',j.data.codes.length,1);
+ok('invalid code',(await join('staff',{action:'apply',code:'wrong',name:'직원',phone:'01000000000'})).status,400);
+ok('employee request',(await join('staff',{action:'apply',code,name:'직원',phone:'01000000000'})).status,200);
+ok('duplicate request idempotent',(await join('staff',{action:'apply',code,name:'직원',phone:'01000000000'})).status,200);
+ok('pending cannot see store',(await store('staff')).status,409);
+let mine=await join('staff');ok('pending visible to self',mine.data.requests[0].status,'pending');ok('pending response hides wage',JSON.stringify(mine).includes('wage'),false);
+ok('other employee sees no requests',(await join('stranger')).data.requests.length,0);
+j=await join('boss');ok('owner receives one request',j.data.requests.length,1);const id=j.data.requests[0].id;
+ok('employee cannot approve',(await join('staff',{action:'review',id,approve:true,version:j.data.version})).status,403);
+ok('stale approval blocked',(await join('boss',{action:'review',id,approve:true,version:0})).status,409);
+ok('owner accepts',(await join('boss',{action:'review',id,approve:true,version:j.data.version})).status,200);
+ok('employee connected',(await join('staff')).data.connected,true);
+let s=await store('staff');ok('employee access',s.data.access,'employee');ok('unagreed wage zero',s.data.state.employees[0].wage,0);
+ok('employee cannot change account',(await account('staff',{action:'changePlan',plan:'team'})).status,403);
+let boss=await store('boss'),eid=boss.data.state.employees[0].id;
+ok('free contract confirmation blocked',(await store('boss',{action:'contract',id:eid,reason:'테스트',version:boss.data.version})).status,400);
+ok('free contract queue blocked',(await store('boss',{action:'queueContract',id:eid,version:boss.data.version})).status,400);
+ok('ordinary save preserves joins',(await store('boss',{state:boss.data.state,version:boss.data.version},'PUT')).status,200);
+ok('join code survives save',(await join('boss')).data.codes[0].code,code);
+ok('staff stays linked',(await store('staff')).status,200);
+ok('second request',(await join('staff2',{action:'apply',code,name:'직원2',phone:'01000000000'})).status,200);
+j=await join('boss');ok('reject request',(await join('boss',{action:'review',id:j.data.requests[0].id,approve:false,version:j.data.version})).status,200);
+ok('rejected cannot access',(await store('staff2')).status,409);ok('rejected own status',(await join('staff2')).data.requests[0].status,'rejected');
+ok('retry after rejection',(await join('staff2',{action:'apply',code,name:'직원2',phone:'01000000000'})).status,200);
+ok('upgrade starter',(await account('boss',{action:'changePlan',plan:'starter'})).status,200);
+boss=await store('boss');ok('paid contract queue allowed',(await store('boss',{action:'queueContract',id:eid,version:boss.data.version})).status,200);
+ok('employee cannot use manager API',(await call('staff','/api/manager')).status,403);
+boss=await store('boss');boss.data.state.employees[0].access='중간관리자';boss.data.state.employees[0].managerPermissions=['schedule','notices'];
+ok('owner delegates manager duties',(await store('boss',{state:boss.data.state,version:boss.data.version},'PUT')).status,200);
+let manager=await call('staff','/api/manager');ok('manager permission selection',manager.data.permissions,['schedule','notices']);
+ok('manager payload hides wage',JSON.stringify(manager.data).includes('wage'),false);
+ok('manager cannot grant own roles',(await store('staff',{state:(await store('staff')).data.state,version:manager.data.version},'PUT')).status,403);
+ok('manager cannot manage foreign employee',(await call('staff','/api/manager',{action:'saveShift',version:manager.data.version,shift:{employeeId:'foreign',date:'2026-10-10',start:'09:00',end:'18:00',breakMinutes:60}})).status,403);
+ok('delegated manager adds shift',(await call('staff','/api/manager',{action:'saveShift',version:manager.data.version,shift:{employeeId:eid,date:'2026-10-10',start:'09:00',end:'18:00',breakMinutes:60}})).status,200);
+manager=await call('staff','/api/manager');ok('unassigned approval blocked',(await call('staff','/api/manager',{action:'reviewLeave',version:manager.data.version,id:'x',approve:true,comment:'test'})).status,403);
+ok('manager can post branch notice',(await call('staff','/api/manager',{action:'postNotice',version:manager.data.version,title:'테스트 공지',body:'가상 검수'})).status,200);
+boss=await store('boss');boss.data.state.employees[0].managerPermissions=[];await store('boss',{state:boss.data.state,version:boss.data.version},'PUT');manager=await call('staff','/api/manager');
+ok('revoked permission blocked immediately',(await call('staff','/api/manager',{action:'postNotice',version:manager.data.version,title:'test',body:'test'})).status,403);
+
+
+// Continuation uses only synthetic in-memory accounts and records.
+j=await join('staff2');const pendingId=j.data.requests.find(x=>x.status==='pending').id;
+ok('stranger cannot withdraw application',(await join('stranger',{action:'withdraw',id:pendingId})).status,404);
+ok('employee withdraws pending application',(await join('staff2',{action:'withdraw',id:pendingId})).status,200);
+ok('withdrawn status visible',(await join('staff2')).data.requests[0].status,'withdrawn');
+ok('withdraw twice blocked',(await join('staff2',{action:'withdraw',id:pendingId})).status,409);
+ok('apply again after withdrawal',(await join('staff2',{action:'apply',code,name:'직원2',phone:'01000000000'})).status,200);
+j=await join('boss');ok('owner accepts reapplied employee',(await join('boss',{action:'review',id:j.data.requests[0].id,approve:true,version:j.data.version})).status,200);
+boss=await store('boss');const second=boss.data.state.employees.find(x=>x.email==='staff2@example.com').id;
+boss.data.state.employees[0].managerPermissions=['attendance','leave'];await store('boss',{state:boss.data.state,version:boss.data.version},'PUT');
+function fixture(fn){const r=db.prepare('SELECT data FROM stores WHERE owner=?').get('boss'),d=JSON.parse(r.data);fn(d);db.prepare('UPDATE stores SET data=?,version=version+1 WHERE owner=?').run(JSON.stringify(d),'boss')}
+fixture(d=>{d.attendance=[{id:'morning',employeeId:second,start:'2026-09-20T00:00:00.000Z',end:'2026-09-20T04:00:00.000Z',breakMinutes:30,breakStart:null},{id:'evening',employeeId:second,start:'2026-09-20T08:00:00.000Z',end:'2026-09-20T13:00:00.000Z',breakMinutes:30,breakStart:null}];});
+const request=async(end)=>store('staff2',{action:'request',id:'morning',start:'2026-09-20T00:00:00.000Z',end,breakMinutes:30,reason:'시간 정정',version:(await store('staff2')).data.version});
+ok('overlapping correction blocked',(await request('2026-09-20T09:00:00.000Z')).status,400);
+ok('valid correction submitted',(await request('2026-09-20T05:00:00.000Z')).status,200);
+ok('duplicate pending correction blocked',(await request('2026-09-20T05:00:00.000Z')).status,400);
+manager=await call('staff','/api/manager');const correction=manager.data.corrections[0].id;
+ok('manager sees colleague request',manager.data.corrections.length,1);
+fixture(d=>{d.payrollRuns.test={locked:true,month:'2026-09',rows:[{employeeId:second}]};});
+manager=await call('staff','/api/manager');ok('manager cannot alter finalized payroll',(await call('staff','/api/manager',{action:'reviewCorrection',id:correction,approve:true,version:manager.data.version})).status,409);
+fixture(d=>{d.payrollRuns={};});manager=await call('staff','/api/manager');
+ok('manager approves valid correction',(await call('staff','/api/manager',{action:'reviewCorrection',id:correction,approve:true,version:manager.data.version})).status,200);
+ok('employee sees updated end',(await store('staff2')).data.state.attendance.find(a=>a.id==='morning').end,'2026-09-20T05:00:00.000Z');
+manager=await call('staff','/api/manager');ok('approval cannot repeat',(await call('staff','/api/manager',{action:'reviewCorrection',id:correction,approve:true,version:manager.data.version})).status,403);
+ok('employee sees approval status',(await store('staff2')).data.state.requests[0].status,'승인');
+console.log('Scenario checks: '+passed+' passed');

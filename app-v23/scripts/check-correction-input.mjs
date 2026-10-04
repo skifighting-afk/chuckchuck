@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {koreanInstant,correctionInputError} from '../lib/correction-input.ts';
+const base={start:'2026-09-23T09:00',end:'2026-09-23T18:00',breakMinutes:60,reason:'정정'};
+assert.equal(koreanInstant(base.start),'2026-09-23T00:00:00.000Z');
+assert.equal(koreanInstant('2026-02-30T09:00'),null);
+assert.equal(koreanInstant('2026-09-23T25:00'),null);
+assert.equal(correctionInputError(base),null);
+assert.ok(correctionInputError({...base,end:'2026-09-23T08:00'}));
+assert.equal(correctionInputError({...base,start:'2026-09-23T22:00',end:'2026-09-24T06:00'}),null);
+assert.ok(correctionInputError({...base,breakMinutes:540}));
+assert.ok(correctionInputError({...base,reason:'  '}));
+assert.equal(correctionInputError({...base,end:''}),null);
+assert.ok(correctionInputError({...base,start:''}));
+console.log('PASS 10 correction-input cases: KST, invalid dates/hours, valid, reversed, overnight, excessive break, missing reason, active shift, missing start');

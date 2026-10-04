@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {attendanceQrEntry,cameraErrorMessage} from '../lib/qr-entry.ts';
+const token='12345678-1234-1234-1234-123456789abc'.repeat(2);
+const search='?branch=branch-main&attendanceQr='+token;
+let n=0;const test=(name,run)=>{run();console.log(`PASS ${++n}. ${name}`)};
+test('QR survives local sign-in return',()=>assert.equal(attendanceQrEntry('/app',search),'/app'+search+'#attendance'));
+test('QR context can be reopened on login',()=>assert.equal(attendanceQrEntry('/login',search),'/app'+search+'#attendance'));
+test('arbitrary external next is discarded',()=>assert.equal(attendanceQrEntry('/app',search+'&next=https://evil.invalid'),'/app'+search+'#attendance'));
+test('missing token is not an employee QR entry',()=>assert.equal(attendanceQrEntry('/app','?branch=branch-main'),null));
+test('malformed token is not an employee QR entry',()=>assert.equal(attendanceQrEntry('/app','?branch=branch-main&attendanceQr=forged'),null));
+test('missing branch is rejected',()=>assert.equal(attendanceQrEntry('/app','?attendanceQr='+token),null));
+test('unrelated route does not switch roles',()=>assert.equal(attendanceQrEntry('/signup',search),null));
+test('branch stays encoded inside local query',()=>assert.ok(attendanceQrEntry('/app','?branch='+encodeURIComponent('//evil.invalid/a?b=c')+'&attendanceQr='+token).startsWith('/app?branch=%2F%2Fevil.invalid')));
+test('control character in branch rejected',()=>assert.equal(attendanceQrEntry('/app','?branch=a%0Ab&attendanceQr='+token),null));
+test('camera refusal has actionable Korean help',()=>assert.match(cameraErrorMessage(new DOMException('', 'NotAllowedError')),/권한.*QR 사진/));
+test('missing camera has phone fallback',()=>assert.match(cameraErrorMessage(new DOMException('', 'NotFoundError')),/휴대폰/));
+test('busy camera explains retry',()=>assert.match(cameraErrorMessage(new DOMException('', 'NotReadableError')),/다른 앱/));
+console.log(`${n}/${n} passed`);
