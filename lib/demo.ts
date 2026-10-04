@@ -22,7 +22,7 @@ export function demoTeam(now = today()): Team {
   const base = s.employees[0];
   const prev = prevMonth(now), from = prev + '-01';
   s.employees = PEOPLE.map((p, i) => {
-    const insurances = blankInsurance();
+    const insurances: Record<string, {status: '확인 필요' | '가입' | '적용 제외'; reason: string}> = blankInsurance();
     for (const n of Object.keys(insurances)) insurances[n] = p.part && ['국민연금', '건강보험', '장기요양'].includes(n) ? {status: '적용 제외', reason: '월 60시간 미만 단시간 근로(예시)'} : {status: '가입', reason: ''};
     return {...base, id: `e${i}a1b2c3-demo`, name: p.name, email: `demo${i}@example.invalid`, phone: '010-0000-0000', address: '', joined: datePlus(from, -60 - i * 30), status: '재직' as const,
       role: p.role, employment: p.part ? '단시간' as const : p.payType === '월급' ? '기간의 정함 없음' as const : '단시간' as const, weeklyHours: p.weekly, payType: p.payType, wage: p.wage, payDay: 10,
