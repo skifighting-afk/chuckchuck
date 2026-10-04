@@ -31,6 +31,8 @@ export async function exportApi(request: Request, env: {DB: D1Database}) {
       documentActivity: activity,
       leaveEvidence: evidence,
     };
+    // 작업 056: 탈퇴 예약 전에 최근 내려받기를 확인한다.
+    await env.DB.prepare('UPDATE app_users SET last_export_at=? WHERE id=?').bind(new Date().toISOString(), uid).run();
     const day = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
     return new Response(JSON.stringify(body, null, 2), {headers: {'Content-Type': 'application/json; charset=utf-8', 'Content-Disposition': `attachment; filename="chukchuk-export-${day}.json"`, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff'}});
   } catch {

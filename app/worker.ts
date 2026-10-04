@@ -13,6 +13,7 @@ import {accountApi,resolveStore} from './saas-api';
 import {plans,trialStatus,isPlan,canWrite,capacityError,hasFeature} from '../lib/plans';
 import {evidenceApi} from './evidence-api';
 import {exportApi} from './export-api';
+import {withdrawApi,processDeletions} from './withdraw-api';
 import {operationsApi} from './operations-api';
 type Env=AuthEnv&{HQ_ADMIN_EMAIL?:string,HQ_NATIVE_USER_ID?:string,DB:D1Database,ASSETS?:{fetch:(r:Request)=>Promise<Response>},RESEND_API_KEY?:string,EMAIL_FROM?:string};
 const json=(v:unknown,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store'}});
@@ -21,6 +22,8 @@ const esc=(s:any)=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;',
 export function slipText(row:any,month:string,date:string,store:string){return payslipText(store,month,date,row)}
 export async function api(request:Request,env:Env){
  const path=new URL(request.url).pathname;
+ // 작업 056: 기한이 지난 탈퇴 예약을 로그인·계정 요청 때 조금씩 마무리한다.
+ if(path==='/api/auth'||path==='/api/account')await processDeletions(env).catch(()=>0);
  if(path==='/api/auth')return nativeAuth(request,env);
  if(path==='/api/admin')return adminApi(await withNativeIdentity(request,env),env);
  request=await withNativeIdentity(request,env);
@@ -31,6 +34,7 @@ export async function api(request:Request,env:Env){
  if(path==='/api/account')return accountApi(request,env);
  if(path==='/api/evidence')return evidenceApi(request,env);
  if(path==='/api/export')return exportApi(request,env);
+ if(path==='/api/withdraw')return withdrawApi(request,env);
  if(path==='/api/operations')return operationsApi(request,env);
  if(!['/api/store','/api/join'].includes(path))return json({error:'요청 경로를 찾을 수 없습니다.'},404);
  const userId=request.headers.get('oai-authenticated-user-id');if(!userId)return json({error:'로그인 후 이용해 주세요.'},401);
@@ -52,6 +56,7 @@ export async function api(request:Request,env:Env){
   return {state:filtered,version:version+1,audit:[],outbox:[],actor,emailConnected:false,access,selfId:self!.id,plan:raw?._account?{plan:raw._account.plan}:null};
  };
  if(request.method==='GET')return json({...result(),version,updatedAt:row?.updated_at});
+ if(raw?._account?.deletion)return json({error:'탈퇴를 예약해 가게가 읽기 전용이에요. 계정 화면에서 예약을 취소하면 다시 저장할 수 있어요.',code:'WITHDRAW_PENDING'},403);
  if(raw?._account&&!canWrite(raw._account))return json({error:'체험이 종료되었습니다. 기록 조회와 내려받기는 계속 이용할 수 있습니다.',code:'TRIAL_ENDED'},403);
  if(!['PUT','POST'].includes(request.method))return json({error:'지원하지 않는 요청입니다.'},405);
  if(request.headers.get('origin')!==new URL(request.url).origin)return json({error:'요청 출처를 확인할 수 없습니다.'},403);

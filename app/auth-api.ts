@@ -152,3 +152,9 @@ export async function confirmSigner(request:Request,env:Env,password:unknown,req
  if(!check.ok||check.data?.user?.id!==user.auth_id)throw Error('현재 비밀번호를 확인해 주세요.');
  return {userId:id,email:user.email,authMethod:'email-password',emailVerified:!!user.email_verified};
 }
+
+/** 작업 056: Supabase Auth 로그인 계정 삭제(서비스 키). 이미 없으면 성공으로 본다. */
+export async function deleteAuthUser(env:Env,authId:string){
+ const r=await gotrue(env,'/admin/users/'+encodeURIComponent(authId),{method:'DELETE',admin:true});
+ return r.ok||r.status===404;
+}

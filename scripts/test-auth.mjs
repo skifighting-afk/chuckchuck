@@ -25,6 +25,12 @@ export function fakeGoTrue(DB,{domain='example.invalid'}={}){
    if([...users.values()].some(u=>u.email===body.email))return reply(422,{msg:'email_exists'});
    const u={id:crypto.randomUUID(),email:body.email,password:body.password,user_metadata:body.user_metadata||{}};users.set(u.id,u);return reply(200,view(u));
   }
+  if(p.startsWith('/admin/users/')&&method==='DELETE'){
+   if(apikey!==SERVICE||token!==SERVICE)return reply(403,{msg:'service role required'});
+   const id=p.slice('/admin/users/'.length);if(!users.delete(id))return reply(404,{msg:'user not found'});
+   for(const [t,u] of [...tokens])if(u===id)tokens.delete(t);
+   return reply(200,{});
+  }
   if(p==='/token'&&url.searchParams.get('grant_type')==='password'){
    const u=[...users.values()].find(u=>u.email===String(body.email).toLowerCase()&&u.password===body.password);
    return u?reply(200,issue(u)):reply(400,{error:'invalid_grant'});

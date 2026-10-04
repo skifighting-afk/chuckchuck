@@ -13,7 +13,7 @@ export function trialStatus(a:any,now=Date.now()){
  if(a.status==='cancelled')return 'cancelled';
  return Date.parse(a.trialEndsAt)>now?'trialing':'expired';
 }
-export function canWrite(a:any){return ['legacy','free','trialing'].includes(trialStatus(a))}
+export function canWrite(a:any){if(a?.deletion)return false;return ['legacy','free','trialing'].includes(trialStatus(a))}
 export function planLimits(a:any){
  if(!a||!isPlan(a.plan))return {employees:150,branches:50};
  return {employees:plans[a.plan as PlanId].employees,branches:a.plan==='multi'?Math.max(2,Math.min(10,Number(a.storeSlots)||2)):1};
