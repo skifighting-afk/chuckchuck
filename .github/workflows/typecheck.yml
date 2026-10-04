@@ -14,4 +14,7 @@ jobs:
         with: {node-version: 22}
       - run: npm ci --no-audit --no-fund >/dev/null
       - name: tsc
-        run: npx tsc --noEmit --pretty false | sed -E 's/^([^(]+)\(([0-9]+),([0-9]+)\): error (TS[0-9]+): (.*)$/::error file=\1,line=\2,col=\3::\4 \5/'; exit ${PIPESTATUS[0]}
+        shell: bash
+        run: |
+          set -o pipefail
+          npx tsc --noEmit --pretty false | sed -E 's/^([^(]+)\(([0-9]+),([0-9]+)\): error (TS[0-9]+): (.*)$/::error file=\1,line=\2,col=\3::\4 \5/'
