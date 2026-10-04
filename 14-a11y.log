@@ -1,3 +1,1 @@
-접근성 문제 2건:
-390px /demo?screen=attendance [axe color-contrast] Elements must meet minimum color contrast ratio thresholds — .neutral
-1280px /demo?screen=attendance [axe color-contrast] Elements must meet minimum color contrast ratio thresholds — .neutral
+접근성 점검 통과: 12개 화면 × 2개 크기 (axe 포함)
