@@ -2,14 +2,4 @@
 > chuckchuck@0.1.0 build
 > node scripts/portable-build.mjs
 
-file:///home/runner/work/chuckchuck/chuckchuck/scripts/portable-build.mjs:14
-if(process.env.CI&&process.env.REQUIRE_SUPABASE_CONFIG&&(!pick('SUPABASE_URL')||!pick('SUPABASE_ANON_KEY')))throw Error('SUPABASE_URL과 SUPABASE_ANON_KEY(저장소 Variables)가 필요해요.');
-                                                                                                                  ^
-
-Error: SUPABASE_URL과 SUPABASE_ANON_KEY(저장소 Variables)가 필요해요.
-    at file:///home/runner/work/chuckchuck/chuckchuck/scripts/portable-build.mjs:14:115
-    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
-    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
-
-Node.js v22.23.3
+척척사장봇 화면·서버 함수 빌드 완료

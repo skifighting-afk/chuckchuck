@@ -1,0 +1,490 @@
+
+> chuckchuck@0.1.0 test
+> node scripts/check-model.mjs
+
+PASS: overnight duration, breaks, Korean month boundaries and wage validation.
+
+── check-team
+PASS: migration, auth, forged identity headers, origin, conflicts, owner isolation, email-bound invites (verified email only), role filtering, manager cannot approve, attendance before/after audit, payroll lock, reopen, unavailable email not marked sent, insurance and income validation.
+
+── check-admin
+1. PASS anonymous admin denied
+2. PASS forged identity headers cannot open admin
+3. PASS customer admin denied
+4. PASS unconfigured admin denied
+5. PASS HQ sees summary
+6. PASS customer has no HQ entry
+7. PASS HQ flag server assigned
+8. PASS summary excludes wage fields
+9. PASS cross origin admin write denied
+10. PASS invalid status denied
+11. PASS support memo saves
+12. PASS stale save denied
+13. PASS internal memo absent in customer payload
+14. PASS customer save preserves HQ memo
+15. PASS free three employees save
+16. PASS fourth employee capacity dialog code
+17. PASS over limit never persists
+18. PASS checkout cannot fake payment
+HQ/capacity checks: 18 passed
+
+── check-admin-overview
+1. PASS HQ can open while stray session cookie exists
+2. PASS forged headers cannot impersonate HQ email
+3. PASS other account rejected
+4. PASS unverified account rejected
+5. PASS customer accounts separate from branches
+6. PASS employees exclude retired
+7. PASS new shops last30days
+8. PASS trial statuses correct
+9. PASS queue counts correct
+10. PASS trial price uses purchased branch slots
+11. PASS unknown payments not fabricated
+12. PASS PII not returned
+13. PASS salary fields not returned
+14. PASS capacity store count
+15. PASS industry counts
+16. PASS plan filtering
+17. PASS overview independent of filter
+18. PASS branch name search
+19. PASS queue filter
+20. PASS unmatched search empty
+21. PASS page clamped
+22. PASS server page50
+23. PASS second page count
+24. PASS search spans all pages
+25. PASS six months buckets
+26. PASS industry onboarding created
+27. PASS industry in account view
+28. PASS industry reaches HQ
+29. PASS unlisted industry rejected
+HQ analytics and onboarding checks: 29 passed
+
+── check-attendance-qr
+PASS 1. branch save
+PASS 2. clock in without QR blocked
+PASS 3. owner issues store QR
+PASS 4. employee cannot fetch QR secret
+PASS 5. employee cannot issue QR
+PASS 6. forged QR blocked
+PASS 7. other branch QR blocked
+PASS 8. valid QR clock in
+PASS 9. duplicate in blocked
+PASS 10. clock out without QR blocked
+PASS 11. break does not require QR
+PASS 12. resume does not require QR
+PASS 13. normal save preserves QR
+PASS 14. valid QR clock out
+PASS 15. reopening QR keeps printed token
+PASS 16. rotation invalidates old QR
+PASS 17. rotated QR works
+PASS 18. owner manual correction path retained
+18/18 passed
+
+── check-correction-input
+PASS 10 correction-input cases: KST, invalid dates/hours, valid, reversed, overnight, excessive break, missing reason, active shift, missing start
+
+── check-entry
+1. PASS entry route /app
+2. PASS entry route /signup?plan=free
+3. PASS entry route /employee?code=example
+4. PASS entry route /staff-requests
+5. PASS entry route /app/
+6. PASS entry route /start
+7. PASS entry route /try
+8. PASS entry route /account
+9. PASS unknown route stays 404
+10. PASS anonymous denied
+11. PASS free store creation
+12. PASS owner role
+13. PASS make shared code
+14. PASS one branch code
+15. PASS invalid code
+16. PASS employee request
+17. PASS duplicate request idempotent
+18. PASS pending cannot see store
+19. PASS pending visible to self
+20. PASS pending response hides wage
+21. PASS other employee sees no requests
+22. PASS owner receives one request
+23. PASS employee cannot approve
+24. PASS stale approval blocked
+25. PASS owner accepts
+26. PASS employee connected
+27. PASS employee access
+28. PASS unagreed wage zero
+29. PASS employee cannot change account
+30. PASS free contract confirmation blocked
+31. PASS free contract queue blocked
+32. PASS ordinary save preserves joins
+33. PASS join code survives save
+34. PASS staff stays linked
+35. PASS second request
+36. PASS reject request
+37. PASS rejected cannot access
+38. PASS rejected own status
+39. PASS retry after rejection
+40. PASS upgrade starter
+41. PASS paid contract queue allowed
+42. PASS employee cannot use manager API
+43. PASS owner delegates manager duties
+44. PASS manager permission selection
+45. PASS manager payload hides wage
+46. PASS manager cannot grant own roles
+47. PASS manager cannot manage foreign employee
+48. PASS delegated manager adds shift
+49. PASS unassigned approval blocked
+50. PASS manager can post branch notice
+51. PASS revoked permission blocked immediately
+Entry/join/contracts/manager checks: 51 passed
+
+── check-evidence
+PASS evidence auth, owner/self only, tenant isolation, origin, consent, signature, size, quota, expiry and deletion.
+
+── check-final-qa
+PASS 1. branch save
+PASS 2. impossible schedule date rejected
+PASS 3. impossible payroll paydate rejected
+PASS 4. unrelated branch payroll metadata absent
+PASS 5. own confirmed payslip preserved
+PASS 6. retired employee clock in blocked
+PASS 7. retired account denied
+7/7 passed
+
+── check-hq-email
+1. PASS registration returns a session for own login
+2. PASS signup alone grants no HQ
+3. PASS app user id is native Supabase id
+4. PASS exact configured native user can access
+5. PASS account menu sees granted HQ
+6. PASS unverified HQ email does not grant admin
+7. PASS unverified HQ email account remains restricted
+8. PASS forged identity headers do not grant admin
+9. PASS forged configured user id without token denied
+10. PASS verified HQ_ADMIN_EMAIL account gains access
+11. PASS HQ uses real password authentication
+12. PASS logout revokes native HQ session
+13. PASS reauth restores allowed HQ access
+14. PASS removing config revokes HQ immediately
+Native HQ checks: 14 passed
+
+── check-native-auth
+PASS 1. anonymous cannot see store
+PASS 2. short password rejected
+PASS 3. common sequential password rejected
+PASS 4. repeated password rejected
+PASS 5. rejected passwords never reach Supabase Auth
+PASS 6. employee email registration with 8 characters and no symbols succeeds
+PASS 7. app database stores no password or password hash
+PASS 8. session is a bearer token, not a cookie
+PASS 9. session token not stored in app database
+PASS 10. account created through service role with metadata
+PASS 11. native session resolves employee role
+PASS 12. unverified email is honest
+PASS 13. employee cannot accidentally create owner store
+PASS 14. case insensitive duplicate rejected
+PASS 15. wrong password denied
+PASS 16. unknown and wrong login share response
+PASS 17. correct password creates new session
+PASS 18. bad token cannot fall through to forged identity headers
+PASS 19. public anon key is not a login
+PASS 20. logout succeeds
+PASS 21. logged out session is revoked
+PASS 22. unverified HQ email never grants admin
+PASS 23. native owner creates their own store
+PASS 24. owner publishes join conditions
+PASS 25. rest exceeding shift rejected
+PASS 26. fixed term requires end date
+PASS 27. impossible contract date rejected
+PASS 28. normal owner save preserves contract setup
+PASS 29. employee cannot alter employer conditions
+PASS 30. impossible employee start date rejected
+PASS 31. employee sees employer contract draft with own details
+PASS 32. contract review required before apply
+PASS 33. confirmed employee application is submitted
+PASS 34. pending employee cannot access store
+PASS 35. pending employee can inspect own submitted draft
+PASS 36. owner sees profile and review timestamp
+PASS 37. owner can update future join conditions
+PASS 38. outdated contract acknowledgement cannot be approved
+PASS 39. employee can recover by withdrawing outdated application
+PASS 40. employee can confirm revised contract and reapply
+PASS 41. owner approves employee
+PASS 42. approved employee reaches own screen
+PASS 43. approved conditions reach wage and contract
+PASS 44. contract review does not pretend to be signed
+PASS 45. missing email service does not pretend to send
+PASS 46. recovery link returns to this site reset screen
+PASS 47. recovery does not reveal unknown accounts
+PASS 48. cross origin authentication mutation rejected
+PASS 49. recovery token changes password
+PASS 50. old password no longer works
+PASS 51. new password works
+PASS 52. password recovery revokes previous sessions
+PASS 53. recovery link proves email ownership
+PASS 54. invalid or expired recovery token rejected
+PASS 55. expired sessions denied
+PASS 56. repeated authentication requests limited
+56/56 passed
+
+── check-personal-access
+1. PASS employee record contains only self
+2. PASS own schedule retained, colleagues excluded
+3. PASS own attendance retained
+4. PASS own request retained
+5. PASS own wage adjustments only
+6. PASS own confirmed payslip retained
+7. PASS unconfirmed payroll hidden
+8. PASS private payroll metadata omitted
+9. PASS legacy and internal notes omitted
+10. PASS other employee identities absent from complete response
+11. PASS accountant information and owner audit absent
+12. PASS query parameters cannot change identity
+13. PASS anonymous access blocked
+14. PASS employee cannot read manager endpoint
+15. PASS employee cannot change another clock record
+16. PASS employee cannot request another record correction
+17. PASS employee cannot replace store state
+18. PASS leave portal contains own employee only
+19. PASS leave portal contains own leave only
+20. PASS own-branch and whole-store notices remain
+21. PASS owner retains all staff
+22. PASS owner retains all schedules
+23. PASS own QR attendance still records
+24. PASS mutation response also excludes colleagues
+25. PASS manager personal view stays own-only
+26. PASS delegated manager sees assigned branch schedules
+27. PASS delegated manager cannot see foreign branch
+28. PASS manager has no other employee pay data
+29. PASS manager personal endpoint cannot correct colleague
+30. PASS revoked schedule permission removes branch schedules
+31. PASS retired employee loses personal access
+31/31 personal access checks passed
+
+── check-qr-entry
+PASS 1. QR survives local sign-in return
+PASS 2. QR context can be reopened on login
+PASS 3. arbitrary external next is discarded
+PASS 4. missing token is not an employee QR entry
+PASS 5. malformed token is not an employee QR entry
+PASS 6. missing branch is rejected
+PASS 7. unrelated route does not switch roles
+PASS 8. branch stays encoded inside local query
+PASS 9. control character in branch rejected
+PASS 10. camera refusal has actionable Korean help
+PASS 11. missing camera has phone fallback
+PASS 12. busy camera explains retry
+12/12 passed
+
+── check-saas
+PASS: approved leave blocks shifts; overlapping shifts blocked.
+PASS: free account, blank tenant, per-store 3/10 limits, free core notice, paid feature guards, pricing 3 stores, trial unchanged/no repeat, downgrade capacity protection, no payment, leave balance once, tenant isolation, expired→free restores writes.
+
+── check-simple-join
+1. PASS owner creates short code
+2. PASS 8 unambiguous characters
+3. PASS grouped lowercase normalizes
+4. PASS short link copy retains code
+5. PASS old long link paste remains supported
+6. PASS foreign website is not accepted as store link
+7. PASS short link routes to employee signup
+8. PASS short link prepopulates correct code
+9. PASS invalid short link 404
+10. PASS anonymous cannot inspect join terms
+11. PASS code alone cannot read staff data
+12. PASS formatted short code finds correct store
+13. PASS short code permits application
+14. PASS application still waits for owner
+15. PASS pending employee still cannot access store
+16. PASS reopening code does not rotate or invalidate it
+17. PASS employee cannot create store code
+18. PASS old code becomes 8 characters
+19. PASS previous code preserved as alias
+20. PASS previous shared link still finds correct store
+21. PASS new short code finds same store
+21/21 simple join checks passed
+
+── check-simulation
+1. PASS entry route /app
+2. PASS entry route /signup?plan=free
+3. PASS entry route /employee?code=example
+4. PASS entry route /staff-requests
+5. PASS entry route /app/
+6. PASS entry route /start
+7. PASS entry route /try
+8. PASS entry route /account
+9. PASS unknown route stays 404
+10. PASS anonymous denied
+11. PASS free store creation
+12. PASS owner role
+13. PASS make shared code
+14. PASS one branch code
+15. PASS invalid code
+16. PASS employee request
+17. PASS duplicate request idempotent
+18. PASS pending cannot see store
+19. PASS pending visible to self
+20. PASS pending response hides wage
+21. PASS other employee sees no requests
+22. PASS owner receives one request
+23. PASS employee cannot approve
+24. PASS stale approval blocked
+25. PASS owner accepts
+26. PASS employee connected
+27. PASS employee access
+28. PASS unagreed wage zero
+29. PASS employee cannot change account
+30. PASS free contract confirmation blocked
+31. PASS free contract queue blocked
+32. PASS ordinary save preserves joins
+33. PASS join code survives save
+34. PASS staff stays linked
+35. PASS second request
+36. PASS reject request
+37. PASS rejected cannot access
+38. PASS rejected own status
+39. PASS retry after rejection
+40. PASS upgrade starter
+41. PASS paid contract queue allowed
+42. PASS employee cannot use manager API
+43. PASS owner delegates manager duties
+44. PASS manager permission selection
+45. PASS manager payload hides wage
+46. PASS manager cannot grant own roles
+47. PASS manager cannot manage foreign employee
+48. PASS delegated manager adds shift
+49. PASS unassigned approval blocked
+50. PASS manager can post branch notice
+51. PASS revoked permission blocked immediately
+52. PASS stranger cannot withdraw application
+53. PASS employee withdraws pending application
+54. PASS withdrawn status visible
+55. PASS withdraw twice blocked
+56. PASS apply again after withdrawal
+57. PASS owner accepts reapplied employee
+58. PASS overlapping correction blocked
+59. PASS valid correction submitted
+60. PASS duplicate pending correction blocked
+61. PASS manager sees colleague request
+62. PASS manager cannot alter finalized payroll
+63. PASS manager approves valid correction
+64. PASS employee sees updated end
+65. PASS approval cannot repeat
+66. PASS employee sees approval status
+Scenario checks: 66 passed
+
+── check-verified-contracts
+PASS 1. email configuration status is honest
+PASS 2. verification requires authenticated account
+PASS 3. unconfigured verification is not marked sent
+PASS 4. verification email is sent through provider adapter
+PASS 5. verification token is in fragment, not request query
+PASS 6. verification token is stored hashed
+PASS 7. repeated send is rate limited
+PASS 8. visiting status does not consume emailed token
+PASS 9. verification proof confirms correct email
+PASS 10. verified state appears on existing session
+PASS 11. verification token cannot be reused
+PASS 12. expired verification proof rejected
+PASS 13. provider failure has no usable verification token
+PASS 14. recovery mail is delegated to Supabase Auth with same-site reset link
+PASS 15. owner sees linked employee and paid contract access
+PASS 16. anonymous contract list denied
+PASS 17. employee cannot create employer request
+PASS 18. unfinished template cannot be requested
+PASS 19. owner consent required
+PASS 20. wrong owner name rejected
+PASS 21. owner password reauthentication required
+PASS 22. owner signature freezes and creates request
+PASS 23. contract hash matches stored snapshot
+PASS 24. duplicate waiting request blocked
+PASS 25. unrelated employee cannot read document
+PASS 26. unrelated employee cannot download document
+PASS 27. employee sees own signing request
+PASS 28. owner cannot sign on behalf of employee
+PASS 29. different document hash rejected
+PASS 30. employee consent cannot be skipped
+PASS 31. stale version rejected
+PASS 32. changed work conditions block old contract signature
+PASS 33. unverified employee cannot sign
+PASS 34. both signatures commit without pretending email sent
+PASS 35. unconfigured delivery is marked setup required
+PASS 36. signed status reaches employee current contract
+PASS 37. repeated signature is rejected
+PASS 38. signed request cannot be withdrawn
+PASS 39. database prevents changing signed document snapshot
+PASS 40. failed email is not marked delivered
+PASS 41. provider acceptance is distinct from employee receipt
+PASS 42. copy email contains actual immutable signed HTML
+PASS 43. duplicate delivery does not resend accepted email
+PASS 44. owner cannot confirm employee received copy
+PASS 45. employee receipt requires explicit checkbox
+PASS 46. employee can record receipt
+PASS 47. signature and delivery history retained
+PASS 48. download contains both names, timestamps and hash
+PASS 49. former employee can retain previously signed copy
+PASS 50. free plan cannot create new electronic contract
+PASS 51. free plan retains old copies
+PASS 52. cross origin contract mutation rejected
+PASS 53. outsider cannot read image document
+PASS 54. owner cannot mark employee download
+PASS 55. save confirmation requires prior download
+PASS 56. employee view records receipt separately
+PASS 57. download request does not pretend saved
+PASS 58. explicit employee save is recorded
+PASS 59. owner sees employee document activity
+PASS 60. employee cannot send payroll
+PASS 61. owner sends locked payslip in app
+PASS 62. repeat send idempotent
+PASS 63. employee sees own sent payroll
+PASS 64. outsider sees no payroll
+PASS 65. outsider cannot fetch payroll by id
+PASS 66. unlocked payroll cannot send
+PASS 67. revised payroll sends a new immutable copy
+PASS 68. new revision has independent pending download
+PASS 69. latest payslip is marked current
+PASS 70. older payslip is marked replaced
+PASS 71. reopened payroll marks sent payslip as under review
+PASS 72. unrelated store writes do not block sending
+PASS 73. owner list carries activity without per-row queries
+PASS 74. unlinked employee gives a clear message
+PASS 75. former employee still opens own payslip copy
+PASS 76. cross origin document action denied
+PASS 77. new contract revision can be requested
+PASS 78. unsigned contract image is blocked
+PASS 79. in-app signing works with password without email service
+PASS 80. app signing sends no email
+PASS 81. app signature preserves truthful email verification state
+81/81 passed; no external email or real signatures sent.
+
+── check-pay-rules
+PASS 1. overnight shift worked hours
+PASS 2. night hours prorated by break
+PASS 3. week starts on Monday
+PASS 4. september has 18 Mon-Thu shifts
+PASS 5. weekly holiday pay by weeks ending in month
+PASS 6. night premium for 5+ workplaces
+PASS 7. no overtime under 8h/day and 40h/week
+PASS 8. small workplace: weekly holiday pay still applies
+PASS 9. small workplace: no night premium, with a note
+PASS 10. weekly overtime beyond 40h
+PASS 11. daily overtime beyond 8h
+PASS 12. daily and weekly overtime not double counted
+PASS 13. under 15h a week: no weekly holiday pay
+PASS 14. pension 4.75%
+PASS 15. health 3.595%
+PASS 16. long-term care 13.14% of health premium, floored to 10 won
+PASS 17. employment 0.9%
+PASS 18. only enrolled insurances are deducted
+PASS 19. base + weekly holiday + night premium in earnings
+PASS 20. insurance deductions added
+PASS 21. income tax left for manual entry
+PASS 22. manual entry replaces the automatic line
+PASS 23. automatic calculation is off by default behaviour
+PASS 24. below minimum wage warning
+PASS: 법정수당(주휴·연장·야간)·4대보험 자동 계산.
+
+> chuckchuck@0.1.0 check:function
+> node scripts/check-supabase-function.mjs
+
+PASS: Supabase 함수 — CORS·출처 차단, 가입·로그인·로그아웃, 신원 헤더 위조 차단, 매장 등록, 비밀번호 재설정, 직원 역할, 본사 권한.
