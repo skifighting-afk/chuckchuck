@@ -311,3 +311,18 @@ console.log('PASS: 요율 연간 갱신 경고.');
  row=calculate(t,'2026-09').find(r=>r.employeeId===e.id);ok('approved leave day is not absence',row.earnings.some(x=>x.name==='주휴수당'));
  console.log('PASS: 주휴 개근 판단.');
 }
+
+// 작업 027: 일급·월급 통상시급
+{
+ const {ordinaryHourly}=await import('../dist/server/team-model.js');
+ ok('monthly 40h → 209h',ordinaryHourly({payType:'월급',wage:2156880,weeklyHours:40,contract:{}}).hourly===Math.round(2156880/209));
+ ok('daily wage ÷ contract hours',ordinaryHourly({payType:'일급',wage:96000,weeklyHours:40,contract:{start:'09:00',end:'18:00',breakMinutes:60}}).hourly===12000);
+ const k=(d,hm)=>new Date(`${d}T${hm}:00+09:00`).toISOString();
+ const t=normalizeTeam(null);delete t.legacy;t.adjustments={};t.payrollRuns={};t.shifts=[];t.settings.fivePlus=true;
+ const e=t.employees[0];Object.assign(e,{payType:'월급',wage:2090000,weeklyHours:40,autoPay:true,taxMode:'직접 입력'});t.employees=[e];
+ t.attendance=[{id:'m1',employeeId:e.id,start:k('2026-09-07','09:00'),end:k('2026-09-07','21:00'),breakMinutes:60,breakStart:null}];
+ const row=calculate(t,'2026-09').find(r=>r.employeeId===e.id);
+ ok('monthly worker overtime 3h at 통상시급 10,000',row.earnings.some(x=>x.name==='연장근로 가산'&&x.amount===3*10000*0.5&&x.formula.includes('통상시급')));
+ ok('monthly wage already includes 주휴',!row.earnings.some(x=>x.name==='주휴수당'));
+ console.log('PASS: 일급·월급 통상시급.');
+}
