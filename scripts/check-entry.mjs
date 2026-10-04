@@ -8,7 +8,7 @@ const account=(u,b)=>call(u,'/api/account',b),join=(u,b)=>call(u,'/api/staff-joi
 for(const p of ['/app','/signup?plan=free','/employee?code=example','/staff-requests','/app/','/start','/try','/account']){const r=await worker.fetch(new Request('https://test.local'+p),{DB,ASSETS:{fetch:async r=>new Response(new URL(r.url).pathname,{status:new URL(r.url).pathname==='/'?200:404})}});ok('entry route '+p,r.status,200)}
 ok('unknown route stays 404',(await worker.fetch(new Request('https://test.local/missing'),{DB,ASSETS:{fetch:async()=>new Response('',{status:404})}})).status,404);
 ok('anonymous denied',(await join('')).status,401);
-ok('free store creation',(await account('boss',{action:'onboard',storeName:'테스트',branchName:'본점',ownerName:'대표',plan:'free',acknowledged:true})).status,201);
+ok('free store creation',(await account('boss',{action:'onboard',storeName:'테스트',branchName:'본점',ownerName:'대표',plan:'free',acknowledged:true,dpaAgreed:true})).status,201);
 let j=await join('boss');ok('owner role',j.data.owner,true);
 ok('make shared code',(await join('boss',{action:'code',branchId:'branch-main',version:j.data.version})).status,200);
 j=await join('boss');const code=j.data.codes[0].code;ok('one branch code',j.data.codes.length,1);

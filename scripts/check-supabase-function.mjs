@@ -47,9 +47,9 @@ assert.equal(r.status,204);assert.equal(r.headers.get('access-control-allow-orig
 r=await call('/api/auth',{method:'POST',body:{action:'login',email:'x@y.kr',password:'whatever1'},origin:'https://evil.example'});
 assert.equal(r.status,403,'다른 사이트에서 온 요청은 막아야 함');
 
-r=await call('/api/auth',{method:'POST',body:{action:'register',email:'Owner@Example.kr',password:'safe-pass-91',name:'김사장',role:'owner'}});
+r=await call('/api/auth',{method:'POST',body:{action:'register',agree:true,email:'Owner@Example.kr',password:'safe-pass-91',name:'김사장',role:'owner'}});
 assert.equal(r.status,200,JSON.stringify(r.data));assert.ok(r.data.session.access_token);session=r.data.session;
-r=await call('/api/auth',{method:'POST',body:{action:'register',email:'owner@example.kr',password:'safe-pass-91',name:'중복',role:'owner'}});
+r=await call('/api/auth',{method:'POST',body:{action:'register',agree:true,email:'owner@example.kr',password:'safe-pass-91',name:'중복',role:'owner'}});
 assert.equal(r.status,409);
 r=await call('/api/auth');assert.equal(r.data.authenticated,true);assert.equal(r.data.verified,false);assert.equal(r.data.email,'owner@example.kr');
 
@@ -57,7 +57,7 @@ r=await call('/api/auth');assert.equal(r.data.authenticated,true);assert.equal(r
 r=await handler(new Request(SUPA+'/functions/v1/api/account',{headers:{origin:APP,apikey:'anon',authorization:'Bearer anon','oai-authenticated-user-id':'native:hacker','oai-authenticated-user-email':'hq@example.kr'}}));
 assert.equal(r.status,401,'토큰 없이 신원 헤더만으로는 로그인되면 안 됨');
 
-r=await call('/api/account',{method:'POST',body:{action:'onboard',plan:'starter',storeName:'척척식당',branchName:'본점',ownerName:'김사장',acknowledged:true}});
+r=await call('/api/account',{method:'POST',body:{action:'onboard',plan:'starter',storeName:'척척식당',branchName:'본점',ownerName:'김사장',acknowledged:true,dpaAgreed:true}});
 assert.equal(r.status,201,JSON.stringify(r.data));assert.equal(r.data.storeName,'척척식당');
 r=await call('/api/account');assert.equal(r.data.onboarded,true);assert.equal(r.data.user.emailVerified,false);
 r=await call('/api/store');assert.equal(r.status,200,JSON.stringify(r.data).slice(0,300));
@@ -75,10 +75,10 @@ r=await call('/api/auth',{method:'POST',body:{action:'login',email:'owner@exampl
 
 // 직원 가입
 const owner=session;
-r=await call('/api/auth',{method:'POST',body:{action:'register',email:'staff@example.kr',password:'staff-pass-55',name:'이직원',role:'employee'}});assert.equal(r.status,200);
+r=await call('/api/auth',{method:'POST',body:{action:'register',agree:true,email:'staff@example.kr',password:'staff-pass-55',name:'이직원',role:'employee'}});assert.equal(r.status,200);
 const staff=r.data.session;
 r=await call('/api/account',{token:staff.access_token});assert.equal(r.data.user.role,'employee');
-r=await call('/api/account',{method:'POST',token:staff.access_token,body:{action:'onboard',plan:'free',storeName:'x',branchName:'y',ownerName:'z',acknowledged:true}});assert.equal(r.status,403);
+r=await call('/api/account',{method:'POST',token:staff.access_token,body:{action:'onboard',plan:'free',storeName:'x',branchName:'y',ownerName:'z',acknowledged:true,dpaAgreed:true}});assert.equal(r.status,403);
 r=await call('/api/admin',{token:owner.access_token});assert.equal(r.status,403,'일반 사장님은 본사 화면 불가');
 
 console.log('PASS: Supabase 함수 — CORS·출처 차단, 가입·로그인·로그아웃, 신원 헤더 위조 차단, 매장 등록, 비밀번호 재설정, 직원 역할, 본사 권한.');

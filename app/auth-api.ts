@@ -3,6 +3,7 @@
 // 2) 화면의 /api/auth 요청(가입·로그인·비밀번호 찾기·이메일 확인)을 Supabase Auth로 중계한다.
 import {digest,randomToken,validPassword} from '../lib/password';
 import {mailReady,sendMail} from '../lib/mail';
+import {LEGAL,consentCurrent} from '../lib/legal';
 export type AuthEnv={DB:D1Database,SUPABASE_URL?:string,SUPABASE_ANON_KEY?:string,SUPABASE_SERVICE_ROLE_KEY?:string,RESEND_API_KEY?:string,EMAIL_FROM?:string,AUTH_FETCH?:typeof fetch};
 type Env=AuthEnv;
 const json=(data:any,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
@@ -64,6 +65,13 @@ export async function nativeAuth(request:Request,env:Env){
   const ip=(request.headers.get('x-forwarded-for')||'').split(',')[0].trim()||request.headers.get('cf-connecting-ip')||'local';
   await env.DB.prepare('DELETE FROM auth_limits WHERE expires_at<?').bind(Date.now()).run();
   if(!await authLimit(env,'ip:'+ip,60,15*60000))return json({error:'시도가 많아요. 15분 뒤 다시 시도해 주세요.'},429);
+  if(b.action==='consent'){
+   const current=await withNativeIdentity(new Request(request.url,{headers:request.headers}),env),id=current.headers.get('oai-authenticated-user-id');
+   if(!id)return json({error:'로그인한 뒤 동의해 주세요.'},401);
+   if(b.agree!==true)return json({error:'이용약관과 개인정보 처리방침에 동의해 주세요.'},400);
+   await env.DB.prepare('UPDATE app_users SET terms_version=?,privacy_version=?,consented_at=? WHERE id=?').bind(LEGAL.terms.version,LEGAL.privacy.version,new Date().toISOString(),id).run();
+   return json({ok:true});
+  }
   if(b.action==='verifyEmail'){
    if(typeof b.token!=='string'||!/^([a-f0-9]{64})$/.test(b.token))return json({error:'인증 주소를 다시 확인해 주세요.'},400);
    const proof=await env.DB.prepare('DELETE FROM auth_verifications WHERE token_hash=? AND expires_at>? RETURNING user_id,email').bind(await digest(b.token),Date.now()).first<any>();
@@ -109,11 +117,13 @@ export async function nativeAuth(request:Request,env:Env){
   if(b.action==='register'){
    if(!validPassword(b.password))return json({error:'비밀번호는 8~128자로 입력해 주세요. 단순 반복이나 연속 숫자는 피해 주세요.'},400);
    if(!['owner','employee'].includes(b.role)||typeof b.name!=='string'||!b.name.trim()||b.name.length>80)return json({error:'이름과 가입할 역할을 확인해 주세요.'},400);
+   if(b.agree!==true)return json({error:'이용약관과 개인정보 처리방침에 동의해 주세요.',code:'CONSENT_REQUIRED'},400);
    if(await env.DB.prepare('SELECT 1 AS x FROM app_users WHERE email=?').bind(email).first())return json({error:'이 이메일로 가입할 수 없어요. 기존 회원이라면 로그인해 주세요.'},409);
    // 가입 즉시 쓸 수 있게 만든다. 이메일 확인은 앱의 '이메일 확인' 단계에서 따로 한다.
    const created=await gotrue(env,'/admin/users',{method:'POST',admin:true,body:{email,password:b.password,email_confirm:true,user_metadata:{name:b.name.trim(),role:b.role}}});
    if(!created.ok||!created.data?.id)return created.status===422?json({error:'이 이메일로 가입할 수 없어요. 기존 회원이라면 로그인해 주세요.'},409):json({error:'가입을 완료하지 못했어요. 잠시 뒤 다시 시도해 주세요.'},502);
-   await appUser(env,created.data);
+   const made=await appUser(env,created.data);
+   await env.DB.prepare('UPDATE app_users SET terms_version=?,privacy_version=?,consented_at=? WHERE id=?').bind(LEGAL.terms.version,LEGAL.privacy.version,new Date().toISOString(),made.id).run();
    const login=await gotrue(env,'/token?grant_type=password',{method:'POST',body:{email,password:b.password}});
    if(!login.ok)return json({error:'가입은 됐어요. 로그인해 주세요.'},409);
    return json({ok:true,role:b.role,emailVerified:false,session:session(login.data)});

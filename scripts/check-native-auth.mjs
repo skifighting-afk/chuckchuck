@@ -11,11 +11,11 @@ const tokenOf=r=>r.data?.session?.access_token;
 /** 앱 DB 전체에서 문자열 찾기(비밀번호·토큰이 앱 테이블에 남지 않는지 확인) */
 async function appDbContains(text){for(const t of ['stores','app_users','auth_limits','auth_verifications','contract_envelopes','payslip_documents']){const rows=await sql.unsafe(`SELECT * FROM ${t}`);if(JSON.stringify(rows).includes(text))return true}return false}
 let r=await call('/api/store');test('anonymous cannot see store',r.status===401);
-r=await call('/api/auth',{action:'register',email:'weak@example.invalid',password:'1234',name:'검수 직원',role:'employee'});test('short password rejected',r.status===400);
-r=await call('/api/auth',{action:'register',email:'weak@example.invalid',password:'12345678',name:'검수 직원',role:'employee'});test('common sequential password rejected',r.status===400);
-r=await call('/api/auth',{action:'register',email:'weak@example.invalid',password:'aaaaaaaa',name:'검수 직원',role:'employee'});test('repeated password rejected',r.status===400);
+r=await call('/api/auth',{action:'register',agree:true,email:'weak@example.invalid',password:'1234',name:'검수 직원',role:'employee'});test('short password rejected',r.status===400);
+r=await call('/api/auth',{action:'register',agree:true,email:'weak@example.invalid',password:'12345678',name:'검수 직원',role:'employee'});test('common sequential password rejected',r.status===400);
+r=await call('/api/auth',{action:'register',agree:true,email:'weak@example.invalid',password:'aaaaaaaa',name:'검수 직원',role:'employee'});test('repeated password rejected',r.status===400);
 test('rejected passwords never reach Supabase Auth',!auth.calls.some(c=>c.path==='/admin/users'));
-r=await call('/api/auth',{action:'register',email:'staff@example.invalid',password,name:'검수 직원',role:'employee'});const staffToken=tokenOf(r);test('employee email registration with 8 characters and no symbols succeeds',r.status===200&&!!staffToken);
+r=await call('/api/auth',{action:'register',agree:true,email:'staff@example.invalid',password,name:'검수 직원',role:'employee'});const staffToken=tokenOf(r);test('employee email registration with 8 characters and no symbols succeeds',r.status===200&&!!staffToken);
 // 예전: 앱 DB에 솔트+해시 저장 / HttpOnly 쿠키 / 세션 해시 저장. 지금: 자격 증명은 Supabase Auth에만 있고 세션은 Bearer 토큰.
 const user=await q('SELECT * FROM app_users WHERE email=?','staff@example.invalid').first();
 test('app database stores no password or password hash',!('password_hash' in user)&&!('salt' in user)&&!await appDbContains(password));
@@ -24,8 +24,8 @@ test('session token not stored in app database',!await appDbContains(staffToken)
 test('account created through service role with metadata',auth.calls.some(c=>c.path==='/admin/users'&&c.body.user_metadata?.role==='employee'&&c.body.email==='staff@example.invalid'));
 r=await call('/api/account',null,staffToken);test('native session resolves employee role',r.data.user?.role==='employee'&&r.data.user?.authMethod==='email');
 test('unverified email is honest',r.data.user.emailVerified===false);
-r=await call('/api/account',{action:'onboard',plan:'free',storeName:'x',branchName:'x',ownerName:'x',acknowledged:true},staffToken);test('employee cannot accidentally create owner store',r.status===403);
-r=await call('/api/auth',{action:'register',email:'STAFF@example.invalid',password,name:'검수',role:'employee'});test('case insensitive duplicate rejected',r.status===409);
+r=await call('/api/account',{action:'onboard',plan:'free',storeName:'x',branchName:'x',ownerName:'x',acknowledged:true,dpaAgreed:true},staffToken);test('employee cannot accidentally create owner store',r.status===403);
+r=await call('/api/auth',{action:'register',agree:true,email:'STAFF@example.invalid',password,name:'검수',role:'employee'});test('case insensitive duplicate rejected',r.status===409);
 r=await call('/api/auth',{action:'login',email:'staff@example.invalid',password:'wrong password'});test('wrong password denied',r.status===401);
 r=await call('/api/auth',{action:'login',email:'unknown@example.invalid',password:'wrong password'});test('unknown and wrong login share response',r.status===401&&r.data.error==='이메일 또는 비밀번호를 확인해 주세요.');
 r=await call('/api/auth',{action:'login',email:'staff@example.invalid',password});let current=tokenOf(r);test('correct password creates new session',r.status===200&&!!current&&current!==staffToken&&r.data.role==='employee');
@@ -33,10 +33,21 @@ r=await call('/api/account',null,'forged-token',{'oai-authenticated-user-id':'ow
 r=await call('/api/account',null,env.SUPABASE_ANON_KEY);test('public anon key is not a login',r.status===401);
 r=await call('/api/auth',{action:'logout'},current);test('logout succeeds',r.status===200&&r.data.session===null);
 r=await call('/api/account',null,current);test('logged out session is revoked',r.status===401);
-r=await call('/api/auth',{action:'register',email:'hq@example.invalid',password,name:'검수',role:'owner'});const sameHq=tokenOf(r);
+r=await call('/api/auth',{action:'register',agree:true,email:'hq@example.invalid',password,name:'검수',role:'owner'});const sameHq=tokenOf(r);
 r=await call('/api/admin',null,sameHq);test('unverified HQ email never grants admin',r.status===403);
-r=await call('/api/auth',{action:'register',email:'owner@example.invalid',password,name:'검수 대표',role:'owner'});const ownerToken=tokenOf(r);
-r=await call('/api/account',{action:'onboard',plan:'starter',storeName:'가상 가입 검수',branchName:'본점',ownerName:'검수 대표',acknowledged:true},ownerToken);test('native owner creates their own store',r.status===201);
+r=await call('/api/auth',{action:'register',agree:true,email:'owner@example.invalid',password,name:'검수 대표',role:'owner'});const ownerToken=tokenOf(r);
+// 작업 016·017: 가입·재동의·처리위탁 동의 기록
+r=await call('/api/auth',{action:'register',email:'noagree@example.invalid',password,name:'검수',role:'owner'});test('registration without consent rejected',r.status===400&&r.data.code==='CONSENT_REQUIRED');
+let consent=(await sql`SELECT terms_version,privacy_version,consented_at FROM app_users WHERE email='owner@example.invalid'`)[0];test('registration stores consent versions and time',!!consent.terms_version&&!!consent.privacy_version&&!!consent.consented_at);
+r=await call('/api/account',null,ownerToken);test('current consent not asked again',r.status===200&&r.data.consentRequired===false);
+await sql`UPDATE app_users SET terms_version='old' WHERE email='owner@example.invalid'`;
+r=await call('/api/account',null,ownerToken);test('changed terms version asks consent again',r.data.consentRequired===true);
+r=await call('/api/auth',{action:'consent'},ownerToken);test('re-consent requires explicit agree',r.status===400);
+r=await call('/api/auth',{action:'consent',agree:true});test('re-consent requires login',r.status===401);
+r=await call('/api/auth',{action:'consent',agree:true},ownerToken);test('re-consent recorded',r.status===200&&(await call('/api/account',null,ownerToken)).data.consentRequired===false);
+r=await call('/api/account',{action:'onboard',plan:'starter',storeName:'가상 가입 검수',branchName:'본점',ownerName:'검수 대표',acknowledged:true},ownerToken);test('store creation requires processing agreement',r.status===400&&r.data.code==='DPA_REQUIRED');
+r=await call('/api/account',{action:'onboard',plan:'starter',storeName:'가상 가입 검수',branchName:'본점',ownerName:'검수 대표',acknowledged:true,dpaAgreed:true},ownerToken);test('native owner creates their own store',r.status===201);
+const dpa=JSON.parse((await sql`SELECT data FROM stores LIMIT 1`)[0].data)._account.dpa;test('processing agreement version and time stored with store',!!dpa?.version&&!!dpa?.agreedAt&&dpa.by.startsWith('native:'));
 let state=(await call('/api/store',null,ownerToken)).data;
 await call('/api/staff-join',{action:'code',branchId:'branch-main',version:state.version},ownerToken);
 let data=(await call('/api/staff-join',null,ownerToken)).data,code=data.codes[0].code;
@@ -87,7 +98,7 @@ test('recovery link proves email ownership',(await q('SELECT email_verified FROM
 r=await call('/api/auth',{action:'reset',token:'x'.repeat(40),password:'Another synthetic password'});test('invalid or expired recovery token rejected',r.status===400);
 auth.expire(ownerToken);r=await call('/api/account',null,ownerToken);test('expired sessions denied',r.status===401);
 // The limiter must reject before contacting Supabase Auth.
-for(let i=0;i<11;i++)r=await call('/api/auth',{action:'register',email:'rate@example.invalid',password:'x',name:'검수',role:'employee'});
+for(let i=0;i<11;i++)r=await call('/api/auth',{action:'register',agree:true,email:'rate@example.invalid',password:'x',name:'검수',role:'employee'});
 test('repeated authentication requests limited',r.status===429);
 console.log(`${n}/${n} passed`);
 await closeAll();

@@ -6,7 +6,7 @@ const T=await authedTest({domain:'example.invalid'}),{q,headersFor,id}=T,env=T.e
 let n=0;function ok(label,actual,expected=true){assert.deepEqual(actual,expected,label);console.log(`${++n}. PASS ${label}`)}
 async function call(user,path,body){const r=await api(new Request('https://qa.local'+path,{method:body?'POST':'GET',headers:{origin:'https://qa.local',...(await headersFor(user))},...(body?{body:JSON.stringify(body)}:{})}),env);return{status:r.status,data:await r.json()}}
 const join=(u,b)=>call(u,'/api/staff-join',b);
-await call('owner','/api/account',{action:'onboard',storeName:'가상가게',branchName:'본점',ownerName:'검수',plan:'free',acknowledged:true});
+await call('owner','/api/account',{action:'onboard',storeName:'가상가게',branchName:'본점',ownerName:'검수',plan:'free',acknowledged:true,dpaAgreed:true});
 let owner=(await join('owner')).data;
 ok('owner creates short code',(await join('owner',{action:'code',branchId:'branch-main',version:owner.version})).status,200);
 owner=(await join('owner')).data;const code=owner.codes[0].code;

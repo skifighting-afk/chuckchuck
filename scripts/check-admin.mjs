@@ -7,7 +7,7 @@ ok('anonymous admin denied',(await call('','/api/admin')).status,403);
 ok('forged identity headers cannot open admin',(await call('','/api/admin',null,{headers:{'oai-authenticated-user-id':'hq','oai-authenticated-user-email':'hq@example.invalid'}})).status,403);
 ok('customer admin denied',(await call('customer','/api/admin')).status,403);
 ok('unconfigured admin denied',(await call('hq','/api/admin',null,{env:{...env,HQ_ADMIN_EMAIL:undefined}})).status,403);
-await call('customer','/api/account',{action:'onboard',storeName:'고객 가게',branchName:'본점',ownerName:'가상대표',plan:'free',acknowledged:true});
+await call('customer','/api/account',{action:'onboard',storeName:'고객 가게',branchName:'본점',ownerName:'가상대표',plan:'free',acknowledged:true,dpaAgreed:true});
 ok('HQ sees summary',(await call('hq','/api/admin')).data.total,1);
 ok('customer has no HQ entry',(await call('customer','/api/account')).data.hq,false);
 ok('HQ flag server assigned',(await call('hq','/api/account')).data.hq,true);

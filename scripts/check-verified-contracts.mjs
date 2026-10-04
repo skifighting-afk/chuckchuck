@@ -8,7 +8,7 @@ const originalFetch=globalThis.fetch;globalThis.fetch=async(url,options)=>{asser
 const configured={...base,RESEND_API_KEY:'synthetic-only',EMAIL_FROM:'test@example.invalid'};
 async function call(path,body,token='',env=base,extra={}){const r=await api(new Request('https://qa.local'+path,{method:body?'POST':'GET',headers:{origin:'https://qa.local',...(token?{authorization:'Bearer '+token}:{}),...extra},...(body?{body:JSON.stringify(body)}:{})}),env);return{status:r.status,data:r.headers.get('content-type')?.includes('json')?await r.json():await r.text(),headers:r.headers}}
 function ok(name,value){assert.ok(value,name);console.log(`PASS ${++number}. ${name}`)}
-const register=async(email,name,role)=>call('/api/auth',{action:'register',email,name,role,password});
+const register=async(email,name,role)=>call('/api/auth',{action:'register',agree:true,email,name,role,password});
 const tokenOf=r=>{assert.equal(r.status,200,JSON.stringify(r.data));return r.data.session.access_token};
 const owner=tokenOf(await register('owner@example.invalid','가상 대표','owner')),staff=tokenOf(await register('staff@example.invalid','가상 직원','employee')),other=tokenOf(await register('other@example.invalid','다른 직원','employee'));
 ok('email configuration status is honest',(await call('/api/auth',null,staff)).data.mailReady===false);
@@ -28,7 +28,7 @@ await q('UPDATE app_users SET email_verified=1 WHERE email=?','owner@example.inv
 failMail=true;r=await call('/api/auth',{action:'sendVerification'},other,configured);ok('provider failure has no usable verification token',r.status===503&&!await q('SELECT * FROM auth_verifications WHERE email=?','other@example.invalid').first());failMail=false;
 // 비밀번호 찾기 메일은 이제 Supabase Auth가 보낸다(앱의 Resend 발송 아님). 돌아올 주소가 이 사이트의 재설정 화면인지 확인.
 {const before=mail.length;const r=await call('/api/auth',{action:'recover',email:'staff@example.invalid'},'',configured);const rec=auth.calls.filter(c=>c.path==='/recover').at(-1);ok('recovery mail is delegated to Supabase Auth with same-site reset link',r.status===200&&mail.length===before&&rec.body.email==='staff@example.invalid'&&new URLSearchParams(rec.search).get('redirect_to')==='https://qa.local/login?mode=reset');}
-await call('/api/account',{action:'onboard',storeName:'가상 계약 검수',branchName:'본점',ownerName:'가상 대표',plan:'starter',acknowledged:true},owner);
+await call('/api/account',{action:'onboard',storeName:'가상 계약 검수',branchName:'본점',ownerName:'가상 대표',plan:'starter',acknowledged:true,dpaAgreed:true},owner);
 let codeState=(await call('/api/staff-join',null,owner)).data;await call('/api/staff-join',{action:'code',branchId:'branch-main',version:codeState.version},owner);codeState=(await call('/api/staff-join',null,owner)).data;
 await call('/api/staff-join',{action:'apply',code:codeState.codes[0].code,name:'가상 직원',phone:'01000000000',profile:{address:'가상 주소',joined:'2026-09-23',note:'테스트'}},staff);
 codeState=(await call('/api/staff-join',null,owner)).data;assert.equal((await call('/api/staff-join',{action:'review',approve:true,id:codeState.requests[0].id,version:codeState.version},owner)).status,200);

@@ -5,7 +5,7 @@ import {authedTest} from './test-auth.mjs';import {closeAll} from './test-db.mjs
 const T=await authedTest({domain:'example.com'}),{q,headersFor,id}=T,env=T.env,DB=env.DB;
 async function call(user,path,body,method){const r=await api(new Request('https://test.local'+path,{method:method||(body?'POST':'GET'),headers:{origin:'https://test.local',...(await headersFor(user))},...(body?{body:JSON.stringify(body)}:{})}),env);return {status:r.status,data:await r.json()}}
 const account=(u,b)=>call(u,'/api/account',b),store=(u,b,m)=>call(u,'/api/store',b,m),ops=(u,b)=>call(u,'/api/operations',b);
-const setup=(plan,storeSlots)=>({action:'onboard',storeName:'테스트 매장',branchName:'본점',ownerName:'테스트 사장',plan,storeSlots,acknowledged:true});
+const setup=(plan,storeSlots)=>({action:'onboard',storeName:'테스트 매장',branchName:'본점',ownerName:'테스트 사장',plan,storeSlots,acknowledged:true,dpaAgreed:true});
 assert.equal((await account('')).status,401);assert.equal((await account('free',setup('free'))).status,201);
 let a=(await account('free')).data;assert.equal(a.account.status,'free');assert.equal(a.account.trialEndsAt,null);assert.equal(a.account.monthlyPrice,0);
 let st=(await store('free')).data;assert.equal(st.state.employees.length,0);assert.equal(st.state.legacy,undefined);
