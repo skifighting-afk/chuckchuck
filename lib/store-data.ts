@@ -12,5 +12,7 @@ export type Operations={leaves:Leave[],notices:Notice[],swaps?:Swap[],availabili
 export type ManualStep={text:string,imageId?:string|null};
 export type Manual={id:string,title:string,branchId:string,steps:ManualStep[],createdAt?:string,updatedAt:string,reads?:string[]};
 export type PayrollRun={month:string,branch:string,locked:boolean,payDate?:string,rows:{employeeId:string,name:string,net:number,gross:number}[]};
+export type JoinCode={branchId:string,code:string,legacyCode?:string,paused?:boolean,expiresAt?:string};
+export type JoinApplication={id:string,userId:string,status:string,branchId:string,name:string,createdAt:string,[k:string]:any};
 /** stores.data를 JSON.parse한 값 */
-export type StoreData=Omit<Team,'payrollRuns'>&{payrollRuns:Record<string,PayrollRun>,_operations?:Operations,_members?:Member[],_manuals?:Manual[],_audit?:AuditEntry[],_account?:Record<string,any>,_hq?:Record<string,unknown>,_attendanceQr?:Record<string,string>,_attendanceQrMode?:Record<string,'static'|'dynamic'>};
+export type StoreData=Omit<Team,'payrollRuns'>&{payrollRuns:Record<string,PayrollRun>,_operations?:Operations,_members?:Member[],_manuals?:Manual[],_audit?:AuditEntry[],_account?:Record<string,any>,_hq?:Record<string,unknown>,_attendanceQr?:Record<string,string>,_attendanceQrMode?:Record<string,'static'|'dynamic'>,_joinCodes?:JoinCode[],_joinApplications?:JoinApplication[],_joinTerms?:any[]};
