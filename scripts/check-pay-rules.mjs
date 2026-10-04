@@ -440,3 +440,19 @@ console.log('PASS: 요율 연간 갱신 경고.');
  Object.assign(e,{status:'재직',endDate:''});r=calculate(s,'2026-10')[0];ok('만근은 월급 그대로',r.earnings[0].amount===3100000&&!r.earnings[0].formula.includes('재직'));
  console.log('PASS: 중도 입·퇴사 일할.');
 }
+
+// 작업 054: 직원 일괄 등록
+{
+ const {parseBulk}=await import('../dist/server/bulk-members.js');const {teamSchema}=await import('../dist/server/team-model.js');
+ const text=['이름\t연락처\t이메일\t입사일\t급여형태\t급여\t주 소정시간\t직무','김민지\t010-1\tMinji@Ex.com\t2026.10.5\t시급\t10,320원\t20\t홀','박준호\t010-2\tjun@ex.com\t\t월급\t2500000\t\t주방','\t\t\t\t\t\t\t','이서연\t\tminji@ex.com\t2026-13-01\t연봉\tabc\t90\t사장','최현우\t010-3\told@ex.com\t\t\t11000'].join('\n');
+ const r=parseBulk(text,'branch-main',['OLD@ex.com'],{workplace:'점검식당',employer:'김사장'});
+ ok('제목 줄·빈 줄 건너뜀',r.length===4&&r[0].line===2);
+ ok('날짜·금액 정리, 이메일 소문자',r[0].member.joined==='2026-10-05'&&r[0].member.wage===10320&&r[0].member.email==='minji@ex.com');
+ ok('월급 기본 40시간·정규직',r[1].member.weeklyHours===40&&r[1].member.employment==='기간의 정함 없음'&&r[1].member.role==='주방');
+ ok('여러 오류를 한 줄에 모두 알려 줌',r[2].errors.length>=5&&r[2].errors.some(e=>e.includes('이메일')));
+ ok('기존 직원 이메일 중복 차단',r[3].errors.some(e=>e.includes('이미 등록')));
+ ok('근무장소·사업주 채움',r[0].member.contract.workplace==='점검식당'&&r[0].member.contract.employer==='김사장');
+ ok('이메일·연락처 필수',parseBulk('누구\t\t\t\t시급\t10320','b').at(0).errors.length===2);
+ const st=normalizeTeam(null);st.employees=[...st.employees,...r.filter(x=>x.member).map(x=>x.member)];ok('등록 결과가 저장 검사를 통과',teamSchema.safeParse(st).success);
+ console.log('PASS: 직원 일괄 등록.');
+}

@@ -148,6 +148,12 @@ await step('근로계약서: 사장님 서명 → 직원 서명 → 사본',asyn
  const row=await srv.db.q("SELECT status,employee_signature FROM contract_envelopes LIMIT 1").first();
  if(row?.status!=='signed'||!row.employee_signature)throw Error('계약서가 양측 서명 상태가 아니에요: '+row?.status);
 });
+await step('작업 054: 직원 여러 명 붙여넣기 등록',async()=>{
+ await owner.goto(B+'/app?screen=employees',{waitUntil:'networkidle'});await owner.click('button:has-text("여러 명 붙여넣기")');
+ await owner.fill('textarea[aria-label="직원 표 붙여넣기"]','붙임직원\t010-0000-0000\tbulk@example.invalid\t2026-10-05\t시급\t10320\t15\t주방\n오류직원\t\t\t\t연봉\tabc');
+ await owner.locator('.bulk-err').first().waitFor();await owner.click('button:has-text("1명 등록")');
+ await owner.getByText(/직원 1명을 '입사 준비'로 등록했어요/).waitFor();await owner.getByText('붙임직원').first().waitFor();
+});
 await step('다시 로그인 (로그아웃 후)',async()=>{
  await staff.goto(B+'/logout');await staff.waitForURL(/\/login/);await staff.goto(B+'/login?role=employee',{waitUntil:'networkidle'});
  await staff.fill('input[type=email]',STAFF.email);await staff.fill('input[aria-label="비밀번호"]',STAFF.password);await staff.locator('form button[type=submit]').click();
