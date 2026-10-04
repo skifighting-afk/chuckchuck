@@ -1,3 +1,4 @@
+import {ContractLimits} from './limits-note';
 import {DocumentDownload,DocumentStatus} from './document-delivery';
 import {useEffect,useRef,useState} from 'react';
 const states:Record<string,string>={waiting:'서명 대기 중',signed:'두 분 서명 완료',declined:'직원이 수정 요청',withdrawn:'사장님이 요청 철회'};
@@ -10,7 +11,7 @@ export function ContractsDesk(){
  async function action(action:string){if(lock.current)return;lock.current=true;setBusy(true);setError('');setMessage('');try{const r=await fetch('/api/contracts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,id:selected?.id,version:selected?.version,documentHash:selected?.document_hash,employeeId,text,name,password,consent,deliveryMethod:method,reason,confirmed:receipt})}),d:any=await r.json();if(!r.ok)throw Error(d.error);const fresh=await load();if(selected){const r=await fetch('/api/contracts?id='+encodeURIComponent(selected.id)),v:any=await r.json();if(r.ok){setSelected(v.envelope);setEvents(v.events)}}if(creating){setCreating(false);setSelected(fresh?.envelopes.find((e:any)=>e.id===d.id)||null)}setPassword('');setConsent(false);setMessage(d.message||'처리했어요. 아래 상태를 확인해 주세요.')}catch(e){setError(e instanceof Error?e.message:'처리하지 못했어요.')}finally{lock.current=false;setBusy(false)}}
  const selectedEmployee=data?.employees.find((e:any)=>e.id===employeeId);
  const signing=creating||selected?.status==='waiting'&&!data?.owner;
- return <main className="saas-account contracts-desk"><a href="/app">← 내 매장으로</a><div className="contract-page-heading"><div><p className="saas-kicker">약속을 함께 확인해요</p><h1>{data?.owner?'전자 근로계약서':'내 전자계약서'}</h1><p>{data?.owner?'계약서 작성 → 사장님 서명 → 직원 서명 → 사본 전달':'내용 확인 → 내 성명으로 서명 → 사본 받기'}</p></div>{data?.owner&&<button className="saas-primary" disabled={busy||!data.canCreate} onClick={()=>{reset();setSelected(null);setCreating(true);setEmployeeId('');setText('')}}>새 계약서 만들기</button>}</div>
+ return <main className="saas-account contracts-desk"><a href="/app">← 내 매장으로</a><div className="contract-page-heading"><div><p className="saas-kicker">약속을 함께 확인해요</p><h1>{data?.owner?'전자 근로계약서':'내 전자계약서'}</h1><p>{data?.owner?'계약서 작성 → 사장님 서명 → 직원 서명 → 사본 전달':'내용 확인 → 내 성명으로 서명 → 사본 받기'}</p></div>{data?.owner&&<button className="saas-primary" disabled={busy||!data.canCreate} onClick={()=>{reset();setSelected(null);setCreating(true);setEmployeeId('');setText('')}}>새 계약서 만들기</button>}</div><ContractLimits/>
  {error&&<p className="saas-error" role="alert">{error}</p>}{message&&<p className="saas-success" role="status">{message}</p>}
 
  {data?.owner&&!data.canCreate&&<p className="notice">새 계약 요청은 사장님 5 이상에서 사용할 수 있어요. 기존 사본은 계속 볼 수 있어요. <a href="/account">이용권 확인</a></p>}
