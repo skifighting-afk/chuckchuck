@@ -23,7 +23,7 @@ for(const f of readdirSync(dir)){for(const s of JSON.parse(readFileSync(join(dir
 const best=new Map(),root=resolve('.')+'/';
 for(const [path,{src,hit}] of files){
  const own=path.startsWith(root)&&!path.includes('/dist/')?path.slice(root.length):null;
- const marks=own?[{name:own,at:0}]:[...src.matchAll(/^\/\/ ((?:lib|app)\/[^\n]+\.tsx?)$/gm)].map(m=>({name:m[1],at:m.index}));
+ const marks=own?[{name:own,at:0}]:[...src.matchAll(/^\/\/(?:#region)? ?((?:lib|app)\/[^\n]+?\.tsx?)$/gm)].map(m=>({name:m[1],at:m.index}));
  marks.forEach((m,i)=>{if(!TARGETS.includes(m.name))return;const end=i+1<marks.length?marks[i+1].at:src.length;let code=0,run=0;
   const text=src.slice(m.at,end).replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g,x=>' '.repeat(x.length));
   for(let k=0;k<text.length;k++){if(/\s/.test(text[k]))continue;code++;if(hit[m.at+k])run++}
@@ -33,6 +33,6 @@ for(const [path,{src,hit}] of files){
 const rows=[...best].map(([name,pct])=>({name,pct}));
 rows.sort((a,b)=>a.name.localeCompare(b.name));
 for(const r of rows)console.log(`${r.pct>=min?'PASS':'LOW '} ${r.pct.toFixed(1).padStart(5)}%  ${r.name}`);
-const missing=TARGETS.filter(t=>!rows.some(r=>r.name===t));if(missing.length)console.log('측정되지 않음(묶음에 없음):',missing.join(', '));
+const missing=TARGETS.filter(t=>!rows.some(r=>r.name===t));if(missing.length){console.log('측정되지 않음(묶음에 없음):',missing.join(', '));for(const [p,{src}] of files)if(p.includes('/dist/'))console.log(p.split('/').pop(),'구간 표시 예:',[...src.matchAll(/^\/\/.{0,60}$/gm)].slice(0,3).map(m=>m[0]).join(' | '));if(min){console.error('측정되지 않은 모듈이 있어 실패');process.exit(1)}}
 writeFileSync('coverage-summary.json',JSON.stringify(rows,null,1));
 const low=rows.filter(r=>r.pct<min);if(min&&low.length){console.error(`${min}% 미만: ${low.map(r=>r.name).join(', ')}`);process.exit(1)}
