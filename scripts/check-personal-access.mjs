@@ -93,6 +93,16 @@ ok('revoked schedule permission removes branch schedules',(await call('self','/a
  }
  const after=JSON.stringify(await read());ok('owner data unchanged by refused actions',after.includes('010-PEER-0000')&&!after.includes('"locked":true,"month":"2026-10"'));
 }
+// 작업 071: 데이터 내보내기 — 사장님만, 내부 비밀값 제외
+{
+ const r=await api(new Request('https://qa.local/api/export',{headers:{origin:'https://qa.local',...(await headersFor('boss'))}}),env);
+ ok('owner can export store data',r.status,200);
+ const exp=await r.json();
+ ok('export has store, contracts, payslips',!!exp.store&&Array.isArray(exp.contracts)&&Array.isArray(exp.payslips));
+ ok('export omits QR tokens and invite hashes',!('_attendanceQr' in exp.store)&&!('_invitations' in exp.store));
+ ok('export filename is set',/attachment; filename="chukchuk-export-\d{4}-\d{2}-\d{2}\.json"/.test(r.headers.get('content-disposition')));
+ for(const who of ['self','stranger','outsider','']){const x=await api(new Request('https://qa.local/api/export',{headers:{origin:'https://qa.local',...(await headersFor(who))}}),env);ok(`${who||'anonymous'} cannot export this store`,x.status===200?!JSON.stringify(await x.json()).includes('010-PEER-0000'):true);}
+}
 d=await read();d.employees.find(e=>e.id===a).status='퇴사';await save(d);
 ok('retired employee loses personal access',(await call('self')).status,403);
 console.log(`${n}/${n} personal access checks passed`);

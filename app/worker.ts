@@ -12,6 +12,7 @@ import {staffJoinApi} from './staff-join-api';
 import {accountApi,resolveStore} from './saas-api';
 import {plans,trialStatus,isPlan,canWrite,capacityError,hasFeature} from '../lib/plans';
 import {evidenceApi} from './evidence-api';
+import {exportApi} from './export-api';
 import {operationsApi} from './operations-api';
 type Env=AuthEnv&{HQ_ADMIN_EMAIL?:string,HQ_NATIVE_USER_ID?:string,DB:D1Database,ASSETS?:{fetch:(r:Request)=>Promise<Response>},RESEND_API_KEY?:string,EMAIL_FROM?:string};
 const json=(v:unknown,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store'}});
@@ -29,6 +30,7 @@ export async function api(request:Request,env:Env){
  if(path==='/api/staff-join')return staffJoinApi(request,env);
  if(path==='/api/account')return accountApi(request,env);
  if(path==='/api/evidence')return evidenceApi(request,env);
+ if(path==='/api/export')return exportApi(request,env);
  if(path==='/api/operations')return operationsApi(request,env);
  if(!['/api/store','/api/join'].includes(path))return json({error:'요청 경로를 찾을 수 없습니다.'},404);
  const userId=request.headers.get('oai-authenticated-user-id');if(!userId)return json({error:'로그인 후 이용해 주세요.'},401);
