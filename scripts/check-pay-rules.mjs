@@ -244,7 +244,7 @@ console.log('PASS: 요율 연간 갱신 경고.');
  t.adjustments['2026-10:p1']={earnings:[{name:'식대',amount:200000,formula:'월 정액',taxFree:true}],deductions:[],note:''};
  row=calculate(t,'2026-10').find(r=>r.employeeId==='p1');
  const pension=row.deductions.find(d=>d.name==='국민연금');
- ok('tax-free meal excluded from insurance base',pension.amount===Math.floor((row.gross-200000)*0.0475/10)*10&&row.gross===8*11000+200000);
+ ok('tax-free meal excluded from insurance base (pension floor 410,000 from 2026-07)',pension.amount===Math.floor(Math.max(410000,Math.floor((row.gross-200000)/1000)*1000)*0.0475/10)*10&&row.gross===8*11000+200000&&pension.formula.includes('하한'));
  t.adjustments['2026-10:p1'].earnings[0].amount=250000;row=calculate(t,'2026-10').find(r=>r.employeeId==='p1');
  ok('tax-free over 200,000 warns',row.warnings.some(w=>w.includes('비과세')));
  console.log('PASS: 수습 감액·비과세 수당.');
@@ -264,4 +264,16 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('1,200만원(1천만원 초과 구간) = 기준 + 2백만×98%×35% + 25,000',incomeTax(12000000,2026,1).incomeTax===Math.floor((1507400+25000+2000000*0.98*0.35)/10)*10);
  ok('가족 12명 = 11명 − (10명−11명)',incomeTax(10000000,2026,12).incomeTax===Math.floor((960840-(990840-960840))/10)*10);
  console.log('PASS: 근로소득 간이세액표.');
+}
+
+// 작업 024: 국민연금 상·하한(7월 변경), 건강보험 본인 상한
+{
+ const all2=Object.fromEntries(['국민연금','건강보험','장기요양','고용보험'].map(n=>[n,{status:'가입'}]));
+ const p=(g,m)=>insuranceLines(g,2026,all2,m).find(l=>l.name==='국민연금').amount;
+ ok('pension floor 400,000 before July 2026',p(300000,'2026-06')===Math.floor(400000*0.0475/10)*10);
+ ok('pension floor 410,000 from July 2026',p(300000,'2026-07')===Math.floor(410000*0.0475/10)*10);
+ ok('pension cap 6,370,000 / 6,590,000',p(9000000,'2026-06')===Math.floor(6370000*0.0475/10)*10&&p(9000000,'2026-08')===Math.floor(6590000*0.0475/10)*10);
+ ok('pension base truncates below 1,000',p(2345678,'2026-08')===Math.floor(2345000*0.0475/10)*10);
+ ok('health employee cap 4,591,740',insuranceLines(200000000,2026,all2,'2026-08').find(l=>l.name==='건강보험').amount===4591740);
+ console.log('PASS: 4대보험 상·하한.');
 }

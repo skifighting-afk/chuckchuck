@@ -74,12 +74,25 @@ export function allowances(records: Record_[], month: string, wage: number, five
   return {lines, notes, night, overtime: dailyOt + weeklyOt};
 }
 
-/** 4대보험 근로자 부담분. status가 '가입'인 보험만 뗀다(10원 미만 버림). */
-export function insuranceLines(gross: number, year: number, insurances: Record<string, {status: string}>) {
+// 작업 024: 국민연금 기준소득월액 상·하한(매년 7월 변경, 보건복지부 고시). 기준소득월액은 1천원 미만 버림.
+export const PENSION_LIMITS: {from: string; min: number; max: number}[] = [
+  {from: '2025-07', min: 400000, max: 6370000},
+  {from: '2026-07', min: 410000, max: 6590000},
+];
+// 건강보험 직장가입자 보수월액보험료 본인 부담 상한(월). 하한은 월 60시간 미만이 대부분 적용 제외라 따로 두지 않는다.
+export const HEALTH_MAX_EMPLOYEE: Record<number, number> = {2026: 4591740};
+export const pensionLimitFor = (month: string) => [...PENSION_LIMITS].reverse().find(l => month >= l.from) || PENSION_LIMITS[0];
+
+/** 4대보험 근로자 부담분. status가 '가입'인 보험만 뗀다(10원 미만 버림). month(YYYY-MM)가 있으면 국민연금 상·하한을 적용한다. */
+export function insuranceLines(gross: number, year: number, insurances: Record<string, {status: string}>, month?: string) {
   const r = ratesFor(year), on = (n: string) => insurances?.[n]?.status === '가입', lines: Line[] = [];
-  if (on('국민연금')) lines.push({name: '국민연금', amount: floor10(gross * r.pension), formula: `${won(gross)}원 × ${(r.pension * 100).toFixed(2)}% (기준소득월액 상·하한 별도 확인)`});
+  if (on('국민연금')) {
+    const lim = month ? pensionLimitFor(month) : null, base = lim ? Math.min(lim.max, Math.max(lim.min, Math.floor(gross / 1000) * 1000)) : gross;
+    const note = !lim ? '' : base !== Math.floor(gross / 1000) * 1000 ? ` · 기준소득월액 ${base === lim.min ? '하한' : '상한'} ${won(base)}원 적용` : ' · 기준소득월액(천원 미만 버림)';
+    lines.push({name: '국민연금', amount: floor10(base * r.pension), formula: `${won(base)}원 × ${(r.pension * 100).toFixed(2)}%${note}`});
+  }
   if (on('건강보험')) {
-    const h = floor10(gross * r.health);
+    const cap = HEALTH_MAX_EMPLOYEE[year], h = Math.min(floor10(gross * r.health), cap ?? Infinity);
     lines.push({name: '건강보험', amount: h, formula: `${won(gross)}원 × ${(r.health * 100).toFixed(3)}%`});
     if (on('장기요양')) lines.push({name: '장기요양보험', amount: floor10(h * r.care), formula: `건강보험료 ${won(h)}원 × ${(r.care * 100).toFixed(2)}%`});
   }

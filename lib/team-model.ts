@@ -43,7 +43,7 @@ export function calculate(s:Team,month:string){
   const deductions=[...adj.deductions];
   if(e.taxMode==='사업소득 3.3%'&&!deductions.some(x=>x.name==='사업소득 원천징수'))deductions.push({name:'사업소득 원천징수',amount:Math.floor(gross*0.033),formula:'총액 × 3.3% (원 미만 버림·소득 구분 및 세액 별도 검토)'});
   // 4대보험은 비과세 수당(식대 등)을 뺀 금액으로 계산
-  if(e.taxMode==='4대보험 자동')for(const x of insuranceLines(gross-taxFree,year,e.insurances))if(!deductions.some(d=>d.name===x.name))deductions.push(taxFree?{...x,formula:x.formula+' · 비과세 '+won(taxFree)+'원 제외'}:x);
+  if(e.taxMode==='4대보험 자동')for(const x of insuranceLines(gross-taxFree,year,e.insurances,month))if(!deductions.some(d=>d.name===x.name))deductions.push(taxFree?{...x,formula:x.formula+' · 비과세 '+won(taxFree)+'원 제외'}:x);
   // 근로소득세·지방소득세: 간이세액표(비과세 제외 월급여, 공제대상가족·자녀 수, 원천징수 비율)
   if(e.taxMode==='4대보험 자동'&&!deductions.some(d=>d.name==='근로소득세')){const tx=incomeTax(gross-taxFree,year,(e as any).taxFamily||1,(e as any).taxChildren||0,(e as any).taxRatio||100),basis=`간이세액표(${tx.year}) · 월급여 ${won(gross-taxFree)}원 · 공제대상가족 ${tx.family}명${tx.children?` · 8~20세 자녀 ${tx.children}명`:''}${tx.ratio!==100?` · ${tx.ratio}% 선택`:''}`;if(tx.incomeTax>0){deductions.push({name:'근로소득세',amount:tx.incomeTax,formula:basis});deductions.push({name:'지방소득세',amount:tx.localTax,formula:'근로소득세 × 10%'});}}
   const deduction=deductions.reduce((n,a)=>n+a.amount,0);
