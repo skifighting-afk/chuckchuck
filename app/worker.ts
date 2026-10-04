@@ -36,17 +36,17 @@ export async function api(request:Request,env:Env){
  if(path==='/api/export')return exportApi(request,env);
  if(path==='/api/withdraw')return withdrawApi(request,env);
  if(path==='/api/operations')return operationsApi(request,env);
- if(!['/api/store','/api/join'].includes(path))return json({error:'요청 경로를 찾을 수 없습니다.'},404);
+ if(!['/api/store','/api/join'].includes(path))return json({error:'없는 기능이에요. 새로고침한 뒤 다시 시도해 주세요.'},404);
  const userId=request.headers.get('oai-authenticated-user-id');if(!userId)return json({error:'로그인 후 이용해 주세요.'},401);
  try{
  if(new URL(request.url).pathname==='/api/join')return join(request,env,userId);
  const linked=await resolveStore(env.DB,userId);
  if(!linked)return json({error:'매장 등록을 먼저 완료해 주세요.',code:'ONBOARDING_REQUIRED'},409);
- if(linked.access==='revoked')return json({error:'매장 이용 권한이 없습니다.'},403);
+ if(linked.access==='revoked')return json({error:'이 가게를 볼 권한이 없어요. 사장님께 연결을 요청해 주세요.'},403);
  const owner=linked.owner,row=linked.row;
  const raw=row?JSON.parse(row.data):null;let state=normalizeTeam(raw);let audit:any[]=raw?._audit||[],outbox:any[]=raw?._outbox||[],invitations:any[]=raw?._invitations||[],members:any[]=raw?._members||[];const version=row?.version||0;
  const self=state.employees.find(e=>e.id===members.find(m=>m.userId===userId)?.employeeId),access=owner===userId?'owner':self?.access==='중간관리자'?'manager':'employee';
- if(owner!==userId&&(!self||self.status==='퇴사'))return json({error:'매장 이용 권한이 없습니다.'},403);
+ if(owner!==userId&&(!self||self.status==='퇴사'))return json({error:'이 가게를 볼 권한이 없어요. 사장님께 연결을 요청해 주세요.'},403);
  let name=request.headers.get('oai-authenticated-user-full-name')||request.headers.get('oai-authenticated-user-email')||'사장님';try{if(request.headers.get('oai-authenticated-user-full-name-encoding')==='percent-encoded-utf-8')name=decodeURIComponent(name)}catch{}
  const actor={id:userId,name:self?.name||name,email:request.headers.get('oai-authenticated-user-email')||''};
  let inviteUrl:string|undefined;let attendanceQrUrl:string|undefined;
@@ -57,14 +57,14 @@ export async function api(request:Request,env:Env){
  };
  if(request.method==='GET')return json({...result(),version,updatedAt:row?.updated_at});
  if(raw?._account?.deletion)return json({error:'탈퇴를 예약해 가게가 읽기 전용이에요. 계정 화면에서 예약을 취소하면 다시 저장할 수 있어요.',code:'WITHDRAW_PENDING'},403);
- if(raw?._account&&!canWrite(raw._account))return json({error:'체험이 종료되었습니다. 기록 조회와 내려받기는 계속 이용할 수 있습니다.',code:'TRIAL_ENDED'},403);
- if(!['PUT','POST'].includes(request.method))return json({error:'지원하지 않는 요청입니다.'},405);
+ if(raw?._account&&!canWrite(raw._account))return json({error:'체험이 끝났어요. 기록 조회·내려받기는 계속 되고, 계정·요금제에서 무료 요금제로 바꾸면 다시 저장할 수 있어요.',code:'TRIAL_ENDED'},403);
+ if(!['PUT','POST'].includes(request.method))return json({error:'이 방법으로는 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},405);
  if(request.headers.get('origin')!==new URL(request.url).origin)return json({error:'요청 출처를 확인할 수 없습니다.'},403);
- const text=await request.text();if(text.length>1500000)return json({error:'데이터 용량을 초과했습니다.'},413);
- let b:any;try{b=JSON.parse(text)}catch{return json({error:'올바르지 않은 요청입니다.'},400)}
- if(access!=='owner'&&(request.method==='PUT'||!['attendance','request'].includes(b.action)))return json({error:'사장님만 처리할 수 있습니다.'},403);
- if(access!=='owner'&&b.action==='attendance'&&b.employeeId!==self!.id)return json({error:'본인의 출퇴근만 기록할 수 있습니다.'},403);
- if(access!=='owner'&&b.action==='request'){const target=state.attendance.find(a=>a.id===b.id);if(!target||target.employeeId!==self!.id)return json({error:'본인의 출퇴근만 수정 요청할 수 있습니다.'},403);}
+ const text=await request.text();if(text.length>1500000)return json({error:'한 번에 저장할 수 있는 양을 넘었어요. 오래된 기록을 정리하거나 나눠서 저장해 주세요.'},413);
+ let b:any;try{b=JSON.parse(text)}catch{return json({error:'요청을 읽지 못했어요. 새로고침한 뒤 다시 시도해 주세요.'},400)}
+ if(access!=='owner'&&(request.method==='PUT'||!['attendance','request'].includes(b.action)))return json({error:'이 작업은 사장님만 할 수 있어요. 사장님께 요청해 주세요.'},403);
+ if(access!=='owner'&&b.action==='attendance'&&b.employeeId!==self!.id)return json({error:'본인 출퇴근만 기록할 수 있어요. 내 계정으로 로그인했는지 확인해 주세요.'},403);
+ if(access!=='owner'&&b.action==='request'){const target=state.attendance.find(a=>a.id===b.id);if(!target||target.employeeId!==self!.id)return json({error:'본인 출퇴근만 정정 요청할 수 있어요.'},403);}
  if(b.version!==version)return json({error:'다른 화면의 변경 사항이 있습니다. 새로고침 후 다시 시도해 주세요.'},409);
  const fail=(message:string)=>{throw new Error(message)};
  const log=(action:string,target:string,before:any,after:any,reason='')=>audit.push({id:crypto.randomUUID(),at:new Date().toISOString(),actor,action,target,before,after,reason});
@@ -126,19 +126,19 @@ export default {async fetch(request:Request,env:Env){
 }};
 async function hashToken(token:string){return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token)))).map(n=>n.toString(16).padStart(2,'0')).join('')}
 async function join(request:Request,env:Env,userId:string){
- if(request.method!=='POST'||request.headers.get('origin')!==new URL(request.url).origin)return json({error:'올바르지 않은 초대 요청입니다.'},403);
- const b:any=await request.json();if(typeof b.token!=='string'||b.token.length>100)return json({error:'유효하지 않은 초대입니다.'},400);
+ if(request.method!=='POST'||request.headers.get('origin')!==new URL(request.url).origin)return json({error:'초대 주소가 올바르지 않아요. 사장님께 새 초대 링크를 요청해 주세요.'},403);
+ const b:any=await request.json();if(typeof b.token!=='string'||b.token.length>100)return json({error:'초대 링크가 올바르지 않아요. 사장님께 새 초대 링크를 요청해 주세요.'},400);
  const hash=await hashToken(b.token),row=await env.DB.prepare("SELECT stores.owner,stores.data,stores.version FROM stores, jsonb_array_elements(coalesce(stores.data::jsonb->'_invitations','[]'::jsonb)) AS i(value) WHERE (i.value->>'hash')=? LIMIT 1").bind(hash).first<any>();
- if(!row)return json({error:'초대가 만료되었거나 이미 사용되었습니다.'},400);
+ if(!row)return json({error:'초대 링크가 만료됐거나 이미 쓰였어요. 사장님께 새 링크를 요청해 주세요.'},400);
  const data=JSON.parse(row.data),invite=data._invitations.find((i:any)=>i.hash===hash),email=request.headers.get('oai-authenticated-user-email')?.toLowerCase();
  if(userId.startsWith('native:')&&request.headers.get('oai-authenticated-user-email-verified')!=='true')return json({error:'이메일 가입 직원은 가게 코드로 합류를 신청하고 사장님의 수락을 받아 주세요.'},403);
  if(invite.expires<Date.now()||!email||email!==invite.email)return json({error:'초대받은 이메일 계정으로 로그인해 주세요. 초대는 7일간 유효합니다.'},403);
- if(userId===row.owner)return json({error:'사장님 계정으로 직원 초대를 수락할 수 없습니다.'},400);
+ if(userId===row.owner)return json({error:'사장님 계정으로는 직원 초대를 받을 수 없어요. 직원 계정으로 로그인해 주세요.'},400);
  const existing=await env.DB.prepare("SELECT stores.owner FROM stores, jsonb_array_elements(coalesce(stores.data::jsonb->'_members','[]'::jsonb)) AS m(value) WHERE (m.value->>'userId')=? LIMIT 1").bind(userId).first<any>();
  const own=await env.DB.prepare('SELECT owner FROM stores WHERE owner=?').bind(userId).first<any>();if(own)return json({error:'이미 사장님 매장이 연결된 계정입니다. 다른 직원 계정을 사용해 주세요.'},409);
- if(data._account&&!canWrite(data._account))return json({error:'이 매장의 체험이 종료되어 초대를 수락할 수 없습니다.'},403);
- if(existing)return json({error:'이미 연결된 매장 계정입니다.'},409);
- if(data._members?.some((m:any)=>m.employeeId===invite.employeeId))return json({error:'이미 연결된 직원입니다.'},409);
+ if(data._account&&!canWrite(data._account))return json({error:'이 가게의 체험이 끝나 지금은 초대를 받을 수 없어요. 사장님께 알려 주세요.'},403);
+ if(existing)return json({error:'이미 가게에 연결된 계정이에요. 로그인하면 바로 가게로 들어가요.'},409);
+ if(data._members?.some((m:any)=>m.employeeId===invite.employeeId))return json({error:'이미 연결된 직원이에요. 목록을 새로고침해 주세요.'},409);
  data._members=[...(data._members||[]),{userId,employeeId:invite.employeeId}];data._invitations=data._invitations.filter((i:any)=>i.hash!==hash);
  data._audit=[...(data._audit||[]),{id:crypto.randomUUID(),at:new Date().toISOString(),actor:{id:userId,name:email,email},action:'직원 초대 수락',target:invite.employeeId,before:null,after:null,reason:'초대 이메일 일치 확인'}];
  const r=await env.DB.prepare('UPDATE stores SET data=?,version=?,updated_at=? WHERE owner=? AND version=?').bind(JSON.stringify(data),row.version+1,new Date().toISOString(),row.owner,row.version).run();

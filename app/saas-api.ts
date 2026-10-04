@@ -21,20 +21,20 @@ export async function accountApi(request:Request,env:Env){
  try{
   const email=request.headers.get('oai-authenticated-user-email')||'';
   const linked=await resolveStore(env.DB,id);
-  if(linked?.access==='revoked')return json({error:'매장 이용 권한이 종료되었습니다.'},403);
+  if(linked?.access==='revoked')return json({error:'이 가게 이용이 끝났어요. 받은 서류는 \'내 서류 보기\'에서 확인할 수 있어요.'},403);
   const data=linked?JSON.parse(linked.row.data):null;
   // 작업 016: 약관·처리방침 버전이 바뀌었거나 동의 기록이 없으면 다시 동의를 받는다.
   const consentRow=id.startsWith('native:')?await env.DB.prepare('SELECT terms_version,privacy_version FROM app_users WHERE id=?').bind(id).first<any>():null;
   const consentRequired=!!consentRow&&!consentCurrent(consentRow);
   const view=(d:any)=>({hq:isHQ(request,env),consentRequired,legal:{terms:LEGAL.terms.version,privacy:LEGAL.privacy.version},user:{email,authMethod:id.startsWith('native:')?'email':'chatgpt',role:request.headers.get('oai-authenticated-user-native-role')||'owner',emailVerified:!id.startsWith('native:')||request.headers.get('oai-authenticated-user-email-verified')==='true'},onboarded:!!d,access:linked?.access||'owner',storeName:d?.store?.name||'',industry:d?._account?.industry||null,industryName:industryName(d?._account?.industry),storeClosingAt:d?._account?.deletion?.purgeAt||null,account:linked&&linked.access!=='owner'?null:d?{plan:d._account?.plan||null,deletion:d._account?.deletion||null,status:trialStatus(d._account),trialEndsAt:d._account?.trialEndsAt||null,createdAt:d._account?.createdAt||null,autoRenew:false,storeSlots:planLimits(d._account).branches,limits:planLimits(d._account),monthlyPrice:isPlan(d._account?.plan)?monthlyPrice(d._account.plan,planLimits(d._account).branches):0}:null,usage:linked&&linked.access!=='owner'?null:d?{employees:d.employees.filter((e:any)=>e.status!=='퇴사').length,branches:d.branches?.length||1,perBranch:d.branches.map((b:any)=>({id:b.id,name:b.name,employees:d.employees.filter((e:any)=>e.branchId===b.id&&e.status!=='퇴사').length}))}:null,billing:{enabled:false,reason:'사업자 정보와 결제 서비스 연결을 준비하고 있어요. 현재 결제되지 않습니다.'}});
   if(request.method==='GET')return json(view(data));
-  if(request.method!=='POST')return json({error:'지원하지 않는 요청입니다.'},405);
+  if(request.method!=='POST')return json({error:'이 방법으로는 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},405);
   if(request.headers.get('origin')!==new URL(request.url).origin)return json({error:'요청 출처를 확인할 수 없습니다.'},403);
-  const raw=await request.text();if(raw.length>12000)return json({error:'요청이 너무 큽니다.'},413);
-  let b:any;try{b=JSON.parse(raw)}catch{return json({error:'올바르지 않은 요청입니다.'},400)}
+  const raw=await request.text();if(raw.length>12000)return json({error:'보낸 내용이 너무 커요. 내용을 줄여서 다시 시도해 주세요.'},413);
+  let b:any;try{b=JSON.parse(raw)}catch{return json({error:'요청을 읽지 못했어요. 새로고침한 뒤 다시 시도해 주세요.'},400)}
   if(b.action==='onboard'){
    if(request.headers.get('oai-authenticated-user-native-role')==='employee')return json({error:'직원 계정에서는 가게 합류를 신청해 주세요.'},403);
-   if(linked)return json({error:'이미 연결된 매장이 있습니다.'},409);
+   if(linked)return json({error:'이미 연결된 가게가 있어요. 내 가게로 들어가 주세요.'},409);
    if(!email)return json({error:'이메일이 확인된 계정으로 로그인해 주세요.'},400);
    if(!isPlan(b.plan))return json({error:'요금제를 선택해 주세요.'},400);
    for(const key of ['storeName','branchName','ownerName'])if(typeof b[key]!=='string'||!b[key].trim()||b[key].trim().length>80)return json({error:'매장명·지점명·사장님 성함을 80자 이내로 입력해 주세요.'},400);
@@ -54,19 +54,19 @@ export async function accountApi(request:Request,env:Env){
    return json(view(next),201);
   }
   if(!linked)return json({error:'매장 등록을 먼저 완료해 주세요.'},409);
-  if(linked.access!=='owner')return json({error:'사장님만 이용권을 관리할 수 있습니다.'},403);
-  if(b.action==='checkout')return json({error:'아직 결제를 받지 않습니다. 결제 서비스 연결 후 별도 동의로 시작됩니다.',code:'BILLING_NOT_READY'},503);
-  if(!data._account)return json({error:'기존 매장은 현재 이용 상태가 유지됩니다. 정식 판매 전 요금제를 별도로 안내합니다.'},409);
+  if(linked.access!=='owner')return json({error:'요금제는 사장님만 바꿀 수 있어요.'},403);
+  if(b.action==='checkout')return json({error:'아직 결제를 받지 않아요. 지금은 무료·체험으로 계속 이용하시면 돼요.',code:'BILLING_NOT_READY'},503);
+  if(!data._account)return json({error:'기존 매장은 지금 이용 상태 그대로 쓸 수 있어요. 요금제는 정식 판매 전에 따로 안내할게요.'},409);
   if(b.action==='changePlan'){
-   if(b.plan!=='free'&&trialStatus(data._account)!=='trialing'&&data._account.trialUsed)return json({error:'유료 기능 체험을 이미 사용했습니다. 현재 결제 연결 전이며 무료 요금제로 계속 이용할 수 있습니다.'},403);
+   if(b.plan!=='free'&&trialStatus(data._account)!=='trialing'&&data._account.trialUsed)return json({error:'유료 기능 체험은 이미 사용했어요. 지금은 결제를 받지 않으니 무료 요금제로 계속 이용해 주세요.'},403);
    if(!isPlan(b.plan))return json({error:'올바른 요금제를 선택해 주세요.'},400);
    const nextAccount={...data._account,plan:b.plan,storeSlots:b.plan==='multi'?Math.max(2,Math.min(10,Math.floor(Number(b.storeSlots)||2))):1};const exceeded=capacityError(data,nextAccount);if(exceeded)return json({error:exceeded},409);
    if(b.plan!=='free'&&!data._account.trialUsed){nextAccount.trialEndsAt=new Date(Date.now()+TRIAL_DAYS*86400000).toISOString();nextAccount.trialUsed=true;}
    nextAccount.status=b.plan==='free'?'free':'trialing';data._account=nextAccount;
   }else if(b.action==='endTrial'){
    if(b.confirm!==true)return json({error:'체험 종료 확인이 필요합니다.'},400);
-   if(data._account.plan==='free')return json({error:'무료 요금제에는 종료할 유료 체험이 없습니다.'},400);data._account.status='cancelled';data._account.cancelledAt=new Date().toISOString();
-  }else return json({error:'지원하지 않는 작업입니다.'},400);
+   if(data._account.plan==='free')return json({error:'무료 요금제라 종료할 체험이 없어요. 지금처럼 계속 이용하시면 돼요.'},400);data._account.status='cancelled';data._account.cancelledAt=new Date().toISOString();
+  }else return json({error:'이 작업은 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},400);
   data._audit=[...(data._audit||[]),{id:crypto.randomUUID(),at:new Date().toISOString(),actor:{id,name:email,email},action:b.action==='endTrial'?'체험 종료':'체험 요금제 변경',target:'이용권',before:null,after:{plan:data._account.plan,status:trialStatus(data._account)},reason:'계정 관리'}];
   const saved=await env.DB.prepare('UPDATE stores SET data=?,version=?,updated_at=? WHERE owner=? AND version=?').bind(JSON.stringify(data),linked.row.version+1,new Date().toISOString(),id,linked.row.version).run();
   return saved.meta.changes?json(view(data)):json({error:'다른 변경이 있습니다. 새로고침해 주세요.'},409);

@@ -13,13 +13,13 @@ const json=(v:unknown,status=200)=>Response.json(v,{status,headers:{'Cache-Contr
 export async function withdrawAction(request:Request,env:AuthEnv,b:any,linked:any){
  const id=request.headers.get('oai-authenticated-user-id')!;
  const user=await env.DB.prepare('SELECT id,auth_id,last_export_at FROM app_users WHERE id=?').bind(id).first<any>();
- if(!user)return json({error:'이메일로 가입한 계정만 여기서 탈퇴할 수 있어요.'},400);
+ if(!user)return json({error:'이 계정은 여기서 탈퇴할 수 없어요. 운영팀에 탈퇴를 요청해 주세요.'},400);
  if(b.action==='cancelWithdraw'){
-  if(linked?.access!=='owner')return json({error:'취소할 탈퇴 예약이 없어요.'},404);
+  if(linked?.access!=='owner')return json({error:'취소할 탈퇴 예약이 없어요. 지금처럼 이용하시면 돼요.'},404);
   const data=JSON.parse(linked.row.data);
-  if(!data._account?.deletion)return json({error:'취소할 탈퇴 예약이 없어요.'},404);
+  if(!data._account?.deletion)return json({error:'취소할 탈퇴 예약이 없어요. 지금처럼 이용하시면 돼요.'},404);
   const gone=await env.DB.prepare('DELETE FROM account_deletions WHERE user_id=? AND data_purged_at IS NULL RETURNING user_id').bind(id).first();
-  if(!gone)return json({error:'이미 삭제가 진행됐어요.'},409);
+  if(!gone)return json({error:'이미 삭제가 진행돼 취소할 수 없어요. 내려받은 데이터 파일을 확인해 주세요.'},409);
   delete data._account.deletion;
   data._audit=[...(data._audit||[]),{id:crypto.randomUUID(),at:new Date().toISOString(),actor:{id,name:'사장님',email:request.headers.get('oai-authenticated-user-email')||''},action:'탈퇴 예약 취소',target:'계정',before:null,after:null,reason:'사장님 요청'}];
   await env.DB.prepare('UPDATE stores SET data=?,version=version+1,updated_at=? WHERE owner=?').bind(JSON.stringify(data),new Date().toISOString(),id).run();
@@ -30,7 +30,7 @@ export async function withdrawAction(request:Request,env:AuthEnv,b:any,linked:an
  if(linked?.access==='owner'){
   const data=JSON.parse(linked.row.data);
   if(!data._account)return json({error:'기존 매장은 운영팀에 탈퇴를 요청해 주세요.'},409);
-  if(data._account.deletion)return json({error:'이미 탈퇴를 예약했어요.',purgeAt:data._account.deletion.purgeAt},409);
+  if(data._account.deletion)return json({error:'이미 탈퇴를 예약했어요. 취소하려면 \'탈퇴 예약 취소\'를 눌러 주세요.',purgeAt:data._account.deletion.purgeAt},409);
   const exported=Date.parse(user.last_export_at||'');
   if(!Number.isFinite(exported)||Date.now()-exported>EXPORT_FRESH_DAYS*DAY)return json({error:'탈퇴 전에 가게 데이터를 먼저 내려받아 주세요. 근로계약서·임금대장 등은 3년간 보존해야 해요(근로기준법 제42조).',code:'EXPORT_REQUIRED'},409);
   const now=new Date(),purgeAt=new Date(now.getTime()+WITHDRAW_GRACE_DAYS*DAY);
@@ -70,11 +70,11 @@ export async function processDeletions(env:AuthEnv,limit=3){
 export async function withdrawApi(request:Request,env:AuthEnv){
  const id=request.headers.get('oai-authenticated-user-id');
  if(!id)return json({error:'로그인해 주세요.'},401);
- if(request.method!=='POST')return json({error:'지원하지 않는 요청이에요.'},405);
+ if(request.method!=='POST')return json({error:'이 방법으로는 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},405);
  if(request.headers.get('origin')!==new URL(request.url).origin)return json({error:'이 화면에서 다시 시도해 주세요.'},403);
- const raw=await request.text();if(raw.length>2000)return json({error:'요청이 너무 커요.'},413);
+ const raw=await request.text();if(raw.length>2000)return json({error:'보낸 내용이 너무 커요. 내용을 줄여서 다시 시도해 주세요.'},413);
  let b:any;try{b=JSON.parse(raw)}catch{return json({error:'요청을 확인해 주세요.'},400)}
- if(!b||!['withdraw','cancelWithdraw'].includes(b.action))return json({error:'지원하지 않는 작업이에요.'},400);
+ if(!b||!['withdraw','cancelWithdraw'].includes(b.action))return json({error:'이 작업은 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},400);
  try{return await withdrawAction(request,env,b,await resolveStore(env.DB,id))}
  catch{return json({error:'탈퇴를 처리하지 못했어요. 잠시 뒤 다시 시도해 주세요.'},500)}
 }

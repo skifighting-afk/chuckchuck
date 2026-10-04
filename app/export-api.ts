@@ -9,7 +9,7 @@ const INTERNAL = ['_attendanceQr', '_invitations'];
 export async function exportApi(request: Request, env: {DB: D1Database}) {
   const uid = request.headers.get('oai-authenticated-user-id');
   if (!uid) return json({error: '로그인해 주세요.'}, 401);
-  if (request.method !== 'GET') return json({error: '지원하지 않는 요청이에요.'}, 405);
+  if (request.method !== 'GET') return json({error: '이 방법으로는 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'}, 405);
   try {
     const linked = await resolveStore(env.DB, uid);
     if (linked?.access !== 'owner') return json({error: '사장님만 가게 데이터를 내려받을 수 있어요.'}, 403);

@@ -87,7 +87,7 @@ export async function nativeAuth(request:Request,env:Env){
    const user=await env.DB.prepare('SELECT id,email,email_verified FROM app_users WHERE id=?').bind(id).first<any>();
    if(!user)return json({error:'다시 로그인해 주세요.'},401);
    if(user.email_verified)return json({ok:true,verified:true});
-   if(!mailReady(env))return json({error:'발신 도메인과 이메일 발송 연결을 준비 중이에요.',code:'EMAIL_NOT_READY'},503);
+   if(!mailReady(env))return json({error:'이메일 발송을 준비하고 있어요. 지금은 앱에서 서류를 확인하도록 안내해 주세요.',code:'EMAIL_NOT_READY'},503);
    if(!await authLimit(env,'verify-minute:'+id,1,60000)||!await authLimit(env,'verify-hour:'+id,5,3600000))return json({error:'메일함을 확인해 주세요. 다시 받기는 1분 뒤, 한 시간에 최대 5번 가능해요.'},429);
    const token=randomToken(),hash=await digest(token);
    await env.DB.prepare('INSERT INTO auth_verifications(token_hash,user_id,email,expires_at,created_at) VALUES(?,?,?,?,?)').bind(hash,id,user.email,Date.now()+30*60000,Date.now()).run();
@@ -135,7 +135,7 @@ export async function nativeAuth(request:Request,env:Env){
    const user=await appUser(env,login.data.user);
    return json({ok:true,role:user.role,emailVerified:!!user.email_verified,session:session(login.data)});
   }
-  return json({error:'지원하지 않는 요청입니다.'},400);
+  return json({error:'이 방법으로는 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},400);
  }catch{return json({error:'계정 처리를 완료하지 못했어요. 잠시 뒤 다시 시도해 주세요.'},500)}
 }
 
