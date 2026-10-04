@@ -4,6 +4,7 @@ import {trialStatus,canWrite,hasFeature} from '../lib/plans';
 import {z} from 'zod';
 import {leaveBalanceFor,unusedLeavePay} from '../lib/annual-leave';
 import {ordinaryHourly} from '../lib/team-model';
+import {same} from '../lib/same';
 const kstToday=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date());
 const json=(v:unknown,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store'}});
 const date=z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(v=>!isNaN(Date.parse(v))&&new Date(v).toISOString().slice(0,10)===v);
@@ -17,7 +18,9 @@ export async function operationsApi(request:Request,env:{DB:D1Database}){
  const self=data.employees.find((e:any)=>e.id===data._members?.find((m:any)=>m.userId===userId)?.employeeId);
  const fivePlus=!!data.settings?.fivePlus,asOf=kstToday();
  const accrual=(e:any)=>{const r=leaveBalanceFor(e,ops.leaves.filter((l:any)=>l.employeeId===e.id),asOf,fivePlus);let hourly=0;try{hourly=ordinaryHourly(e).hourly}catch{};return {eligible:r.eligible,reason:r.reason,earned:r.earned,used:r.used,remaining:r.remaining,next:r.next,grants:r.grants.length,unusedPay:r.eligible?unusedLeavePay(r.remaining,hourly):0}};
- const view=()=>({fivePlus,version:row.version,access,selfId:self?.id||null,employees:data.employees.filter((e:any)=>access==='owner'||e.id===self?.id).map((e:any)=>({id:e.id,name:e.name,branchId:e.branchId,leaveBalance:e.leaveBalance,joined:e.joined,accrual:accrual(e)})),branches:access==='owner'?data.branches:data.branches.filter((b:any)=>b.id===self?.branchId),leaves:ops.leaves.filter((l:any)=>access==='owner'||l.employeeId===self?.id),notices:ops.notices.filter((n:any)=>access==='owner'||n.branchId==='all'||n.branchId===self?.branchId).map((n:any)=>({id:n.id,title:n.title,body:n.body,branchId:n.branchId,createdAt:n.createdAt,author:n.author,read:n.reads.includes(userId),...(access==='owner'?{readCount:n.reads.length}:{})}))});
+ const myBranch=self?.branchId,visibleSwap=(w:any)=>access==='owner'||w.branchId===myBranch;
+ const upcoming=(s:any)=>s.date>=asOf&&(access==='owner'||s.employeeId===self?.id);
+ const view=()=>({fivePlus,swaps:(ops.swaps||[]).filter(visibleSwap).slice(-200),myShifts:data.shifts.filter(upcoming).sort((a:any,b:any)=>(a.date+a.start<b.date+b.start?-1:1)).slice(0,200).map((s:any)=>({id:s.id,employeeId:s.employeeId,date:s.date,start:s.start,end:s.end})),colleagues:data.employees.filter((e:any)=>e.status!=='퇴사'&&(access==='owner'||(e.branchId===myBranch&&e.id!==self?.id))).map((e:any)=>({id:e.id,name:e.name,branchId:e.branchId})),version:row.version,access,selfId:self?.id||null,employees:data.employees.filter((e:any)=>access==='owner'||e.id===self?.id).map((e:any)=>({id:e.id,name:e.name,branchId:e.branchId,leaveBalance:e.leaveBalance,joined:e.joined,accrual:accrual(e)})),branches:access==='owner'?data.branches:data.branches.filter((b:any)=>b.id===self?.branchId),leaves:ops.leaves.filter((l:any)=>access==='owner'||l.employeeId===self?.id),notices:ops.notices.filter((n:any)=>access==='owner'||n.branchId==='all'||n.branchId===self?.branchId).map((n:any)=>({id:n.id,title:n.title,body:n.body,branchId:n.branchId,createdAt:n.createdAt,author:n.author,read:n.reads.includes(userId),...(access==='owner'?{readCount:n.reads.length}:{})}))});
  if(request.method==='GET')return json(view());
  if(request.method!=='POST')return json({error:'이 방법으로는 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},405);
  if(request.headers.get('origin')!==new URL(request.url).origin)return json({error:'요청 출처를 확인할 수 없습니다.'},403);
@@ -53,6 +56,49 @@ export async function operationsApi(request:Request,env:{DB:D1Database}){
   const list=data.employees.filter((e:any)=>e.status!=='퇴사'&&(b.employeeId==='all'||e.id===b.employeeId));if(!list.length)return json({error:'반영할 재직 직원이 없어요. 직원 목록을 새로고침해 주세요.'},400);
   const changed:string[]=[];for(const e of list){const a=accrual(e);if(a.eligible&&a.remaining!==e.leaveBalance){e.leaveBalance=Math.min(100,a.remaining);changed.push(e.name)}}
   label='연차 자동 계산 반영';target=changed.join(', ')||'변경 없음';b.comment='입사일 기준 발생분 − 승인된 연차';
+ }else if(['requestSwap','acceptSwap','reviewSwap','cancelSwap'].includes(b.action)){
+  // 작업 049: 대타·교대 — 직원끼리 구하고 사장님은 승인만
+  ops.swaps=ops.swaps||[];const emp=(id:string)=>data.employees.find((e:any)=>e.id===id&&e.status!=='퇴사');
+  const lockedMonth=(employeeId:string,date:string)=>Object.values(data.payrollRuns||{}).some((r:any)=>r.locked&&r.month===date.slice(0,7)&&r.rows?.some((x:any)=>x.employeeId===employeeId));
+  const onLeave=(employeeId:string,date:string)=>ops.leaves.some((l:any)=>l.status==='승인'&&l.employeeId===employeeId&&date>=l.start&&date<=l.end);
+  const toMin=(t:string)=>{const [h,m]=t.split(':').map(Number);return h*60+m},span=(s:any)=>{const a=toMin(s.start),z=toMin(s.end);return [a,z<=a?z+1440:z]};
+  const overlaps=(employeeId:string,shift:any,ignore:string[])=>data.shifts.some((x:any)=>x.employeeId===employeeId&&x.date===shift.date&&!ignore.includes(x.id)&&(()=>{const [a1,b1]=span(x),[a2,b2]=span(shift);return a1<b2&&a2<b1})());
+  const check=(employeeId:string,shift:any,ignore:string[])=>{const e=emp(employeeId);if(!e)return '재직 중인 직원만 맡을 수 있어요. 다른 직원을 골라 주세요.';if(lockedMonth(shift.employeeId,shift.date)||lockedMonth(employeeId,shift.date))return '급여가 확정된 달의 근무예요. 사장님께 확정 해제를 요청해 주세요.';if(onLeave(employeeId,shift.date))return e.name+'님은 그날 승인된 휴가가 있어요. 다른 직원을 찾아 주세요.';if(overlaps(employeeId,shift,ignore))return e.name+'님은 그 시간에 이미 근무가 있어요. 시간을 확인해 주세요.';return ''};
+  const core=(s:any)=>s&&({id:s.id,date:s.date,start:s.start,end:s.end,employeeId:s.employeeId}),snap=(s:any)=>({id:s.id,date:s.date,start:s.start,end:s.end,employeeId:s.employeeId,name:emp(s.employeeId)?.name||''});
+  if(b.action==='requestSwap'){
+   if(!['대타','교대'].includes(b.kind)||typeof b.reason!=='string'||!b.reason.trim()||b.reason.length>500)return json({error:'종류와 사유를 입력해 주세요.'},400);
+   const shift=data.shifts.find((s:any)=>s.id===b.shiftId);if(!shift||shift.date<asOf)return json({error:'오늘 이후 근무만 대타·교대를 구할 수 있어요. 근무를 다시 골라 주세요.'},400);
+   if(access!=='owner'&&shift.employeeId!==self?.id)return json({error:'본인 근무만 대타·교대를 요청할 수 있어요.'},403);
+   if(ops.swaps.some((w:any)=>w.shift.id===shift.id&&['구하는 중','승인 대기'].includes(w.status)))return json({error:'이 근무는 이미 대타·교대를 구하는 중이에요. 기존 요청을 확인해 주세요.'},409);
+   if(ops.swaps.length>=2000)return json({error:'요청 기록을 더 저장할 수 없어요. 사장님께 지난 기록 정리를 요청해 주세요.'},400);
+   const pick=b.targetId?emp(b.targetId):null;if(b.targetId&&(!pick||pick.id===shift.employeeId||(access!=='owner'&&pick.branchId!==self?.branchId)))return json({error:'같은 지점의 다른 직원을 골라 주세요.'},400);
+   const owner=emp(shift.employeeId);ops.swaps.push({id:crypto.randomUUID(),kind:b.kind,branchId:owner?.branchId,shift:snap(shift),targetId:pick?.id||null,targetName:pick?.name||'',reason:b.reason.trim(),status:'구하는 중',at:now,by:actor.name});label=b.kind+' 요청';
+  }else{
+   const w=ops.swaps.find((w:any)=>w.id===b.id);if(!w||!visibleSwap(w))return json({error:'요청을 찾을 수 없어요. 목록을 새로고침해 주세요.'},404);
+   const shift=data.shifts.find((s:any)=>s.id===w.shift.id);
+   if(b.action==='cancelSwap'){if(!['구하는 중','승인 대기'].includes(w.status))return json({error:'이미 처리된 요청이에요. 목록을 새로고침해 주세요.'},409);if(access!=='owner'&&w.shift.employeeId!==self?.id)return json({error:'요청한 직원이나 사장님만 취소할 수 있어요.'},403);w.status='취소';label=w.kind+' 요청 취소';
+   }else if(b.action==='acceptSwap'){
+    if(w.status!=='구하는 중')return json({error:'이미 다른 직원이 맡았거나 마감된 요청이에요. 목록을 새로고침해 주세요.'},409);
+    const who=access==='owner'?b.employeeId:self?.id;if(!who||who===w.shift.employeeId)return json({error:'요청한 본인은 맡을 수 없어요. 같은 지점 동료가 수락할 때까지 기다려 주세요.'},400);
+    if(w.targetId&&w.targetId!==who)return json({error:'지정된 직원만 수락할 수 있어요.'},403);
+    if(!shift||!same(core(shift),core(w.shift)))return json({error:'근무가 바뀌어서 수락할 수 없어요. 요청한 직원에게 다시 요청해 달라고 해 주세요.'},409);
+    let mine:any=null;if(w.kind==='교대'){mine=data.shifts.find((s:any)=>s.id===b.myShiftId&&s.employeeId===who&&s.date>=asOf);if(!mine)return json({error:'바꿔 줄 내 근무를 골라 주세요.'},400);const back=check(w.shift.employeeId,{...mine,employeeId:mine.employeeId},[shift.id]);if(back)return json({error:back},409);}
+    const err=check(who,shift,mine?[mine.id]:[]);if(err)return json({error:err},409);
+    const e=emp(who);w.taker={id:who,name:e.name,at:now};w.counter=mine?snap(mine):null;w.status='승인 대기';label=w.kind+' 수락';
+   }else{
+    if(access!=='owner')return json({error:'승인은 사장님만 할 수 있어요. 사장님께 확인을 요청해 주세요.'},403);
+    if(w.status!=='승인 대기'||typeof b.approve!=='boolean')return json({error:'처리할 요청이 없어요. 목록을 새로고침해 주세요.'},409);
+    if(b.approve){
+     if(!shift||!same(core(shift),core(w.shift)))return json({error:'요청 이후 근무가 바뀌어 승인할 수 없어요. 반려한 뒤 다시 요청받아 주세요.'},409);
+     const counter=w.counter?data.shifts.find((s:any)=>s.id===w.counter.id):null;if(w.counter&&(!counter||!same(core(counter),core(w.counter))))return json({error:'바꿀 근무가 바뀌어 승인할 수 없어요. 반려한 뒤 다시 요청받아 주세요.'},409);
+     const err=check(w.taker.id,shift,counter?[counter.id]:[])||(counter?check(w.shift.employeeId,counter,[shift.id]):'');if(err)return json({error:err},409);
+     shift.employeeId=w.taker.id;if(counter)counter.employeeId=w.shift.employeeId;
+    }
+    w.status=b.approve?'승인':'반려';w.reviewedAt=now;w.reviewer=actor.name;w.comment=typeof b.comment==='string'?b.comment.slice(0,500):'';label=w.kind+' '+w.status;
+   }
+   target=w.shift.name+' '+w.shift.date;
+  }
+  if(b.action==='requestSwap'){const w=ops.swaps[ops.swaps.length-1];target=w.shift.name+' '+w.shift.date}
  }else if(b.action==='postNotice'){
   if(access!=='owner')return json({error:'공지는 사장님이나 공지 권한을 받은 매니저만 등록할 수 있어요.'},403);
   const parsed=noticeSchema.safeParse(b);if(!parsed.success)return json({error:'제목과 내용을 확인해 주세요.'},400);const n=parsed.data;

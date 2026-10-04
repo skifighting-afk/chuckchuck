@@ -80,8 +80,8 @@ ok('revoked schedule permission removes branch schedules',(await call('self','/a
   if(route!=='/api/auth')ok(`anonymous blocked: ${route}`,[401,403,404,405].includes(anon.status));
   for(const who of ['self','stranger','outsider']){
    const r=await call(who,route);const text=JSON.stringify(r.body);
-   // 위임받은 매니저는 같은 지점 직원의 이름·ID만 받는다(근무표 배정용). 연락처·주소·임금·다른 지점 직원은 안 된다.
-   const allowed=route==='/api/manager'&&who==='self'?[b]:[];
+   // 위임받은 매니저(근무표 배정)와 대타·교대 지정(작업 049)은 같은 지점 직원의 이름·ID만 받는다. 연락처·주소·임금·다른 지점 직원은 안 된다.
+   const allowed=['/api/manager','/api/operations'].includes(route)&&who==='self'?[b]:[];
    ok(`${who} sees no colleague secrets: ${route}`,secrets.filter(x=>text.includes(x)&&!allowed.includes(x)),[]);
   }
  }
