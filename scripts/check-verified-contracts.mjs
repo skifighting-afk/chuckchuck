@@ -59,7 +59,12 @@ ok('stale version rejected',(await call('/api/contracts',{...sign,version:0},sta
 await fixture(raw=>{raw.employees[0].wage=14000});ok('changed work conditions block old contract signature',(await call('/api/contracts',sign,staff)).status===409);
 await fixture(raw=>{raw.employees[0].wage=13000});
 await q('UPDATE app_users SET email_verified=0 WHERE email=?','staff@example.invalid').run();ok('unverified employee cannot sign',(await call('/api/contracts',sign,staff)).status===400);await q('UPDATE app_users SET email_verified=1 WHERE email=?','staff@example.invalid').run();
+ok('작업 039: non-PNG drawing rejected',(await call('/api/contracts',{...sign,drawing:'data:image/svg+xml;base64,PHN2Zz4='},staff)).status===400);
+ok('작업 039: oversized drawing rejected',(await call('/api/contracts',{...sign,drawing:'data:image/png;base64,'+'A'.repeat(70000)},staff)).status===400);
+sign.drawing='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
 r=await call('/api/contracts',sign,staff);ok('both signatures commit without pretending email sent',r.status===200);
+{const d=(await call('/api/contracts?id='+id,null,owner)).data.envelope;ok('작업 039: hand signature kept with hash',d.employeeSignature.drawing===sign.drawing&&/^[0-9a-f]{64}$/.test(d.employeeSignature.drawingHash));
+ok('작업 039: list omits image but flags it',(await call('/api/contracts',null,owner)).data.envelopes.find(e=>e.id===id).employeeSignature.hasDrawing===true);}
 detail=(await call('/api/contracts?id='+id,null,staff)).data.envelope;ok('unconfigured delivery is marked setup required',detail.status==='signed'&&detail.delivery_status==='setup_required');
 const signedStore=(await call('/api/store',null,staff)).data;ok('signed status reaches employee current contract',signedStore.state.employees.find(e=>e.id===employeeId).contract.status==='체결 완료');
 ok('repeated signature is rejected',(await call('/api/contracts',{...sign,version:detail.version},staff)).status===403);

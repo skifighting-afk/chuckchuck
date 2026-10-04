@@ -121,7 +121,9 @@ await step('근로계약서: 사장님 서명 → 직원 서명 → 사본',asyn
  const fills={'시작 시각':'11:00','종료 시각':'11:30'};
  const body=(await owner.locator('textarea').inputValue()).replace(/\[([^\]]*)\]/g,(_,k)=>fills[k]??({'년 월 일':'2026년 10월 4일'}[k])??'확인함');await owner.fill('textarea',body);
  await owner.fill('label:has-text("사업주 성명") input',OWNER.name);await owner.fill('label:has-text("현재 비밀번호") input',OWNER.password);await owner.check('label:has-text("사업주로서") input');
- await owner.click('text=서명하고 직원에게 확인 요청');await owner.getByText(/직원 서명|서명 대기|확인 요청/).first().waitFor();
+ {const box=await owner.locator('.sig-pad canvas').boundingBox();await owner.mouse.move(box.x+20,box.y+box.height/2);await owner.mouse.down();for(let i=1;i<=10;i++)await owner.mouse.move(box.x+20+i*25,box.y+box.height/2+(i%2?15:-15));await owner.mouse.up();await owner.getByText('지우고 다시 그리기').waitFor();}
+ await owner.click('text=서명하고 직원에게 확인 요청');
+ {let row=null;for(let i=0;i<20&&!row;i++){row=await srv.db.q('SELECT owner_signature FROM contract_envelopes ORDER BY created_at DESC LIMIT 1').first();if(!row)await owner.waitForTimeout(300)}if(!row)throw Error('계약서가 저장되지 않음');if(!JSON.parse(row.owner_signature).drawing?.startsWith('data:image/png;base64,'))throw Error('손서명 저장 안 됨');}await owner.getByText(/직원 서명|서명 대기|확인 요청/).first().waitFor();
  await staff.goto(B+'/contracts',{waitUntil:'networkidle'});await staff.getByText(STAFF.name).first().waitFor();
  await staff.locator('.contract-list-item').first().click();
  await staff.fill('label:has-text("성명") input',STAFF.name);await staff.fill('label:has-text("현재 비밀번호") input',STAFF.password);
