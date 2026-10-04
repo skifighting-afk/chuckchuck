@@ -6,7 +6,7 @@ import {serverError} from '../lib/errors';
 
 const json = (v: unknown, status = 200) => Response.json(v, {status, headers: {'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff'}});
 // 화면 동작용 비밀값(출퇴근 QR 토큰, 초대 링크 해시)은 내보내지 않는다.
-const INTERNAL = ['_attendanceQr', '_invitations'];
+const INTERNAL = ['_attendanceQr', '_attendanceQrMode', '_invitations'];
 
 export async function exportApi(request: Request, env: {DB: D1Database}) {
   const uid = request.headers.get('oai-authenticated-user-id');

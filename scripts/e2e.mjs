@@ -148,6 +148,11 @@ await step('근로계약서: 사장님 서명 → 직원 서명 → 사본',asyn
  const row=await srv.db.q("SELECT status,employee_signature FROM contract_envelopes LIMIT 1").first();
  if(row?.status!=='signed'||!row.employee_signature)throw Error('계약서가 양측 서명 상태가 아니에요: '+row?.status);
 });
+await step('작업 044: 30초마다 바뀌는 QR 화면',async()=>{
+ await owner.goto(B+'/app?screen=attendance',{waitUntil:'networkidle'});await owner.locator('button:has-text("출퇴근 QR")').first().click();
+ await owner.click('button:has-text("움직이는 QR 켜고 화면 띄우기")');await owner.locator('.live-qr img').waitFor();await owner.getByText(/\d+초 뒤 새 QR/).waitFor();
+ await owner.click('.live-qr button:has-text("닫기")');await owner.click('button:has-text("인쇄용 고정 QR로 되돌리기")');await owner.getByText('움직이는 QR 켜고 화면 띄우기').waitFor();
+});
 await step('작업 054: 직원 여러 명 붙여넣기 등록',async()=>{
  await owner.goto(B+'/app?screen=employees',{waitUntil:'networkidle'});await owner.click('button:has-text("여러 명 붙여넣기")');
  await owner.fill('textarea[aria-label="직원 표 붙여넣기"]','붙임직원\t010-0000-0000\tbulk@example.invalid\t2026-10-05\t시급\t10320\t15\t주방\n오류직원\t\t\t\t연봉\tabc');

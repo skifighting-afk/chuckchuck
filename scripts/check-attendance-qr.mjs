@@ -43,6 +43,20 @@ test('reopening QR keeps printed token',new URL(issued.data.attendanceQrUrl).sea
 state=await get();issued=await call('owner','/api/store',{action:'attendanceQr',branchId:'branch-main',rotate:true,version:state.version});
 test('rotation invalidates old QR',(await attendance('in',token)).status===403);
 test('rotated QR works',(await attendance('in',new URL(issued.data.attendanceQrUrl).searchParams.get('attendanceQr'))).status===200);
+// 작업 044: 30초마다 바뀌는 QR
+const rotated=new URL(issued.data.attendanceQrUrl).searchParams.get('attendanceQr');
+state=await get();let dyn=await call('owner','/api/store',{action:'attendanceQr',branchId:'branch-main',mode:'dynamic',version:state.version});test('owner turns on moving QR',dyn.status===200&&dyn.data.qrModes['branch-main']==='dynamic');
+test('employee cannot open live QR',(await call('staff','/api/qr-live?branch=branch-main')).status===403);
+test('live QR not available for static branch',(await call('owner','/api/qr-live?branch=b2')).status===409);
+let live=(await call('owner','/api/qr-live?branch=branch-main')).data;const liveToken=new URL(live.url).searchParams.get('attendanceQr');test('live token shape',/^L\.\d+\.[0-9a-f]{20}$/.test(liveToken)&&live.expiresIn>0&&live.expiresIn<=30);
+test('printed QR rejected in moving mode',(await attendance('out',rotated)).status===403);
+test('forged live token rejected',(await attendance('out',liveToken.slice(0,-1)+(liveToken.endsWith('0')?'1':'0'))).status===403);
+test('live token works right away',(await attendance('out',liveToken)).status===200);
+clock+=90000;test('live token photographed 90s ago rejected',(await attendance('in',liveToken)).status===403);
+live=(await call('owner','/api/qr-live?branch=branch-main')).data;test('fresh live token works',(await attendance('in',new URL(live.url).searchParams.get('attendanceQr'))).status===200);
+state=await get();await call('owner','/api/store',{action:'attendanceQr',branchId:'branch-main',mode:'static',version:state.version});
+test('back to printed QR',(await attendance('out',rotated)).status===200);
+await attendance('in',rotated);
 test('owner manual correction path retained',(await attendance('out',undefined,'owner')).status===200);
 console.log(`${n-failures}/${n} passed`);if(failures)process.exitCode=1;
 globalThis.Date=RealDate;await closeAll();
