@@ -22,11 +22,14 @@ async function cleanup(){
  const {SUPABASE_ACCESS_TOKEN:token,SUPABASE_PROJECT_REF:ref}=process.env;
  if(!token||!ref)throw Error('점검 계정을 지우려면 SUPABASE_ACCESS_TOKEN, SUPABASE_PROJECT_REF가 필요해요');
  if(!/^e2e-[a-z0-9-]+@chukchukapp\.kr$/.test(email))throw Error('점검 계정 형식이 아니에요');
- const q=`select purge_store(id) from app_users where email='${email}'; delete from account_deletions where user_id in (select id from app_users where email='${email}'); delete from app_users where email='${email}'; delete from auth.users where email='${email}';`;
- const r=await fetch(`https://api.supabase.com/v1/projects/${ref}/database/query`,{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({query:q})});
- if(!r.ok)throw Error('점검 계정 정리 실패: HTTP '+r.status);
- const left=await fetch(`https://api.supabase.com/v1/projects/${ref}/database/query`,{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({query:`select (select count(*) from auth.users where email='${email}')+(select count(*) from app_users where email='${email}') as n`})}).then(r=>r.json());
- if(Number(left?.[0]?.n)!==0)throw Error('점검 계정이 남았어요');
+ // 이번 계정과, 예전 점검에서 남았을 수 있는 점검 계정(e2e-…@chukchukapp.kr)을 함께 지운다.
+ const who="email like 'e2e-%@chukchukapp.kr'";
+ const q=`select purge_store(id) from app_users where ${who}; delete from account_deletions where user_id in (select id from app_users where ${who}); delete from app_users where ${who}; delete from auth.users where ${who};`;
+ const run=async query=>{const r=await fetch(`https://api.supabase.com/v1/projects/${ref}/database/query`,{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({query})});const body=await r.text();if(!r.ok)throw Error('점검 계정 정리 실패: HTTP '+r.status+' '+body.slice(0,200));try{return JSON.parse(body)}catch{return body}};
+ await run(q);
+ const left=await run(`select (select count(*) from auth.users where ${who})::int as auth_n,(select count(*) from app_users where ${who})::int as app_n`);
+ const row=Array.isArray(left)?left[0]:left?.result?.[0]??left;
+ if(Number(row?.auth_n)!==0||Number(row?.app_n)!==0)throw Error('점검 계정이 남았어요: '+JSON.stringify(left).slice(0,200));
  log('점검 계정 삭제 완료');
 }
 
