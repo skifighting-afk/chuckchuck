@@ -6,5 +6,4 @@
 | 사업자 정보: 상호, 대표자, 사업장 주소, 전화, 이메일, 사업자등록번호, 통신판매업 신고번호 | 013 운영자 정보, 014 이용약관 | 사업자등록증, 통신판매업 신고증 |
 | 개인정보 보호책임자 이름·연락처 | 015 개인정보처리방침, 076 유출 대응 | 대표님 또는 지정한 사람 |
 | Resend 계정과 보낼 도메인(예: chukchukapp.kr) DNS 설정 권한 | 094 메일 발송, 비밀번호 재설정 메일 | resend.com 가입 → 도메인 추가 → 가비아 DNS에 레코드 추가 |
-| 백업 암호화 비밀번호 `BACKUP_PASSPHRASE` (32자 이상, 잃어버리면 백업을 못 엶) | 006 DB 백업 | GitHub 저장소 → Settings → Secrets and variables → Actions → New repository secret |
 | Supabase 예전 토큰(sbp_fc73…) 삭제, 점검용 계정(e2e-…) 4개 삭제 | 보안 정리 | Supabase 대시보드 |
