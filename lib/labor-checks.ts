@@ -21,3 +21,33 @@ export function attendanceBreakShortfalls(records: {start: string; end: string |
     return brk < requiredBreak(span - brk);
   }).length;
 }
+
+type ContractMember = {
+  wage: number; payType: string; payDay: number; employment: string; endDate?: string; weeklyHours?: number; phone?: string; email?: string;
+  contract: {workplace?: string; duties?: string; workDays?: string; start?: string; end?: string; holiday?: string; leave?: string; paymentMethod?: string; employer?: string};
+};
+const blank = (v: unknown) => typeof v !== 'string' || !v.trim();
+
+/**
+ * 근로계약서 필수 기재사항 중 비어 있는 항목.
+ * 근로기준법 제17조·시행령 제8조: 임금(구성항목·계산방법·지급방법), 소정근로시간, 주휴일, 연차유급휴가, 취업 장소와 업무.
+ * 기간제 및 단시간근로자 보호 등에 관한 법률 제17조: 근로계약기간, 휴게, (단시간) 근로일 및 근로일별 근로시간.
+ */
+export function contractMissing(e: ContractMember) {
+  const c = e.contract || {}, out: string[] = [];
+  if (!(e.wage > 0)) out.push('임금');
+  if (!e.payDay) out.push('임금 지급일');
+  if (blank(c.paymentMethod)) out.push('임금 지급방법');
+  if (blank(c.start) || blank(c.end)) out.push('소정근로시간(시업·종업 시각)');
+  if (blank(c.workDays)) out.push('근로일');
+  if (blank(c.holiday)) out.push('휴일(주휴일)');
+  if (blank(c.leave)) out.push('연차유급휴가');
+  if (blank(c.workplace)) out.push('취업 장소');
+  if (blank(c.duties)) out.push('종사 업무');
+  if (e.employment === '기간제' && blank(e.endDate)) out.push('근로계약기간(종료일)');
+  if (e.employment === '단시간' && !(Number(e.weeklyHours) > 0)) out.push('주 소정근로시간');
+  if (blank(c.employer)) out.push('사업주');
+  if (blank(e.phone)) out.push('직원 연락처');
+  if (blank(e.email)) out.push('직원 이메일');
+  return out;
+}

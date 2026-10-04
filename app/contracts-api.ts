@@ -1,5 +1,6 @@
 import {documentActivity} from './documents-api';
 import {resolveStore} from './saas-api';
+import {contractMissing} from '../lib/labor-checks';
 import {authLimit,confirmSigner} from './auth-api';
 import {digest} from '../lib/password';
 import {mailReady,sendMail,utf8Base64,type MailEnv} from '../lib/mail';
@@ -47,7 +48,7 @@ export async function contractsApi(request:Request,env:Env){
    const e=team.employees.find(e=>e.id===b.employeeId&&e.status!=='퇴사'),m=raw._members?.find((m:any)=>m.employeeId===b.employeeId&&m.userId!==uid);
    if(!e||!m)return json({error:'직원의 가입 신청을 먼저 수락해 계정을 연결해 주세요.'},409);
    if(typeof b.text!=='string'||b.text.trim().length<200||b.text.length>30000||/\[[^\]]+\]/.test(b.text))return json({error:'계약서의 대괄호 빈칸을 모두 채우고 실제 조건을 확인해 주세요.'},400);
-   if(!e.wage||!e.phone||!e.email||!e.contract.workplace||!e.contract.employer)return json({error:'직원의 임금·연락처·이메일·근무장소·사업주부터 입력해 주세요.'},400);
+   const missing=contractMissing(e as any);if(missing.length)return json({error:'계약서 필수 항목을 먼저 채워 주세요: '+missing.join(', '),code:'CONTRACT_INCOMPLETE',missing},400);
    if(b.consent!==true||b.name?.trim()!==e.contract.employer.trim())return json({error:'사업주 성명을 그대로 입력하고 계약 내용에 동의해 주세요.'},400);
    const identity=await confirmSigner(request,env,b.password,false),now=new Date().toISOString();
    const doc={text:clean(b.text.trim()),employeeName:e.name,employeeEmail:e.email,employeeId:e.id,employer:e.contract.employer,storeName:team.store.name,sourceHash:await digest(source(e)),formatVersion:1},document_json=JSON.stringify(doc),hash=await digest(document_json);

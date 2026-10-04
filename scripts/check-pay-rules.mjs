@@ -85,3 +85,11 @@ ok('attendance shortfalls counted',attendanceBreakShortfalls([shift('2026-09-07'
 team.attendance=[{id:'b1',employeeId:e.id,...shift('2026-09-07','09:00','18:00',0),breakStart:null}];team.adjustments={};
 ok('payroll warns about short breaks',calculate(team,'2026-09').find(x=>x.employeeId===e.id).warnings.some(w=>w.includes('휴게시간')));
 console.log('PASS: 휴게시간 법정 기준 경고.');
+// 작업 036: 근로계약서 필수 기재사항
+const {contractMissing}=await import('../lib/labor-checks.ts');
+const full={wage:10320,payType:'시급',payDay:10,employment:'기간의 정함 없음',weeklyHours:20,phone:'010-0000-0000',email:'a@b.kr',contract:{workplace:'본점',duties:'홀 서빙',workDays:'월~금',start:'09:00',end:'13:00',holiday:'매주 일요일',leave:'근로기준법에 따름',paymentMethod:'계좌 이체',employer:'김사장'}};
+ok('complete contract has nothing missing',contractMissing(full).length===0);
+ok('missing duties and holiday are named',contractMissing({...full,contract:{...full.contract,duties:'',holiday:' '}}).join()==='휴일(주휴일),종사 업무');
+ok('fixed-term needs an end date',contractMissing({...full,employment:'기간제',endDate:''}).includes('근로계약기간(종료일)'));
+ok('part-time needs weekly hours',contractMissing({...full,employment:'단시간',weeklyHours:0}).includes('주 소정근로시간'));
+console.log('PASS: 근로계약서 필수 기재사항 검사.');
