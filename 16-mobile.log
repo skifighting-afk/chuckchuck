@@ -4,6 +4,7 @@ PASS public-login · 이전과 0% 다름
 PASS public-signup · 이전과 0% 다름
 PASS public-calculator · 이전과 0% 다름
 PASS public-help · 이전과 0% 다름
+PASS public-refund
 PASS demo-home · 이전과 0% 다름
 PASS demo-employees · 이전과 0% 다름
 PASS demo-attendance · 이전과 0% 다름
@@ -18,4 +19,4 @@ PASS demo-reports · 이전과 0% 다름
 PASS demo-stores · 이전과 0% 다름
 PASS demo-settings · 이전과 0% 다름
 PASS demo-guide · 이전과 0% 다름
-390px 화면 20개: 가로 넘침 없음
+390px 화면 21개: 가로 넘침 없음
