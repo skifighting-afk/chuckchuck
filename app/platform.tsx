@@ -2,6 +2,7 @@ import {DeviceSessions} from './devices';
 import {TextSizeToggle,applyTextSize} from './text-size';
 applyTextSize();
 import {InstallButton,registerSW} from './install';
+import {LiveQr} from './live-qr';
 registerSW();
 import {ContractsDesk} from './contracts-desk';
 import {VerifyEmail} from './verify-email';
@@ -50,6 +51,7 @@ export default function Platform(){
  if(path==='/manager'&&account.onboarded)return <Shell><ManagerDesk/></Shell>;
  if(path==='/employee')return <Shell><StaffJoin/></Shell>;
  if(path==='/staff-requests'&&account.onboarded)return <Shell><StaffJoin owner/></Shell>;
+ if(path==='/qr-screen'&&account.onboarded&&account.access==='owner')return <LiveQr branch={query.get('branch')||'branch-main'} name={query.get('name')||'우리 매장'} onClose={()=>{if(history.length>1)history.back();else location.assign('/app')}}/>;
  if(invite)return <TeamApp/>;
  if(!account.onboarded&&(qrEntry||account.user.role==='employee'))return <Shell><StaffJoin returnTo={qrEntry||"/app"}/></Shell>;
  if(!account.onboarded)return <Onboarding onDone={()=>location.assign('/app')} email={account.user.email} initial={planId(query.get('plan'))||'pro'}/>;
