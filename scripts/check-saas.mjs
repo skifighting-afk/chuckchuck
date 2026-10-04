@@ -65,4 +65,8 @@ console.log('PASS: 세금계산서 정보·발행 요청.');
 await account('free');await account('free');
 {const box=JSON.parse((await q('SELECT data FROM stores WHERE owner=?',id('free')).first()).data)._outbox.filter(m=>m.key.startsWith('expiry:'));assert.equal(box.length,1,'one reminder');assert.equal(box[0].status,'발송 대기');assert.ok(box[0].subject.includes('기간제 계약'));}
 console.log('PASS: 기간제 만료 안내 메일 준비.');
+// 작업 064: 결제 내역(본인 가게 것만)
+await q("INSERT INTO payments(id,owner,order_id,plan,store_slots,months,amount,status,paid_at,created_at) VALUES('p1',?,'o1','pro',1,1,14900,'paid',?,?)",id('free'),new Date().toISOString(),new Date().toISOString()).run();
+assert.equal((await account('free')).data.payments.length,1);assert.equal((await account('other')).data.payments.length,0,'other store sees none');
+console.log('PASS: 결제 내역.');
 await closeAll();

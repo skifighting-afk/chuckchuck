@@ -37,3 +37,8 @@ export function ServiceNotices({notices}:{notices?:any[]}){
  const list=(notices||[]).filter(n=>!n.agreedAt&&!done.includes(n.id));if(!list.length)return null;
  return <div className="service-notice" role="status">{list.map(n=><details key={n.id}><summary><b>{n.kind} 변경 안내</b> · {n.title} · {n.effectiveAt}부터</summary><p>{n.body}</p><p className="saas-fine">시행일 전에 동의하지 않으시면 언제든 해지하실 수 있어요. 해지해도 기록 내려받기는 계속 돼요.</p><button className="saas-primary" onClick={async()=>{setErr('');try{await post({action:'agreeNotice',id:n.id});setDone([...done,n.id])}catch(e){setErr((e as Error).message)}}}>내용을 확인했고 동의해요</button></details>)}{err&&<p className="saas-error" role="alert">{err}</p>}</div>
 }
+/** 작업 064: 결제 내역·영수증 */
+export function PaymentHistory({payments}:{payments?:any[]}){
+ const status:Record<string,string>={paid:'결제 완료',cancelled:'취소',refunded:'환불',failed:'실패'};
+ return <section className="auth-card t-gap"><h2>결제 내역</h2>{!payments?.length?<p className="saas-fine">아직 결제 내역이 없어요. 결제를 연결하기 전이라 청구되지 않았어요.</p>:<table className="t-table"><thead><tr><th>날짜</th><th>내용</th><th>금액</th><th>상태</th><th>영수증</th></tr></thead><tbody>{payments.map(p=><tr key={p.order_id}><td>{p.paid_at?new Date(p.paid_at).toLocaleDateString('ko-KR'):'—'}</td><td>{p.plan==='pro'?'프로':'베이직'} {p.store_slots}지점 · {p.months}개월{p.period_start?` (${p.period_start}~${p.period_end})`:''}</td><td>{won(p.amount)}원{p.refunded_amount?` (환불 ${won(p.refunded_amount)}원)`:''}</td><td>{status[p.status]||p.status}</td><td>{p.receipt_url?<a href={p.receipt_url} target="_blank" rel="noopener">보기</a>:'—'}</td></tr>)}</tbody></table>}</section>
+}
