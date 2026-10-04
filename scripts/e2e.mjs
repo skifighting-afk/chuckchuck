@@ -8,7 +8,7 @@ const srv=await startE2EServer();const B=srv.ORIGIN;
 const browser=await chromium.launch(process.env.PW_CHROMIUM?{executablePath:process.env.PW_CHROMIUM}:{});
 const errors=[];let n=0;
 const watch=p=>{p.setDefaultTimeout(15000);p.on('pageerror',e=>errors.push(e.message))};
-let extra=null;async function step(name,fn){const t=Date.now();try{await fn();console.log(`PASS ${++n}. ${name} (${Date.now()-t}ms)`)}catch(e){console.error(`FAIL ${name}: ${e.message.split('\n')[0]}`);if(extra)await extra.screenshot({path:'e2e-failure-extra.png',fullPage:true}).catch(()=>{});for(const [i,p] of [owner,staff].filter(Boolean).entries())await p.screenshot({path:`e2e-failure-${i?'staff':'owner'}.png`,fullPage:true}).catch(()=>{});await browser.close();await srv.close();process.exit(1)}}
+let extra=null;async function step(name,fn){const t=Date.now();try{await fn();console.log(`PASS ${++n}. ${name} (${Date.now()-t}ms)`)}catch(e){console.error(`FAIL ${name}: ${e.message.split('\n').slice(0,14).join('\n')}`);if(extra)await extra.screenshot({path:'e2e-failure-extra.png',fullPage:true}).catch(()=>{});for(const [i,p] of [owner,staff].filter(Boolean).entries())await p.screenshot({path:`e2e-failure-${i?'staff':'owner'}.png`,fullPage:true}).catch(()=>{});await browser.close();await srv.close();process.exit(1)}}
 const kToday=()=>new Date(Date.now()+9*3600000).toISOString().slice(0,10);
 const OWNER={name:'김사장',email:'boss@example.invalid',password:'Boss-pass-2026'},STAFF={name:'이직원',email:'staff@example.invalid',password:'Staff-pass-2026'};
 
