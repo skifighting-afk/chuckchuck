@@ -4,7 +4,7 @@ import {isHQ} from './admin-api';
 import {normalizeTeam} from '../lib/team-model';
 import {hydrateAttendance} from './attendance-store';
 import {LEGAL,consentCurrent} from '../lib/legal';
-import {plans,planId,TRIAL_DAYS,trialStatus,planLimits,monthlyPrice,periodPrice,capacityError,branchCount,MAX_BRANCHES,CONTRACTS_FREE_PER_MONTH,CONTRACT_EXTRA_PRICE} from '../lib/plans';
+import {plans,planId,TRIAL_DAYS,trialStatus,planLimits,monthlyPrice,periodPrice,capacityError,branchCount,MAX_BRANCHES,CONTRACTS_FREE_PER_MONTH,CONTRACT_EXTRA_PRICE,trialNotice,validBizNo} from '../lib/plans';
 type Env={DB:D1Database,HQ_ADMIN_EMAIL?:string,HQ_NATIVE_USER_ID?:string};
 const json=(v:unknown,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 export async function resolveStore(db:D1Database,userId:string){
@@ -23,6 +23,7 @@ export function accountView(a:any,contractsThisMonth=0){
  const plan=planId(a?.plan),branches=branchCount(a),months=[1,6,12].includes(Number(a?.months))?Number(a.months):1;
  return {plan,planName:plan?plans[plan].name:null,deletion:a?.deletion||null,status:trialStatus(a),trialEndsAt:a?.trialEndsAt||null,createdAt:a?.createdAt||null,autoRenew:false,
   storeSlots:branches,limits:planLimits(a),months,monthlyPrice:plan?monthlyPrice(plan,branches):0,periodPrice:plan?periodPrice(plan,branches,months as 1|6|12):0,vatIncluded:true,qr:plan==='pro'||trialStatus(a)==='trialing',
+  notice:trialNotice(a),periodStart:a?.periodStart||null,billing:a?.billing||null,invoiceRequests:(a?.invoiceRequests||[]).slice(-24),
   contracts:{thisMonth:contractsThisMonth,free:CONTRACTS_FREE_PER_MONTH,extra:Math.max(0,contractsThisMonth-CONTRACTS_FREE_PER_MONTH),extraPrice:CONTRACT_EXTRA_PRICE}};
 }
 export async function accountApi(request:Request,env:Env){
@@ -78,11 +79,23 @@ export async function accountApi(request:Request,env:Env){
    const months=[1,6,12].includes(Number(b.months))?Number(b.months):(data._account.months||1);
    const nextAccount={...data._account,plan:chosen,storeSlots:branches,months};const exceeded=capacityError(data,nextAccount);if(exceeded)return json({error:exceeded},409);
    data._account=nextAccount;
+  }else if(b.action==='billingInfo'){
+   // 작업 069: 세금계산서용 사업자 정보
+   const t=(v:any,n:number)=>typeof v==='string'?v.trim().slice(0,n):'';const info={bizNo:t(b.bizNo,12).replace(/\D/g,''),company:t(b.company,100),ceo:t(b.ceo,50),email:t(b.email,200).toLowerCase(),address:t(b.address,300),bizType:t(b.bizType,50),bizItem:t(b.bizItem,50)};
+   if(!validBizNo(info.bizNo))return json({error:'사업자등록번호 10자리를 다시 확인해 주세요.'},400);
+   if(!info.company||!info.ceo)return json({error:'상호와 대표자 이름을 입력해 주세요.'},400);
+   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(info.email))return json({error:'세금계산서를 받을 이메일을 확인해 주세요.'},400);
+   data._account.billing={...info,updatedAt:new Date().toISOString()};
+  }else if(b.action==='taxInvoiceRequest'){
+   if(!data._account.billing)return json({error:'먼저 세금계산서용 사업자 정보를 저장해 주세요.'},400);
+   if(typeof b.month!=='string'||!/^\d{4}-(0[1-9]|1[0-2])$/.test(b.month))return json({error:'발행받을 달을 골라 주세요.'},400);
+   const list=data._account.invoiceRequests||[];if(list.some((r:any)=>r.month===b.month&&r.status!=='취소'))return json({error:'그 달은 이미 요청했어요. 요청 내역을 확인해 주세요.'},409);
+   data._account.invoiceRequests=[...list,{id:crypto.randomUUID(),month:b.month,at:new Date().toISOString(),status:'요청',bizNo:data._account.billing.bizNo}].slice(-60);
   }else if(b.action==='endTrial'){
    if(b.confirm!==true)return json({error:'체험 종료 확인이 필요합니다.'},400);
    if(trialStatus(data._account)!=='trialing')return json({error:'진행 중인 체험이 없어요. 지금 상태 그대로 조회와 내려받기를 이용하시면 돼요.'},400);data._account.status='cancelled';data._account.cancelledAt=new Date().toISOString();
   }else return json({error:'이 작업은 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},400);
-  data._audit=[...(data._audit||[]),{id:crypto.randomUUID(),at:new Date().toISOString(),actor:{id,name:email,email},action:b.action==='endTrial'?'체험 종료':'요금제 변경',target:'이용권',before:null,after:{plan:data._account.plan,status:trialStatus(data._account)},reason:'계정 관리'}];
+  data._audit=[...(data._audit||[]),{id:crypto.randomUUID(),at:new Date().toISOString(),actor:{id,name:email,email},action:b.action==='endTrial'?'체험 종료':b.action==='billingInfo'?'세금계산서 정보 저장':b.action==='taxInvoiceRequest'?'세금계산서 발행 요청':'요금제 변경',target:'이용권',before:null,after:{plan:data._account.plan,status:trialStatus(data._account)},reason:'계정 관리'}];
   const saved=await env.DB.prepare('UPDATE stores SET data=?,version=?,updated_at=? WHERE owner=? AND version=?').bind(JSON.stringify(data),linked.row.version+1,new Date().toISOString(),id,linked.row.version).run();
   return saved.meta.changes?json(view(data)):json({error:'다른 변경이 있습니다. 새로고침해 주세요.'},409);
  }catch(error){return serverError('account',error,'계정 정보를 처리하지 못했어요. 잠시 뒤 다시 시도해 주세요.')}

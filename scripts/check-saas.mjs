@@ -52,4 +52,12 @@ shift.date='2026-10-02';assert.equal((await store('free',{state:{...st.state,shi
 assert.equal((await store('free',{state:{...st.state,shifts:[shift]},version:st.version},'PUT')).status,200);
 console.log('PASS: approved leave blocks shifts; overlapping shifts blocked.');
 console.log('PASS: 요금제(베이직·프로 지점 구간 요금, VAT 포함, 직원 수 제한 없음, 30일 체험, 6·12개월 할인, QR은 프로, 체험 종료 후 조회만, 예전 무료 고객 보호).');
+// 작업 069: 세금계산서 정보·발행 요청
+assert.equal((await account('free',{action:'taxInvoiceRequest',month:'2026-10'})).status,400,'needs billing info first');
+assert.equal((await account('free',{action:'billingInfo',bizNo:'123-45-67890',company:'가게',ceo:'대표',email:'tax@example.com'})).status,400,'bad biz no');
+r=await account('free',{action:'billingInfo',bizNo:'123-45-67891',company:'테스트 가게',ceo:'김대표',email:'TAX@example.com'});assert.equal(r.status,200,JSON.stringify(r.data));assert.equal(r.data.account.billing.bizNo,'1234567891');assert.equal(r.data.account.billing.email,'tax@example.com');
+r=await account('free',{action:'taxInvoiceRequest',month:'2026-10'});assert.equal(r.status,200);assert.equal(r.data.account.invoiceRequests.length,1);
+assert.equal((await account('free',{action:'taxInvoiceRequest',month:'2026-10'})).status,409,'duplicate month');
+assert.ok(r.data.account.notice,'trial notice present');
+console.log('PASS: 세금계산서 정보·발행 요청.');
 await closeAll();

@@ -466,3 +466,21 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('빈 값은 빈 값',maskPhone('')===''&&maskEmail('')==='');
  console.log('PASS: 연락처 가리기.');
 }
+
+// 작업 065·067·068·069: 체험 안내·차액·환불·사업자번호
+{
+ const {trialNotice,changeQuote,refundQuote,validBizNo}=await import('../lib/plans.ts');
+ const now=Date.parse('2026-10-05T00:00:00Z'),acct=d=>({plan:'basic',status:'trialing',trialEndsAt:new Date(now+d*86400000).toISOString()});
+ ok('체험 10일 남음은 안내 없음',trialNotice(acct(10),now).level===null);
+ ok('7일 전 안내',trialNotice(acct(7),now).level==='7d'&&trialNotice(acct(7),now).daysLeft===7);
+ ok('1일 전 안내',trialNotice(acct(0.5),now).level==='1d');
+ ok('체험 끝',trialNotice(acct(-1),now).level==='ended');
+ const q=changeQuote({plan:'basic',slots:1,months:1},{plan:'pro',slots:1,months:1},'2026-10-01',Date.parse('2026-10-16T00:00:00Z'));
+ ok('월 중간 프로 전환: 남은 16일분 차액',q.totalDays===31&&q.daysLeft===16&&q.diff===Math.round((14900-9900)/31*16/10)*10);
+ ok('내리면 차감(음수)',changeQuote({plan:'pro',slots:3,months:1},{plan:'basic',slots:1,months:1},'2026-10-01',Date.parse('2026-10-16T00:00:00Z')).diff<0);
+ const r=refundQuote(143040,12,'2026-01-01',Date.parse('2026-04-01T00:00:00Z'));
+ ok('12개월 중 90일 사용 환불',r.usedDays===90&&r.totalDays===365&&r.refund===Math.floor((143040-143040*90/365)/10)*10);
+ ok('기간 다 쓰면 환불 0',refundQuote(9900,1,'2026-01-01',Date.parse('2026-03-01T00:00:00Z')).refund===0);
+ ok('사업자번호 검증',validBizNo('123-45-67891')&&!validBizNo('123-45-67892')&&!validBizNo('12345'));
+ console.log('PASS: 체험 안내·차액·환불·사업자번호.');
+}

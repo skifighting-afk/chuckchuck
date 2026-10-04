@@ -54,3 +54,31 @@ export function hasFeature(a:any,feature:'payroll'|'reports'|'leave'|'comparison
  if(feature==='comparison')return branchCount(a)>1;
  return true;
 }
+
+// 작업 065: 체험 종료 안내(7일·1일 전). 유료 전환은 사장님이 직접 동의할 때만(자동 결제 없음).
+export function trialNotice(a:any,now=Date.now()):{level:'7d'|'1d'|'ended'|null,daysLeft:number}{
+ if(!a||trialStatus(a,now)!=='trialing'){return {level:a&&['expired','cancelled'].includes(trialStatus(a,now))?'ended':null,daysLeft:0}}
+ const left=Math.ceil((Date.parse(a.trialEndsAt)-now)/86400000);
+ return {level:left<=1?'1d':left<=7?'7d':null,daysLeft:Math.max(0,left)};
+}
+const DAY=86400000;
+/** 작업 068: 이용 기간 중 요금제·지점 수를 바꿀 때 남은 기간만큼의 차액(+ 추가 청구 / − 다음 청구에서 차감). 결제 연결 전에는 안내용 추정. */
+export function changeQuote(cur:{plan:PlanId,slots:number,months:1|6|12},next:{plan:PlanId,slots:number,months:1|6|12},periodStart:string,now=Date.now()){
+ const start=Date.parse(periodStart),endD=new Date(start);endD.setUTCMonth(endD.getUTCMonth()+cur.months);const end=+endD;
+ const total=Math.max(1,Math.round((end-start)/DAY)),left=Math.max(0,Math.min(total,Math.ceil((end-now)/DAY)));
+ const oldDaily=periodPrice(cur.plan,cur.slots,cur.months)/total,newDaily=periodPrice(next.plan,next.slots,cur.months)/total;
+ const diff=Math.round((newDaily-oldDaily)*left/10)*10;
+ return {daysLeft:left,totalDays:total,diff,periodEnd:new Date(end).toISOString().slice(0,10)};
+}
+/** 작업 067: 중도 해지 환불(일할). 낸 금액 − 쓴 날 × (낸 금액 ÷ 이용 기간 일수), 10원 미만 버림. 장기 할인은 쓴 기간에도 그대로 적용. */
+export function refundQuote(paid:number,months:1|6|12,periodStart:string,cancelAt=Date.now()){
+ const start=Date.parse(periodStart),endD=new Date(start);endD.setUTCMonth(endD.getUTCMonth()+months);
+ const total=Math.max(1,Math.round((+endD-start)/DAY)),used=Math.max(0,Math.min(total,Math.ceil((cancelAt-start)/DAY)));
+ const refund=Math.max(0,Math.floor((paid-paid*used/total)/10)*10);
+ return {usedDays:used,totalDays:total,refund,formula:`${paid.toLocaleString('ko-KR')}원 − ${used}일/${total}일 사용분 = ${refund.toLocaleString('ko-KR')}원`};
+}
+/** 작업 069: 사업자등록번호 검증(국세청 검증식) */
+export function validBizNo(v:string){
+ const d=v.replace(/\D/g,'');if(d.length!==10)return false;const w=[1,3,7,1,3,7,1,3,5];let s=0;
+ for(let i=0;i<9;i++)s+=Number(d[i])*w[i];s+=Math.floor(Number(d[8])*5/10);return (10-s%10)%10===Number(d[9]);
+}
