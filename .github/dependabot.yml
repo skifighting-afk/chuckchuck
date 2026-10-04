@@ -1,0 +1,13 @@
+# 작업 075: 의존성 보안 업데이트(주 1회). 큰 버전 변경은 사람이 확인한 뒤 합친다.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule: {interval: weekly, day: monday, time: "09:00", timezone: Asia/Seoul}
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: {interval: weekly, day: monday, time: "09:00", timezone: Asia/Seoul}
