@@ -20,7 +20,8 @@ export function isPlan(v:unknown):v is PlanId{return typeof v==='string'&&Object
 export function trialStatus(a:any,now=Date.now()){
  if(!a)return 'legacy';
  if(a.status==='cancelled')return 'cancelled';
- if(a.status==='active')return 'active';
+ // 작업 018: 해지 예약은 이번 결제 기간 끝(cancelAt)까지 그대로 이용
+ if(a.status==='active')return a.cancelAt&&Date.parse(a.cancelAt)<=now?'cancelled':'active';
  // 예전 무료 요금제 가게는 베이직으로 계속 이용(정식 판매 전 가입 고객 보호)
  if(a.status==='free'||a.plan==='free')return 'active';
  return Date.parse(a.trialEndsAt)>now?'trialing':'expired';

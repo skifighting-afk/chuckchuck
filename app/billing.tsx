@@ -42,3 +42,27 @@ export function PaymentHistory({payments}:{payments?:any[]}){
  const status:Record<string,string>={paid:'결제 완료',cancelled:'취소',refunded:'환불',failed:'실패'};
  return <section className="auth-card t-gap"><h2>결제 내역</h2>{!payments?.length?<p className="saas-fine">아직 결제 내역이 없어요. 결제를 연결하기 전이라 청구되지 않았어요.</p>:<table className="t-table"><thead><tr><th>날짜</th><th>내용</th><th>금액</th><th>상태</th><th>영수증</th></tr></thead><tbody>{payments.map(p=><tr key={p.order_id}><td>{p.paid_at?new Date(p.paid_at).toLocaleDateString('ko-KR'):'—'}</td><td>{p.plan==='pro'?'프로':'베이직'} {p.store_slots}지점 · {p.months}개월{p.period_start?` (${p.period_start}~${p.period_end})`:''}</td><td>{won(p.amount)}원{p.refunded_amount?` (환불 ${won(p.refunded_amount)}원)`:''}</td><td>{status[p.status]||p.status}</td><td>{p.receipt_url?<a href={p.receipt_url} target="_blank" rel="noopener">보기</a>:'—'}</td></tr>)}</tbody></table>}</section>
 }
+/** 작업 018: 해지 신청(이번 결제 기간 끝까지 이용) */
+export function CancelSubscription({a,reload}:{a:any,reload:()=>Promise<void>}){
+ const [reason,setReason]=useState(''),[busy,setBusy]=useState(false),[err,setErr]=useState('');
+ if(a.status!=='active'||!a.periodStart)return <p className="saas-fine">결제 중인 이용권이 없어요. 해지·환불 규정은 <a href="/refund">여기</a>에서 볼 수 있어요.</p>;
+ const run=async(body:any)=>{setBusy(true);setErr('');try{await post(body);await reload()}catch(e){setErr((e as Error).message)}finally{setBusy(false)}};
+ const q=refundQuote(a.periodPrice,a.months,a.periodStart);
+ return <details className="auth-card t-gap"><summary><b>해지 신청</b>{a.cancelAt&&<> · {new Date(a.cancelAt).toLocaleDateString('ko-KR')}까지 이용 후 해지 예정</>}</summary>
+  {a.cancelAt?<><p>해지가 예약되어 있어요. {new Date(a.cancelAt).toLocaleDateString('ko-KR')}까지 지금처럼 쓰고, 그 뒤로는 기록 조회·내려받기만 할 수 있어요.</p><button className="saas-secondary" disabled={busy} onClick={()=>run({action:'undoCancel'})}>해지 취소하고 계속 이용</button></>:<>
+  <p>해지해도 이번 결제 기간이 끝날 때까지 그대로 쓸 수 있어요. 자동 결제는 없어요. 남은 기간 환불을 원하시면 해지 사유에 적어 주세요(지금 해지 시 예상 환불 {won(q.refund)}원 · {q.formula}).</p>
+  <label className="saas-field">해지 사유 (선택)<textarea maxLength={500} value={reason} onChange={e=>setReason(e.target.value)}/></label>
+  <button className="saas-secondary" disabled={busy} onClick={()=>run({action:'cancelSubscription',reason})}>해지 예약</button> <a href="/refund">해지·환불 규정</a></>}
+  {err&&<p className="saas-error" role="alert">{err}</p>}</details>
+}
+export function RefundPolicy(){
+ return <main className="saas-policy"><span className="saas-kicker">해지·환불</span><h1>해지·환불 규정</h1><p className="auth-note">정식 판매 전 운영 기준 초안이에요. 결제 서비스를 연결하고 이용약관을 확정할 때 함께 확정합니다. 지금은 결제를 받지 않아요.</p>
+  <h2>언제든 해지할 수 있어요</h2><p>계정·요금제 화면의 '해지 신청'에서 예약하면 이번 결제 기간이 끝날 때까지 그대로 쓰고, 그 뒤로는 기록 조회·내려받기만 할 수 있어요. 자동 결제·자동 갱신은 하지 않아요.</p>
+  <h2>무료 체험</h2><p>체험 중에는 결제가 없어서 환불할 금액도 없어요. 체험을 그만두거나 끝나도 기록은 지우지 않아요.</p>
+  <h2>결제 후 7일 안 · 사용 전</h2><p>결제하고 7일이 지나지 않았고 결제 뒤 저장한 기록이 없으면 전액 환불해요.</p>
+  <h2>이용 중 해지 환불</h2><p>남은 기간만큼 날짜로 나눠 환불해요: 낸 금액 − (쓴 날 ÷ 이용 기간 일수 × 낸 금액), 10원 미만은 버려요. 6·12개월 할인은 쓴 기간에도 그대로 적용해요(할인 전 가격으로 다시 계산하지 않음).</p>
+  <h2>요금제·지점 수 변경</h2><p>기간 중에 올리면 남은 기간만큼 차액을 더 내고, 내리면 다음 결제에서 빼요.</p>
+  <h2>환불 방법과 기간</h2><p>결제한 수단으로 돌려드려요. 신청 확인 후 3영업일 안에 처리하고, 카드사 사정에 따라 실제 반영까지 더 걸릴 수 있어요.</p>
+  <h2>탈퇴하면</h2><p>탈퇴 전에 가게 데이터를 내려받아 두세요. 근로계약서·임금 서류는 근로기준법에 따라 3년 보관해야 해요. 결제 기록은 전자상거래법에 따라 5년 보관해요.</p>
+  <p className="saas-fine"><a href="/account">← 계정·요금제로</a></p></main>
+}

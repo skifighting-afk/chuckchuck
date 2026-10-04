@@ -69,4 +69,13 @@ console.log('PASS: 기간제 만료 안내 메일 준비.');
 await q("INSERT INTO payments(id,owner,order_id,plan,store_slots,months,amount,status,paid_at,created_at) VALUES('p1',?,'o1','pro',1,1,14900,'paid',?,?)",id('free'),new Date().toISOString(),new Date().toISOString()).run();
 assert.equal((await account('free')).data.payments.length,1);assert.equal((await account('other')).data.payments.length,0,'other store sees none');
 console.log('PASS: 결제 내역.');
+// 작업 018: 해지 예약은 결제 기간 끝까지 이용
+assert.equal((await account('free',{action:'cancelSubscription',reason:''})).status,400,'trial cannot cancel subscription');
+{const raw=JSON.parse((await q('SELECT data FROM stores WHERE owner=?',id('free')).first()).data);raw._account.status='active';raw._account.periodStart=new Date(Date.now()-10*86400000).toISOString();raw._account.months=1;await q('UPDATE stores SET data=?,version=version+1 WHERE owner=?',JSON.stringify(raw),id('free')).run();}
+r=await account('free',{action:'cancelSubscription',reason:'가게 정리'});assert.equal(r.status,200,JSON.stringify(r.data));assert.ok(Date.parse(r.data.account.cancelAt)>Date.now(),'cancel at period end');assert.equal(r.data.account.status,'active','still usable');
+st=(await store('free')).data;assert.equal((await store('free',{state:st.state,version:st.version},'PUT')).status,200,'can still save before period end');
+r=await account('free',{action:'undoCancel'});assert.equal(r.status,200);assert.equal(r.data.account.cancelAt,null);
+{const raw=JSON.parse((await q('SELECT data FROM stores WHERE owner=?',id('free')).first()).data);raw._account.cancelAt=new Date(Date.now()-1000).toISOString();await q('UPDATE stores SET data=?,version=version+1 WHERE owner=?',JSON.stringify(raw),id('free')).run();}
+assert.equal((await account('free')).data.account.status,'cancelled','after period end: read only');
+console.log('PASS: 해지 예약.');
 await closeAll();
