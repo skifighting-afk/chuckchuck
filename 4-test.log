@@ -638,6 +638,9 @@ PASS 87. strict flags 3m late
 PASS 88. future shift not yet 미출근
 PASS 89. summary counts
 PASS: 지각·조퇴·미출근 표시.
+PASS 90. week start Monday splits the week (no 주휴)
+PASS 91. week start Sunday groups Sun–Sat (주휴 16h)
+PASS: 주 시작요일.
 
 ── check-claims
 PASS: 과장·허위 문구 검사 (화면·홈페이지).
