@@ -490,3 +490,65 @@ console.log('PASS: 요율 연간 갱신 경고.');
  const {FAQ}=await import('../dist/server/faq.js');
  {const all=FAQ.flatMap(g=>g.items);ok('질문 30개',all.length===30);ok('질문 중복 없음',new Set(all.map(i=>i.q)).size===30);ok('답이 모두 있음',all.every(i=>i.a.length>20));console.log('PASS: 도움말.');}
 }
+
+// 작업 088: 급여 모듈 커버리지 보강 — 저장 검사·옛 데이터 변환·계약서 문구·퇴직금·통상시급 경계
+{
+ const tm=await import('../dist/server/team-model.js');
+ const fresh=()=>{const s=tm.normalizeTeam(null);for(const e of s.employees){e.status='재직';e.income='근로소득';e.email='m'+e.id+'@ex.invalid'}return s};
+ const issue=(mut)=>{const s=fresh();mut(s);const r=tm.teamSchema.safeParse(s);return r.success?'':r.error.issues.map(i=>i.message).join('|')};
+ ok('통과 기준 데이터',issue(()=>{})==='');
+ ok('중복 직원',issue(s=>s.employees.push({...s.employees[0]})).includes('중복된 항목'));
+ ok('3.3%는 사업소득만',issue(s=>{s.employees[0].taxMode='사업소득 3.3%'}).includes('사업소득 여부'));
+ ok('4대보험 자동은 근로소득만',issue(s=>{s.employees[0].taxMode='4대보험 자동';s.employees[0].income='사업소득'}).includes('근로소득 직원에게만'));
+ ok('공제 없음은 근거 필요',issue(s=>{s.employees[0].taxMode='공제 없음·근거 확인';s.employees[0].taxReason=''}).includes('근거'));
+ ok('없는 지점',issue(s=>{s.employees[0].branchId='nope'}).includes('소속 지점'));
+ ok('보험 제외는 사유 필요',issue(s=>{s.employees[0].insurances['고용보험']={status:'적용 제외',reason:''}}).includes('제외 사유'));
+ ok('이메일 중복',issue(s=>{s.employees[1].email=s.employees[0].email.toUpperCase()}).includes('이메일이 중복'));
+ ok('없는 직원의 근무',issue(s=>{s.shifts=[{id:'x',employeeId:'ghost',date:'2026-10-05',start:'09:00',end:'10:00',breakMinutes:0}]}).includes('직원 정보'));
+ ok('동시에 두 번 출근',issue(s=>{const id=s.employees[0].id;s.attendance=[{id:'a',employeeId:id,start:'2026-10-05T00:00:00.000Z',end:null,breakMinutes:0,breakStart:null},{id:'b',employeeId:id,start:'2026-10-05T01:00:00.000Z',end:null,breakMinutes:0,breakStart:null}]}).includes('이미 출근'));
+ ok('잘못된 날짜 거부',issue(s=>{s.employees[0].joined='2026-02-30'})!=='');
+ ok('휴게가 근무보다 긴 근무 거부',issue(s=>{s.shifts=[{id:'x',employeeId:s.employees[0].id,date:'2026-10-05',start:'09:00',end:'10:00',breakMinutes:90}]})!=='');
+ const legacy=tm.normalizeTeam({store:{name:'옛 가게',branch:'본점'},employees:[{id:'o1',name:'옛 직원',role:'홀',type:'정직원',wage:12000,phone:'',joined:'2025-01-01',income:'근로소득',contractText:'기존 약정'}],shifts:[],attendance:[],adjustments:{'2025-12:o1':{allowance:30000,deduction:5000,note:'연말'}}});
+ ok('옛 데이터 변환: 수당·공제·메모 보존',legacy.adjustments['2025-12:o1'].earnings[0].amount===30000&&legacy.adjustments['2025-12:o1'].deductions[0].amount===5000&&legacy.employees[0].weeklyHours===40&&legacy.employees[0].contract.additional==='기존 약정');
+ ok('이미 새 형식이면 그대로 검사',tm.normalizeTeam(fresh()).schemaVersion===2);
+ const s=fresh(),e=s.employees[0];e.contract.employer='김사장';e.contract.workplace='본점';
+ ok('표준 계약서 문구에 핵심 조건',['근로자: '+e.name,'사용자: 김사장','미체결'].every(t=>tm.contractText(s,e).includes(t)));
+ e.contract.draftText='직접 쓴 계약서';e.contract.signedAt='2026-10-01T00:00:00Z';e.contract.signedBy='앱 전자서명: 김직원 / 문서 1';
+ ok('직접 쓴 계약서 + 전자서명 기록',tm.contractText(s,e).startsWith('직접 쓴 계약서')&&tm.contractText(s,e).includes('전자서명 기록'));
+ ok('빠진 항목 목록',tm.missing({...e,email:'',phone:''}).includes('이메일')&&tm.missing({...e,email:'',phone:''}).includes('연락처'));
+ const r1=tm.retirement({...e,joined:'2024-10-01',weeklyHours:20,employment:'단시간'},'2026-10-01',3000000,92,100000);
+ ok('퇴직금: 1년 이상·주 15시간 이상이면 대상, 평균임금과 통상임금 중 큰 값',r1.eligible&&r1.daily===Math.max(3000000/92,100000)&&r1.estimate===Math.round(r1.daily*30*730/365));
+ ok('퇴직금: 1년 미만·독립 용역은 대상 아님',!tm.retirement({...e,joined:'2026-01-01'},'2026-10-01',1,1,1).eligible&&!tm.retirement({...e,joined:'2020-01-01',employment:'독립 용역'},'2026-10-01',1,1,1).eligible);
+ ok('통상시급: 일급인데 근무시간 없음',tm.ordinaryHourly({payType:'일급',wage:100000,weeklyHours:40,contract:{start:'',end:'',breakMinutes:0}}).hourly===0);
+ ok('통상시급: 월급인데 주 소정시간 0',tm.ordinaryHourly({payType:'월급',wage:2000000,weeklyHours:0,contract:{start:'09:00',end:'18:00',breakMinutes:60}}).hourly===0);
+ ok('통상시급: 월급 주 40시간 = 월급 ÷ 209시간',tm.ordinaryHourly({payType:'월급',wage:2090000,weeklyHours:40,contract:{start:'09:00',end:'18:00',breakMinutes:60}}).hourly===Math.round(2090000/Math.round((40+8)*4.345)));
+ // 사업소득 3.3%, 일급 수습, 지정 주휴일
+ const t=fresh(),w=t.employees[0];Object.assign(w,{income:'사업소득',taxMode:'사업소득 3.3%',payType:'시급',wage:20000,autoPay:false});t.employees=[w];t.shifts=[];
+ t.attendance=[{id:'x1',employeeId:w.id,start:'2026-10-05T00:00:00.000Z',end:'2026-10-05T05:00:00.000Z',breakMinutes:0,breakStart:null}];
+ let row=tm.calculate(t,'2026-10')[0];ok('사업소득 3.3% 원천징수',row.deductions.some(d=>d.name==='사업소득 원천징수'&&d.amount===Math.floor(row.gross*0.033)));
+ Object.assign(w,{income:'근로소득',taxMode:'직접 입력',payType:'일급',wage:100000,joined:'2026-10-01',employment:'기간의 정함 없음',probation:{months:3,rate:0.9}});
+ row=tm.calculate(t,'2026-10')[0];ok('일급 수습 감액 계산식',row.earnings[0].formula.includes('수습')&&row.earnings[0].amount===90000);
+ Object.assign(w,{payType:'시급',wage:12000,autoPay:true,weeklyHours:20,weeklyHoliday:1,probation:undefined});t.settings.fivePlus=true;
+ row=tm.calculate(t,'2026-10')[0];ok('지정 주휴일(월) 근무는 휴일 가산',row.earnings.some(l=>l.name.includes('휴일')));
+ console.log('PASS: 급여 모듈 경계 사례.');
+}
+
+// 작업 088: 손서명 이미지 검사 경계
+{
+ const {checkDrawing}=await import('../lib/signature-image.ts');
+ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+ ok('비어 있으면 손서명 없음',checkDrawing(undefined).ok&&checkDrawing('').value===null);
+ ok('PNG만',checkDrawing(png).ok&&!checkDrawing('data:image/jpeg;base64,/9j/4AAQ').ok&&!checkDrawing(123).ok);
+ ok('base64 문자 검사',!checkDrawing('data:image/png;base64,@@@@').ok);
+ ok('PNG 머리 검사',!checkDrawing('data:image/png;base64,'+btoa('GIF89a-not-png')).ok);
+ ok('크기 제한',!checkDrawing('data:image/png;base64,'+'A'.repeat(60004)).ok);
+ console.log('PASS: 손서명 이미지 검사.');
+}
+
+// 작업 088: 세액표가 없는 해는 가장 가까운 이전 표(없으면 2026) 사용
+{
+ const {incomeTax}=await import('../dist/server/income-tax.js');
+ ok('2027년은 2026 표',incomeTax(3000000,2027,1).incomeTax===incomeTax(3000000,2026,1).incomeTax);
+ ok('2024년(표 없음)도 2026 표',incomeTax(3000000,2024,1).incomeTax===incomeTax(3000000,2026,1).incomeTax);
+ console.log('PASS: 세액표 연도 대체.');
+}

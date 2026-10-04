@@ -51,3 +51,4 @@ smoke-failure.png
 supabase/functions/.env.local
 e2e-failure-*.png
 tsconfig.tsbuildinfo
+coverage-summary.json

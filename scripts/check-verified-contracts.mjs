@@ -139,5 +139,21 @@ await fixture(raw=>{raw.employees[0].phone='010-9999-9999'});emp=(await call('/a
 await fixture(raw=>{raw.employees[0].wage=15000});emp=(await call('/api/contracts',null,owner)).data.employees.find(e=>e.id===employeeId);
 ok('wage change detected with before/after',emp.change&&emp.change.changes.some(c=>c.label==='임금'&&c.to.includes('15,000')));
 ok('change note has no blank brackets',emp.change.note.startsWith('■ 변경 근로계약서')&&!/\[[^\]]+\]/.test(emp.change.note));
+// 작업 088: 계약 경로 예외 처리
+const rawCall=async(method,body,token=owner)=>(await api(new Request('https://qa.local/api/contracts',{method,headers:{origin:'https://qa.local',authorization:'Bearer '+token,'content-type':'application/json'},body}),base)).status;
+ok('unsupported method',await rawCall('PATCH','{}')===405);
+ok('oversized body',await rawCall('POST','x'.repeat(130000))===413);
+ok('broken JSON',await rawCall('POST','{nope')===400);
+ok('unknown action',[400,404].includes((await call('/api/contracts',{action:'explode'},owner)).status));
+ok('bad hand-signature on create',(await call('/api/contracts',{...create,drawing:'data:image/gif;base64,R0lGOD'},owner)).status===400);
+await fixture(raw=>{raw.employees[0].contract.workDays=''});ok('incomplete contract blocked with list',(await call('/api/contracts',create,owner)).data.code==='CONTRACT_INCOMPLETE');await fixture(raw=>{raw.employees[0].contract.workDays='월, 수, 금'});
+let w=await call('/api/contracts',create,owner);ok('new waiting contract after change',w.status===201);let wd=(await call('/api/contracts?id='+w.data.id,null,staff)).data.envelope;
+ok('decline needs reason',(await call('/api/contracts',{action:'decline',id:wd.id,version:wd.version,reason:' '},staff)).status===400);
+ok('owner cannot decline for employee',(await call('/api/contracts',{action:'decline',id:wd.id,version:wd.version,reason:'다름'},owner)).status===403);
+ok('employee declines with reason',(await call('/api/contracts',{action:'decline',id:wd.id,version:wd.version,reason:'시급이 달라요'},staff)).status===200);
+w=await call('/api/contracts',create,owner);wd=(await call('/api/contracts?id='+w.data.id,null,owner)).data.envelope;
+ok('employee cannot withdraw',(await call('/api/contracts',{action:'withdraw',id:wd.id,version:wd.version,reason:'x'},staff)).status===403);
+ok('owner withdraws',(await call('/api/contracts',{action:'withdraw',id:wd.id,version:wd.version,reason:'조건 재협의'},owner)).status===200);
+ok('stranger cannot open',(await call('/api/contracts?id='+wd.id,null,other)).status===404);
 globalThis.fetch=originalFetch;console.log(`${number}/${number} passed; no external email or real signatures sent.`);
 await closeAll();

@@ -67,6 +67,11 @@ jobs:
         run: |
           set -o pipefail
           { npm test && npm run check:function; } 2>&1 | tee ci-logs/4-test.log
+      - name: 급여·계약 모듈 커버리지 90% 이상 (작업 088)
+        if: steps.tests.outcome == 'success'
+        run: |
+          set -o pipefail
+          node scripts/coverage.mjs --min 90 2>&1 | tee ci-logs/5-coverage.log
       - name: 배포 파일 보관
         if: steps.build.outcome == 'success'
         uses: actions/upload-artifact@v4
