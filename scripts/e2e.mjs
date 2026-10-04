@@ -153,6 +153,12 @@ await step('작업 044: 30초마다 바뀌는 QR 화면',async()=>{
  await owner.click('button:has-text("움직이는 QR 켜고 화면 띄우기")');await owner.locator('.live-qr img').waitFor();await owner.getByText(/\d+초 뒤 새 QR/).waitFor();
  await owner.click('.live-qr button:has-text("닫기")');await owner.locator('button:has-text("출퇴근 QR")').first().click();await owner.click('button:has-text("인쇄용 고정 QR로 되돌리기")');await owner.getByText('움직이는 QR 켜고 화면 띄우기').waitFor();
 });
+await step('작업 051: 어제 퇴근 누락 → 직원 화면 안내 → 정정 요청',async()=>{
+ const row=await srv.db.q('SELECT owner,data FROM stores LIMIT 1').first();const d=JSON.parse(row.data);const eid=d._members[0].employeeId;
+ const y=new Date(Date.now()-86400000*2).toISOString();await srv.db.q("INSERT INTO attendance_records(owner,id,employee_id,start_at,record) VALUES(?,?,?,?,?)",row.owner,'missed-1',eid,y,JSON.stringify({id:'missed-1',employeeId:eid,start:y,end:null,breakMinutes:0,breakStart:null})).run();
+ await staff.goto(B+'/app',{waitUntil:'networkidle'});await staff.getByText(/퇴근 기록이 없어요/).waitFor();await staff.click('button:has-text("퇴근 시각 정정 요청")');await staff.getByText('출퇴근 수정 요청').first().waitFor();
+ await srv.db.q("DELETE FROM attendance_records WHERE id='missed-1'").run();
+});
 await step('작업 054: 직원 여러 명 붙여넣기 등록',async()=>{
  await owner.goto(B+'/app?screen=employees',{waitUntil:'networkidle'});await owner.click('button:has-text("여러 명 붙여넣기")');
  await owner.fill('textarea[aria-label="직원 표 붙여넣기"]','붙임직원\t010-0000-0000\tbulk@example.invalid\t2026-10-05\t시급\t10320\t15\t주방\n오류직원\t\t\t\t연봉\tabc');
