@@ -511,6 +511,9 @@ PASS 45. minor night work flagged
 PASS 46. documents checked: no document warning
 PASS: 18세 미만 직원 보호 점검.
 
+── check-claims
+PASS: 과장·허위 문구 검사 (화면·홈페이지).
+
 > chuckchuck@0.1.0 check:function
 > node scripts/check-supabase-function.mjs
 
