@@ -1,11 +1,11 @@
-PASS  93.3%  app/contracts-api.ts
+PASS  93.8%  app/contracts-api.ts
 PASS  96.7%  lib/annual-leave.ts
 PASS  95.7%  lib/close-check.ts
-PASS  94.7%  lib/contract-template.ts
+PASS  93.7%  lib/contract-template.ts
 PASS 100.0%  lib/employer-insurance.ts
 PASS 100.0%  lib/holidays.ts
 PASS  96.8%  lib/income-tax.ts
-PASS  92.2%  lib/labor-checks.ts
+PASS  99.0%  lib/labor-checks.ts
 PASS 100.0%  lib/pay-rules.ts
 PASS 100.0%  lib/payslip.ts
 PASS  94.3%  lib/pdf.ts
