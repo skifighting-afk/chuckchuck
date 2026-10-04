@@ -565,3 +565,18 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('설정되면 대행사로 전송',(await sendAlimtalk(env,'010-1234-5678','CONTRACT_SIGN',{이름:'a',가게:'b'},async(u,o)=>{sent=JSON.parse(o.body);return new Response('{}',{status:200})})).status==='accepted'&&sent.to==='01012345678'&&sent.templateCode==='CONTRACT_SIGN');
  console.log('PASS: 알림톡 뼈대.');
 }
+
+// 작업 043: 2025 개정 표준 근로계약서 항목
+{
+ const {standardContractDraft}=await import('../dist/server/contract-template.js');
+ const s=normalizeTeam(null),e=s.employees[0];Object.assign(e,{employment:'기간의 정함 없음',weeklyHours:40,endDate:''});e.contract={...e.contract,workDays:'월, 화, 수, 목, 금',holiday:'주휴일: 매주 일요일',employer:'김사장'};
+ let t=standardContractDraft(s,e);
+ ok('정규 서식 제목·근로개시일',t.includes('표준근로계약서(기간의 정함이 없는 경우)')&&t.includes('1. 근로개시일'));
+ ok('2025 추가 문구: 공휴일·근로자의 날',t.includes('공휴일(대체공휴일 포함)은 근로기준법이 정하는 바에 따르며, 근로자의 날은 유급휴일로 함'));
+ ok('임금지급일 휴일 전날·교부 제17조·사회보험 원칙',t.includes('(휴일의 경우는 전날 지급)')&&t.includes('근로기준법 제17조 이행')&&t.includes('적용(가입)을 원칙으로 함'));
+ ok('1일 시간 계산(주 40시간 ÷ 5일)',t.includes('(1일 8시간, 1주 40시간)'));
+ Object.assign(e,{endDate:'2027-03-31'});ok('기간제 서식',standardContractDraft(s,e).includes('기간의 정함이 있는 경우')&&standardContractDraft(s,e).includes('1. 근로계약기간'));
+ Object.assign(e,{employment:'단시간',weeklyHours:20,endDate:''});t=standardContractDraft(s,e);ok('단시간 서식: 요일별 근로시간',t.includes('단시간근로자 표준근로계약서')&&t.includes('(월)요일 · 업무 시작'));
+ Object.assign(e,{birthMonth:'2010-01'});t=standardContractDraft(s,e);ok('연소근로자 서식: 7시간·35시간, 가족관계증명서, 제67조',t.includes('연소근로자(18세 미만인 자)')&&t.includes('1주에 35시간')&&t.includes('가족관계기록사항')&&t.includes('제67조'));
+ console.log('PASS: 2025 표준 근로계약서.');
+}
