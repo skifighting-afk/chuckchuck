@@ -19,11 +19,11 @@ ok('pending cannot see store',(await store('staff')).status,409);
 let mine=await join('staff');ok('pending visible to self',mine.data.requests[0].status,'pending');ok('pending response hides wage',JSON.stringify(mine).includes('wage'),false);
 ok('other employee sees no requests',(await join('stranger')).data.requests.length,0);
 j=await join('boss');ok('owner receives one request',j.data.requests.length,1);const id=j.data.requests[0].id;
-ok('employee cannot approve',(await join('staff',{action:'review',id,approve:true,version:j.data.version})).status,403);
-ok('stale approval blocked',(await join('boss',{action:'review',id,approve:true,version:0})).status,409);
-ok('owner accepts',(await join('boss',{action:'review',id,approve:true,version:j.data.version})).status,200);
+ok('employee cannot approve',(await join('staff',{action:'review',id,approve:true,payType:'시급',wage:10320,version:j.data.version})).status,403);
+ok('stale approval blocked',(await join('boss',{action:'review',id,approve:true,payType:'시급',wage:10320,version:0})).status,409);
+ok('owner accepts',(await join('boss',{action:'review',id,approve:true,payType:'시급',wage:10320,version:j.data.version})).status,200);
 ok('employee connected',(await join('staff')).data.connected,true);
-let s=await store('staff');ok('employee access',s.data.access,'employee');ok('unagreed wage zero',s.data.state.employees[0].wage,0);
+let s=await store('staff');ok('employee access',s.data.access,'employee');ok('wage set by owner on approval',s.data.state.employees[0].wage,10320);
 ok('employee cannot change account',(await account('staff',{action:'changePlan',plan:'team'})).status,403);
 let boss=await store('boss'),eid=boss.data.state.employees[0].id;
 ok('free contract confirmation blocked',(await store('boss',{action:'contract',id:eid,reason:'테스트',version:boss.data.version})).status,400);
@@ -45,7 +45,7 @@ ok('manager payload hides wage',JSON.stringify(manager.data).includes('wage'),fa
 ok('manager cannot grant own roles',(await store('staff',{state:(await store('staff')).data.state,version:manager.data.version},'PUT')).status,403);
 ok('manager cannot manage foreign employee',(await call('staff','/api/manager',{action:'saveShift',version:manager.data.version,shift:{employeeId:'foreign',date:'2026-10-10',start:'09:00',end:'18:00',breakMinutes:60}})).status,403);
 ok('delegated manager adds shift',(await call('staff','/api/manager',{action:'saveShift',version:manager.data.version,shift:{employeeId:eid,date:'2026-10-10',start:'09:00',end:'18:00',breakMinutes:60}})).status,200);
-manager=await call('staff','/api/manager');ok('unassigned approval blocked',(await call('staff','/api/manager',{action:'reviewLeave',version:manager.data.version,id:'x',approve:true,comment:'test'})).status,403);
+manager=await call('staff','/api/manager');ok('unassigned approval blocked',(await call('staff','/api/manager',{action:'reviewLeave',version:manager.data.version,id:'x',approve:true,payType:'시급',wage:10320,comment:'test'})).status,403);
 ok('manager can post branch notice',(await call('staff','/api/manager',{action:'postNotice',version:manager.data.version,title:'테스트 공지',body:'가상 검수'})).status,200);
 boss=await store('boss');boss.data.state.employees[0].managerPermissions=[];await store('boss',{state:boss.data.state,version:boss.data.version},'PUT');manager=await call('staff','/api/manager');
 ok('revoked permission blocked immediately',(await call('staff','/api/manager',{action:'postNotice',version:manager.data.version,title:'test',body:'test'})).status,403);
@@ -58,7 +58,7 @@ ok('employee withdraws pending application',(await join('staff2',{action:'withdr
 ok('withdrawn status visible',(await join('staff2')).data.requests[0].status,'withdrawn');
 ok('withdraw twice blocked',(await join('staff2',{action:'withdraw',id:pendingId})).status,409);
 ok('apply again after withdrawal',(await join('staff2',{action:'apply',code,name:'직원2',phone:'01000000000'})).status,200);
-j=await join('boss');ok('owner accepts reapplied employee',(await join('boss',{action:'review',id:j.data.requests[0].id,approve:true,version:j.data.version})).status,200);
+j=await join('boss');ok('owner accepts reapplied employee',(await join('boss',{action:'review',id:j.data.requests[0].id,approve:true,payType:'시급',wage:10320,version:j.data.version})).status,200);
 boss=await store('boss');const second=boss.data.state.employees.find(x=>x.email==='staff2@example.com').id;
 boss.data.state.employees[0].managerPermissions=['attendance','leave'];await store('boss',{state:boss.data.state,version:boss.data.version},'PUT');
 async function fixture(fn){const r=await q('SELECT data FROM stores WHERE owner=?',userId('boss')).first(),d=JSON.parse(r.data);fn(d);await q('UPDATE stores SET data=?,version=version+1 WHERE owner=?',JSON.stringify(d),userId('boss')).run()}
@@ -70,11 +70,11 @@ ok('duplicate pending correction blocked',(await request('2026-09-20T05:00:00.00
 manager=await call('staff','/api/manager');const correction=manager.data.corrections[0].id;
 ok('manager sees colleague request',manager.data.corrections.length,1);
 await fixture(d=>{d.payrollRuns.test={locked:true,month:'2026-09',rows:[{employeeId:second}]};});
-manager=await call('staff','/api/manager');ok('manager cannot alter finalized payroll',(await call('staff','/api/manager',{action:'reviewCorrection',id:correction,approve:true,version:manager.data.version})).status,409);
+manager=await call('staff','/api/manager');ok('manager cannot alter finalized payroll',(await call('staff','/api/manager',{action:'reviewCorrection',id:correction,approve:true,payType:'시급',wage:10320,version:manager.data.version})).status,409);
 await fixture(d=>{d.payrollRuns={};});manager=await call('staff','/api/manager');
-ok('manager approves valid correction',(await call('staff','/api/manager',{action:'reviewCorrection',id:correction,approve:true,version:manager.data.version})).status,200);
+ok('manager approves valid correction',(await call('staff','/api/manager',{action:'reviewCorrection',id:correction,approve:true,payType:'시급',wage:10320,version:manager.data.version})).status,200);
 ok('employee sees updated end',(await store('staff2')).data.state.attendance.find(a=>a.id==='morning').end,'2026-09-20T05:00:00.000Z');
-manager=await call('staff','/api/manager');ok('approval cannot repeat',(await call('staff','/api/manager',{action:'reviewCorrection',id:correction,approve:true,version:manager.data.version})).status,403);
+manager=await call('staff','/api/manager');ok('approval cannot repeat',(await call('staff','/api/manager',{action:'reviewCorrection',id:correction,approve:true,payType:'시급',wage:10320,version:manager.data.version})).status,403);
 ok('employee sees approval status',(await store('staff2')).data.state.requests[0].status,'승인');
 console.log('Scenario checks: '+passed+' passed');
 await closeAll();

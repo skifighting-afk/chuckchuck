@@ -72,12 +72,12 @@ r=await call('/api/staff-join',null,current);test('pending employee can inspect 
 data=(await call('/api/staff-join',null,ownerToken)).data;test('owner sees profile and review timestamp',data.requests[0].profile.address==='가상 검수 주소'&&!!data.requests[0].confirmedAt);
 r=await call('/api/staff-join',{action:'terms',branchId:'branch-main',fields:{...fields,additional:'변경된 검수용 조건'},version:data.version},ownerToken);test('owner can update future join conditions',r.status===200);
 data=(await call('/api/staff-join',null,ownerToken)).data;
-r=await call('/api/staff-join',{action:'review',id:data.requests[0].id,approve:true,version:data.version},ownerToken);test('outdated contract acknowledgement cannot be approved',r.status===409);
+r=await call('/api/staff-join',{action:'review',id:data.requests[0].id,approve:true,payType:'시급',wage:10320,version:data.version},ownerToken);test('outdated contract acknowledgement cannot be approved',r.status===409);
 r=await call('/api/staff-join',{action:'withdraw',id:data.requests[0].id},current);test('employee can recover by withdrawing outdated application',r.status===200);
 const revised=(await call('/api/staff-join',{action:'preview',code,name:'검수 직원',phone:'01000000000',profile},current)).data;
 r=await call('/api/staff-join',{action:'apply',code,name:'검수 직원',phone:'01000000000',profile,termsRevision:revised.terms.revision,confirmed:true},current);test('employee can confirm revised contract and reapply',r.status===200);
 data=(await call('/api/staff-join',null,ownerToken)).data;
-r=await call('/api/staff-join',{action:'review',id:data.requests[0].id,approve:true,version:data.version},ownerToken);test('owner approves employee',r.status===200);
+r=await call('/api/staff-join',{action:'review',id:data.requests[0].id,approve:true,payType:'시급',wage:10320,version:data.version},ownerToken);test('owner approves employee',r.status===200);
 r=await call('/api/store',null,current);test('approved employee reaches own screen',r.status===200&&r.data.access==='employee');
 const emp=r.data.state.employees.find(e=>e.id===r.data.selfId);test('approved conditions reach wage and contract',emp.wage===12000&&emp.contract.draftText.includes('가상 검수 주소'));
 test('contract review does not pretend to be signed',emp.contract.status==='검토 중'&&!emp.contract.signedAt);

@@ -87,6 +87,12 @@ export async function staffJoinApi(request:Request,env:{DB:D1Database}){
    else {
     if(d.employees.some((x:any)=>x.email.toLowerCase()===a.email))return reply({error:'이미 입력한 직원이 있어요. 해당 직원과 연결해 주세요.'},409);
     employee=joinMember(d,a);
+    // 가입 근로조건 없이 신청한 경우: 임금을 0원으로 두지 않고 사장님이 수락할 때 정한다.
+    if(!a.terms?.fields){
+     const wage=Number(b.wage);
+     if(!['시급','월급','일급'].includes(b.payType)||!Number.isInteger(wage)||wage<1||wage>100000000)return reply({error:'급여 계산에 쓸 임금을 입력해 주세요. 임금 기준(시급·월급·일급)과 금액을 정한 뒤 수락해 주세요.',code:'WAGE_REQUIRED'},400);
+     employee.payType=b.payType;employee.wage=wage;
+    }
     if(a.contractText)employee.contract.draftText=a.contractText;
     d.employees.push(employee);
    }

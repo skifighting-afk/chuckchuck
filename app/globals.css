@@ -205,3 +205,4 @@ summary{cursor:pointer;padding-block:4px}
 :focus-visible{outline:3px solid #2f6f4f;outline-offset:2px}
 .t-sidebar-note small{font-size:12px}
 .notice.limits-note{display:block}.limits-note p{margin:0 0 6px;line-height:1.7}.limits-note p:last-child{margin:0}
+.join-pay{border:1px solid #cddfd5;border-radius:12px;padding:14px 16px;margin:12px 0}.join-pay legend{font-weight:700;padding:0 6px}.join-pay p{margin:0 0 8px}

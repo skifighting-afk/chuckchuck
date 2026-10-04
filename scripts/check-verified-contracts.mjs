@@ -31,7 +31,7 @@ failMail=true;r=await call('/api/auth',{action:'sendVerification'},other,configu
 await call('/api/account',{action:'onboard',storeName:'가상 계약 검수',branchName:'본점',ownerName:'가상 대표',plan:'starter',acknowledged:true,dpaAgreed:true},owner);
 let codeState=(await call('/api/staff-join',null,owner)).data;await call('/api/staff-join',{action:'code',branchId:'branch-main',version:codeState.version},owner);codeState=(await call('/api/staff-join',null,owner)).data;
 await call('/api/staff-join',{action:'apply',code:codeState.codes[0].code,name:'가상 직원',phone:'01000000000',profile:{address:'가상 주소',joined:'2026-09-23',note:'테스트'}},staff);
-codeState=(await call('/api/staff-join',null,owner)).data;assert.equal((await call('/api/staff-join',{action:'review',approve:true,id:codeState.requests[0].id,version:codeState.version},owner)).status,200);
+codeState=(await call('/api/staff-join',null,owner)).data;assert.equal((await call('/api/staff-join',{action:'review',approve:true,payType:'시급',wage:10320,id:codeState.requests[0].id,version:codeState.version},owner)).status,200);
 const ownerId=(await q('SELECT id FROM app_users WHERE email=?','owner@example.invalid').first()).id;
 async function fixture(fn){const raw=JSON.parse((await q('SELECT data FROM stores WHERE owner=?',ownerId).first()).data);fn(raw);await q('UPDATE stores SET data=?,version=version+1 WHERE owner=?',JSON.stringify(raw),ownerId).run()}
 await fixture(raw=>{const e=raw.employees[0];e.wage=13000;e.weeklyHours=40;e.contract={...e.contract,employer:'가상 대표',workplace:'가상 매장',duties:'홀 업무',workDays:'월~금',start:'09:00',end:'18:00',breakMinutes:60,holiday:'일요일',leave:'관계 법령에 따름'};});

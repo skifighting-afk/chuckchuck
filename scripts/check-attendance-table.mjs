@@ -41,6 +41,11 @@ const old=new Date(now-600*DAY+9*3600000).toISOString().slice(0,7);
 r=await call('boss','/api/store',{action:'finalize',month:old,branch:'branch-main',payDate:old+'-25',version:r.body.version});
 ok('finalize for a month outside the window uses that month\'s records',r.status===200&&r.body.state.payrollRuns[old+':branch-main'].rows[0].hours>0);
 ok('records outside the window survive the save',Number((await q('SELECT count(*)::int AS n FROM attendance_records WHERE owner=?',id('boss')).first()).n)===12001);
+// 임금 0원인 직원이 일한 달은 확정하지 않는다
+{const dd=await read();dd.employees[0].wage=0;await q('UPDATE stores SET data=?,version=version+1 WHERE owner=?',JSON.stringify(dd),id('boss')).run();
+ const g2=await call('boss','/api/store');const m=new Date(now-30*DAY+9*3600000).toISOString().slice(0,7);
+ const z=await call('boss','/api/store',{action:'finalize',month:m,branch:'branch-main',payDate:m+'-25',version:g2.body.version});
+ ok('payroll with a zero-wage worker is refused',z.status===400&&z.body.error.includes('임금이 0원'));}
 // 내려받기에는 전체 기록
 const ex=await call('boss','/api/export');
 ok('export includes every attendance record',ex.status===200&&ex.body.store.attendance.length===12001&&!('_attendanceFrom' in ex.body.store));

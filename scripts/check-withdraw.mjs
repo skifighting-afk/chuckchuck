@@ -15,7 +15,7 @@ await call('boss','/api/staff-join',{action:'code',branchId:'branch-main',versio
 const code=(await call('boss','/api/staff-join')).body.codes[0].code;
 await call('staff','/api/staff-join',{action:'apply',code,name:'탈퇴직원',phone:'01000000000'});
 let j=(await call('boss','/api/staff-join')).body;
-await call('boss','/api/staff-join',{action:'review',id:j.requests.find(r=>r.status==='pending').id,approve:true,version:j.version});
+await call('boss','/api/staff-join',{action:'review',id:j.requests.find(r=>r.status==='pending').id,approve:true,payType:'시급',wage:10320,version:j.version});
 const read=async owner=>{const row=await q('SELECT data FROM stores WHERE owner=?',id(owner)).first();return row?JSON.parse(row.data):null};
 const staffEmployee=(await read('boss'))._members.find(m=>m.userId===id('staff')).employeeId;
 await q("INSERT INTO payslip_documents(id,owner_id,employee_id,employee_user_id,run_key,revision,document_json,created_at) VALUES('slip-1',?,?,?,'2026-09:branch-main',1,'{}','2026-10-01T00:00:00Z')",id('boss'),staffEmployee,id('staff')).run();

@@ -11,7 +11,7 @@ const code=(await call('boss','/api/staff-join')).body.codes[0].code;
 for(const [user,name]of[['self','본인검수'],['peer','타인검수'],['foreign','다른지점검수']]){
  await call(user,'/api/staff-join',{action:'apply',code,name,phone:'01000000000'});
  const j=(await call('boss','/api/staff-join')).body;
- await call('boss','/api/staff-join',{action:'review',id:j.requests.find(r=>r.status==='pending').id,approve:true,version:j.version});
+ await call('boss','/api/staff-join',{action:'review',id:j.requests.find(r=>r.status==='pending').id,approve:true,payType:'시급',wage:10320,version:j.version});
 }
 const read=async()=>JSON.parse((await q('SELECT data FROM stores WHERE owner=?',id('boss')).first()).data);
 const save=d=>q('UPDATE stores SET data=?,version=version+1 WHERE owner=?',JSON.stringify(d),id('boss')).run();

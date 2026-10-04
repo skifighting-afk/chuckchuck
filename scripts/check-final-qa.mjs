@@ -10,7 +10,7 @@ let state=(await call('owner','/api/store')).data;
 await call('owner','/api/staff-join',{action:'code',branchId:'branch-main',version:state.version});
 let j=(await call('owner','/api/staff-join')).data;
 await call('staff','/api/staff-join',{action:'apply',code:j.codes[0].code,name:'가상직원',phone:'01000000000'});
-j=(await call('owner','/api/staff-join')).data;await call('owner','/api/staff-join',{action:'review',id:j.requests[0].id,approve:true,version:j.version});
+j=(await call('owner','/api/staff-join')).data;await call('owner','/api/staff-join',{action:'review',id:j.requests[0].id,approve:true,payType:'시급',wage:10320,version:j.version});
 const get=async()=> (await call('owner','/api/store')).data;
 state=await get();const eid=state.state.employees[0].id;
 state.state.branches.push({id:'b2',name:'두번째',address:''});
