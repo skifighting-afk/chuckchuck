@@ -1,4 +1,5 @@
 import {documentsApi} from './documents-api';
+import {payslipText} from '../lib/payslip';
 import {normalizeJoinCode} from '../lib/join-code';
 import {contractsApi} from './contracts-api';
 import {personalTeam} from '../lib/personal-team';
@@ -16,7 +17,7 @@ type Env=AuthEnv&{HQ_ADMIN_EMAIL?:string,HQ_NATIVE_USER_ID?:string,DB:D1Database
 const json=(v:unknown,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store'}});
 const same=(a:any,b:any)=>JSON.stringify(a)===JSON.stringify(b);
 const esc=(s:any)=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
-export function slipText(row:any,month:string,date:string,store:string){return [store+' · '+month+' 급여명세서','성명: '+row.name,'직원번호: '+row.employeeId,'지급일: '+date,...row.earnings.map((i:any)=>i.name+': '+i.amount.toLocaleString('ko-KR')+'원 ('+i.formula+')'),'지급 합계: '+row.gross.toLocaleString('ko-KR')+'원',...row.deductions.map((i:any)=>i.name+': '+i.amount.toLocaleString('ko-KR')+'원 ('+i.formula+')'),'공제 합계: '+row.deduction.toLocaleString('ko-KR')+'원','실수령액: '+row.net.toLocaleString('ko-KR')+'원',row.note].join('\n')}
+export function slipText(row:any,month:string,date:string,store:string){return payslipText(store,month,date,row)}
 export async function api(request:Request,env:Env){
  const path=new URL(request.url).pathname;
  if(path==='/api/auth')return nativeAuth(request,env);

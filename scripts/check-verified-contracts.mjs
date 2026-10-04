@@ -94,6 +94,7 @@ ok('owner sends locked payslip in app',(await call('/api/documents',send,owner))
 ok('repeat send idempotent',(await call('/api/documents',send,owner)).status===200&&(await q('SELECT COUNT(*) AS n FROM payslip_documents').first()).n===1);
 const slips=(await call('/api/documents',null,staff)).data.documents;
 ok('employee sees own sent payroll',slips.length===1&&slips[0].document.text.includes('100'));
+ok('app payslip includes employee number and pay date',slips[0].document.text.includes('직원번호: ')&&slips[0].document.text.includes('임금지급일: 2026-09-25'));
 ok('outsider sees no payroll',(await call('/api/documents',null,other)).data.documents.length===0);
 ok('outsider cannot fetch payroll by id',(await call('/api/documents?id='+slips[0].id,null,other)).status===404);
 await fixture(raw=>{raw.payrollRuns[send.runKey].locked=false});

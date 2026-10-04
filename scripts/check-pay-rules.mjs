@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import {allowances,insuranceLines,splitRecord,monday} from '../lib/pay-rules.ts';
 import {calculate,normalizeTeam} from '../dist/server/team-model.js';
+import {payslipText,payslipMissing,employeeNumber} from '../lib/payslip.ts';
 
 let n=0;const ok=(name,v)=>{assert.ok(v,name);console.log(`PASS ${++n}. ${name}`)};
 const kst=(day,hm)=>new Date(`${day}T${hm}:00+09:00`).toISOString();
@@ -64,4 +65,12 @@ ok('manual entry replaces the automatic line',manual.earnings.filter(x=>x.name==
 Object.assign(e,{autoPay:false,taxMode:'직접 입력'});team.adjustments={};
 ok('automatic calculation is off by default behaviour',calculate(team,'2026-09').find(x=>x.employeeId===e.id).earnings.length===1);
 e.wage=9000;ok('below minimum wage warning',calculate(team,'2026-09').find(x=>x.employeeId===e.id).warnings.some(w=>w.includes('최저시급')));
+// 6) 임금명세서 기재사항 (근로기준법 시행령 제27조의2)
+Object.assign(e,{wage:14000,autoPay:true,taxMode:'4대보험 자동'});team.adjustments={};
+const slipRow=calculate(team,'2026-09').find(x=>x.employeeId===e.id);
+const slip=payslipText('척척식당','2026-09','2026-10-10',slipRow);
+ok('payslip has every required item',payslipMissing(slip).length===0);
+ok('payslip shows employee number',slip.includes('직원번호: '+employeeNumber(e.id))&&employeeNumber('3fa9c1d2-77ab-4e10-9c3e-aa11bb22cc33')==='3FA9C1D2');
+ok('night premium line carries its hours',/^야간근로 가산: .*\d+\.\d+시간/m.test(slip));
+ok('missing items are detected',payslipMissing(slip.replace(/^직원번호: .*$/m,'')).includes('직원번호'));
 console.log('PASS: 법정수당(주휴·연장·야간)·4대보험 자동 계산.');
