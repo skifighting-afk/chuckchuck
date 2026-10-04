@@ -31,3 +31,4 @@
 .devices ul{list-style:none;padding:0;margin:8px 0;display:grid;gap:8px}.devices li{display:grid;gap:2px;padding:10px 12px;border:1px solid #dfe5e0;border-radius:8px}.devices li small{color:#4f5a54}
 .masked-toggle{background:none;border:0;color:#12634b;text-decoration:underline;cursor:pointer;font:inherit;font-size:13px;padding:4px;min-height:32px}
 html.large-text .saas-shell main,html.large-text .t-work,html.large-text [role=dialog]{zoom:1.18}html.large-text .account-strip{font-size:16px}.text-size-toggle{background:transparent;border:1px solid currentColor;border-radius:999px;color:inherit;font:inherit;font-size:13px;padding:4px 10px;min-height:32px;cursor:pointer}.text-size-toggle[aria-pressed=true]{background:#fff;color:#12634b}
+.install-tip{position:fixed;left:16px;right:16px;bottom:16px;z-index:200;background:#fff;color:#183d32;border:1px solid #cfd8d1;border-radius:12px;padding:16px;box-shadow:0 8px 30px rgba(0,0,0,.15)}

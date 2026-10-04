@@ -73,7 +73,8 @@ await step('작업 050: 직원이 근무 가능 시간 제출 → 사장님 초�
  await staff.goto(B+'/app',{waitUntil:'networkidle'});
 });
 await step('작업 096: 사장님 홈에 오늘 할 일',async()=>{
- await owner.goto(B+'/app',{waitUntil:'networkidle'});await owner.getByRole('heading',{name:/오늘 할 일/}).waitFor();await owner.click('button.text-size-toggle');if(!await owner.evaluate(()=>document.documentElement.classList.contains('large-text')))throw Error('글씨 크게 안 됨');await owner.reload({waitUntil:'networkidle'});if(!await owner.evaluate(()=>document.documentElement.classList.contains('large-text')))throw Error('글씨 크게 설정이 유지되지 않음');await owner.click('button.text-size-toggle');
+ await owner.goto(B+'/app',{waitUntil:'networkidle'});await owner.getByRole('heading',{name:/오늘 할 일/}).waitFor();if(!await owner.evaluate(()=>Promise.race([navigator.serviceWorker.ready.then(r=>!!r.active),new Promise(r=>setTimeout(()=>r(false),8000))])))throw Error('서비스워커가 등록되지 않음');{const m=await owner.request.get(B+'/manifest.webmanifest');if(!m.ok()||(await m.json()).start_url!=='/app')throw Error('manifest 없음')}
+ await owner.click('button.text-size-toggle[title]');if(!await owner.evaluate(()=>document.documentElement.classList.contains('large-text')))throw Error('글씨 크게 안 됨');await owner.reload({waitUntil:'networkidle'});if(!await owner.evaluate(()=>document.documentElement.classList.contains('large-text')))throw Error('글씨 크게 설정이 유지되지 않음');await owner.click('button.text-size-toggle[title]');
  const text=await owner.locator('.today-tasks').innerText();if(!/근로계약서 미체결|처리할 일이 없어요/.test(text))throw Error('오늘 할 일 내용 이상: '+text);
 });
 await step('매장 매뉴얼: 사장님이 사진과 함께 작성 → 직원이 바로 확인',async()=>{
