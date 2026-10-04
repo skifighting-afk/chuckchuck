@@ -63,3 +63,40 @@ export function applyTemplate(items: TemplateItem[], weekStart: string, shifts: 
   }
   return {made, skipped};
 }
+
+// 작업 050: 근무 가능 시간으로 근무표 초안
+export type Slot = {weekday: number; start: string; end: string};
+export type Need = Slot & {count: number; breakMinutes: number};
+const mins = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+const span = (s: {start: string; end: string}) => { const a = mins(s.start), b = mins(s.end); return [a, b <= a ? b + 1440 : b] as const; };
+const net = (s: {start: string; end: string; breakMinutes: number}) => { const [a, b] = span(s); return Math.max(0, b - a - s.breakMinutes) / 60; };
+/** 필요 인원(요일·시간·명수)을 근무 가능 시간이 맞는 직원으로 채운다. 이번 주 배정 시간이 적은 직원부터, 주 소정근로시간을 넘기지 않게. */
+export function draftFromAvailability(needs: Need[], availability: Record<string, Slot[]>, weekStart: string, shifts: Shift[], staff: {id: string; weeklyHours: number}[], leaves: {employeeId: string; start: string; end: string}[] = [], newId: () => string = () => crypto.randomUUID()) {
+  const end = addDays(weekStart, 7), made: Shift[] = [], unfilled: {date: string; start: string; end: string; missing: number}[] = [];
+  const hours = new Map(staff.map(e => [e.id, 0]));
+  for (const s of shifts) if (s.date >= weekStart && s.date < end && hours.has(s.employeeId)) hours.set(s.employeeId, hours.get(s.employeeId)! + net(s));
+  for (let i = 0; i < 7; i++) {
+    const date = addDays(weekStart, i), wd = weekday(date);
+    for (const need of needs.filter(n => n.weekday === wd).sort((a, b) => a.start.localeCompare(b.start))) {
+      const [na, nb] = span(need);
+      const covering = (s: Shift) => s.date === date && (([a, b]) => a <= na && b >= nb)(span(s));
+      let missing = need.count - [...shifts, ...made].filter(covering).length;
+      const dur = net(need);
+      const candidates = staff.filter(e => {
+        if ([...shifts, ...made].some(s => s.employeeId === e.id && covering(s))) return false;
+        if (!(availability[e.id] || []).some(sl => sl.weekday === wd && (([a, b]) => a <= na && b >= nb)(span(sl)))) return false;
+        if (leaves.some(l => l.employeeId === e.id && date >= l.start && date <= l.end)) return false;
+        if (e.weeklyHours > 0 && hours.get(e.id)! + dur > e.weeklyHours) return false;
+        return true;
+      }).sort((a, b) => hours.get(a.id)! - hours.get(b.id)! || a.id.localeCompare(b.id));
+      for (const e of candidates) {
+        if (missing <= 0) break;
+        const s = {id: newId(), employeeId: e.id, date, start: need.start, end: need.end, breakMinutes: need.breakMinutes};
+        if (overlaps(s, [...shifts, ...made])) continue;
+        made.push(s); hours.set(e.id, hours.get(e.id)! + dur); missing--;
+      }
+      if (missing > 0) unfilled.push({date, start: need.start, end: need.end, missing});
+    }
+  }
+  return {made, unfilled};
+}

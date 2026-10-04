@@ -363,3 +363,21 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('미사용 연차수당 = 일수 × 8시간 × 통상시급',unusedLeavePay(6,10320)===495360);
  console.log('PASS: 연차 자동 발생.');
 }
+
+// 작업 050: 근무 가능 시간으로 근무표 초안
+{
+ const {draftFromAvailability}=await import('../lib/schedule-tools.ts');
+ let k=0;const nid=()=>'d'+(++k);const W='2026-10-05';// 월요일
+ const needs=[{weekday:1,start:'09:00',end:'15:00',count:2,breakMinutes:30},{weekday:2,start:'09:00',end:'15:00',count:1,breakMinutes:30},{weekday:6,start:'18:00',end:'02:00',count:1,breakMinutes:60}];
+ const av={a:[{weekday:1,start:'08:00',end:'16:00'},{weekday:2,start:'09:00',end:'15:00'}],b:[{weekday:1,start:'09:00',end:'14:00'},{weekday:6,start:'17:00',end:'03:00'}],c:[{weekday:1,start:'09:00',end:'15:00'},{weekday:2,start:'09:00',end:'15:00'}]};
+ const staff=[{id:'a',weeklyHours:40},{id:'b',weeklyHours:20},{id:'c',weeklyHours:5.5}];
+ let r=draftFromAvailability(needs,av,W,[],staff,[],nid);
+ ok('월요일 2명: 가능 시간을 다 덮는 a·c (b는 14시까지라 제외)',r.made.filter(x=>x.date==='2026-10-05').map(x=>x.employeeId).sort().join()==='a,c');
+ ok('화요일: c는 주 5.5시간 상한이라 a',r.made.find(x=>x.date==='2026-10-06').employeeId==='a');
+ ok('토요일 밤샘 근무도 가능 시간이 덮으면 배정',r.made.find(x=>x.date==='2026-10-10')?.employeeId==='b');
+ ok('모두 채움',r.unfilled.length===0);
+ r=draftFromAvailability(needs,av,W,[{id:'x',employeeId:'a',date:'2026-10-05',start:'09:00',end:'15:00',breakMinutes:30}],staff,[{employeeId:'c',start:'2026-10-05',end:'2026-10-05'}],nid);
+ ok('이미 있는 근무는 인원에 포함, 휴가자는 제외 → 못 채운 1명',r.made.filter(x=>x.date==='2026-10-05').length===0&&r.unfilled[0].missing===1&&r.unfilled[0].date==='2026-10-05');
+ ok('적게 일한 직원부터',draftFromAvailability([{weekday:2,start:'09:00',end:'15:00',count:1,breakMinutes:30}],av,W,[{id:'y',employeeId:'a',date:'2026-10-05',start:'09:00',end:'15:00',breakMinutes:30}],staff,[],nid).made[0].employeeId==='c');
+ console.log('PASS: 근무 가능 시간 초안.');
+}

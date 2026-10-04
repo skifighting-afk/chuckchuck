@@ -56,4 +56,9 @@ ok('owner assigns',(await ops('boss',{action:'acceptSwap',version:r.body.version
 o=(await ops('boss')).body;ok('owner cancels',(await ops('boss',{action:'cancelSwap',version:o.version,id:w.id})).body.swaps.at(-1).status,'취소');
 d=await read();ok('cancel leaves shift unchanged',d.shifts.find(s=>s.id==='sb').employeeId,C);
 console.log('PASS: 대타·교대 요청·수락·승인·충돌 차단.');
+// 작업 050: 근무 가능 시간
+me=(await ops('amy')).body;r=await ops('amy',{action:'setAvailability',version:me.version,slots:[{weekday:1,start:'09:00',end:'18:00'}],note:'평일 오전'});ok('employee submits availability',r.status,200);ok('own availability visible',Object.keys(r.body.availability),[A]);
+ok('invalid time rejected',(await ops('amy',{action:'setAvailability',version:r.body.version,slots:[{weekday:9,start:'09:00',end:'18:00'}]})).status,400);
+ok('colleague cannot see it',Object.keys((await ops('ben')).body.availability).length,0);
+ok('owner sees it',(await ops('boss')).body.availability[A].note,'평일 오전');
 await closeAll();

@@ -64,6 +64,13 @@ await step('작업 048: 근무표 반복 등록 → 템플릿 저장 → 다음 
  await owner.locator('input[aria-label="근무표 날짜"]').fill(new Date(Date.now()+9*3600000+35*86400000).toISOString().slice(0,10));
  await owner.getByRole('button',{name:'템플릿',exact:true}).click();await owner.locator('.template-list button:has-text("이 주에 붙이기")').first().click();await owner.getByText(/템플릿 '평일 기본'으로 근무 \d+개를 넣었어요/).waitFor();
 });
+await step('작업 050: 직원이 근무 가능 시간 제출 → 사장님 초안 화면에서 확인',async()=>{
+ await staff.goto(B+'/app',{waitUntil:'networkidle'});await staff.click('button:has-text("휴가·공지")');await staff.click('button:has-text("근무 요청")');
+ await staff.locator('.avail-row',{hasText:'토요일'}).locator('input[type=checkbox]').check();await staff.click('button:has-text("가능 시간 내기")');await staff.getByText('제출').first().waitFor();
+ const av=JSON.parse((await srv.db.q('SELECT data FROM stores LIMIT 1').first()).data)._operations.availability;if(!Object.values(av).some(a=>a.slots.some(x=>x.weekday===6)))throw Error('가능 시간 저장 안 됨');
+ await owner.goto(B+'/app?screen=schedule',{waitUntil:'networkidle'});await owner.click('button:has-text("가능 시간으로 초안")');await owner.getByText('근무 가능 시간 낸 직원 1/1명').waitFor();await owner.getByText('토 09:00~18:00').waitFor();await owner.click('[role=dialog] button:has-text("닫기")');
+ await staff.goto(B+'/app',{waitUntil:'networkidle'});
+});
 await step('매장 QR로 출근·퇴근 (QR 없이 누르면 기록 안 됨)',async()=>{
  await staff.click('button:has-text("출근")');await staff.getByText('출근 전에 매장 QR을 찍어 주세요').waitFor();await staff.click('text=취소 · 기록하지 않기');
  await owner.goto(B+'/app?screen=attendance',{waitUntil:'networkidle'});await owner.locator('button:has-text("출퇴근 QR")').first().click();
