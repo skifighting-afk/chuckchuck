@@ -151,7 +151,7 @@ await step('근로계약서: 사장님 서명 → 직원 서명 → 사본',asyn
 await step('작업 044: 30초마다 바뀌는 QR 화면',async()=>{
  await owner.goto(B+'/app?screen=attendance',{waitUntil:'networkidle'});await owner.locator('button:has-text("출퇴근 QR")').first().click();
  await owner.click('button:has-text("움직이는 QR 켜고 화면 띄우기")');await owner.locator('.live-qr img').waitFor();await owner.getByText(/\d+초 뒤 새 QR/).waitFor();
- await owner.click('.live-qr button:has-text("닫기")');await owner.click('button:has-text("인쇄용 고정 QR로 되돌리기")');await owner.getByText('움직이는 QR 켜고 화면 띄우기').waitFor();
+ await owner.click('.live-qr button:has-text("닫기")');await owner.locator('button:has-text("출퇴근 QR")').first().click();await owner.click('button:has-text("인쇄용 고정 QR로 되돌리기")');await owner.getByText('움직이는 QR 켜고 화면 띄우기').waitFor();
 });
 await step('작업 054: 직원 여러 명 붙여넣기 등록',async()=>{
  await owner.goto(B+'/app?screen=employees',{waitUntil:'networkidle'});await owner.click('button:has-text("여러 명 붙여넣기")');
