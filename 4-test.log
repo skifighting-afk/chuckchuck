@@ -437,25 +437,26 @@ PASS 60. employee cannot send payroll
 PASS 61. owner sends locked payslip in app
 PASS 62. repeat send idempotent
 PASS 63. employee sees own sent payroll
-PASS 64. outsider sees no payroll
-PASS 65. outsider cannot fetch payroll by id
-PASS 66. unlocked payroll cannot send
-PASS 67. revised payroll sends a new immutable copy
-PASS 68. new revision has independent pending download
-PASS 69. latest payslip is marked current
-PASS 70. older payslip is marked replaced
-PASS 71. reopened payroll marks sent payslip as under review
-PASS 72. unrelated store writes do not block sending
-PASS 73. owner list carries activity without per-row queries
-PASS 74. unlinked employee gives a clear message
-PASS 75. former employee still opens own payslip copy
-PASS 76. cross origin document action denied
-PASS 77. new contract revision can be requested
-PASS 78. unsigned contract image is blocked
-PASS 79. in-app signing works with password without email service
-PASS 80. app signing sends no email
-PASS 81. app signature preserves truthful email verification state
-81/81 passed; no external email or real signatures sent.
+PASS 64. app payslip includes employee number and pay date
+PASS 65. outsider sees no payroll
+PASS 66. outsider cannot fetch payroll by id
+PASS 67. unlocked payroll cannot send
+PASS 68. revised payroll sends a new immutable copy
+PASS 69. new revision has independent pending download
+PASS 70. latest payslip is marked current
+PASS 71. older payslip is marked replaced
+PASS 72. reopened payroll marks sent payslip as under review
+PASS 73. unrelated store writes do not block sending
+PASS 74. owner list carries activity without per-row queries
+PASS 75. unlinked employee gives a clear message
+PASS 76. former employee still opens own payslip copy
+PASS 77. cross origin document action denied
+PASS 78. new contract revision can be requested
+PASS 79. unsigned contract image is blocked
+PASS 80. in-app signing works with password without email service
+PASS 81. app signing sends no email
+PASS 82. app signature preserves truthful email verification state
+82/82 passed; no external email or real signatures sent.
 
 ── check-pay-rules
 PASS 1. overnight shift worked hours
@@ -482,6 +483,10 @@ PASS 21. income tax left for manual entry
 PASS 22. manual entry replaces the automatic line
 PASS 23. automatic calculation is off by default behaviour
 PASS 24. below minimum wage warning
+PASS 25. payslip has every required item
+PASS 26. payslip shows employee number
+PASS 27. night premium line carries its hours
+PASS 28. missing items are detected
 PASS: 법정수당(주휴·연장·야간)·4대보험 자동 계산.
 
 > chuckchuck@0.1.0 check:function
