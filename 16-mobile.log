@@ -1,21 +1,21 @@
-PASS public-home
-PASS public-start
-PASS public-login
-PASS public-signup
-PASS public-calculator
-PASS public-help
-PASS demo-home
-PASS demo-employees
-PASS demo-attendance
-PASS demo-schedule
-PASS demo-payroll
-PASS demo-contracts
-PASS demo-retirement
-PASS demo-outbox
-PASS demo-operations
-PASS demo-manual
-PASS demo-reports
-PASS demo-stores
-PASS demo-settings
-PASS demo-guide
+PASS public-home · 이전과 0% 다름
+PASS public-start · 이전과 0% 다름
+PASS public-login · 이전과 0% 다름
+PASS public-signup · 이전과 0% 다름
+PASS public-calculator · 이전과 0% 다름
+PASS public-help · 이전과 0% 다름
+PASS demo-home · 이전과 0% 다름
+PASS demo-employees · 이전과 0% 다름
+PASS demo-attendance · 이전과 0% 다름
+PASS demo-schedule · 이전과 0% 다름
+PASS demo-payroll · 이전과 0% 다름
+PASS demo-contracts · 이전과 0% 다름
+PASS demo-retirement · 이전과 0% 다름
+PASS demo-outbox · 이전과 0% 다름
+PASS demo-operations · 이전과 0% 다름
+PASS demo-manual · 이전과 0% 다름
+PASS demo-reports · 이전과 0% 다름
+PASS demo-stores · 이전과 0% 다름
+PASS demo-settings · 이전과 0% 다름
+PASS demo-guide · 이전과 0% 다름
 390px 화면 20개: 가로 넘침 없음
