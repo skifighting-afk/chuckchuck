@@ -8,7 +8,7 @@ export async function resolveStore(db:D1Database,userId:string){
   // Owners keep their existing store even if a stale invite also exists.
   const own=await db.prepare('SELECT owner,data,version,updated_at FROM stores WHERE owner=?').bind(userId).first<any>();
   if(own)return {row:own,owner:userId,access:'owner' as const};
-  const linked=await db.prepare("SELECT stores.owner,stores.data,stores.version,stores.updated_at FROM stores, json_each(stores.data, '$._members') AS m WHERE json_extract(m.value, '$.userId')=? LIMIT 1").bind(userId).first<any>();
+  const linked=await db.prepare("SELECT stores.owner,stores.data,stores.version,stores.updated_at FROM stores, jsonb_array_elements(coalesce(stores.data::jsonb->'_members','[]'::jsonb)) AS m(value) WHERE (m.value->>'userId')=? LIMIT 1").bind(userId).first<any>();
   if(!linked)return null;
   const data=JSON.parse(linked.data),member=data._members?.find((m:any)=>m.userId===userId),employee=data.employees?.find((e:any)=>e.id===member?.employeeId);
   if(!employee||employee.status==='퇴사')return {row:linked,owner:linked.owner,access:'revoked' as const};

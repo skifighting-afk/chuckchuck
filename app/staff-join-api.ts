@@ -14,7 +14,7 @@ export async function staffJoinApi(request:Request,env:{DB:D1Database}){
    const data=JSON.parse(linked.row.data);
    return reply({owner:true,version:linked.row.version,codes:data._joinCodes||[],terms:data._joinTerms||[],contractsEnabled:hasFeature(data._account,'contracts'),branches:data.branches,requests:(data._joinApplications||[]).filter((x:any)=>x.status==='pending'),employees:data.employees.filter((x:any)=>x.status!=='퇴사').map((x:any)=>({id:x.id,name:x.name,email:x.email,branchId:x.branchId})),linkedIds:(data._members||[]).map((x:any)=>x.employeeId)});
   }
-  const rows=await env.DB.prepare("SELECT owner,data FROM stores WHERE EXISTS (SELECT 1 FROM json_each(stores.data,'$._joinApplications') j WHERE json_extract(j.value,'$.userId')=?)").bind(uid).all<any>();
+  const rows=await env.DB.prepare("SELECT owner,data FROM stores WHERE EXISTS (SELECT 1 FROM jsonb_array_elements(coalesce(stores.data::jsonb->'_joinApplications','[]'::jsonb)) AS j(value) WHERE (j.value->>'userId')=?)").bind(uid).all<any>();
   return reply({owner:false,email,name:displayName(request),connected:!!linked&&linked.access!=='revoked',requests:(rows.results||[]).flatMap((row:any)=>{const d=JSON.parse(row.data);return (d._joinApplications||[]).filter((a:any)=>a.userId===uid).map((a:any)=>({id:a.id,name:a.name,status:a.status,storeName:d.store.name,branchName:d.branches.find((b:any)=>b.id===a.branchId)?.name,createdAt:a.createdAt,profile:a.profile,contractText:a.contractText,confirmedAt:a.confirmedAt}))})});
  }
  if(request.method!=='POST'||request.headers.get('origin')!==new URL(request.url).origin)return reply({error:'올바르지 않은 요청입니다.'},403);
@@ -22,7 +22,7 @@ export async function staffJoinApi(request:Request,env:{DB:D1Database}){
  const b=JSON.parse(raw);if(b.action==='preview'||b.action==='apply')b.code=normalizeJoinCode(b.code);
  if(b.action==='preview'){
   if(!b.code)return reply({error:'가게 코드를 다시 확인해 주세요.'},400);
-  const row=await env.DB.prepare("SELECT owner,data,version FROM stores WHERE EXISTS (SELECT 1 FROM json_each(stores.data,'$._joinCodes') c WHERE json_extract(c.value,'$.code')=? OR json_extract(c.value,'$.legacyCode')=?) LIMIT 1").bind(b.code,b.code).first<any>();
+  const row=await env.DB.prepare("SELECT owner,data,version FROM stores WHERE EXISTS (SELECT 1 FROM jsonb_array_elements(coalesce(stores.data::jsonb->'_joinCodes','[]'::jsonb)) AS c(value) WHERE (c.value->>'code')=? OR (c.value->>'legacyCode')=?) LIMIT 1").bind(b.code,b.code).first<any>();
   if(!row)return reply({error:'가게 코드를 찾지 못했어요. 사장님께 확인해 주세요.'},404);
   const d=JSON.parse(row.data),code=d._joinCodes.find((x:any)=>x.code===b.code||x.legacyCode===b.code),branch=d.branches.find((x:any)=>x.id===code.branchId);
   if(!branch)return reply({error:'운영하지 않는 가게예요.'},409);
@@ -32,7 +32,7 @@ export async function staffJoinApi(request:Request,env:{DB:D1Database}){
   return reply({storeName:d.store.name,branchName:branch.name,branchId:branch.id,terms:terms?{revision:terms.revision,fields:terms.fields}:null,contractText:draft});
  }
  if(b.action==='withdraw'){
-  const row=await env.DB.prepare("SELECT owner,data,version FROM stores WHERE EXISTS (SELECT 1 FROM json_each(stores.data,'$._joinApplications') j WHERE json_extract(j.value,'$.id')=? AND json_extract(j.value,'$.userId')=?) LIMIT 1").bind(b.id,uid).first<any>();
+  const row=await env.DB.prepare("SELECT owner,data,version FROM stores WHERE EXISTS (SELECT 1 FROM jsonb_array_elements(coalesce(stores.data::jsonb->'_joinApplications','[]'::jsonb)) AS j(value) WHERE (j.value->>'id')=? AND (j.value->>'userId')=?) LIMIT 1").bind(b.id,uid).first<any>();
   if(!row)return reply({error:'본인의 신청만 취소할 수 있어요.'},404);
   const d=JSON.parse(row.data),a=d._joinApplications.find((x:any)=>x.id===b.id&&x.userId===uid);
   if(a.status!=='pending')return reply({error:'사장님 확인 전의 신청만 취소할 수 있어요.'},409);
@@ -45,7 +45,7 @@ export async function staffJoinApi(request:Request,env:{DB:D1Database}){
   if(linked)return reply({error:'이미 매장에 연결된 계정입니다. 기존 매장으로 들어가 주세요.'},409);
   if(!b.code)return reply({error:'가게 코드를 다시 확인해 주세요.'},400);
   if(typeof b.name!=='string'||!b.name.trim()||b.name.length>80||typeof b.phone!=='string'||!b.phone.trim()||b.phone.length>30||!/^[0-9+() -]{8,30}$/.test(b.phone)||b.phone.replace(/\D/g,'').length<8)return reply({error:'이름과 연락처를 입력해 주세요.'},400);
-  const row=await env.DB.prepare("SELECT owner,data,version FROM stores WHERE EXISTS (SELECT 1 FROM json_each(stores.data,'$._joinCodes') c WHERE json_extract(c.value,'$.code')=? OR json_extract(c.value,'$.legacyCode')=?) LIMIT 1").bind(b.code,b.code).first<any>();
+  const row=await env.DB.prepare("SELECT owner,data,version FROM stores WHERE EXISTS (SELECT 1 FROM jsonb_array_elements(coalesce(stores.data::jsonb->'_joinCodes','[]'::jsonb)) AS c(value) WHERE (c.value->>'code')=? OR (c.value->>'legacyCode')=?) LIMIT 1").bind(b.code,b.code).first<any>();
   if(!row)return reply({error:'사용할 수 없는 가게 코드입니다. 사장님께 확인해 주세요.'},404);
   const d=JSON.parse(row.data),code=d._joinCodes.find((x:any)=>x.code===b.code||x.legacyCode===b.code);
   if(!d.branches.some((x:any)=>x.id===code.branchId))return reply({error:'운영하지 않는 지점입니다.'},409);
@@ -101,7 +101,7 @@ export async function staffJoinApi(request:Request,env:{DB:D1Database}){
  }else return reply({error:'지원하지 않는 요청입니다.'},400);
  const approved=b.action==='review'&&b.approve?d._joinApplications.find((x:any)=>x.id===b.id).userId:null;
  // One conditional SQL write prevents cross-store simultaneous approvals.
- const r=await env.DB.prepare("UPDATE stores SET data=?,version=version+1,updated_at=? WHERE owner=? AND version=? AND (? IS NULL OR NOT EXISTS (SELECT 1 FROM stores other, json_each(other.data,'$._joinCodes') codes WHERE (other.owner<>? OR json_extract(codes.value,'$.branchId')<>?) AND json_extract(codes.value,'$.code')=?)) AND (? IS NULL OR NOT EXISTS (SELECT 1 FROM stores s WHERE s.owner=? OR EXISTS (SELECT 1 FROM json_each(s.data,'$._members') m WHERE json_extract(m.value,'$.userId')=?)))").bind(JSON.stringify(d),new Date().toISOString(),uid,linked.row.version,assignedCode,uid,b.branchId||'',assignedCode,approved,approved,approved).run();
+ const r=await env.DB.prepare("UPDATE stores SET data=?,version=version+1,updated_at=? WHERE owner=? AND version=? AND (CAST(? AS text) IS NULL OR NOT EXISTS (SELECT 1 FROM stores other, jsonb_array_elements(coalesce(other.data::jsonb->'_joinCodes','[]'::jsonb)) AS codes(value) WHERE (other.owner<>? OR (codes.value->>'branchId')<>?) AND (codes.value->>'code')=?)) AND (CAST(? AS text) IS NULL OR NOT EXISTS (SELECT 1 FROM stores s WHERE s.owner=? OR EXISTS (SELECT 1 FROM jsonb_array_elements(coalesce(s.data::jsonb->'_members','[]'::jsonb)) AS m(value) WHERE (m.value->>'userId')=?)))").bind(JSON.stringify(d),new Date().toISOString(),uid,linked.row.version,assignedCode,uid,b.branchId||'',assignedCode,approved,approved,approved).run();
  return r.meta.changes?reply({ok:true}):reply({error:'계정 연결이나 신청 상태가 변경됐어요. 새로고침해 주세요.'},409);
  }catch{return reply({error:'신청을 처리하지 못했어요. 입력 내용을 확인하고 다시 시도해 주세요.'},400);}
 }

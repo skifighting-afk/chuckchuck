@@ -121,13 +121,13 @@ async function hashToken(token:string){return Array.from(new Uint8Array(await cr
 async function join(request:Request,env:Env,userId:string){
  if(request.method!=='POST'||request.headers.get('origin')!==new URL(request.url).origin)return json({error:'올바르지 않은 초대 요청입니다.'},403);
  const b:any=await request.json();if(typeof b.token!=='string'||b.token.length>100)return json({error:'유효하지 않은 초대입니다.'},400);
- const hash=await hashToken(b.token),row=await env.DB.prepare("SELECT stores.owner,stores.data,stores.version FROM stores, json_each(stores.data, '$._invitations') AS i WHERE json_extract(i.value, '$.hash')=? LIMIT 1").bind(hash).first<any>();
+ const hash=await hashToken(b.token),row=await env.DB.prepare("SELECT stores.owner,stores.data,stores.version FROM stores, jsonb_array_elements(coalesce(stores.data::jsonb->'_invitations','[]'::jsonb)) AS i(value) WHERE (i.value->>'hash')=? LIMIT 1").bind(hash).first<any>();
  if(!row)return json({error:'초대가 만료되었거나 이미 사용되었습니다.'},400);
  const data=JSON.parse(row.data),invite=data._invitations.find((i:any)=>i.hash===hash),email=request.headers.get('oai-authenticated-user-email')?.toLowerCase();
  if(userId.startsWith('native:')&&request.headers.get('oai-authenticated-user-email-verified')!=='true')return json({error:'이메일 가입 직원은 가게 코드로 합류를 신청하고 사장님의 수락을 받아 주세요.'},403);
  if(invite.expires<Date.now()||!email||email!==invite.email)return json({error:'초대받은 이메일 계정으로 로그인해 주세요. 초대는 7일간 유효합니다.'},403);
  if(userId===row.owner)return json({error:'사장님 계정으로 직원 초대를 수락할 수 없습니다.'},400);
- const existing=await env.DB.prepare("SELECT stores.owner FROM stores, json_each(stores.data, '$._members') AS m WHERE json_extract(m.value, '$.userId')=? LIMIT 1").bind(userId).first<any>();
+ const existing=await env.DB.prepare("SELECT stores.owner FROM stores, jsonb_array_elements(coalesce(stores.data::jsonb->'_members','[]'::jsonb)) AS m(value) WHERE (m.value->>'userId')=? LIMIT 1").bind(userId).first<any>();
  const own=await env.DB.prepare('SELECT owner FROM stores WHERE owner=?').bind(userId).first<any>();if(own)return json({error:'이미 사장님 매장이 연결된 계정입니다. 다른 직원 계정을 사용해 주세요.'},409);
  if(data._account&&!canWrite(data._account))return json({error:'이 매장의 체험이 종료되어 초대를 수락할 수 없습니다.'},403);
  if(existing)return json({error:'이미 연결된 매장 계정입니다.'},409);

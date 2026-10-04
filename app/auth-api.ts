@@ -9,7 +9,7 @@ const cookie=(r:Request,value:string)=>`${cookieName(r)}=${value}; Path=/; HttpO
 const goodEmail=(v:unknown)=>typeof v==='string'&&v.length<=254&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 export async function authLimit(env:Env,key:string,max:number,window:number){
  const now=Date.now(),bucket=await digest(key+':'+Math.floor(now/window));
- const row=await env.DB.prepare('INSERT INTO auth_limits(bucket,hits,expires_at) VALUES(?,1,?) ON CONFLICT(bucket) DO UPDATE SET hits=hits+1 RETURNING hits').bind(bucket,now+window*2).first<any>();
+ const row=await env.DB.prepare('INSERT INTO auth_limits(bucket,hits,expires_at) VALUES(?,1,?) ON CONFLICT(bucket) DO UPDATE SET hits=auth_limits.hits+1 RETURNING hits').bind(bucket,now+window*2).first<any>();
  return row.hits<=max;
 }
 async function session(request:Request,env:Env,user:any){

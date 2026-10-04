@@ -3,23 +3,23 @@ import {industryName,industries} from './industries';
 
 // Project aggregate counts in SQL; never load employee profiles or contracts into the HQ response.
 export const adminProjection=`WITH records AS (
- SELECT owner, CASE WHEN json_valid(data) THEN data ELSE '{}' END AS doc,
- json_valid(data) AS valid, version, updated_at FROM stores
+ SELECT owner, coalesce(try_jsonb(data),'{}'::jsonb) AS doc,
+ (try_jsonb(data) IS NOT NULL) AS valid, version, updated_at FROM stores
 ) SELECT owner,version,updated_at,valid,
- json_extract(doc,'$.store.name') AS name,
- json_extract(doc,'$._account') AS account,
- json_extract(doc,'$._hq') AS support,
- CASE WHEN json_array_length(doc,'$.branches')>0 THEN
- (SELECT json_group_array(json_object('name',json_extract(b.value,'$.name'),'employees',
-   (SELECT count(*) FROM json_each(r.doc,'$.employees') e
-    WHERE coalesce(json_extract(e.value,'$.status'),'')!='퇴사'
-    AND json_extract(e.value,'$.branchId')=json_extract(b.value,'$.id'))))
-  FROM json_each(r.doc,'$.branches') b)
- ELSE json_array(json_object('name',coalesce(json_extract(doc,'$.store.branch'),'본점'),'employees',
-   (SELECT count(*) FROM json_each(r.doc,'$.employees') e WHERE coalesce(json_extract(e.value,'$.status'),'')!='퇴사'))) END AS branches,
- (SELECT count(*) FROM json_each(doc,'$._joinApplications') j WHERE json_extract(j.value,'$.status')='pending') AS pendingJoins,
- (SELECT count(*) FROM json_each(doc,'$.requests') q WHERE json_extract(q.value,'$.status')='승인 대기') AS pendingCorrections,
- (SELECT count(*) FROM json_each(doc,'$._outbox') m WHERE json_extract(m.value,'$.status') IN ('발송 실패','결과 확인 필요','수신 주소 필요')) AS failedMail
+ doc#>>'{store,name}' AS name,
+ doc->'_account' AS account,
+ doc->'_hq' AS support,
+ CASE WHEN jsonb_typeof(doc->'branches')='array' AND jsonb_array_length(doc->'branches')>0 THEN
+ (SELECT jsonb_agg(jsonb_build_object('name',b.value->>'name','employees',
+   (SELECT count(*) FROM jsonb_array_elements(CASE WHEN jsonb_typeof(r.doc->'employees')='array' THEN r.doc->'employees' ELSE '[]'::jsonb END) e
+    WHERE coalesce(e.value->>'status','')<>'퇴사'
+    AND e.value->>'branchId'=b.value->>'id')))
+  FROM jsonb_array_elements(r.doc->'branches') b)
+ ELSE jsonb_build_array(jsonb_build_object('name',coalesce(doc#>>'{store,branch}','본점'),'employees',
+   (SELECT count(*) FROM jsonb_array_elements(CASE WHEN jsonb_typeof(r.doc->'employees')='array' THEN r.doc->'employees' ELSE '[]'::jsonb END) e WHERE coalesce(e.value->>'status','')<>'퇴사'))) END AS branches,
+ (SELECT count(*) FROM jsonb_array_elements(CASE WHEN jsonb_typeof(doc->'_joinApplications')='array' THEN doc->'_joinApplications' ELSE '[]'::jsonb END) j WHERE j.value->>'status'='pending') AS "pendingJoins",
+ (SELECT count(*) FROM jsonb_array_elements(CASE WHEN jsonb_typeof(doc->'requests')='array' THEN doc->'requests' ELSE '[]'::jsonb END) q WHERE q.value->>'status'='승인 대기') AS "pendingCorrections",
+ (SELECT count(*) FROM jsonb_array_elements(CASE WHEN jsonb_typeof(doc->'_outbox')='array' THEN doc->'_outbox' ELSE '[]'::jsonb END) m WHERE m.value->>'status' IN ('발송 실패','결과 확인 필요','수신 주소 필요')) AS "failedMail"
  FROM records r ORDER BY updated_at DESC,owner ASC`;
 
 function parsed(value:any,fallback:any){try{return typeof value==='string'?JSON.parse(value):value??fallback}catch{return fallback}}
