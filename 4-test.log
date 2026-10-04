@@ -27,7 +27,17 @@ PASS: migration, auth, forged identity headers, origin, conflicts, owner isolati
 17. PASS branch over chosen count gets capacity code
 18. PASS over branch count never persists
 19. PASS checkout cannot fake payment
-HQ/capacity checks: 19 passed
+20. PASS biz default 확인 전
+21. PASS biz check needs reason
+22. PASS customer cannot biz check
+23. PASS biz check saves
+24. PASS biz filter
+25. PASS biz filter excludes
+26. PASS support memo kept after biz check
+27. PASS views and actions logged
+28. PASS log records filters
+29. PASS customer cannot read HQ log
+HQ/capacity checks: 29 passed
 
 ── check-admin-overview
 1. PASS HQ can open while stray session cookie exists
@@ -872,7 +882,7 @@ PASS 36. 2026-03-31: no attendance in the future
 PASS: 체험 화면 숫자(급여·명세서·임금대장 합계).
 
 ── check-error-messages
-PASS: 오류 문구 325개 모두 다음 행동 안내 포함.
+PASS: 오류 문구 329개 모두 다음 행동 안내 포함.
 PASS: 오류 번호·로그 개인정보 제거.
 
 ── check-attendance-table
