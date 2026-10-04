@@ -35,6 +35,10 @@ export function fakeGoTrue(DB,{domain='example.invalid'}={}){
    const u=[...users.values()].find(u=>u.email===String(body.email).toLowerCase()&&u.password===body.password);
    return u?reply(200,issue(u)):reply(400,{error:'invalid_grant'});
   }
+  if(p==='/token'&&url.searchParams.get('grant_type')==='refresh_token'){
+   const old=String(body.refresh_token||'').replace(/^r_/,''),id=tokens.get(old),u=users.get(id);
+   return u?reply(200,issue(u)):reply(400,{error:'invalid_grant'});
+  }
   if(p==='/user'){
    const u=users.get(tokens.get(token));if(!u)return reply(401,{msg:'invalid JWT'});
    if(method==='PUT'&&body.password)u.password=body.password;

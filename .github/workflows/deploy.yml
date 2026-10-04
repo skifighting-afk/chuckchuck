@@ -95,9 +95,47 @@ jobs:
           name: logs-test
           path: ci-logs
 
+  e2e:
+    name: 화면 E2E
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: chuck_test
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/chuck_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: mkdir -p ci-logs
+      - name: 의존성 설치
+        run: |
+          npm install --no-audit --no-fund >/dev/null
+          npm install --no-save --no-audit --no-fund playwright@1.56.0 >/dev/null
+          npx playwright install --with-deps chromium >/dev/null
+      - name: 사장님·직원 핵심 흐름 (작업 080·052)
+        run: |
+          set -o pipefail
+          npm run e2e 2>&1 | tee ci-logs/15-e2e.log
+      - name: 실패 화면 보관
+        if: failure()
+        run: cp e2e-failure-*.png ci-logs/ 2>/dev/null || true
+      - name: 기록 보관
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-e2e
+          path: ci-logs
+
   deploy:
     name: 배포
-    needs: test
+    needs: [test, e2e]
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
@@ -233,7 +271,7 @@ jobs:
 
   report:
     name: 결과 기록
-    needs: [test, deploy]
+    needs: [test, e2e, deploy]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -248,10 +286,10 @@ jobs:
         run: |
           mkdir -p /tmp/status && cp -r logs/. /tmp/status/ 2>/dev/null || true
           cat > /tmp/status/status.json <<EOF
-          {"sha":"${{ github.sha }}","ref":"${{ github.ref }}","event":"${{ github.event_name }}","run":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}","test":"${{ needs.test.result }}","deploy":"${{ needs.deploy.result }}","at":"$(date -u +%FT%TZ)"}
+          {"sha":"${{ github.sha }}","ref":"${{ github.ref }}","event":"${{ github.event_name }}","run":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}","test":"${{ needs.test.result }}","e2e":"${{ needs.e2e.result }}","deploy":"${{ needs.deploy.result }}","at":"$(date -u +%FT%TZ)"}
           EOF
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git fetch origin ci-status || true
           if git rev-parse --verify -q origin/ci-status >/dev/null; then git worktree add /tmp/wt origin/ci-status && (cd /tmp/wt && git switch -c ci-status); else git worktree add --detach /tmp/wt && (cd /tmp/wt && git switch --orphan ci-status); fi
-          cd /tmp/wt && find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} + && cp -r /tmp/status/. . && git add -A && git commit -m "CI ${{ github.sha }} test=${{ needs.test.result }} deploy=${{ needs.deploy.result }}" && git push origin ci-status
+          cd /tmp/wt && find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} + && cp -r /tmp/status/. . && git add -A && git commit -m "CI ${{ github.sha }} test=${{ needs.test.result }} e2e=${{ needs.e2e.result }} deploy=${{ needs.deploy.result }}" && git push origin ci-status

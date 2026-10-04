@@ -49,3 +49,4 @@ next-env.d.ts
 /supabase/.temp
 smoke-failure.png
 supabase/functions/.env.local
+e2e-failure-*.png
