@@ -48,6 +48,21 @@ Settings → Pages의 Source는 **GitHub Actions**로 둔다.
 
 Node 22.13 이상.
 
+### 로컬에서 전체 실행 (작업 002)
+Docker Desktop을 켠 뒤:
+```
+npm install
+npm run dev            # 처음 한 번, 또는 DB를 비우려면: npm run dev -- --reset
+```
+1. Supabase 로컬 스택(Postgres·로그인·서버 함수 실행기)이 켜지고 `supabase/migrations`가 적용된다.
+2. 화면과 서버 함수를 빌드하고, `app/`·`lib/`를 고치면 자동으로 다시 빌드한다.
+3. 서버 함수 `api`가 로컬에서 돈다(`supabase functions serve`).
+4. 화면: http://localhost:5173 · DB 화면(Studio): http://127.0.0.1:54323
+- 운영 Supabase에는 연결하지 않는다. 로컬 주소·키는 `supabase status`에서 읽는다.
+- 끌 때: Ctrl+C 후 `npx supabase stop`.
+
+### 점검
+
 ```
 npm install
 npm run check        # 타입 검사

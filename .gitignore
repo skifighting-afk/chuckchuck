@@ -48,3 +48,4 @@ next-env.d.ts
 /supabase/functions/api/index.js
 /supabase/.temp
 smoke-failure.png
+supabase/functions/.env.local
