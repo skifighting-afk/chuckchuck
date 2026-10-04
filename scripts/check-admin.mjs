@@ -33,5 +33,16 @@ const extra=await call('customer','/api/store',{state:{...fourth.data.state,bran
 ok('branch over chosen count gets capacity code',extra.data.code,'CAPACITY_EXCEEDED');
 ok('over branch count never persists',(await call('customer','/api/store')).data.state.branches.length,1);
 ok('checkout cannot fake payment',(await call('customer','/api/account',{action:'checkout'})).data.code,'BILLING_NOT_READY');
+// 작업 012·073: 사업자 확인 수동 처리, 본사 열람 기록
+list=await call('hq','/api/admin');item=list.data.stores[0];ok('biz default 확인 전',item.biz.status,'확인 전');
+ok('biz check needs reason',(await call('hq','/api/admin',{action:'bizCheck',id:item.id,version:item.version,status:'수동 확인',reason:''})).status,400);
+ok('customer cannot biz check',(await call('customer','/api/admin',{action:'bizCheck',id:item.id,version:item.version,status:'수동 확인',reason:'x'})).status,403);
+ok('biz check saves',(await call('hq','/api/admin',{action:'bizCheck',id:item.id,version:item.version,status:'수동 확인',reason:'사업자등록증 사본 확인'})).status,200);
+ok('biz filter',(await call('hq','/api/admin?biz='+encodeURIComponent('수동 확인'))).data.matched,1);
+ok('biz filter excludes',(await call('hq','/api/admin?biz='+encodeURIComponent('불일치'))).data.matched,0);
+list=await call('hq','/api/admin');ok('support memo kept after biz check',list.data.stores[0].support.note,'본사 전용');
+const log=(await call('hq','/api/admin?log=1')).data.log;ok('views and actions logged',['가게 목록 열람','사업자 확인 처리','가게 상세 메모 저장'].every(a=>log.some(l=>l.action===a)),true);
+ok('log records filters',log.some(l=>l.detail?.filters?.biz==='수동 확인'),true);
+ok('customer cannot read HQ log',(await call('customer','/api/admin?log=1')).status,403);
 console.log('HQ/capacity checks: '+count+' passed');
 await closeAll();

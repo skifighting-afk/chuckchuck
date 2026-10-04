@@ -40,7 +40,7 @@ export function summarizeStore(row:any,now=Date.now()){
   overCapacity:branches.length>limits.branches||branches.some(b=>b.employees>b.limit),
   pendingJoins:Number(row.pendingJoins)||0,pendingCorrections:Number(row.pendingCorrections)||0,failedMail:Number(row.failedMail)||0,
   dataIssue:!row.valid||!row.name,
-  support:{status:['미확인','확인 중','처리 완료'].includes(support?.status)?support.status:'미확인',note:typeof support?.note==='string'?support.note:'',history:Array.isArray(support?.history)?support.history:[]}};
+  biz:{status:['수동 확인','불일치'].includes(support?.biz?.status)?support.biz.status:'확인 전',reason:support?.biz?.reason||'',at:support?.biz?.at||null},support:{status:['미확인','확인 중','처리 완료'].includes(support?.status)?support.status:'미확인',note:typeof support?.note==='string'?support.note:'',history:Array.isArray(support?.history)?support.history:[]}};
 }
 export type AdminStore=ReturnType<typeof summarizeStore>;
 export function needsAttention(s:AdminStore){return !!(s.pendingJoins+s.pendingCorrections+s.failedMail||s.trialEnding||s.overCapacity||s.dataIssue||s.support.status==='확인 중')}
@@ -63,7 +63,7 @@ export function adminOverview(stores:AdminStore[],now=Date.now()){
 }
 export function filterAdminStores(stores:AdminStore[],params:URLSearchParams){
  const q=(params.get('q')||'').trim().slice(0,100).toLocaleLowerCase();
- const plan=params.get('plan')||'',status=params.get('status')||'',attention=params.get('attention')||'';
- return stores.filter(s=>(!q||[s.name,...s.branches.map(b=>b.name)].some(n=>n.toLocaleLowerCase().includes(q)))&&(!plan||s.plan===plan)&&(!status||s.status===status)&&(
+ const plan=params.get('plan')||'',status=params.get('status')||'',attention=params.get('attention')||'',biz=params.get('biz')||'';
+ return stores.filter(s=>(!q||[s.name,...s.branches.map(b=>b.name)].some(n=>n.toLocaleLowerCase().includes(q)))&&(!plan||s.plan===plan)&&(!biz||(s as any).biz?.status===biz)&&(!status||s.status===status)&&(
  !attention||attention==='all'&&needsAttention(s)||attention==='joins'&&s.pendingJoins>0||attention==='corrections'&&s.pendingCorrections>0||attention==='mail'&&s.failedMail>0||attention==='trial'&&s.trialEnding||attention==='capacity'&&s.employeeCapacity||attention==='support'&&s.support.status==='확인 중'||attention==='data'&&s.dataIssue));
 }
