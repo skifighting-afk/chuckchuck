@@ -101,6 +101,21 @@ ok('unlocked payroll cannot send',(await call('/api/documents',send,owner)).stat
 await fixture(raw=>{raw.payrollRuns[send.runKey].locked=true;raw.payrollRuns[send.runKey].revision=2});
 ok('revised payroll sends a new immutable copy',(await call('/api/documents',send,owner)).status===200&&(await q('SELECT COUNT(*) AS n FROM payslip_documents').first()).n===2);
 ok('new revision has independent pending download',(await call('/api/documents',null,staff)).data.documents.every(d=>!d.activity.saved_at));
+// 문서 전달 마무리: 수정본 상태 표시, 다른 저장과 무관한 전송, 계정 미연결 안내, 퇴사 뒤 열람
+ok('latest payslip is marked current',(await call('/api/documents',null,staff)).data.documents.find(d=>d.revision===2).state==='current');
+ok('older payslip is marked replaced',(await call('/api/documents',null,staff)).data.documents.find(d=>d.revision===1).state==='replaced');
+await fixture(raw=>{raw.payrollRuns[send.runKey].locked=false});
+ok('reopened payroll marks sent payslip as under review',(await call('/api/documents',null,staff)).data.documents.find(d=>d.revision===2).state==='reopened');
+await fixture(raw=>{raw.payrollRuns[send.runKey].locked=true;raw.payrollRuns[send.runKey].revision=3;raw.attendance=[...(raw.attendance||[])]});
+await q("UPDATE stores SET version=version+5 WHERE owner=?",ownerId).run();
+ok('unrelated store writes do not block sending',(await call('/api/documents',send,owner)).status===200&&(await q('SELECT COUNT(*) AS n FROM payslip_documents').first()).n===3);
+ok('owner list carries activity without per-row queries',(await call('/api/documents',null,owner)).data.documents.every(d=>typeof d.activity==='object'&&d.document_json===undefined));
+await fixture(raw=>{raw._members=[]});
+const unlinked=await call('/api/documents',send,owner);
+ok('unlinked employee gives a clear message',unlinked.status===409&&unlinked.data.code==='NOT_LINKED');
+await fixture(raw=>{raw.employees[0].status='퇴사'});
+ok('former employee still opens own payslip copy',(await call('/api/documents?id='+(await call('/api/documents',null,staff)).data.documents[0].id,null,staff)).status===200);
+await fixture(raw=>{raw.employees[0].status='재직';raw._members=[{employeeId,userId:staffId}]});
 ok('cross origin document action denied',(await call('/api/documents',{kind:'contract',id,action:'view'},staff,base,{origin:'https://bad.invalid'})).status===403);
 
 const appRequest=await call('/api/contracts',create,owner);ok('new contract revision can be requested',appRequest.status===201);

@@ -1,7 +1,21 @@
 import {resolveStore} from './saas-api';
 import {hasFeature,canWrite} from '../lib/plans';
 const json=(v:any,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store'}});
+const ACTIVITY="COALESCE(json_build_object('viewed_at',a.viewed_at,'download_requested_at',a.download_requested_at,'saved_at',a.saved_at),'{}'::json) AS activity";
 export async function documentActivity(db:D1Database,kind:string,id:string){return await db.prepare('SELECT viewed_at,download_requested_at,saved_at FROM document_activity WHERE kind=? AND document_id=?').bind(kind,id).first()||{};}
+const asObject=(v:any)=>typeof v==='string'?JSON.parse(v):v||{};
+
+/** 명세서가 지금 급여 확정본과 같은지. 급여를 다시 열거나 새로 확정하면 예전 명세서는 '지난 수정본'이 된다. */
+export function payslipState(state:any,doc:{run_key:string,revision:number}){
+ const run=state?.payrollRuns?.[doc.run_key];
+ if(!run)return 'replaced';
+ const current=run.revision||1;
+ if(current>doc.revision)return 'replaced';
+ if(!run.locked)return 'reopened';
+ return 'current';
+}
+
+
 export async function documentsApi(request:Request,env:{DB:D1Database}){
  const uid=request.headers.get('oai-authenticated-user-id');if(!uid)return json({error:'로그인해 주세요.'},401);
  const url=new URL(request.url);let b:any={};
@@ -13,29 +27,41 @@ export async function documentsApi(request:Request,env:{DB:D1Database}){
   const state=JSON.parse(linked.row.data),run=state.payrollRuns?.[b.runKey];
   if(!hasFeature(state._account,'payroll')||!canWrite(state._account))return json({error:'급여명세서 이용권을 확인해 주세요.'},403);
   if(!run?.locked)return json({error:'급여를 먼저 확정해 주세요.'},409);
-  const row=run.rows.find((r:any)=>r.employeeId===b.employeeId),member=state._members?.find((m:any)=>m.employeeId===b.employeeId&&m.userId!==uid);
-  if(!row||!member)return json({error:'직원 계정을 먼저 연결해 주세요.'},409);
-  const money=(v:number)=>v.toLocaleString('ko-KR')+'원';
+  const row=run.rows.find((r:any)=>r.employeeId===b.employeeId);
+  if(!row)return json({error:'이번 급여에 없는 직원이에요.'},404);
+  const member=state._members?.find((m:any)=>m.employeeId===b.employeeId);
+  if(!member)return json({error:'이 직원은 아직 앱 계정이 연결되지 않았어요. 직원 정보에서 계정을 연결해 주세요.',code:'NOT_LINKED'},409);
+  if(member.userId===uid)return json({error:'사장님 본인 계정과 연결된 직원 기록에는 보낼 수 없어요. 직원 본인 계정을 연결해 주세요.'},409);
+  const revision=run.revision||1,money=(v:number)=>v.toLocaleString('ko-KR')+'원';
   const text=[state.store.name+' · '+run.month+' 급여명세서','성명: '+row.name,'지급일: '+run.payDate,...row.earnings.map((i:any)=>i.name+': '+money(i.amount)+' ('+i.formula+')'),'지급 합계: '+money(row.gross),...row.deductions.map((i:any)=>i.name+': '+money(i.amount)+' ('+i.formula+')'),'공제 합계: '+money(row.deduction),'실수령액: '+money(row.net),row.note||''].join('\n');
-  await env.DB.prepare('INSERT OR IGNORE INTO payslip_documents(id,owner_id,employee_id,employee_user_id,run_key,revision,document_json,created_at) SELECT ?,?,?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM stores WHERE owner=? AND version=?)').bind(crypto.randomUUID(),uid,row.employeeId,member.userId,b.runKey,run.revision||1,JSON.stringify({text,name:row.name,month:run.month}),new Date().toISOString(),uid,linked.row.version).run();
-  const sent=await env.DB.prepare('SELECT id FROM payslip_documents WHERE owner_id=? AND employee_id=? AND run_key=? AND revision=?').bind(uid,row.employeeId,b.runKey,run.revision||1).first();
-  return sent?json({ok:true}):json({error:'급여가 변경되었어요. 새로 확인해 주세요.'},409);
+  // 매장 데이터의 다른 부분(출퇴근 등)이 바뀌어도 이 급여 확정본이 그대로면 보낸다.
+  await env.DB.prepare(`INSERT OR IGNORE INTO payslip_documents(id,owner_id,employee_id,employee_user_id,run_key,revision,document_json,created_at)
+   SELECT ?,?,?,?,?,CAST(? AS integer),?,? WHERE EXISTS(SELECT 1 FROM stores WHERE owner=? AND (data::jsonb #> ARRAY['payrollRuns',CAST(? AS text),'locked'])='true'::jsonb AND COALESCE((data::jsonb #>> ARRAY['payrollRuns',CAST(? AS text),'revision'])::integer,1)=CAST(? AS integer))`)
+   .bind(crypto.randomUUID(),uid,row.employeeId,member.userId,b.runKey,revision,JSON.stringify({text,name:row.name,month:run.month}),new Date().toISOString(),uid,b.runKey,b.runKey,revision).run();
+  const sent=await env.DB.prepare('SELECT id,created_at FROM payslip_documents WHERE owner_id=? AND employee_id=? AND run_key=? AND revision=?').bind(uid,row.employeeId,b.runKey,revision).first<any>();
+  return sent?json({ok:true,id:sent.id,sentAt:sent.created_at}):json({error:'급여 확정이 바뀌었어요. 새로 확인해 주세요.'},409);
  }
  const id=b.id||url.searchParams.get('id'),kind=b.kind||url.searchParams.get('kind')||'payslip';
  if(!['contract','payslip'].includes(kind))return json({error:'문서 종류를 확인해 주세요.'},400);
+ const linked=await resolveStore(env.DB,uid),state=linked?JSON.parse(linked.row.data):null;
  if(!id&&request.method==='GET'){
-  const rows=await env.DB.prepare('SELECT * FROM payslip_documents WHERE owner_id=? OR employee_user_id=? ORDER BY created_at DESC LIMIT 200').bind(uid,uid).all<any>();
-  return json({documents:await Promise.all(rows.results.map(async r=>({...r,document:JSON.parse(r.document_json),activity:await documentActivity(env.DB,'payslip',r.id)})))});
+  if(kind!=='payslip')return json({error:'계약서 목록은 계약서 화면에서 확인해 주세요.'},400);
+  const rows=await env.DB.prepare(`SELECT p.*,${ACTIVITY} FROM payslip_documents p LEFT JOIN document_activity a ON a.kind='payslip' AND a.document_id=p.id WHERE p.owner_id=? OR p.employee_user_id=? ORDER BY p.created_at DESC LIMIT 500`).bind(uid,uid).all<any>();
+  const documents=rows.results
+   .map(r=>({...r,document_json:undefined,document:JSON.parse(r.document_json),activity:asObject(r.activity),state:linked?.owner===r.owner_id?payslipState(state,r):'replaced'}));
+  return json({documents});
  }
  const table=kind==='contract'?'contract_envelopes':'payslip_documents';
  const row=await env.DB.prepare(`SELECT * FROM ${table} WHERE id=? AND (owner_id=? OR employee_user_id=?)`).bind(id||'',uid,uid).first<any>();
  if(!row)return json({error:'내 문서를 찾을 수 없어요.'},404);
- const employee=row.employee_user_id===uid,ready=kind==='payslip'||row.status==='signed';
+ const employee=row.employee_user_id===uid&&row.owner_id!==uid;
+  // 받은 사람 본인의 사본이므로 퇴사 뒤에도 볼 수 있다(근로계약서·임금명세서 교부 취지).
+ const ready=kind==='payslip'||row.status==='signed';
  if(request.method==='GET'){
   if(!ready)return json({error:'두 분이 서명하면 사본을 저장할 수 있어요.'},409);
   const doc=JSON.parse(row.document_json);let text=doc.text;
-  if(kind==='contract')for(const [label,key] of [['사장님','owner_signature'],['직원','employee_signature']]){const s=JSON.parse(row[key]);text+='\n\n'+label+' 서명: '+s.name+'\n'+s.at+'\n'+s.statement;} 
-  return json({text:text+'\n\n문서번호: '+row.id+(row.document_hash?'\nSHA-256: '+row.document_hash:''),employee,activity:await documentActivity(env.DB,kind,id)});
+  if(kind==='contract')for(const [label,key] of [['사장님','owner_signature'],['직원','employee_signature']]){const s=JSON.parse(row[key]);text+='\n\n'+label+' 서명: '+s.name+'\n'+s.at+'\n'+s.statement;}
+  return json({text:text+'\n\n문서번호: '+row.id+(row.document_hash?'\nSHA-256: '+row.document_hash:''),employee,activity:await documentActivity(env.DB,kind,id),state:kind==='payslip'&&linked?.owner===row.owner_id?payslipState(state,row):null});
  }
  if(!employee)return json({error:'직원 본인만 확인할 수 있어요.'},403);
  if(!['view','download','saved'].includes(b.action))return json({error:'지원하지 않는 요청이에요.'},400);
