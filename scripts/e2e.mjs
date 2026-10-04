@@ -12,9 +12,9 @@ let extra=null;async function step(name,fn){const t=Date.now();try{await fn();co
 const kToday=()=>new Date(Date.now()+9*3600000).toISOString().slice(0,10);
 const OWNER={name:'김사장',email:'boss@example.invalid',password:'Boss-pass-2026'},STAFF={name:'이직원',email:'staff@example.invalid',password:'Staff-pass-2026'};
 
-const ownerCtx=await browser.newContext({viewport:{width:1280,height:900}});const owner=await ownerCtx.newPage();watch(owner);
+const ownerCtx=await browser.newContext({viewport:{width:1280,height:900},timezoneId:'Asia/Seoul',locale:'ko-KR'});const owner=await ownerCtx.newPage();watch(owner);
 // 직원은 휴대폰(아이폰 크기·터치)으로 쓴다.
-const staffCtx=await browser.newContext({...devices['iPhone 13'],browserName:undefined,defaultBrowserType:undefined});const staff=await staffCtx.newPage();watch(staff);
+const staffCtx=await browser.newContext({...devices['iPhone 13'],browserName:undefined,defaultBrowserType:undefined,timezoneId:'Asia/Seoul',locale:'ko-KR'});const staff=await staffCtx.newPage();watch(staff);
 const qrConfirm=async kind=>{await staff.click(`button:has-text("${kind}")`);await staff.click('text=휴대폰 카메라로 연 QR 확인하기');await staff.click(`text=${kind} 기록하기`)};
 let joinLink,qrLink,qrPng;
 
@@ -60,9 +60,9 @@ await step('작업 048: 근무표 반복 등록 → 템플릿 저장 → 다음 
  const preview=await owner.locator('.repeat-preview').innerText();if(!/\d+회/.test(preview))throw Error('반복 미리보기 없음: '+preview);
  await owner.click('button:has-text("반복 일정 저장")');await owner.getByText(/근무 \d+회를 등록했어요/).waitFor();
  const before=JSON.parse((await srv.db.q('SELECT data FROM stores LIMIT 1').first()).data).shifts.length;if(before<15)throw Error('반복 등록 수가 적어요: '+before);
- await owner.click('button:has-text("템플릿")');await owner.fill('label:has-text("새 템플릿 이름") input','평일 기본');await owner.click('button:has-text("이번 주 저장")');await owner.getByText('이번 주 근무를 템플릿으로 저장했어요.').waitFor();await owner.click('[role=dialog] button:has-text("닫기")');
+ await owner.getByRole('button',{name:'템플릿',exact:true}).click();await owner.fill('label:has-text("새 템플릿 이름") input','평일 기본');await owner.click('button:has-text("이번 주 저장")');await owner.getByText('이번 주 근무를 템플릿으로 저장했어요.').waitFor();await owner.click('[role=dialog] button:has-text("닫기")');
  await owner.locator('input[aria-label="근무표 날짜"]').fill(new Date(Date.now()+9*3600000+35*86400000).toISOString().slice(0,10));
- await owner.click('button:has-text("템플릿")');await owner.locator('.template-list button:has-text("이 주에 붙이기")').first().click();await owner.getByText(/템플릿 '평일 기본'으로 근무 \d+개를 넣었어요/).waitFor();
+ await owner.getByRole('button',{name:'템플릿',exact:true}).click();await owner.locator('.template-list button:has-text("이 주에 붙이기")').first().click();await owner.getByText(/템플릿 '평일 기본'으로 근무 \d+개를 넣었어요/).waitFor();
 });
 await step('매장 QR로 출근·퇴근 (QR 없이 누르면 기록 안 됨)',async()=>{
  await staff.click('button:has-text("출근")');await staff.getByText('출근 전에 매장 QR을 찍어 주세요').waitFor();await staff.click('text=취소 · 기록하지 않기');
@@ -87,7 +87,7 @@ await step('사장님 정정 승인 → 이력 기록',async()=>{
  if(!d.requests.some(r=>r.status==='승인'))throw Error('정정 요청이 승인 상태가 아니에요');
 });
 await step('작업 052: 안드로이드 휴대폰에서 매장 QR 사진으로 출근·퇴근',async()=>{
- const ctx=await browser.newContext({...devices['Pixel 7']});const a=await ctx.newPage();watch(a);extra=a;
+ const ctx=await browser.newContext({...devices['Pixel 7'],timezoneId:'Asia/Seoul',locale:'ko-KR'});const a=await ctx.newPage();watch(a);extra=a;
  await a.goto(B+'/login?role=employee',{waitUntil:'networkidle'});
  await a.fill('input[type=email]',STAFF.email);await a.fill('input[aria-label="비밀번호"]',STAFF.password);await a.locator('form button[type=submit]').click();
  await a.click('text=내 직원 화면 열기 →');await a.getByText(`안녕하세요, ${STAFF.name}님`).waitFor();
