@@ -2,3 +2,57 @@
 > chuckchuck@0.1.0 check
 > tsc --noEmit
 
+app/home-overview.tsx(5,18): error TS2339: Property 'locked' does not exist on type '{}'.
+app/home-overview.tsx(5,29): error TS2339: Property 'rows' does not exist on type '{}'.
+app/home-overview.tsx(11,298): error TS2339: Property 'locked' does not exist on type '{}'.
+app/home-overview.tsx(11,441): error TS2339: Property 'locked' does not exist on type '{}'.
+app/team-ui.tsx(32,1785): error TS2339: Property 'status' does not exist on type '{}'.
+app/team-ui.tsx(32,1902): error TS2339: Property 'reason' does not exist on type '{}'.
+app/team-ui.tsx(32,2057): error TS2339: Property 'reason' does not exist on type '{}'.
+app/team-ui.tsx(32,2147): error TS2339: Property 'status' does not exist on type '{}'.
+app/team.tsx(101,57): error TS2339: Property 'locked' does not exist on type '{}'.
+app/team.tsx(101,68): error TS2339: Property 'rows' does not exist on type '{}'.
+app/team.tsx(113,1342): error TS2339: Property 'reason' does not exist on type '{}'.
+app/team.tsx(113,1375): error TS2339: Property 'status' does not exist on type '{}'.
+app/team.tsx(116,204): error TS2339: Property 'locked' does not exist on type '{}'.
+app/team.tsx(116,234): error TS2339: Property 'locked' does not exist on type '{}'.
+app/team.tsx(116,300): error TS2339: Property 'locked' does not exist on type '{}'.
+app/team.tsx(116,756): error TS2339: Property 'status' does not exist on type '{}'.
+app/team.tsx(116,1176): error TS2339: Property 'locked' does not exist on type '{}'.
+app/team.tsx(116,1194): error TS2339: Property 'payDate' does not exist on type '{}'.
+app/team.tsx(116,1817): error TS2339: Property 'locked' does not exist on type '{}'.
+app/team.tsx(116,2115): error TS2339: Property 'locked' does not exist on type '{}'.
+app/team.tsx(116,2172): error TS2339: Property 'payDate' does not exist on type '{}'.
+app/team.tsx(116,2433): error TS2339: Property 'locked' does not exist on type '{}'.
+app/worker.ts(109,519): error TS2339: Property 'locked' does not exist on type '{}'.
+app/worker.ts(109,1109): error TS2339: Property 'revision' does not exist on type '{}'.
+app/worker.ts(109,1826): error TS18046: 'i' is of type 'unknown'.
+app/worker.ts(109,1839): error TS18046: 'i' is of type 'unknown'.
+app/worker.ts(110,57): error TS2339: Property 'locked' does not exist on type '{}'.
+app/worker.ts(110,113): error TS18046: 'r' is of type 'unknown'.
+lib/contract-template.ts(26,64): error TS18046: 'v' is of type 'unknown'.
+lib/model.ts(8,312): error TS2554: Expected 2-3 arguments, but got 1.
+lib/model.ts(15,447): error TS2339: Property 'allowance' does not exist on type '{}'.
+lib/model.ts(15,461): error TS2339: Property 'deduction' does not exist on type '{}'.
+lib/personal-team.ts(17,22): error TS18046: 'run' is of type 'unknown'.
+lib/personal-team.ts(17,34): error TS18046: 'run' is of type 'unknown'.
+lib/personal-team.ts(19,12): error TS18046: 'run' is of type 'unknown'.
+lib/personal-team.ts(19,29): error TS18046: 'run' is of type 'unknown'.
+lib/personal-team.ts(19,46): error TS18046: 'run' is of type 'unknown'.
+lib/personal-team.ts(19,65): error TS18046: 'run' is of type 'unknown'.
+lib/personal-team.ts(20,8): error TS18046: 'run' is of type 'unknown'.
+lib/personal-team.ts(20,24): error TS18046: 'run' is of type 'unknown'.
+lib/personal-team.ts(20,42): error TS18046: 'run' is of type 'unknown'.
+lib/team-model.ts(11,1251): error TS2554: Expected 2-3 arguments, but got 1.
+lib/team-model.ts(15,331): error TS2554: Expected 2-3 arguments, but got 1.
+lib/team-model.ts(15,523): error TS2554: Expected 2-3 arguments, but got 1.
+lib/team-model.ts(15,2467): error TS18046: 'i' is of type 'unknown'.
+lib/team-model.ts(15,2488): error TS18046: 'i' is of type 'unknown'.
+lib/team-model.ts(53,28): error TS2339: Property 'earnings' does not exist on type '{}'.
+lib/team-model.ts(53,41): error TS7006: Parameter 'x' implicitly has an 'any' type.
+lib/team-model.ts(54,110): error TS2339: Property 'earnings' does not exist on type '{}'.
+lib/team-model.ts(56,28): error TS2339: Property 'deductions' does not exist on type '{}'.
+lib/team-model.ts(59,77): error TS2345: Argument of type 'Record<string | number | symbol, unknown>' is not assignable to parameter of type 'Record<string, { status: string; }>'.
+  'string' index signatures are incompatible.
+    Type 'unknown' is not assignable to type '{ status: string; }'.
+lib/team-model.ts(74,149): error TS2339: Property 'note' does not exist on type '{}'.
