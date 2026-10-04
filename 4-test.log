@@ -671,6 +671,10 @@ PASS 115. under 5: no holiday premium + note
 PASS 116. labor day is a holiday even under 5
 PASS 117. 2026 has 21 public holiday entries incl. 6/3 election
 PASS: 휴일근로 가산.
+PASS 118. absent week: no 주휴 + week listed
+PASS 119. owner can accept as 개근
+PASS 120. approved leave day is not absence
+PASS: 주휴 개근 판단.
 
 ── check-claims
 PASS: 과장·허위 문구 검사 (화면·홈페이지).
