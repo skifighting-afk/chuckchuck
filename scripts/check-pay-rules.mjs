@@ -456,3 +456,13 @@ console.log('PASS: 요율 연간 갱신 경고.');
  const st=normalizeTeam(null);st.employees=[...st.employees,...r.filter(x=>x.member).map(x=>x.member)];ok('등록 결과가 저장 검사를 통과',teamSchema.safeParse(st).success);
  console.log('PASS: 직원 일괄 등록.');
 }
+
+// 작업 079: 연락처 가리기
+{
+ const {maskPhone,maskEmail,maskAddress}=await import('../lib/mask.ts');
+ ok('휴대폰 가운데 가림',maskPhone('010-1234-5678')==='010-****-5678'&&maskPhone('01012345678')==='010-****-5678');
+ ok('이메일 앞 한 글자만',maskEmail('minji@example.com')==='m•••@example.com');
+ ok('주소는 시·구까지만',maskAddress('서울시 마포구 월드컵로 1 101호')==='서울시 마포구 •••');
+ ok('빈 값은 빈 값',maskPhone('')===''&&maskEmail('')==='');
+ console.log('PASS: 연락처 가리기.');
+}
