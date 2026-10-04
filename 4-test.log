@@ -109,34 +109,35 @@ PASS 10 correction-input cases: KST, invalid dates/hours, valid, reversed, overn
 22. PASS owner receives one request
 23. PASS employee cannot approve
 24. PASS stale approval blocked
-25. PASS owner accepts
-26. PASS employee connected
-27. PASS employee access
-28. PASS unagreed wage zero
-29. PASS employee cannot change account
-30. PASS free contract confirmation blocked
-31. PASS free contract queue blocked
-32. PASS ordinary save preserves joins
-33. PASS join code survives save
-34. PASS staff stays linked
-35. PASS second request
-36. PASS reject request
-37. PASS rejected cannot access
-38. PASS rejected own status
-39. PASS retry after rejection
-40. PASS upgrade starter
-41. PASS paid contract queue allowed
-42. PASS employee cannot use manager API
-43. PASS owner delegates manager duties
-44. PASS manager permission selection
-45. PASS manager payload hides wage
-46. PASS manager cannot grant own roles
-47. PASS manager cannot manage foreign employee
-48. PASS delegated manager adds shift
-49. PASS unassigned approval blocked
-50. PASS manager can post branch notice
-51. PASS revoked permission blocked immediately
-Entry/join/contracts/manager checks: 51 passed
+25. PASS approval without terms needs a wage
+26. PASS owner accepts
+27. PASS employee connected
+28. PASS employee access
+29. PASS wage set by owner on approval
+30. PASS employee cannot change account
+31. PASS free contract confirmation blocked
+32. PASS free contract queue blocked
+33. PASS ordinary save preserves joins
+34. PASS join code survives save
+35. PASS staff stays linked
+36. PASS second request
+37. PASS reject request
+38. PASS rejected cannot access
+39. PASS rejected own status
+40. PASS retry after rejection
+41. PASS upgrade starter
+42. PASS paid contract queue allowed
+43. PASS employee cannot use manager API
+44. PASS owner delegates manager duties
+45. PASS manager permission selection
+46. PASS manager payload hides wage
+47. PASS manager cannot grant own roles
+48. PASS manager cannot manage foreign employee
+49. PASS delegated manager adds shift
+50. PASS unassigned approval blocked
+51. PASS manager can post branch notice
+52. PASS revoked permission blocked immediately
+Entry/join/contracts/manager checks: 52 passed
 
 ── check-evidence
 PASS expired evidence and login-limit rows are purged; unexpired rows stay.
@@ -414,7 +415,7 @@ PASS: free account, blank tenant, per-store 3/10 limits, free core notice, paid 
 25. PASS owner accepts
 26. PASS employee connected
 27. PASS employee access
-28. PASS unagreed wage zero
+28. PASS wage set by owner on approval
 29. PASS employee cannot change account
 30. PASS free contract confirmation blocked
 31. PASS free contract queue blocked
@@ -684,7 +685,7 @@ PASS 36. 2026-03-31: no attendance in the future
 PASS: 체험 화면 숫자(급여·명세서·임금대장 합계).
 
 ── check-error-messages
-PASS: 오류 문구 262개 모두 다음 행동 안내 포함.
+PASS: 오류 문구 263개 모두 다음 행동 안내 포함.
 PASS: 오류 번호·로그 개인정보 제거.
 
 ── check-attendance-table
@@ -698,9 +699,10 @@ PASS: 오류 번호·로그 개인정보 제거.
 8. PASS oldest record (3 years ago) still stored
 9. PASS finalize for a month outside the window uses that month's records
 10. PASS records outside the window survive the save
-11. PASS export includes every attendance record
-12. PASS store purge removes attendance records
-12/12 passed
+11. PASS payroll with a zero-wage worker is refused
+12. PASS export includes every attendance record
+13. PASS store purge removes attendance records
+13/13 passed
 
 > chuckchuck@0.1.0 check:function
 > node scripts/check-supabase-function.mjs
