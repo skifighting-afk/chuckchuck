@@ -1,3 +1,4 @@
+import {confirmSigner} from './auth-api';
 import {isIndustry,industryName} from '../lib/industries';
 import {serverError} from '../lib/errors';
 import {isHQ} from './admin-api';
@@ -23,7 +24,7 @@ export function accountView(a:any,contractsThisMonth=0){
  const plan=planId(a?.plan),branches=branchCount(a),months=[1,6,12].includes(Number(a?.months))?Number(a.months):1;
  return {plan,planName:plan?plans[plan].name:null,deletion:a?.deletion||null,status:trialStatus(a),trialEndsAt:a?.trialEndsAt||null,createdAt:a?.createdAt||null,autoRenew:false,
   storeSlots:branches,limits:planLimits(a),months,monthlyPrice:plan?monthlyPrice(plan,branches):0,periodPrice:plan?periodPrice(plan,branches,months as 1|6|12):0,vatIncluded:true,qr:plan==='pro'||trialStatus(a)==='trialing',
-  notice:trialNotice(a),periodStart:a?.periodStart||null,billing:a?.billing||null,invoiceRequests:(a?.invoiceRequests||[]).slice(-24),
+  notice:trialNotice(a),transfer:a?.transfer&&Date.parse(a.transfer.expiresAt)>Date.now()?{toEmail:a.transfer.toEmail,expiresAt:a.transfer.expiresAt}:null,periodStart:a?.periodStart||null,billing:a?.billing||null,invoiceRequests:(a?.invoiceRequests||[]).slice(-24),
   contracts:{thisMonth:contractsThisMonth,free:CONTRACTS_FREE_PER_MONTH,extra:Math.max(0,contractsThisMonth-CONTRACTS_FREE_PER_MONTH),extraPrice:CONTRACT_EXTRA_PRICE}};
 }
 export async function accountApi(request:Request,env:Env){
@@ -41,7 +42,10 @@ export async function accountApi(request:Request,env:Env){
   const monthStart=new Date(Date.parse(new Date(Date.now()+9*3600000).toISOString().slice(0,7)+'-01T00:00:00+09:00')).toISOString();
   const contractsThisMonth=linked?.access==='owner'?Number((await env.DB.prepare('SELECT count(*)::int AS n FROM contract_envelopes WHERE owner_id=? AND created_at>=?').bind(id,monthStart).first<any>())?.n||0):0;
   const view=(d:any)=>({hq:isHQ(request,env),consentRequired,legal:{terms:LEGAL.terms.version,privacy:LEGAL.privacy.version},user:{email,authMethod:id.startsWith('native:')?'email':'chatgpt',role:request.headers.get('oai-authenticated-user-native-role')||'owner',emailVerified:!id.startsWith('native:')||request.headers.get('oai-authenticated-user-email-verified')==='true'},onboarded:!!d,access:linked?.access||'owner',storeName:d?.store?.name||'',industry:d?._account?.industry||null,industryName:industryName(d?._account?.industry),storeClosingAt:d?._account?.deletion?.purgeAt||null,account:linked&&linked.access!=='owner'?null:d?accountView(d._account,contractsThisMonth):null,usage:linked&&linked.access!=='owner'?null:d?{employees:d.employees.filter((e:any)=>e.status!=='퇴사').length,branches:d.branches?.length||1,perBranch:d.branches.map((b:any)=>({id:b.id,name:b.name,employees:d.employees.filter((e:any)=>e.branchId===b.id&&e.status!=='퇴사').length}))}:null,billing:{enabled:false,reason:'사업자 정보와 결제 서비스 연결을 준비하고 있어요. 지금은 결제되지 않아요.'}});
-  if(request.method==='GET')return json(view(data));
+  if(request.method==='GET'){const v:any=view(data);
+   // 작업 057: 나에게 넘겨진 가게(이메일 확인된 계정만)
+   if(email&&v.user.emailVerified&&linked?.access!=='owner'){const rows=await env.DB.prepare("SELECT owner,data FROM stores WHERE lower(data::jsonb#>>'{_account,transfer,toEmail}')=lower(?)").bind(email).all<any>();v.transferOffers=rows.results.map((r:any)=>{const d=JSON.parse(r.data);return Date.parse(d._account.transfer.expiresAt)>Date.now()?{owner:r.owner,storeName:d.store?.name||'',fromEmail:d._account.transfer.fromEmail||'',expiresAt:d._account.transfer.expiresAt}:null}).filter(Boolean)}
+   return json(v)}
   if(request.method!=='POST')return json({error:'이 방법으로는 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},405);
   if(request.headers.get('origin')!==new URL(request.url).origin)return json({error:'요청 출처를 확인할 수 없습니다.'},403);
   const raw=await request.text();if(raw.length>12000)return json({error:'보낸 내용이 너무 커요. 내용을 줄여서 다시 시도해 주세요.'},413);
@@ -69,6 +73,21 @@ export async function accountApi(request:Request,env:Env){
    if(!result.meta.changes)return json({error:'이미 매장이 생성되었습니다. 새로고침해 주세요.'},409);
    return json(view(next),201);
   }
+  if(b.action==='transferAccept'){
+   // 작업 057: 넘겨받는 쪽 확인(이메일 확인된 계정 + 비밀번호)
+   if(linked?.access==='owner')return json({error:'이미 내 가게가 있는 계정은 다른 가게를 넘겨받을 수 없어요. 다른 계정으로 로그인해 주세요.'},409);
+   if(typeof b.owner!=='string')return json({error:'넘겨받을 가게를 골라 주세요.'},400);
+   try{const who=await confirmSigner(request,env as any,b.password,true);if(who.email.toLowerCase()!==email.toLowerCase())throw Error('로그인 계정을 확인해 주세요.')}catch(e){return json({error:(e as Error).message||'비밀번호를 확인해 주세요.'},400)}
+   const row=await env.DB.prepare('SELECT data,version FROM stores WHERE owner=?').bind(b.owner).first<any>();const d=row?JSON.parse(row.data):null,t=d?._account?.transfer;
+   if(!t||t.toEmail.toLowerCase()!==email.toLowerCase()||Date.parse(t.expiresAt)<=Date.now())return json({error:'넘겨받을 수 있는 가게가 없어요. 이전 대표님께 다시 요청해 달라고 해 주세요.'},404);
+   if(linked&&linked.owner!==b.owner)return json({error:'다른 가게에 직원으로 연결된 계정이에요. 그 가게에서 나간 뒤 다시 시도해 주세요.'},409);
+   const now=new Date().toISOString();d._members=(d._members||[]).filter((m:any)=>m.userId!==id);delete d._account.transfer;
+   d._account.transferHistory=[...(d._account.transferHistory||[]),{from:b.owner,fromEmail:t.fromEmail,to:id,toEmail:email,at:now}].slice(-20);
+   d._audit=[...(d._audit||[]),{id:crypto.randomUUID(),at:now,actor:{id,name:email,email},action:'가게 대표 변경',target:'이용권',before:{owner:t.fromEmail},after:{owner:email},reason:'양쪽 확인(요청·수락)'}];
+   const saved=await env.DB.prepare('UPDATE stores SET data=?,version=version+1,updated_at=? WHERE owner=? AND version=?').bind(JSON.stringify(d),now,b.owner,row.version).run();if(!saved.meta.changes)return json({error:'다른 변경이 있어요. 새로고침한 뒤 다시 시도해 주세요.'},409);
+   await env.DB.prepare('SELECT transfer_store(?,?) AS r').bind(b.owner,id).first();
+   return json({ok:true,message:'가게 대표가 되었어요.'});
+  }
   if(!linked)return json({error:'매장 등록을 먼저 완료해 주세요.'},409);
   if(linked.access!=='owner')return json({error:'요금제는 사장님만 바꿀 수 있어요.'},403);
   if(b.action==='checkout')return json({error:'아직 결제를 받지 않아요. 지금은 무료·체험으로 계속 이용하시면 돼요.',code:'BILLING_NOT_READY'},503);
@@ -91,11 +110,19 @@ export async function accountApi(request:Request,env:Env){
    if(typeof b.month!=='string'||!/^\d{4}-(0[1-9]|1[0-2])$/.test(b.month))return json({error:'발행받을 달을 골라 주세요.'},400);
    const list=data._account.invoiceRequests||[];if(list.some((r:any)=>r.month===b.month&&r.status!=='취소'))return json({error:'그 달은 이미 요청했어요. 요청 내역을 확인해 주세요.'},409);
    data._account.invoiceRequests=[...list,{id:crypto.randomUUID(),month:b.month,at:new Date().toISOString(),status:'요청',bizNo:data._account.billing.bizNo}].slice(-60);
+  }else if(b.action==='transferStart'){
+   const to=typeof b.email==='string'?b.email.trim().toLowerCase():'';if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)||to.length>200)return json({error:'넘겨받을 분의 이메일을 확인해 주세요.'},400);
+   if(to===email.toLowerCase())return json({error:'지금 계정과 다른 이메일을 입력해 주세요.'},400);
+   if(b.confirmName!==data.store?.name)return json({error:'확인을 위해 가게 이름을 그대로 입력해 주세요.'},400);
+   try{await confirmSigner(request,env as any,b.password,false)}catch(e){return json({error:(e as Error).message||'비밀번호를 확인해 주세요.'},400)}
+   data._account.transfer={toEmail:to,fromEmail:email,at:new Date().toISOString(),expiresAt:new Date(Date.now()+7*86400000).toISOString()};
+  }else if(b.action==='transferCancel'){
+   if(!data._account.transfer)return json({error:'진행 중인 대표 변경 요청이 없어요. 새로고침해서 상태를 확인해 주세요.'},400);delete data._account.transfer;
   }else if(b.action==='endTrial'){
    if(b.confirm!==true)return json({error:'체험 종료 확인이 필요합니다.'},400);
    if(trialStatus(data._account)!=='trialing')return json({error:'진행 중인 체험이 없어요. 지금 상태 그대로 조회와 내려받기를 이용하시면 돼요.'},400);data._account.status='cancelled';data._account.cancelledAt=new Date().toISOString();
   }else return json({error:'이 작업은 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},400);
-  data._audit=[...(data._audit||[]),{id:crypto.randomUUID(),at:new Date().toISOString(),actor:{id,name:email,email},action:b.action==='endTrial'?'체험 종료':b.action==='billingInfo'?'세금계산서 정보 저장':b.action==='taxInvoiceRequest'?'세금계산서 발행 요청':'요금제 변경',target:'이용권',before:null,after:{plan:data._account.plan,status:trialStatus(data._account)},reason:'계정 관리'}];
+  data._audit=[...(data._audit||[]),{id:crypto.randomUUID(),at:new Date().toISOString(),actor:{id,name:email,email},action:b.action==='endTrial'?'체험 종료':b.action==='billingInfo'?'세금계산서 정보 저장':b.action==='taxInvoiceRequest'?'세금계산서 발행 요청':b.action==='transferStart'?'가게 대표 변경 요청':b.action==='transferCancel'?'가게 대표 변경 취소':'요금제 변경',target:'이용권',before:null,after:{plan:data._account.plan,status:trialStatus(data._account)},reason:'계정 관리'}];
   const saved=await env.DB.prepare('UPDATE stores SET data=?,version=?,updated_at=? WHERE owner=? AND version=?').bind(JSON.stringify(data),linked.row.version+1,new Date().toISOString(),id,linked.row.version).run();
   return saved.meta.changes?json(view(data)):json({error:'다른 변경이 있습니다. 새로고침해 주세요.'},409);
  }catch(error){return serverError('account',error,'계정 정보를 처리하지 못했어요. 잠시 뒤 다시 시도해 주세요.')}

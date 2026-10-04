@@ -36,3 +36,4 @@ html.large-text .saas-shell main,html.large-text .t-work,html.large-text [role=d
 .help-page section{margin-top:20px}.help-item{border-bottom:1px solid #dfe5e0}.help-item>button{width:100%;text-align:left;background:none;border:0;font:inherit;font-weight:700;font-size:16px;padding:14px 4px;min-height:48px;cursor:pointer}.help-answer{padding:0 4px 14px}.help-answer p{margin:0 0 6px;line-height:1.7}
 .hq-biz{border-top:1px solid #dfe5e0;margin:12px 0;padding-top:10px}.hq-biz h3 small{font-weight:400;color:#4f5a54;margin-left:6px}.hq-biz input{flex:1;min-width:180px;min-height:40px;padding:6px 10px}.hq-log summary{cursor:pointer;font-weight:700;padding:6px 0}
 .contract-changes h2{font-size:17px;margin:0 0 8px}.contract-changes p{margin:0}
+.transfer summary{cursor:pointer;padding:4px 0}.transfer-offer{margin-bottom:16px;border:2px solid #12634b}
