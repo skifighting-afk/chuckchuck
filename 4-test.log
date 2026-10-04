@@ -683,6 +683,9 @@ PASS 35. 2026-03-31: one person still at work today
 PASS 36. 2026-03-31: no attendance in the future
 PASS: 체험 화면 숫자(급여·명세서·임금대장 합계).
 
+── check-error-messages
+PASS: 오류 문구 269개 모두 다음 행동 안내 포함.
+
 > chuckchuck@0.1.0 check:function
 > node scripts/check-supabase-function.mjs
 
