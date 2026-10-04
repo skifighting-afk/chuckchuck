@@ -414,3 +414,29 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('지급일 평일은 문제 없음',payDateIssue('2026-10-08')==='');
  console.log('PASS: 오늘 할 일·월말 마감·지급일.');
 }
+
+// 작업 033: 사장님 부담 4대보험
+{
+ const {employerInsurance}=await import('../dist/server/employer-insurance.js');
+ const all={국민연금:{status:'가입'},건강보험:{status:'가입'},장기요양:{status:'가입'},고용보험:{status:'가입'}};
+ const r=employerInsurance({gross:2200000,earnings:[{amount:200000,taxFree:true},{amount:2000000}]},{income:'근로소득',insurances:all},'2026-10',0.007);const g=n=>r.lines.find(l=>l.name===n)?.amount;
+ ok('비과세 제외 기준 200만원',r.base===2000000);
+ ok('국민연금 사장님 = 근로자와 같은 4.75%',g('국민연금')===95000);
+ ok('건강보험 3.595%, 장기요양 13.14%',g('건강보험')===71900&&g('장기요양보험')===Math.floor(71900*0.1314/10)*10);
+ ok('고용보험 0.9% + 0.25%',g('고용보험')===23000);
+ ok('산재 업종 요율',g('산재보험')===14000);
+ ok('사업소득은 사장님 부담 없음',employerInsurance({gross:1000000,earnings:[]},{income:'사업소득',insurances:all},'2026-10',0.007).total===0);
+ ok('미가입 보험은 제외, 산재는 가입 여부와 무관',employerInsurance({gross:1000000,earnings:[]},{income:'근로소득',insurances:{}},'2026-10',0.007).lines.map(l=>l.name).join()==='산재보험');
+ console.log('PASS: 사장님 부담 4대보험.');
+}
+
+// 작업 034: 월급 직원 중도 입·퇴사 일할
+{
+ const s=normalizeTeam(null);const e=s.employees[0];Object.assign(e,{status:'재직',payType:'월급',wage:3100000,joined:'2026-10-11',autoPay:false,taxMode:'직접 입력'});s.employees=[e];s.shifts=[];s.attendance=[];
+ let r=calculate(s,'2026-10')[0];const base=r.earnings[0];
+ ok('10/11 입사: 31일 중 21일',base.amount===Math.round(3100000*21/31)&&base.formula.includes('재직 21일/31일')&&base.formula.includes('2026-10-11 입사'));
+ Object.assign(e,{joined:'2026-01-01',status:'퇴사',endDate:'2026-10-15'});r=calculate(s,'2026-10')[0];
+ ok('10/15 퇴사: 15일',r&&r.earnings[0].amount===1500000&&r.earnings[0].formula.includes('2026-10-15 퇴사'));
+ Object.assign(e,{status:'재직',endDate:''});r=calculate(s,'2026-10')[0];ok('만근은 월급 그대로',r.earnings[0].amount===3100000&&!r.earnings[0].formula.includes('재직'));
+ console.log('PASS: 중도 입·퇴사 일할.');
+}
