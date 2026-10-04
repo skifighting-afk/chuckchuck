@@ -5,7 +5,7 @@ import {resolveStore} from './saas-api';
 import {newMember,teamSchema} from '../lib/team-model';
 import {capacityError,canWrite,hasFeature} from '../lib/plans';
 const reply=(data:any,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
-const codeClosed=(c)=>c?.paused?'사장님이 지금 가입 신청을 받지 않도록 해 두었어요. 사장님께 확인해 주세요.':c?.expiresAt&&c.expiresAt<new Date().toISOString()?'가입 링크 기간이 끝났어요. 사장님께 새 링크를 받아 주세요.':'';
+const codeClosed=(c?:{paused?:boolean,expiresAt?:string})=>c?.paused?'사장님이 지금 가입 신청을 받지 않도록 해 두었어요. 사장님께 확인해 주세요.':c?.expiresAt&&c.expiresAt<new Date().toISOString()?'가입 링크 기간이 끝났어요. 사장님께 새 링크를 받아 주세요.':'';
 export async function staffJoinApi(request:Request,env:{DB:D1Database}){
  const uid=request.headers.get('oai-authenticated-user-id'),email=request.headers.get('oai-authenticated-user-email')?.toLowerCase();
  if(!uid||!email)return reply({error:'본인 계정으로 로그인해 주세요.'},401);
@@ -26,7 +26,7 @@ export async function staffJoinApi(request:Request,env:{DB:D1Database}){
   if(!b.code)return reply({error:'가게 코드를 다시 확인해 주세요.'},400);
   const row=await env.DB.prepare("SELECT owner,data,version FROM stores WHERE try_jsonb(data)->'_joinCodes' @> jsonb_build_array(jsonb_build_object('code',CAST(? AS text))) OR try_jsonb(data)->'_joinCodes' @> jsonb_build_array(jsonb_build_object('legacyCode',CAST(? AS text))) LIMIT 1").bind(b.code,b.code).first<any>();
   if(!row)return reply({error:'가게 코드를 찾지 못했어요. 사장님께 확인해 주세요.'},404);
-  const d:StoreData=JSON.parse(row.data),code=d._joinCodes.find((x)=>x.code===b.code||x.legacyCode===b.code),branch=d.branches.find((x)=>x.id===code.branchId);if(codeClosed(code))return reply({error:codeClosed(code)},410);
+  const d:StoreData=JSON.parse(row.data),code=d._joinCodes!.find((x)=>x.code===b.code||x.legacyCode===b.code)!,branch=d.branches.find((x)=>x.id===code.branchId);if(codeClosed(code))return reply({error:codeClosed(code)},410);
   if(!branch)return reply({error:'지금 운영하지 않는 가게예요. 사장님께 새 가입 주소를 받아 주세요.'},409);
   const terms=hasFeature(d._account,'contracts')?(d._joinTerms||[]).find((x)=>x.branchId===branch.id):null;
   const profile=b.profile?joinProfileSchema.parse(b.profile):null;
@@ -36,7 +36,7 @@ export async function staffJoinApi(request:Request,env:{DB:D1Database}){
  if(b.action==='withdraw'){
   const row=await env.DB.prepare("SELECT owner,data,version FROM stores WHERE try_jsonb(data)->'_joinApplications' @> jsonb_build_array(jsonb_build_object('id',CAST(? AS text),'userId',CAST(? AS text))) LIMIT 1").bind(b.id,uid).first<any>();
   if(!row)return reply({error:'본인이 낸 신청만 취소할 수 있어요.'},404);
-  const d:StoreData=JSON.parse(row.data),a=d._joinApplications.find((x)=>x.id===b.id&&x.userId===uid);
+  const d:StoreData=JSON.parse(row.data),a=d._joinApplications!.find((x)=>x.id===b.id&&x.userId===uid)!;
   if(a.status!=='pending')return reply({error:'사장님 확인 전의 신청만 취소할 수 있어요.'},409);
   a.status='withdrawn';a.reviewedAt=new Date().toISOString();
   const result=await env.DB.prepare('UPDATE stores SET data=?,version=version+1,updated_at=? WHERE owner=? AND version=?').bind(JSON.stringify(d),a.reviewedAt,row.owner,row.version).run();
@@ -49,7 +49,7 @@ export async function staffJoinApi(request:Request,env:{DB:D1Database}){
   if(typeof b.name!=='string'||!b.name.trim()||b.name.length>80||typeof b.phone!=='string'||!b.phone.trim()||b.phone.length>30||!/^[0-9+() -]{8,30}$/.test(b.phone)||b.phone.replace(/\D/g,'').length<8)return reply({error:'이름과 연락처를 입력해 주세요.'},400);
   const row=await env.DB.prepare("SELECT owner,data,version FROM stores WHERE try_jsonb(data)->'_joinCodes' @> jsonb_build_array(jsonb_build_object('code',CAST(? AS text))) OR try_jsonb(data)->'_joinCodes' @> jsonb_build_array(jsonb_build_object('legacyCode',CAST(? AS text))) LIMIT 1").bind(b.code,b.code).first<any>();
   if(!row)return reply({error:'사용할 수 없는 가게 코드입니다. 사장님께 확인해 주세요.'},404);
-  const d:StoreData=JSON.parse(row.data),code=d._joinCodes.find((x)=>x.code===b.code||x.legacyCode===b.code);if(codeClosed(code))return reply({error:codeClosed(code)},410);
+  const d:StoreData=JSON.parse(row.data),code=d._joinCodes!.find((x)=>x.code===b.code||x.legacyCode===b.code)!;if(codeClosed(code))return reply({error:codeClosed(code)},410);
   if(!d.branches.some((x)=>x.id===code.branchId))return reply({error:'지금 운영하지 않는 지점이에요. 지점을 다시 골라 주세요.'},409);
   const items=d._joinApplications||[],prev=items.find((x)=>x.userId===uid);
   if(prev?.status==='pending')return reply({ok:true,status:'pending'});
