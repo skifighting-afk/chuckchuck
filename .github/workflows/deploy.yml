@@ -75,7 +75,7 @@ jobs:
           path: supabase/functions/api/index.js
       - name: 화면 파일 보관
         if: steps.build.outcome == 'success' && github.event_name != 'pull_request'
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: dist/client
       - name: 기록 보관
