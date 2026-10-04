@@ -100,7 +100,7 @@ export async function api(request:Request,env:Env){
   for(let attempt=0;attempt<4;attempt++){const latest=await env.DB.prepare('SELECT data,version FROM stores WHERE owner=?').bind(owner).first<any>();const d=JSON.parse(latest.data);const target=d._outbox.find((x:any)=>x.id===m.id);Object.assign(target,{status,providerId,processedAt:new Date().toISOString()});const saved=await env.DB.prepare('UPDATE stores SET data=?,version=?,updated_at=? WHERE owner=? AND version=?').bind(JSON.stringify(d),latest.version+1,new Date().toISOString(),owner,latest.version).run();if(saved.meta.changes)return json({...result(),state:normalizeTeam(d),audit:d._audit,outbox:d._outbox,version:latest.version+1});}return json({error:'발송 결과를 새로고침하여 확인해 주세요. 중복 전송하지 마세요.'},409);
  }
  return json(result());
- }catch(error){return json({error:error instanceof Error?error.message:'처리하지 못했습니다.'},400)}
+ }catch(error){return json({error:error instanceof Error&&error.name!=='PostgresError'&&!/D1|SQLITE|constraint|database|relation|syntax/i.test(error.message)?error.message:'처리하지 못했습니다. 새로고침한 뒤 다시 시도해 주세요.'},400)}
 }
 const appRoutes=new Set(['/admin','/admin/login','/','/app','/signup','/login','/account','/start','/demo','/try','/terms','/privacy','/employee','/staff-requests','/logout','/verify-email','/contracts','/manager']);
 export default {async fetch(request:Request,env:Env){

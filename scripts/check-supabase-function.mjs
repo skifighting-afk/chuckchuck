@@ -27,7 +27,12 @@ globalThis.fetch=async(input,init={})=>{
 // ── Deno 흉내 ──
 let handler;
 globalThis.Deno={env:{get:k=>({SUPABASE_DB_URL:(process.env.TEST_DATABASE_URL||'postgres://postgres:postgres@localhost:5432/chuck_test')+'?options=-c%20search_path%3D'+schema,SUPABASE_URL:SUPA,SUPABASE_ANON_KEY:'anon',SUPABASE_SERVICE_ROLE_KEY:'service',APP_ORIGIN:APP+',https://skifighting-afk.github.io',HQ_ADMIN_EMAIL:'hq@example.kr'})[k]},serve:h=>{handler=h}};
-await import(process.env.FUNCTION_BUNDLE);
+// 빌드된 함수(npm:postgres를 불러오는 Deno용)를 Node에서 돌리려고 드라이버 경로만 바꾼다.
+const {readFileSync,writeFileSync,mkdtempSync}=await import('node:fs');
+const bundle=process.env.FUNCTION_BUNDLE||new URL('../supabase/functions/api/index.js',import.meta.url).pathname;
+const tmp=mkdtempSync('/tmp/fn-')+'/index.mjs';
+writeFileSync(tmp,readFileSync(bundle,'utf8').replace(/(["'])npm:postgres@[^"']+\1/g,JSON.stringify(import.meta.resolve('postgres'))));
+await import(tmp);
 
 let session=null;
 async function call(path,{method='GET',body,origin=APP,token}={}){

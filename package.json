@@ -1,5 +1,5 @@
 {
-  "name": "site-creator-vinext-starter",
+  "name": "chuckchuck",
   "version": "0.1.0",
   "private": true,
   "engines": {
@@ -61,7 +61,8 @@
     "typescript": "5.9.3",
     "vinext": "1.0.0-beta.5",
     "vite": "8.0.13",
-    "wrangler": "4.92.0"
+    "wrangler": "4.92.0",
+    "postgres": "3.4.5"
   },
   "type": "module",
   "overrides": {

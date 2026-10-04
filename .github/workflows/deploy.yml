@@ -1,0 +1,210 @@
+# main에 올리면: 설치 → 타입 검사 → 빌드 → 테스트(실제 Postgres) → GitHub Pages(화면) + Supabase(DB·서버 함수) 배포.
+# 결과는 ci-status 브랜치에 기록된다(비공개 저장소에서도 Claude가 git으로 확인할 수 있게).
+name: 빌드·배포
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+  SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+  APP_DOMAIN: ${{ vars.APP_DOMAIN }}
+
+jobs:
+  test:
+    name: 검사·빌드
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: chuck_test
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/chuck_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: mkdir -p ci-logs
+      - name: 의존성 설치
+        id: install
+        run: |
+          set -o pipefail
+          # package-lock.json이 package.json과 다르면 새로 맞춘다(아래 단계에서 커밋).
+          npm install --no-audit --no-fund 2>&1 | tee ci-logs/1-install.log
+      - name: 타입 검사
+        id: typecheck
+        run: |
+          set -o pipefail
+          npm run check 2>&1 | tee ci-logs/2-typecheck.log
+      - name: 빌드
+        id: build
+        if: always() && steps.install.outcome == 'success'
+        env:
+          REQUIRE_SUPABASE_CONFIG: ${{ github.event_name == 'push' && '1' || '' }}
+        run: |
+          set -o pipefail
+          npm run build 2>&1 | tee ci-logs/3-build.log
+      - name: 테스트
+        id: tests
+        if: always() && steps.build.outcome == 'success'
+        run: |
+          set -o pipefail
+          { npm test && npm run check:function; } 2>&1 | tee ci-logs/4-test.log
+      - name: 배포 파일 보관
+        if: steps.build.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: function
+          path: supabase/functions/api/index.js
+      - name: 화면 파일 보관
+        if: steps.build.outcome == 'success' && github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/client
+      - name: 잠금 파일 갱신
+        if: success() && github.event_name == 'push'
+        run: |
+          if ! git diff --quiet -- package-lock.json; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add package-lock.json
+            git commit -m "package-lock.json 갱신 [skip ci]"
+            git push
+          fi
+      - name: 기록 보관
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-test
+          path: ci-logs
+
+  deploy:
+    name: 배포
+    needs: test
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.pages.outputs.page_url }}
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: mkdir -p ci-logs
+      - name: 설정 확인
+        run: |
+          missing=""
+          for v in SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD SUPABASE_PROJECT_REF SUPABASE_URL SUPABASE_ANON_KEY; do
+            [ -z "${!v}" ] && missing="$missing $v"
+          done
+          if [ -n "$missing" ]; then echo "빠진 설정:$missing" | tee ci-logs/5-config.log; exit 1; fi
+          echo "설정 확인 완료" | tee ci-logs/5-config.log
+      - uses: actions/download-artifact@v4
+        with:
+          name: function
+          path: supabase/functions/api
+      - name: 화면 배포 (GitHub Pages)
+        id: pages
+        uses: actions/deploy-pages@v4
+      - name: 화면 주소 정리
+        id: origin
+        run: |
+          page="${{ steps.pages.outputs.page_url }}"
+          origins="$(echo "$page" | sed -E 's#^(https?://[^/]+).*#\1#')"
+          if [ -n "$APP_DOMAIN" ]; then origins="https://$APP_DOMAIN,$origins"; fi
+          echo "origins=$origins" >> "$GITHUB_OUTPUT"
+          echo "primary=${origins%%,*}" >> "$GITHUB_OUTPUT"
+          echo "화면 주소: $origins" | tee ci-logs/6-pages.log
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Supabase 연결
+        run: |
+          set -o pipefail
+          supabase link --project-ref "$SUPABASE_PROJECT_REF" -p "$SUPABASE_DB_PASSWORD" 2>&1 | tee ci-logs/7-link.log
+      - name: DB 마이그레이션
+        run: |
+          set -o pipefail
+          supabase db push -p "$SUPABASE_DB_PASSWORD" --include-all 2>&1 | tee ci-logs/8-db.log
+      - name: 로그인 설정 반영
+        continue-on-error: true
+        env:
+          APP_ORIGIN_PRIMARY: ${{ steps.origin.outputs.primary }}
+          APP_ORIGIN_EXTRA: ${{ steps.origin.outputs.origins }}
+        run: |
+          set -o pipefail
+          yes | supabase config push --project-ref "$SUPABASE_PROJECT_REF" 2>&1 | tee ci-logs/9-auth-config.log
+      - name: 서버 함수 비밀값 설정
+        env:
+          HQ_ADMIN_EMAIL: ${{ secrets.HQ_ADMIN_EMAIL }}
+          HQ_NATIVE_USER_ID: ${{ secrets.HQ_NATIVE_USER_ID }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EMAIL_FROM: ${{ vars.EMAIL_FROM }}
+        run: |
+          set -o pipefail
+          args=("APP_ORIGIN=${{ steps.origin.outputs.origins }}")
+          for v in HQ_ADMIN_EMAIL HQ_NATIVE_USER_ID RESEND_API_KEY EMAIL_FROM; do
+            [ -n "${!v}" ] && args+=("$v=${!v}")
+          done
+          supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" "${args[@]}" 2>&1 | sed -E 's/=.*/=***/' | tee ci-logs/10-secrets.log
+      - name: 서버 함수 배포
+        run: |
+          set -o pipefail
+          supabase functions deploy api --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt --use-api 2>&1 | tee ci-logs/11-function.log
+      - name: 배포 확인
+        run: |
+          set -o pipefail
+          code=$(curl -s -o ci-logs/12-health.json -w '%{http_code}' -H "apikey: $SUPABASE_ANON_KEY" -H "Origin: ${{ steps.origin.outputs.primary }}" "$SUPABASE_URL/functions/v1/api/auth")
+          echo "GET /api/auth → $code" | tee -a ci-logs/12-health.log
+          cat ci-logs/12-health.json | tee -a ci-logs/12-health.log
+          [ "$code" = "200" ]
+      - name: 기록 보관
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-deploy
+          path: ci-logs
+
+  report:
+    name: 결과 기록
+    needs: [test, deploy]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: logs-*
+          path: logs
+          merge-multiple: true
+        continue-on-error: true
+      - name: ci-status 브랜치에 기록
+        run: |
+          mkdir -p /tmp/status && cp -r logs/. /tmp/status/ 2>/dev/null || true
+          cat > /tmp/status/status.json <<EOF
+          {"sha":"${{ github.sha }}","ref":"${{ github.ref }}","event":"${{ github.event_name }}","run":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}","test":"${{ needs.test.result }}","deploy":"${{ needs.deploy.result }}","at":"$(date -u +%FT%TZ)"}
+          EOF
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin ci-status || true
+          if git rev-parse --verify -q origin/ci-status >/dev/null; then git worktree add /tmp/wt origin/ci-status && (cd /tmp/wt && git switch -c ci-status); else git worktree add --detach /tmp/wt && (cd /tmp/wt && git switch --orphan ci-status); fi
+          cd /tmp/wt && find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} + && cp -r /tmp/status/. . && git add -A && git commit -m "CI ${{ github.sha }} test=${{ needs.test.result }} deploy=${{ needs.deploy.result }}" && git push origin ci-status

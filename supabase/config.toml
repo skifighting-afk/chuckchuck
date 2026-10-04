@@ -5,3 +5,16 @@ project_id = "chuckchuck"
 # 로그인 토큰은 함수 안(app/auth-api.ts)에서 직접 확인한다. CORS 사전 요청(OPTIONS)이 통과하려면 꺼 둬야 한다.
 verify_jwt = false
 entrypoint = "./functions/api/index.js"
+
+[auth]
+# 화면 주소. 비밀번호 재설정 메일의 링크가 이 주소로 돌아온다(배포 때 GitHub Actions가 채움).
+site_url = "env(APP_ORIGIN_PRIMARY)"
+additional_redirect_urls = ["env(APP_ORIGIN_PRIMARY)/login", "env(APP_ORIGIN_PRIMARY)/**"]
+# 가입은 앱 서버(/api/auth)를 통해서만 받는다. 서버는 관리자 권한으로 계정을 만든다.
+enable_signup = false
+jwt_expiry = 3600
+
+[auth.email]
+enable_signup = true
+enable_confirmations = false
+secure_password_change = false
