@@ -1,3 +1,5 @@
+import {notifyUser} from './push-api';
+import type {PushEnv} from '../lib/webpush';
 import {documentActivity} from './documents-api';
 import {serverError} from '../lib/errors';
 import {resolveStore} from './saas-api';
@@ -9,7 +11,7 @@ import {normalizeTeam,type Member} from '../lib/team-model';
 import {standardContractDraft} from '../lib/contract-template';
 import {hasFeature,canWrite} from '../lib/plans';
 import {checkDrawing} from '../lib/signature-image';
-type Env=MailEnv&{DB:D1Database};
+type Env=MailEnv&PushEnv&{DB:D1Database};
 const json=(data:any,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 const esc=(v:unknown)=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
 const lite=(e:any)=>({...e,ownerSignature:e.ownerSignature&&{...e.ownerSignature,drawing:undefined,hasDrawing:!!e.ownerSignature.drawing},employeeSignature:e.employeeSignature&&{...e.employeeSignature,drawing:undefined,hasDrawing:!!e.employeeSignature.drawing}});
@@ -67,6 +69,7 @@ export async function contractsApi(request:Request,env:Env){
    const contractId=crypto.randomUUID();
    const inserted=await env.DB.prepare("INSERT OR IGNORE INTO contract_envelopes(id,owner_id,employee_id,employee_user_id,document_json,document_hash,owner_signature,status,created_at) VALUES(?,?,?,?,?,?,?,'waiting',?)").bind(contractId,uid,e.id,m.userId,document_json,hash,JSON.stringify(signature),now).run();
    if(!inserted.meta.changes)return json({error:'이 직원에게 이미 확인 중인 계약서가 있어요. 철회한 뒤 새로 요청해 주세요.'},409);
+   await notifyUser(env,m.userId,{title:'근로계약서 서명 요청',body:`${team!.store.name}에서 근로계약서 확인과 서명을 요청했어요.`,url:'/contracts'});
    return json({ok:true,id:contractId,message:'직원 화면에 서명 요청을 보냈어요.'},201);
   }
   const row=await env.DB.prepare('SELECT * FROM contract_envelopes WHERE id=? AND (owner_id=? OR employee_user_id=?)').bind(b.id||'',uid,uid).first<any>();

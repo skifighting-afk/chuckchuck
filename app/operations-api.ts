@@ -1,3 +1,5 @@
+import {notifyUser} from './push-api';
+import type {PushEnv} from '../lib/webpush';
 import {resolveStore} from './saas-api';
 import {serverError} from '../lib/errors';
 import {trialStatus,canWrite,hasFeature} from '../lib/plans';
@@ -12,7 +14,7 @@ const json=(v:unknown,status=200)=>Response.json(v,{status,headers:{'Cache-Contr
 const date=z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(v=>!isNaN(Date.parse(v))&&new Date(v).toISOString().slice(0,10)===v);
 const leaveSchema=z.object({employeeId:z.string().max(100),start:date,end:date,kind:z.enum(['연차','무급휴가']),days:z.number().min(.5).max(31).multipleOf(.5),reason:z.string().trim().min(1).max(500)}).refine(v=>v.end>=v.start&&(+new Date(v.end)-+new Date(v.start))/86400000<31&&v.days<=(+new Date(v.end)-+new Date(v.start))/86400000+1,'휴가 날짜와 차감 일수를 확인해 주세요.');
 const noticeSchema=z.object({title:z.string().trim().min(1).max(100),body:z.string().trim().min(1).max(3000),branchId:z.string().max(100)});
-export async function operationsApi(request:Request,env:{DB:D1Database}){
+export async function operationsApi(request:Request,env:{DB:D1Database}&PushEnv){
  const userId=request.headers.get('oai-authenticated-user-id');if(!userId)return json({error:'로그인이 필요합니다.'},401);
  try{
  const linked=await resolveStore(env.DB,userId);if(!linked)return json({error:'먼저 가게를 등록해 주세요.'},409);if(linked.access==='revoked')return json({error:'이 기능을 쓸 권한이 없어요. 사장님께 확인해 주세요.'},403);
@@ -119,6 +121,10 @@ export async function operationsApi(request:Request,env:{DB:D1Database}){
  }else return json({error:'이 작업은 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},400);
  data._operations=ops;data._audit=[...(data._audit||[]),{id:crypto.randomUUID(),at:now,actor,action:label,target,before:null,after:{id:b.id||null},reason:b.comment||b.reason||''}];
  const result=await env.DB.prepare('UPDATE stores SET data=?,version=?,updated_at=? WHERE owner=? AND version=?').bind(JSON.stringify(data),row.version+1,now,linked.owner,row.version).run();
- if(!result.meta.changes)return json({error:'동시 변경이 있습니다. 새로고침해 주세요.'},409);row.version++;return json(view());
+ if(!result.meta.changes)return json({error:'동시 변경이 있습니다. 새로고침해 주세요.'},409);row.version++;
+ // 작업 092: 휴가 처리 결과·대타 요청 알림
+ if(b.action==='reviewLeave'){const l=ops.leaves.find((x)=>x.id===b.id);const uidOf=(eid:string)=>data._members?.find((m)=>m.employeeId===eid)?.userId;if(l)await notifyUser(env,uidOf(l.employeeId),{title:'휴가 신청 '+l.status,body:`${l.start}~${l.end} ${l.kind} 신청이 ${l.status}되었어요.`,url:'/app'})}
+ if(b.action==='requestSwap'){const w=(ops.swaps||[]).at(-1);const tid=w?.targetId?data._members?.find((m)=>m.employeeId===w.targetId)?.userId:null;if(w&&tid)await notifyUser(env,tid,{title:w.kind+' 요청',body:`${w.shift.name}님이 ${w.shift.date} ${w.shift.start}~${w.shift.end} 근무 ${w.kind}를 부탁했어요.`,url:'/app'})}
+ return json(view());
  }catch(e){return serverError('operations',e,'정보를 처리하지 못했어요. 잠시 뒤 다시 시도해 주세요.')}
 }

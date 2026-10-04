@@ -1,3 +1,5 @@
+import {notifyUser} from './push-api';
+import type {PushEnv} from '../lib/webpush';
 import {resolveStore} from './saas-api';
 import {serverError,reportError} from '../lib/errors';
 import {hasFeature,canWrite} from '../lib/plans';
@@ -18,7 +20,7 @@ export function payslipState(state:any,doc:{run_key:string,revision:number}){
 }
 
 
-export async function documentsApi(request:Request,env:{DB:D1Database}){
+export async function documentsApi(request:Request,env:{DB:D1Database}&PushEnv){
  const uid=request.headers.get('oai-authenticated-user-id');if(!uid)return json({error:'로그인해 주세요.'},401);
  const url=new URL(request.url);let b:any={};
  if(request.method==='POST'){if(request.headers.get('origin')!==url.origin)return json({error:'이 화면에서 다시 시도해 주세요.'},403);const text=await request.text();if(text.length>4000)return json({error:'보낸 내용이 너무 커요. 내용을 줄여서 다시 시도해 주세요.'},413);try{b=JSON.parse(text)}catch{return json({error:'요청을 확인해 주세요.'},400)}}
@@ -41,6 +43,7 @@ export async function documentsApi(request:Request,env:{DB:D1Database}){
    SELECT ?,?,?,?,?,CAST(? AS integer),?,? WHERE EXISTS(SELECT 1 FROM stores WHERE owner=? AND (data::jsonb #> ARRAY['payrollRuns',CAST(? AS text),'locked'])='true'::jsonb AND COALESCE((data::jsonb #>> ARRAY['payrollRuns',CAST(? AS text),'revision'])::integer,1)=CAST(? AS integer))`)
    .bind(crypto.randomUUID(),uid,row.employeeId,member.userId,b.runKey,revision,JSON.stringify({text,name:row.name,month:run.month}),new Date().toISOString(),uid,b.runKey,b.runKey,revision).run();
   const sent=await env.DB.prepare('SELECT id,created_at FROM payslip_documents WHERE owner_id=? AND employee_id=? AND run_key=? AND revision=?').bind(uid,row.employeeId,b.runKey,revision).first<any>();
+  if(sent)await notifyUser(env,member.userId,{title:'급여명세서가 도착했어요',body:`${state.store.name} ${run.month} 급여명세서 · 실수령 ${Number(row.net).toLocaleString('ko-KR')}원`,url:'/app'});
   return sent?json({ok:true,id:sent.id,sentAt:sent.created_at}):json({error:'급여 확정이 바뀌었어요. 새로 확인해 주세요.'},409);
  }
  const id=b.id||url.searchParams.get('id'),kind=b.kind||url.searchParams.get('kind')||'payslip';

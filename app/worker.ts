@@ -15,13 +15,14 @@ import {accountApi,resolveStore} from './saas-api';
 import {plans,trialStatus,isPlan,canWrite,capacityError,hasFeature} from '../lib/plans';
 import {evidenceApi} from './evidence-api';
 import {manualApi} from './manual-api';
+import {pushApi,notifyUser} from './push-api';
 import {qrTokenOk} from '../lib/qr-live';
 import {qrLiveApi} from './qr-live-api';
 import {exportApi} from './export-api';
 import {withdrawApi,processDeletions} from './withdraw-api';
 import {operationsApi} from './operations-api';
 import {extendAttendance} from './attendance-store';
-type Env=AuthEnv&{HQ_ADMIN_EMAIL?:string,HQ_NATIVE_USER_ID?:string,DB:D1Database,ASSETS?:{fetch:(r:Request)=>Promise<Response>},RESEND_API_KEY?:string,EMAIL_FROM?:string};
+type Env=AuthEnv&{HQ_ADMIN_EMAIL?:string,HQ_NATIVE_USER_ID?:string,DB:D1Database,ASSETS?:{fetch:(r:Request)=>Promise<Response>},RESEND_API_KEY?:string,EMAIL_FROM?:string,VAPID_PUBLIC_KEY?:string,VAPID_PRIVATE_KEY?:string,VAPID_SUBJECT?:string};
 const json=(v:unknown,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store'}});
 import {same} from '../lib/same';
 import {findShiftConflict} from '../lib/schedule-tools';
@@ -46,6 +47,7 @@ export async function api(request:Request,env:Env){
  if(path==='/api/account')return accountApi(request,env);
  if(path==='/api/evidence')return evidenceApi(request,env);
  if(path==='/api/manual')return manualApi(request,env);
+ if(path==='/api/push')return pushApi(request,env);
  if(path==='/api/qr-live')return qrLiveApi(request,env);
  if(path==='/api/export')return exportApi(request,env);
  if(path==='/api/withdraw')return withdrawApi(request,env);
@@ -123,6 +125,8 @@ export async function api(request:Request,env:Env){
  const data=JSON.stringify({...checked.data,_attendanceQr:raw?._attendanceQr,_attendanceQrMode:raw?._attendanceQrMode,_hq:raw?._hq,_joinTerms:raw?._joinTerms,_joinCodes:raw?._joinCodes,_joinApplications:raw?._joinApplications,_account:raw?._account,_operations:raw?._operations,_manuals:raw?._manuals,_attendanceFrom:raw?._attendanceFrom,_audit:audit,_outbox:outbox,_invitations:invitations,_members:members}),updatedAt=new Date().toISOString();
  const q=version===0?env.DB.prepare('INSERT OR IGNORE INTO stores(owner,data,version,updated_at) VALUES(?,?,?,?)').bind(owner,data,1,updatedAt):env.DB.prepare('UPDATE stores SET data=?,version=?,updated_at=? WHERE owner=? AND version=?').bind(data,version+1,updatedAt,owner,version);
  if(!(await q.run()).meta.changes)return json({error:'동시에 변경된 내용이 있습니다. 새로고침해 주세요.'},409);
+ // 작업 092: 출퇴근 정정 결과를 요청한 사람에게 알림
+ if(b.action==='review'){const r=state.requests.find((x:any)=>x.id===b.id);if(r?.actor?.id&&r.actor.id!==request.headers.get('oai-authenticated-user-id'))await notifyUser(env,r.actor.id,{title:'출퇴근 정정 '+r.status,body:`${kdate(r.before.start)} 기록 정정 요청이 ${r.status}되었어요.`,url:'/app'})}
  if(b.action==='send'){
   const m=outbox.find(m=>m.id===b.id);let status='결과 확인 필요',providerId=null;
   try{const resp=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:'Bearer '+env.RESEND_API_KEY,'Content-Type':'application/json','Idempotency-Key':'onjang-'+m.id},body:JSON.stringify({from:env.EMAIL_FROM,to:[m.to],subject:m.subject,html:'<pre style="font-family:sans-serif;white-space:pre-wrap">'+esc(m.body)+'</pre>'})});const r:any=await resp.json();status=resp.ok&&r.id?'발송 접수':'발송 실패';providerId=r.id||null;}catch{}

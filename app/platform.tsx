@@ -1,4 +1,5 @@
 import {DeviceSessions} from './devices';
+import {PushToggle} from './push';
 import {TextSizeToggle,applyTextSize} from './text-size';
 applyTextSize();
 import {InstallButton,registerSW} from './install';
@@ -41,7 +42,7 @@ export default function Platform(){
  if(path==='/admin/login')return <Shell><main className="native-auth-wrap"><AuthForm role="owner" next="/admin" account={null} admin/></main></Shell>;
  if(path==='/admin')return <Shell><AdminDesk/></Shell>;
  if(path==='/verify-email')return <Shell><VerifyEmail/></Shell>;
- if(path==='/withdraw')return <Shell><DeviceSessions/><Withdraw/></Shell>;
+ if(path==='/withdraw')return <Shell><DeviceSessions/><PushToggle/><Withdraw/></Shell>;
  if(path==='/calculator')return <Shell><Calculator/></Shell>;
  if(path==='/help')return <Shell><Help/></Shell>;
  if(path==='/refund')return <Shell><RefundPolicy/></Shell>;

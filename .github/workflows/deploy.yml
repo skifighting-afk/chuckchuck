@@ -207,6 +207,11 @@ jobs:
         run: |
           set -o pipefail
           yes | supabase config push --project-ref "$SUPABASE_PROJECT_REF" 2>&1 | tee ci-logs/9-auth-config.log
+      - name: 웹 푸시 키 준비(작업 092)
+        if: steps.cfg.outputs.supabase == 'yes'
+        env:
+          VAPID_SEED: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: node scripts/vapid-derive.mjs
       - name: 서버 함수 비밀값 설정
         if: steps.cfg.outputs.supabase == 'yes'
         env:
@@ -214,10 +219,11 @@ jobs:
           HQ_NATIVE_USER_ID: ${{ secrets.HQ_NATIVE_USER_ID }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           EMAIL_FROM: ${{ vars.EMAIL_FROM }}
+          VAPID_SUBJECT: ${{ vars.VAPID_SUBJECT }}
         run: |
           set -o pipefail
           args=("APP_ORIGIN=${{ steps.origin.outputs.origins }}")
-          for v in HQ_ADMIN_EMAIL HQ_NATIVE_USER_ID RESEND_API_KEY EMAIL_FROM; do
+          for v in HQ_ADMIN_EMAIL HQ_NATIVE_USER_ID RESEND_API_KEY EMAIL_FROM VAPID_PUBLIC_KEY VAPID_PRIVATE_KEY VAPID_SUBJECT; do
             [ -n "${!v}" ] && args+=("$v=${!v}")
           done
           supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" "${args[@]}" 2>&1 | sed -E 's/=.*/=***/' | tee ci-logs/10-secrets.log

@@ -39,3 +39,4 @@ html.large-text .saas-shell main,html.large-text .t-work,html.large-text [role=d
 .transfer summary{cursor:pointer;padding:4px 0}.transfer-offer{margin-bottom:16px;border:2px solid #12634b}
 .service-notice{background:#eef5ff;color:#13325c;padding:10px 16px;font-size:14px}.service-notice summary{cursor:pointer}.service-notice p{margin:8px 0;white-space:pre-wrap}
 .empty-staff{display:flex;gap:16px;align-items:center;padding:20px;margin-bottom:16px;flex-wrap:wrap}.empty-staff h2{font-size:18px;margin:0 0 4px}.empty-staff p{margin:0 0 10px}
+.push-toggle{display:grid;gap:6px;margin:12px 0}.push-toggle small{color:#4f5a54}
