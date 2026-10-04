@@ -77,8 +77,8 @@ export async function staffJoinApi(request:Request,env:{DB:D1Database}){
   const existing=(d._joinCodes||[]).find((x)=>x.branchId===b.branchId);
   if(!existing||existing.code.length!==8){assignedCode=newJoinCode();d._joinCodes=[...(d._joinCodes||[]).filter((x)=>x.branchId!==b.branchId),{branchId:b.branchId,code:assignedCode,...(existing?{legacyCode:existing.code}:{})}];}
   // 작업 058: 새 코드로 바꾸기(이전 링크 즉시 중지), 받기 멈춤/다시 받기, 기간 설정
-  else if(b.renew===true){assignedCode=newJoinCode();d._joinCodes=d._joinCodes.map((x)=>x.branchId===b.branchId?{branchId:b.branchId,code:assignedCode,...(x.expiresAt?{expiresAt:x.expiresAt}:{})}:x);}
-  if(typeof b.paused==='boolean'||b.days!==undefined){if(b.days!==undefined&&![0,7,30].includes(b.days))return reply({error:'기간은 7일, 30일, 제한 없음 중에서 골라 주세요.'},400);d._joinCodes=d._joinCodes.map((x)=>{if(x.branchId!==b.branchId)return x;const y={...x};if(typeof b.paused==='boolean')y.paused=b.paused;if(b.days!==undefined){if(b.days)y.expiresAt=new Date(Date.now()+b.days*86400000).toISOString();else delete y.expiresAt}return y});}
+  else if(b.renew===true){const fresh=newJoinCode();assignedCode=fresh;d._joinCodes=(d._joinCodes||[]).map((x)=>x.branchId===b.branchId?{branchId:b.branchId,code:fresh,...(x.expiresAt?{expiresAt:x.expiresAt}:{})}:x);}
+  if(typeof b.paused==='boolean'||b.days!==undefined){if(b.days!==undefined&&![0,7,30].includes(b.days))return reply({error:'기간은 7일, 30일, 제한 없음 중에서 골라 주세요.'},400);d._joinCodes=(d._joinCodes||[]).map((x)=>{if(x.branchId!==b.branchId)return x;const y={...x};if(typeof b.paused==='boolean')y.paused=b.paused;if(b.days!==undefined){if(b.days)y.expiresAt=new Date(Date.now()+b.days*86400000).toISOString();else delete y.expiresAt}return y});}
   if(b.renew===true||typeof b.paused==='boolean'||b.days!==undefined)d._audit=[...(d._audit||[]),{id:crypto.randomUUID(),at:new Date().toISOString(),actor:{id:uid,name:email,email},action:b.renew?'가입 링크 새로 발급':typeof b.paused==='boolean'?(b.paused?'가입 신청 받기 멈춤':'가입 신청 다시 받기'):'가입 링크 기간 변경',target:b.branchId,before:null,after:{days:b.days??null},reason:''}].slice(-1000);
  }else if(b.action==='review'){
   const a=d._joinApplications?.find((x)=>x.id===b.id&&x.status==='pending');
@@ -111,7 +111,7 @@ export async function staffJoinApi(request:Request,env:{DB:D1Database}){
   a.reviewedAt=new Date().toISOString();
   d._audit=[...(d._audit||[]),{id:crypto.randomUUID(),at:a.reviewedAt,actor:{id:uid,name:email,email},action:b.approve?'직원 가입 승인':'직원 가입 반려',target:a.id,before:{status:'pending'},after:{status:a.status},reason:'사장님 확인'}];
  }else return reply({error:'이 방법으로는 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},400);
- const approved=b.action==='review'&&b.approve?d._joinApplications.find((x)=>x.id===b.id).userId:null;
+ const approved=b.action==='review'&&b.approve?d._joinApplications?.find((x)=>x.id===b.id)?.userId??null:null;
  // One conditional SQL write prevents cross-store simultaneous approvals.
  const r=await env.DB.prepare("UPDATE stores SET data=?,version=version+1,updated_at=? WHERE owner=? AND version=? AND (CAST(? AS text) IS NULL OR NOT EXISTS (SELECT 1 FROM stores other, jsonb_array_elements(coalesce(other.data::jsonb->'_joinCodes','[]'::jsonb)) AS codes(value) WHERE (other.owner<>? OR (codes.value->>'branchId')<>?) AND (codes.value->>'code')=?)) AND (CAST(? AS text) IS NULL OR NOT EXISTS (SELECT 1 FROM stores s WHERE s.owner=? OR EXISTS (SELECT 1 FROM jsonb_array_elements(coalesce(s.data::jsonb->'_members','[]'::jsonb)) AS m(value) WHERE (m.value->>'userId')=?)))").bind(JSON.stringify(d),new Date().toISOString(),uid,linked.row.version,assignedCode,uid,b.branchId||'',assignedCode,approved,approved,approved).run();
  return r.meta.changes?reply({ok:true}):reply({error:'계정 연결이나 신청 상태가 변경됐어요. 새로고침해 주세요.'},409);
