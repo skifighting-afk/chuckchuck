@@ -8,7 +8,7 @@ const BASE=(process.env.SMOKE_URL||'https://chukchukapp.kr').replace(/\/$/,'');
 const require=createRequire(import.meta.url);
 const axePath=(()=>{try{return require.resolve('axe-core/axe.min.js')}catch{return null}})();
 const axeSource=axePath&&existsSync(axePath)?readFileSync(axePath,'utf8'):null;
-const pages=['/start','/signup?role=owner','/login?role=owner','/employee','/demo?screen=home','/demo?screen=employees','/demo?screen=attendance','/demo?screen=schedule','/demo?screen=payroll','/demo?screen=contracts','/demo?role=employee'];
+const pages=['/start','/calculator','/signup?role=owner','/login?role=owner','/employee','/demo?screen=home','/demo?screen=employees','/demo?screen=attendance','/demo?screen=schedule','/demo?screen=payroll','/demo?screen=contracts','/demo?role=employee'];
 const problems=[];
 const browser=await chromium.launch(process.env.PW_CHROMIUM?{executablePath:process.env.PW_CHROMIUM}:{});
 // 화면의 보안 정책(CSP)이 점검 도구 주입을 막으므로, 점검 브라우저에서만 끈다.

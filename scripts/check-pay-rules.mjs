@@ -148,3 +148,22 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('every guide item links an official https source',laborGuide.every(x=>/^https:\/\/(www\.)?([a-z0-9]+\.)*(go\.kr|or\.kr)\//.test(laborSources[x[3]]||'')));
  console.log('PASS: 근로기준 안내 숫자·출처.');
 }
+
+// 작업 032: 인건비 계산기(손으로 계산한 값)
+{
+ const {estimateLabor}=await import('../dist/server/labor-estimate.js');
+ let e=estimateLabor({wage:10320,dailyHours:5,days:4,year:2026});
+ ok('calc weekly hours and 주휴 (20h → 4h)',e.weeklyHours===20&&e.juhuEligible&&e.juhuHours===4&&e.week.base===206400&&e.week.juhu===41280&&e.week.total===247680);
+ ok('calc monthly = week × 4.345',e.month.gross===Math.round(247680*4.345));
+ e=estimateLabor({wage:10320,dailyHours:3,days:4,year:2026});ok('under 15h no 주휴',!e.juhuEligible&&e.week.juhu===0);
+ e=estimateLabor({wage:12000,dailyHours:10,days:5,nightHours:4,fivePlus:true,year:2026});
+ ok('5+ overtime (2h×5 + 0) and night 50%',e.week.overtime===10*12000*0.5&&e.week.night===4*12000*0.5&&e.juhuHours===8);
+ e=estimateLabor({wage:12000,dailyHours:10,days:5,nightHours:4,fivePlus:false,year:2026});ok('under 5 no premiums',e.week.overtime===0&&e.week.night===0);
+ e=estimateLabor({wage:10320,dailyHours:8,days:5,deduction:'insurance',industrialRate:0.009,year:2026});
+ const g=e.month.gross;ok('employee insurance uses payroll rates',e.deductions.pension===Math.floor(g*0.0475/10)*10&&e.deductions.employment===Math.floor(g*0.009/10)*10&&e.deductions.care===Math.floor(e.deductions.health*0.1314/10)*10);
+ ok('employer adds stability 0.25% and industrial',e.employer.employment===Math.floor(g*0.0115/10)*10&&e.employer.industrial===Math.floor(g*0.009/10)*10&&e.month.laborCost===g+e.month.employerInsurance);
+ e=estimateLabor({wage:10320,dailyHours:3,days:4,deduction:'insurance',year:2026});ok('under 60h/month pension·health excluded',e.pensionHealthExcluded&&e.deductions.pension===0&&e.deductions.employment>0);
+ e=estimateLabor({wage:10320,dailyHours:5,days:4,deduction:'3.3',year:2026});ok('3.3% = 3% + 0.3% each floored',e.deductions.tax33===Math.floor(e.month.gross*0.03/10)*10+Math.floor(e.month.gross*0.003/10)*10);
+ ok('below minimum wage flagged',estimateLabor({wage:9000,dailyHours:5,days:4,year:2026}).belowMinimum);
+ console.log('PASS: 인건비 계산기.');
+}
