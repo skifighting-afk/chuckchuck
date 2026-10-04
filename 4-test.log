@@ -592,7 +592,20 @@ PASS 87. no change right after signing
 PASS 88. phone-only change is not a term change
 PASS 89. wage change detected with before/after
 PASS 90. change note has no blank brackets
-90/90 passed; no external email or real signatures sent.
+PASS 91. unsupported method
+PASS 92. oversized body
+PASS 93. broken JSON
+PASS 94. unknown action
+PASS 95. bad hand-signature on create
+PASS 96. incomplete contract blocked with list
+PASS 97. new waiting contract after change
+PASS 98. decline needs reason
+PASS 99. owner cannot decline for employee
+PASS 100. employee declines with reason
+PASS 101. employee cannot withdraw
+PASS 102. owner withdraws
+PASS 103. stranger cannot open
+103/103 passed; no external email or real signatures sent.
 
 ── check-pay-rules
 PASS 1. overnight shift worked hours
@@ -818,6 +831,41 @@ PASS 193. 질문 30개
 PASS 194. 질문 중복 없음
 PASS 195. 답이 모두 있음
 PASS: 도움말.
+PASS 196. 통과 기준 데이터
+PASS 197. 중복 직원
+PASS 198. 3.3%는 사업소득만
+PASS 199. 4대보험 자동은 근로소득만
+PASS 200. 공제 없음은 근거 필요
+PASS 201. 없는 지점
+PASS 202. 보험 제외는 사유 필요
+PASS 203. 이메일 중복
+PASS 204. 없는 직원의 근무
+PASS 205. 동시에 두 번 출근
+PASS 206. 잘못된 날짜 거부
+PASS 207. 휴게가 근무보다 긴 근무 거부
+PASS 208. 옛 데이터 변환: 수당·공제·메모 보존
+PASS 209. 이미 새 형식이면 그대로 검사
+PASS 210. 표준 계약서 문구에 핵심 조건
+PASS 211. 직접 쓴 계약서 + 전자서명 기록
+PASS 212. 빠진 항목 목록
+PASS 213. 퇴직금: 1년 이상·주 15시간 이상이면 대상, 평균임금과 통상임금 중 큰 값
+PASS 214. 퇴직금: 1년 미만·독립 용역은 대상 아님
+PASS 215. 통상시급: 일급인데 근무시간 없음
+PASS 216. 통상시급: 월급인데 주 소정시간 0
+PASS 217. 통상시급: 월급 주 40시간 = 월급 ÷ 209시간
+PASS 218. 사업소득 3.3% 원천징수
+PASS 219. 일급 수습 감액 계산식
+PASS 220. 지정 주휴일(월) 근무는 휴일 가산
+PASS: 급여 모듈 경계 사례.
+PASS 221. 비어 있으면 손서명 없음
+PASS 222. PNG만
+PASS 223. base64 문자 검사
+PASS 224. PNG 머리 검사
+PASS 225. 크기 제한
+PASS: 손서명 이미지 검사.
+PASS 226. 2027년은 2026 표
+PASS 227. 2024년(표 없음)도 2026 표
+PASS: 세액표 연도 대체.
 
 ── check-claims
 PASS: 과장·허위 문구 검사 (화면·홈페이지).
