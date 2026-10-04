@@ -323,8 +323,16 @@ PASS 56. repeated authentication requests limited
 92. PASS self cannot run owner action create on /api/contracts
 93. PASS stranger cannot run owner action create on /api/contracts
 94. PASS owner data unchanged by refused actions
-95. PASS retired employee loses personal access
-95/95 personal access checks passed
+95. PASS owner can export store data
+96. PASS export has store, contracts, payslips
+97. PASS export omits QR tokens and invite hashes
+98. PASS export filename is set
+99. PASS self cannot export this store
+100. PASS stranger cannot export this store
+101. PASS outsider cannot export this store
+102. PASS anonymous cannot export this store
+103. PASS retired employee loses personal access
+103/103 personal access checks passed
 
 ── check-qr-entry
 PASS 1. QR survives local sign-in return
