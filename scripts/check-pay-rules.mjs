@@ -484,3 +484,9 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('사업자번호 검증',validBizNo('123-45-67891')&&!validBizNo('123-45-67892')&&!validBizNo('12345'));
  console.log('PASS: 체험 안내·차액·환불·사업자번호.');
 }
+
+// 작업 100: 도움말 30개
+{
+ const {FAQ}=await import('../dist/server/faq.js');
+ {const all=FAQ.flatMap(g=>g.items);ok('질문 30개',all.length===30);ok('질문 중복 없음',new Set(all.map(i=>i.q)).size===30);ok('답이 모두 있음',all.every(i=>i.a.length>20));console.log('PASS: 도움말.');}
+}

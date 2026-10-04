@@ -125,7 +125,7 @@ export async function api(request:Request,env:Env){
  return json(result());
  }catch(error){return error instanceof Error&&error.name!=='PostgresError'&&!/D1|SQLITE|constraint|database|relation|syntax/i.test(error.message)?json({error:error.message},400):serverError('store',error,'처리하지 못했어요. 새로고침한 뒤 다시 시도해 주세요.',400)}
 }
-const appRoutes=new Set(['/admin','/admin/login','/','/app','/signup','/login','/account','/start','/demo','/try','/terms','/privacy','/employee','/staff-requests','/logout','/verify-email','/contracts','/manager','/qr-screen']);
+const appRoutes=new Set(['/admin','/admin/login','/','/app','/signup','/login','/account','/start','/demo','/try','/terms','/privacy','/employee','/staff-requests','/logout','/verify-email','/contracts','/manager','/qr-screen','/help']);
 export default {async fetch(request:Request,env:Env){
  const url=new URL(request.url);
  if(url.pathname.startsWith('/api/'))return api(request,env);

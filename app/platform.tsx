@@ -3,6 +3,7 @@ import {TextSizeToggle,applyTextSize} from './text-size';
 applyTextSize();
 import {InstallButton,registerSW} from './install';
 import {LiveQr} from './live-qr';
+import {Help} from './help';
 import {TrialBanner,PlanChangeQuote,RefundEstimate,TaxInvoice} from './billing';
 registerSW();
 import {ContractsDesk} from './contracts-desk';
@@ -33,12 +34,13 @@ export default function Platform(){
  const [account,setAccount]=useState<any>(null),[status,setStatus]=useState('loading'),[error,setError]=useState('');
  const path=location.pathname,query=new URLSearchParams(location.search),invite=query.get('invite'),qrEntry=attendanceQrEntry(path,location.search);
  const reload=async()=>{setError('');setStatus('loading');try{const r=await fetch('/api/account');const d:any=await r.json();if(r.status===401){setStatus('anonymous');return}if(!r.ok)throw Error(d.error);setAccount(d);setStatus('ready')}catch(e){setError(e instanceof Error?e.message:'연결할 수 없습니다.');setStatus('error')}};
- useEffect(()=>{if(!['/demo','/try','/start','/calculator','/admin','/admin/login'].includes(path))reload()},[]);
+ useEffect(()=>{if(!['/demo','/try','/start','/calculator','/help','/admin','/admin/login'].includes(path))reload()},[]);
  if(path==='/admin/login')return <Shell><main className="native-auth-wrap"><AuthForm role="owner" next="/admin" account={null} admin/></main></Shell>;
  if(path==='/admin')return <Shell><AdminDesk/></Shell>;
  if(path==='/verify-email')return <Shell><VerifyEmail/></Shell>;
  if(path==='/withdraw')return <Shell><DeviceSessions/><Withdraw/></Shell>;
  if(path==='/calculator')return <Shell><Calculator/></Shell>;
+ if(path==='/help')return <Shell><Help/></Shell>;
  if(path==='/logout')return <Logout/>;
  if(path==='/start')return <Start/>;
  if(path==='/demo'||path==='/try')return <TeamApp demo/>;
@@ -57,7 +59,7 @@ export default function Platform(){
  if(!account.onboarded&&(qrEntry||account.user.role==='employee'))return <Shell><StaffJoin returnTo={qrEntry||"/app"}/></Shell>;
  if(!account.onboarded)return <Onboarding onDone={()=>location.assign('/app')} email={account.user.email} initial={planId(query.get('plan'))||'pro'}/>;
  if(path==='/signup'||path==='/account')return <Account data={account} reload={reload}/>;
- return <>{account.access==='owner'&&<TrialBanner account={account.account}/>}{account.storeClosingAt&&<div className="closing-banner" role="status">{account.access==='owner'?<>탈퇴를 예약해 {new Date(account.storeClosingAt).toLocaleDateString('ko-KR')}에 가게 데이터가 삭제돼요. 지금은 읽기 전용이에요. <a href="/withdraw">예약 취소</a></>:<>이 가게는 {new Date(account.storeClosingAt).toLocaleDateString('ko-KR')}에 서비스에서 삭제될 예정이에요. 그 전에 <a href="/contracts">내 근로계약서와 임금명세서</a>를 내려받아 두세요.</>}</div>}<div className="account-strip"><a href="/account"><Store size={15}/>{account.storeName}<span>{account.access==='owner'?'계정·요금제':'내 계정'}</span></a>{account.hq&&<a href="/admin">본사 관리</a>}<span>{account.access==='employee'?'직원 계정':account.access==='manager'?'매니저 계정':account.account?.status==='active'?'이용 중':account.account?.status==='trialing'?`무료 체험 · ${Math.max(0,Math.ceil((+new Date(account.account.trialEndsAt)-Date.now())/86400000))}일 남음`:account.account?.status==='expired'||account.account?.status==='cancelled'?'체험 종료 · 조회 가능':'사전 운영'}</span><InstallButton/><TextSizeToggle/><a href={account.user.authMethod==='email'?'/logout':signOut} target="_top"><LogOut size={14}/>로그아웃</a></div><TeamApp/></>;
+ return <>{account.access==='owner'&&<TrialBanner account={account.account}/>}{account.storeClosingAt&&<div className="closing-banner" role="status">{account.access==='owner'?<>탈퇴를 예약해 {new Date(account.storeClosingAt).toLocaleDateString('ko-KR')}에 가게 데이터가 삭제돼요. 지금은 읽기 전용이에요. <a href="/withdraw">예약 취소</a></>:<>이 가게는 {new Date(account.storeClosingAt).toLocaleDateString('ko-KR')}에 서비스에서 삭제될 예정이에요. 그 전에 <a href="/contracts">내 근로계약서와 임금명세서</a>를 내려받아 두세요.</>}</div>}<div className="account-strip"><a href="/account"><Store size={15}/>{account.storeName}<span>{account.access==='owner'?'계정·요금제':'내 계정'}</span></a>{account.hq&&<a href="/admin">본사 관리</a>}<span>{account.access==='employee'?'직원 계정':account.access==='manager'?'매니저 계정':account.account?.status==='active'?'이용 중':account.account?.status==='trialing'?`무료 체험 · ${Math.max(0,Math.ceil((+new Date(account.account.trialEndsAt)-Date.now())/86400000))}일 남음`:account.account?.status==='expired'||account.account?.status==='cancelled'?'체험 종료 · 조회 가능':'사전 운영'}</span><a href="/help">도움말</a><InstallButton/><TextSizeToggle/><a href={account.user.authMethod==='email'?'/logout':signOut} target="_top"><LogOut size={14}/>로그아웃</a></div><TeamApp/></>;
 }
 function ConsentGate({onDone}:{onDone:()=>Promise<void>}){
  // 작업 016: 약관·처리방침이 바뀌었거나 동의 기록이 없는 계정은 다시 동의해야 계속 쓸 수 있다.

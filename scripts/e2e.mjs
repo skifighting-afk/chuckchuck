@@ -77,6 +77,11 @@ await step('작업 096: 사장님 홈에 오늘 할 일',async()=>{
  await owner.click('button.text-size-toggle[title]');if(!await owner.evaluate(()=>document.documentElement.classList.contains('large-text')))throw Error('글씨 크게 안 됨');await owner.reload({waitUntil:'networkidle'});if(!await owner.evaluate(()=>document.documentElement.classList.contains('large-text')))throw Error('글씨 크게 설정이 유지되지 않음');await owner.click('button.text-size-toggle[title]');
  const text=await owner.locator('.today-tasks').innerText();if(!/근로계약서 미체결|처리할 일이 없어요/.test(text))throw Error('오늘 할 일 내용 이상: '+text);
 });
+await step('작업 100: 도움말 검색',async()=>{
+ await owner.goto(B+'/help',{waitUntil:'networkidle'});await owner.getByRole('heading',{name:'자주 묻는 질문'}).waitFor();
+ if(await owner.locator('.help-item').count()!==30)throw Error('도움말 30개가 아니에요');
+ await owner.fill('input[type=search]','대타');await owner.getByText('같은 지점 동료가 수락하고').first().waitFor();
+});
 await step('매장 매뉴얼: 사장님이 사진과 함께 작성 → 직원이 바로 확인',async()=>{
  await owner.goto(B+'/app?screen=manual',{waitUntil:'networkidle'});await owner.click('button:has-text("새 매뉴얼")');
  await owner.fill('label:has-text("제목") input','마감 청소 순서');await owner.fill('label:has-text("1단계") textarea','바닥을 쓸고 대걸레로 닦아요');
