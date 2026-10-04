@@ -1,5 +1,5 @@
 {
- "at": "2026-10-04T22:08:33.262Z",
+ "at": "2026-10-04T22:10:56.057Z",
  "changedPercent": {
   "public-home": 0,
   "public-start": 0,
@@ -7,6 +7,7 @@
   "public-signup": 0,
   "public-calculator": 0,
   "public-help": 0,
+  "public-refund": 0,
   "demo-home": 0,
   "demo-employees": 0,
   "demo-attendance": 0,
