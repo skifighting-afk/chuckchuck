@@ -133,5 +133,11 @@ ok('in-app signing works with password without email service',(await call('/api/
 ok('app signing sends no email',mail.length===mailCount);
 const appSigned=(await call('/api/contracts?id='+appId,null,staff)).data.envelope;
 ok('app signature preserves truthful email verification state',appSigned.employeeSignature.emailVerified===false&&appSigned.delivery_status==='app_ready');
+// 작업 040: 서명 뒤 근로조건이 바뀌면 변경 계약 안내
+let emp=(await call('/api/contracts',null,owner)).data.employees.find(e=>e.id===employeeId);ok('no change right after signing',emp.change===null);
+await fixture(raw=>{raw.employees[0].phone='010-9999-9999'});emp=(await call('/api/contracts',null,owner)).data.employees.find(e=>e.id===employeeId);ok('phone-only change is not a term change',emp.change===null);
+await fixture(raw=>{raw.employees[0].wage=15000});emp=(await call('/api/contracts',null,owner)).data.employees.find(e=>e.id===employeeId);
+ok('wage change detected with before/after',emp.change&&emp.change.changes.some(c=>c.label==='임금'&&c.to.includes('15,000')));
+ok('change note has no blank brackets',emp.change.note.startsWith('■ 변경 근로계약서')&&!/\[[^\]]+\]/.test(emp.change.note));
 globalThis.fetch=originalFetch;console.log(`${number}/${number} passed; no external email or real signatures sent.`);
 await closeAll();
