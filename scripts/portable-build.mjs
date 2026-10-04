@@ -35,6 +35,7 @@ if(appDomain)await writeFile('dist/client/CNAME',appDomain.trim()+'\n');
 await mkdir('dist/server',{recursive:true});
 await build({input:'app/worker.ts',output:{file:'dist/server/index.js',format:'esm',minify:false}});
 await build({input:'lib/team-model.ts',output:{file:'dist/server/team-model.js',format:'esm',minify:false}});
+await build({input:'lib/wage-ledger.ts',output:{file:'dist/server/wage-ledger.js',format:'esm',minify:false}});
 // Supabase Edge Function (Deno). postgres 드라이버는 Deno가 npm:에서 직접 받는다.
 await build({input:'supabase/functions/api/entry.ts',external:[/^npm:/],output:{file:'supabase/functions/api/index.js',format:'esm',minify:false}});
 console.log('척척사장봇 화면·서버 함수 빌드 완료');

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {allowances,insuranceLines,splitRecord,monday} from '../lib/pay-rules.ts';
 import {calculate,normalizeTeam} from '../dist/server/team-model.js';
 import {payslipText,payslipMissing,employeeNumber} from '../lib/payslip.ts';
+import {wageLedger,ledgerCsv,csvCell} from '../dist/server/wage-ledger.js';
 
 let n=0;const ok=(name,v)=>{assert.ok(v,name);console.log(`PASS ${++n}. ${name}`)};
 const kst=(day,hm)=>new Date(`${day}T${hm}:00+09:00`).toISOString();
@@ -113,3 +114,24 @@ if(now.getUTCMonth()===11&&!hasRatesFor(thisYear+1))console.log(`WARN: ${thisYea
 team.attendance=[];Object.assign(e,{wage:20000,payType:'시급',taxMode:'직접 입력'});
 ok('unregistered year warns on payroll',calculate(team,'2099-01').find(x=>x.employeeId===e.id).warnings.some(w=>w.includes('2099년')));
 console.log('PASS: 요율 연간 갱신 경고.');
+
+// 작업 022: 임금대장
+{
+ const st={branches:[{id:'b1',name:'본점'},{id:'b2',name:'2호점'}],employees:[{id:'emp-aaaa1111',name:'김직원',joined:'2026-01-02',role:'홀',employment:'단시간',payType:'시급',wage:11000,birthMonth:'2000-05',contract:{duties:'서빙'}},{id:'emp-bbbb2222',name:'=HYPERLINK("x")',joined:'2026-02-01',role:'주방',payType:'월급',wage:2200000,contract:{}}],
+  payrollRuns:{
+   '2026-03:b1':{locked:true,month:'2026-03',branch:'b1',payDate:'2026-04-10',revision:2,at:'2026-04-01T00:00:00Z',rows:[{employeeId:'emp-aaaa1111',name:'김직원',hours:100.5,days:20,earnings:[{name:'기본급',amount:1105500,formula:'100.50시간 × 11,000원'},{name:'연장근로 가산',amount:22000,formula:'4.00시간(하루 8시간·주 40시간 초과) × 11,000원 × 50%'},{name:'야간근로 가산',amount:11000,formula:'2.00시간(22~06시) × 11,000원 × 50%'}],deductions:[{name:'고용보험',amount:10240,formula:'x'}],gross:1138500,deduction:10240,net:1128260}]},
+   '2026-04:b2':{locked:false,month:'2026-04',branch:'b2',payDate:'2026-05-10',revision:1,rows:[{employeeId:'emp-bbbb2222',name:'=HYPERLINK("x")',hours:160,days:20,earnings:[{name:'기본급',amount:2200000,formula:'월급'}],deductions:[],gross:2200000,deduction:0,net:2200000}]},
+   '2025-12:b1':{locked:true,month:'2025-12',branch:'b1',payDate:'2026-01-10',rows:[{employeeId:'emp-aaaa1111',name:'김직원',hours:10,days:2,earnings:[],deductions:[],gross:0,deduction:0,net:0}]}}};
+ const all=wageLedger(st,'2026-01','2026-12');
+ ok('ledger only includes requested period',all.length===2&&all.every(e=>e.month.startsWith('2026')));
+ ok('ledger filters by branch',wageLedger(st,'2026-01','2026-12','b1').length===1);
+ const a=all[0];
+ ok('ledger has 시행령 27조 items',a.name==='김직원'&&a.number===employeeNumber('emp-aaaa1111')&&a.birthMonth==='2000-05'&&a.joined==='2026-01-02'&&a.duty.includes('서빙')&&a.payBasis==='시급 11,000원'&&a.days===20&&a.hours===100.5);
+ ok('ledger extracts overtime and night hours',a.overtimeHours===4&&a.nightHours===2&&a.holidayHours===0);
+ ok('ledger marks reopened month',all[1].status==='확정 해제 중'&&a.status==='확정'&&a.revision===2);
+ const csv=ledgerCsv(all);
+ ok('ledger csv has BOM and per-item columns',csv.startsWith('\uFEFF')&&csv.includes('"[지급] 연장근로 가산"')&&csv.includes('"[공제] 고용보험"')&&csv.includes('"10240"'));
+ ok('ledger csv neutralizes formulas',!csv.includes(',"=HYPERLINK')&&csv.includes(`"'=HYPERLINK(""x"")"`));
+ ok('csv cell escapes leading minus and quotes',csvCell('-1')==='"\'-1"'&&csvCell('a"b')==='"a""b"');
+ console.log('PASS: 임금대장(근로기준법 제48조, 시행령 제27조).');
+}
