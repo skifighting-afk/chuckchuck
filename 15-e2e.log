@@ -1,0 +1,19 @@
+
+> chuckchuck@0.1.0 e2e
+> SUPABASE_URL=http://localhost:8790 SUPABASE_ANON_KEY=anon-test-key APP_DOMAIN= node scripts/portable-build.mjs && node scripts/e2e.mjs
+
+척척사장봇 화면·서버 함수 빌드 완료
+PASS 1. 사장님 가입 (약관 동의) (931ms)
+PASS 2. 가게 만들기 (처리위탁 동의, 14일 체험) (341ms)
+PASS 3. 가입용 근로조건 정하고 가입 링크 만들기 (799ms)
+PASS 4. 직원이 링크로 가입하고 합류 신청 (휴대폰) (1121ms)
+PASS 5. 사장님이 합류 신청 수락 → 직원 화면 열림 (288ms)
+PASS 6. 매장 QR로 출근·퇴근 (QR 없이 누르면 기록 안 됨) (1961ms)
+PASS 7. 직원 출퇴근 정정 요청 (117ms)
+PASS 8. 사장님 정정 승인 → 이력 기록 (668ms)
+PASS 9. 작업 052: 안드로이드 휴대폰에서 매장 QR 사진으로 출근·퇴근 (1255ms)
+PASS 10. 급여 확정 (지급일·확인 체크) (989ms)
+PASS 11. 명세서 보내기 → 직원이 열어 봄 (확인 기록) (987ms)
+PASS 12. 근로계약서: 사장님 서명 → 직원 서명 → 사본 (2222ms)
+PASS 13. 다시 로그인 (로그아웃 후) (932ms)
+E2E 13개 흐름 통과
