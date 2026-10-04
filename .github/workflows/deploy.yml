@@ -46,8 +46,8 @@ jobs:
         id: install
         run: |
           set -o pipefail
-          # package-lock.json이 package.json과 다르면 새로 맞춘다(아래 단계에서 커밋).
-          npm install --no-audit --no-fund 2>&1 | tee ci-logs/1-install.log
+          # 작업 008: 잠금 파일 그대로 설치(package.json과 다르면 실패 → 로컬에서 npm install 후 lock 커밋)
+          npm ci --no-audit --no-fund 2>&1 | tee ci-logs/1-install.log
       - name: 타입 검사
         id: typecheck
         run: |
@@ -78,16 +78,6 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: dist/client
-      - name: 잠금 파일 갱신
-        if: success() && github.event_name == 'push'
-        run: |
-          if ! git diff --quiet -- package-lock.json; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add package-lock.json
-            git commit -m "package-lock.json 갱신 [skip ci]"
-            git push
-          fi
       - name: 기록 보관
         if: always()
         uses: actions/upload-artifact@v4
@@ -116,7 +106,7 @@ jobs:
       - run: mkdir -p ci-logs
       - name: 의존성 설치
         run: |
-          npm install --no-audit --no-fund >/dev/null
+          npm ci --no-audit --no-fund >/dev/null
           npm install --no-save --no-audit --no-fund playwright@1.56.0 >/dev/null
           npx playwright install --with-deps chromium >/dev/null
       - name: 사장님·직원 핵심 흐름 (작업 080·052)
