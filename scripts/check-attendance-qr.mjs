@@ -6,7 +6,7 @@ const RealDate=Date;let clock=RealDate.now();globalThis.Date=class extends RealD
 const {env,headersFor}=await authedTest();
 async function call(user,route,body,method){clock+=1000;const r=await api(new Request('https://qa.local'+route,{method:method||(body?'POST':'GET'),headers:{origin:'https://qa.local',...(await headersFor(user))},...(body?{body:JSON.stringify(body)}:{})}),env);return {status:r.status,data:await r.json()}}
 let failures=0,n=0;function test(name,value){n++;console.log(`${value?'PASS':'FAIL'} ${n}. ${name}`);if(!value)failures++;}
-await call('owner','/api/account',{action:'onboard',storeName:'검수',branchName:'본점',ownerName:'대표',plan:'multi',storeSlots:2,acknowledged:true,dpaAgreed:true});
+await call('owner','/api/account',{action:'onboard',storeName:'검수',branchName:'본점',ownerName:'대표',plan:'pro',storeSlots:2,acknowledged:true,dpaAgreed:true});
 let state=(await call('owner','/api/store')).data;
 // Use real join API for a linked synthetic employee.
 await call('owner','/api/staff-join',{action:'code',branchId:'branch-main',version:state.version});

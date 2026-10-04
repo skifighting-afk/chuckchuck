@@ -5,7 +5,7 @@ import {authedTest,TEST_PASSWORD} from './test-auth.mjs';import {closeAll} from 
 const T=await authedTest({domain:'example.invalid'}),{q,sql,headersFor,id,auth}=T,env=T.env;
 let n=0;function ok(label,value){assert.ok(value,label);console.log(`${++n}. PASS ${label}`)}
 async function call(user,path,body,method){const r=await api(new Request('https://qa.local'+path,{method:method||(body?'POST':'GET'),headers:{origin:'https://qa.local',...(await headersFor(user))},...(body?{body:JSON.stringify(body)}:{})}),env);return {status:r.status,body:await r.json().catch(()=>null)}}
-const onboard=user=>call(user,'/api/account',{action:'onboard',storeName:'탈퇴 검수',branchName:'본점',ownerName:'가상대표',plan:'starter',acknowledged:true,dpaAgreed:true});
+const onboard=user=>call(user,'/api/account',{action:'onboard',storeName:'탈퇴 검수',branchName:'본점',ownerName:'가상대표',plan:'pro',acknowledged:true,dpaAgreed:true});
 const withdraw=(user,extra={})=>call(user,'/api/withdraw',{action:'withdraw',password:TEST_PASSWORD,confirm:'탈퇴',...extra});
 
 ok('owner store created',(await onboard('boss')).status===201);

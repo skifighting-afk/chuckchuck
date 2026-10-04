@@ -65,7 +65,7 @@ export async function staffJoinApi(request:Request,env:{DB:D1Database}){
  const d=JSON.parse(linked.row.data);let assignedCode:string|null=null;
  if(b.version!==linked.row.version)return reply({error:'새 신청이 도착했거나 내용이 변경됐어요. 새로고침 후 확인해 주세요.'},409);
  if(b.action==='terms'){
-  if(!canWrite(d._account)||!hasFeature(d._account,'contracts'))return reply({error:'가입 시 근로계약 확인은 사장님 5부터 이용할 수 있어요.'},403);
+  if(!canWrite(d._account)||!hasFeature(d._account,'contracts'))return reply({error:'가입 시 근로계약 확인은 베이직부터 이용할 수 있어요.'},403);
   if(!d.branches.some((x:any)=>x.id===b.branchId))return reply({error:'매장을 확인해 주세요.'},400);
   const fields=joinTermsSchema.parse(b.fields);
   d._audit=[...(d._audit||[]),{id:crypto.randomUUID(),at:new Date().toISOString(),actor:{id:uid,name:email,email},action:'가입용 근로조건 변경',target:b.branchId,before:null,after:fields,reason:'사장님 설정'}];
@@ -79,7 +79,7 @@ export async function staffJoinApi(request:Request,env:{DB:D1Database}){
   if(!a||typeof b.approve!=='boolean')return reply({error:'처리할 신청을 찾지 못했어요. 목록을 새로고침해 주세요.'},409);
   if(b.approve){
    if(!canWrite(d._account))return reply({error:'현재 요금제의 저장 가능 상태를 확인해 주세요.'},403);
-   if(a.terms&&!hasFeature(d._account,'contracts'))return reply({error:'계약 내용을 반영하려면 사장님 5 이상이 필요해요. 계정·요금제를 확인해 주세요.'},403);
+   if(a.terms&&!hasFeature(d._account,'contracts'))return reply({error:'계약 내용을 반영하려면 베이직 이상이 필요해요. 계정·요금제를 확인해 주세요.'},403);
    if(await resolveStore(env.DB,a.userId))return reply({error:'신청한 분이 이미 다른 가게에 연결돼 있어요. 그 가게에서 연결을 해제해야 해요.'},409);
    if(a.terms&&a.terms.revision!==(d._joinTerms||[]).find((x:any)=>x.branchId===a.branchId)?.revision)return reply({error:'신청 뒤 근로조건이 바뀌었어요. 직원이 신청을 취소하고 새 조건을 확인해 다시 신청하도록 안내해 주세요.'},409);
    let employee;

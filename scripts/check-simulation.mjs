@@ -8,7 +8,7 @@ const account=(u,b)=>call(u,'/api/account',b),join=(u,b)=>call(u,'/api/staff-joi
 for(const p of ['/app','/signup?plan=free','/employee?code=example','/staff-requests','/app/','/start','/try','/account']){const r=await worker.fetch(new Request('https://test.local'+p),{DB,ASSETS:{fetch:async r=>new Response(new URL(r.url).pathname,{status:new URL(r.url).pathname==='/'?200:404})}});ok('entry route '+p,r.status,200)}
 ok('unknown route stays 404',(await worker.fetch(new Request('https://test.local/missing'),{DB,ASSETS:{fetch:async()=>new Response('',{status:404})}})).status,404);
 ok('anonymous denied',(await join('')).status,401);
-ok('free store creation',(await account('boss',{action:'onboard',storeName:'테스트',branchName:'본점',ownerName:'대표',plan:'free',acknowledged:true,dpaAgreed:true})).status,201);
+ok('free store creation',(await account('boss',{action:'onboard',storeName:'테스트',branchName:'본점',ownerName:'대표',plan:'basic',acknowledged:true,dpaAgreed:true})).status,201);
 let j=await join('boss');ok('owner role',j.data.owner,true);
 ok('make shared code',(await join('boss',{action:'code',branchId:'branch-main',version:j.data.version})).status,200);
 j=await join('boss');const code=j.data.codes[0].code;ok('one branch code',j.data.codes.length,1);
@@ -24,10 +24,8 @@ ok('stale approval blocked',(await join('boss',{action:'review',id,approve:true,
 ok('owner accepts',(await join('boss',{action:'review',id,approve:true,payType:'시급',wage:10320,version:j.data.version})).status,200);
 ok('employee connected',(await join('staff')).data.connected,true);
 let s=await store('staff');ok('employee access',s.data.access,'employee');ok('wage set by owner on approval',s.data.state.employees[0].wage,10320);
-ok('employee cannot change account',(await account('staff',{action:'changePlan',plan:'team'})).status,403);
+ok('employee cannot change account',(await account('staff',{action:'changePlan',plan:'pro'})).status,403);
 let boss=await store('boss'),eid=boss.data.state.employees[0].id;
-ok('free contract confirmation blocked',(await store('boss',{action:'contract',id:eid,reason:'테스트',version:boss.data.version})).status,400);
-ok('free contract queue blocked',(await store('boss',{action:'queueContract',id:eid,version:boss.data.version})).status,400);
 ok('ordinary save preserves joins',(await store('boss',{state:boss.data.state,version:boss.data.version},'PUT')).status,200);
 ok('join code survives save',(await join('boss')).data.codes[0].code,code);
 ok('staff stays linked',(await store('staff')).status,200);
@@ -35,7 +33,7 @@ ok('second request',(await join('staff2',{action:'apply',code,name:'직원2',pho
 j=await join('boss');ok('reject request',(await join('boss',{action:'review',id:j.data.requests[0].id,approve:false,version:j.data.version})).status,200);
 ok('rejected cannot access',(await store('staff2')).status,409);ok('rejected own status',(await join('staff2')).data.requests[0].status,'rejected');
 ok('retry after rejection',(await join('staff2',{action:'apply',code,name:'직원2',phone:'01000000000'})).status,200);
-ok('upgrade starter',(await account('boss',{action:'changePlan',plan:'starter'})).status,200);
+ok('upgrade starter',(await account('boss',{action:'changePlan',plan:'pro'})).status,200);
 boss=await store('boss');ok('paid contract queue allowed',(await store('boss',{action:'queueContract',id:eid,version:boss.data.version})).status,200);
 ok('employee cannot use manager API',(await call('staff','/api/manager')).status,403);
 boss=await store('boss');boss.data.state.employees[0].access='중간관리자';boss.data.state.employees[0].managerPermissions=['schedule','notices'];

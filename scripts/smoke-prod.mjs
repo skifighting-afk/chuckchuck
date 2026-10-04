@@ -46,7 +46,7 @@ try{
  const errors=[];p.on('pageerror',e=>errors.push(e.message));
  p.setDefaultTimeout(20000);
  // 1) 가입
- await p.goto(BASE+'/signup?role=owner&plan=free',{waitUntil:'networkidle'});
+ await p.goto(BASE+'/signup?role=owner&plan=basic',{waitUntil:'networkidle'});
  await p.fill('input[placeholder="실명을 입력해 주세요"]','점검 사장');
  await p.fill('input[type=email]',email);
  await p.fill('input[aria-label="비밀번호"]',password);
@@ -57,7 +57,7 @@ try{
  await p.locator('.industry-picker label').first().click();
  await p.click('text=다음으로 →');
  for(const box of await p.getByRole('checkbox').all())await box.click();
- await p.click('text=무료로 우리 가게 열기');
+ await p.click('text=30일 무료 체험 시작');
  await p.waitForURL(/\/app/);await p.getByText(store).first().waitFor();
  log('가입·가게 만들기 OK');
  // 3) 로그아웃

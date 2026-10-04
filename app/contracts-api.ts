@@ -45,7 +45,7 @@ export async function contractsApi(request:Request,env:Env){
   if(!await authLimit(env,'contract:'+uid,40,15*60000))return json({error:'시도가 많아요. 잠시 뒤 다시 해 주세요.'},429);
   if(b.action==='create'){
    if(!own||!team)return json({error:'계약서 요청은 사장님만 할 수 있어요. 사장님께 요청해 주세요.'},403);
-   if(!hasFeature(raw._account,'contracts')||!canWrite(raw._account))return json({error:'전자계약은 사장님 5 이상에서 이용할 수 있어요.'},403);
+   if(!hasFeature(raw._account,'contracts')||!canWrite(raw._account))return json({error:'전자계약은 베이직 이상에서 이용할 수 있어요.'},403);
    const e=team.employees.find(e=>e.id===b.employeeId&&e.status!=='퇴사'),m=raw._members?.find((m:any)=>m.employeeId===b.employeeId&&m.userId!==uid);
    if(!e||!m)return json({error:'직원의 가입 신청을 먼저 수락해 계정을 연결해 주세요.'},409);
    if(typeof b.text!=='string'||b.text.trim().length<200||b.text.length>30000||/\[[^\]]+\]/.test(b.text))return json({error:'계약서의 대괄호 빈칸을 모두 채우고 실제 조건을 확인해 주세요.'},400);

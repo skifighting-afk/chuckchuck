@@ -33,7 +33,7 @@ export async function managerApi(request:Request,env:{DB:D1Database}){
    d.attendance=d.attendance.map((a:any)=>a.id===r.before.id?r.after:a);
   }before=r.before;after=b.approve?r.after:r.before;r.status=b.approve?'승인':'반려';r.reviewer=actor;r.reviewedAt=now;target=r.id;
  }else if(b.action==='reviewLeave'){
-  if(!hasFeature(d._account,'leave'))return json({error:'휴가 승인은 사장님 5부터 이용할 수 있어요.'},403);
+  if(!hasFeature(d._account,'leave'))return json({error:'휴가 승인은 베이직부터 이용할 수 있어요.'},403);
   const l=ops.leaves.find((l:any)=>l.id===b.id&&l.status==='승인 대기');if(!l||!ids.has(l.employeeId)||l.employeeId===self.id)return json({error:'소속 지점 다른 직원의 신청만 승인할 수 있어요. 본인 신청은 사장님이 승인해요.'},403);
   if(typeof b.approve!=='boolean'||typeof b.comment!=='string'||!b.comment.trim()||b.comment.length>500)return json({error:'처리 사유를 입력해 주세요.'},400);
   const employee=staff.find((e:any)=>e.id===l.employeeId);if(b.approve){if(d.shifts.some((s:any)=>s.employeeId===l.employeeId&&s.date>=l.start&&s.date<=l.end))return json({error:'휴가 기간에 근무가 있어요. 사장님께 근무 조정을 요청하세요.'},409);if(l.kind==='연차'){if(employee.leaveBalance<l.days)return json({error:'남은 연차가 부족해요. 날짜를 줄이거나 잔여일을 확인해 주세요.'},409);employee.leaveBalance-=l.days;}}

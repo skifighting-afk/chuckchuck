@@ -4,7 +4,7 @@ import {authedTest} from './test-auth.mjs';import {closeAll} from './test-db.mjs
 const T=await authedTest({domain:'example.invalid'}),{q,headersFor,id}=T,env=T.env,DB=env.DB;
 let n=0;function ok(label,value,expected=true){assert.deepEqual(value,expected,label);console.log(`${++n}. PASS ${label}`)}
 async function call(user,path='/api/store',body,method){const r=await api(new Request('https://qa.local'+path,{method:method||(body?'POST':'GET'),headers:{origin:'https://qa.local',...(await headersFor(user))},...(body?{body:JSON.stringify(body)}:{})}),env);return{status:r.status,body:await r.json()}}
-await call('boss','/api/account',{action:'onboard',storeName:'개인 화면 검수',branchName:'본점',ownerName:'가상대표',plan:'multi',storeSlots:2,acknowledged:true,dpaAgreed:true});
+await call('boss','/api/account',{action:'onboard',storeName:'개인 화면 검수',branchName:'본점',ownerName:'가상대표',plan:'pro',storeSlots:2,acknowledged:true,dpaAgreed:true});
 const owner=(await call('boss')).body;
 await call('boss','/api/staff-join',{action:'code',branchId:'branch-main',version:owner.version});
 const code=(await call('boss','/api/staff-join')).body.codes[0].code;
@@ -72,7 +72,7 @@ ok('revoked schedule permission removes branch schedules',(await call('self','/a
 // 작업 059: 모든 서버 경로 전수 점검 — 직원·외부인·익명이 남의 개인정보를 받지 못하고, 사장님 전용 동작을 못 한다.
 {
  d=await read();const peerEmp=d.employees.find(e=>e.id===b);peerEmp.phone='010-PEER-0000';peerEmp.address='타인주소비밀';peerEmp.wage=77777;peerEmp.email='peer-secret@example.invalid';await save(d);
- await call('stranger','/api/account',{action:'onboard',storeName:'남의가게',branchName:'본점',ownerName:'남사장',plan:'free',acknowledged:true,dpaAgreed:true});
+ await call('stranger','/api/account',{action:'onboard',storeName:'남의가게',branchName:'본점',ownerName:'남사장',plan:'basic',acknowledged:true,dpaAgreed:true});
  const secrets=['010-PEER-0000','타인주소비밀','peer-secret@example.invalid','사장전용메모','private-accountant@example.invalid','사장내부정보',b,c];
  const routes=['/api/store','/api/account','/api/operations','/api/documents','/api/documents?kind=payslip','/api/contracts','/api/manager','/api/staff-join','/api/evidence?leave=leave-1','/api/evidence?leave=leave-0','/api/admin','/api/auth','/api/join'];
  for(const route of routes){
@@ -85,7 +85,7 @@ ok('revoked schedule permission removes branch schedules',(await call('self','/a
    ok(`${who} sees no colleague secrets: ${route}`,secrets.filter(x=>text.includes(x)&&!allowed.includes(x)),[]);
   }
  }
- const ownerOnly=[['/api/store',{action:'finalize',month:'2026-10',branch:'branch-main',payDate:'2026-10-25'}],['/api/store',{action:'reopen',key:'2026-09:branch-main',reason:'x'}],['/api/store',{action:'invite',id:b}],['/api/store',{action:'attendanceQr',branchId:'branch-main'}],['/api/staff-join',{action:'code',branchId:'branch-main'}],['/api/documents',{action:'send',runKey:'2026-09:branch-main',employeeId:b}],['/api/account',{action:'changePlan',plan:'multi'}],['/api/contracts',{action:'create',employeeId:b,text:'x'.repeat(300),consent:true,name:'x'}]];
+ const ownerOnly=[['/api/store',{action:'finalize',month:'2026-10',branch:'branch-main',payDate:'2026-10-25'}],['/api/store',{action:'reopen',key:'2026-09:branch-main',reason:'x'}],['/api/store',{action:'invite',id:b}],['/api/store',{action:'attendanceQr',branchId:'branch-main'}],['/api/staff-join',{action:'code',branchId:'branch-main'}],['/api/documents',{action:'send',runKey:'2026-09:branch-main',employeeId:b}],['/api/account',{action:'changePlan',plan:'pro'}],['/api/contracts',{action:'create',employeeId:b,text:'x'.repeat(300),consent:true,name:'x'}]];
  for(const [route,body] of ownerOnly){
   // 직원(self)은 사장님 전용 동작을 못 한다. 다른 가게 사장님(stranger)은 자기 가게 설정은 바꿀 수 있지만, 이 가게의 직원·급여를 건드리는 동작은 실패해야 한다.
   const targetsThisStore=JSON.stringify(body).includes(b)||JSON.stringify(body).includes('2026-09:branch-main');

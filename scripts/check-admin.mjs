@@ -7,7 +7,7 @@ ok('anonymous admin denied',(await call('','/api/admin')).status,403);
 ok('forged identity headers cannot open admin',(await call('','/api/admin',null,{headers:{'oai-authenticated-user-id':'hq','oai-authenticated-user-email':'hq@example.invalid'}})).status,403);
 ok('customer admin denied',(await call('customer','/api/admin')).status,403);
 ok('unconfigured admin denied',(await call('hq','/api/admin',null,{env:{...env,HQ_ADMIN_EMAIL:undefined}})).status,403);
-await call('customer','/api/account',{action:'onboard',storeName:'고객 가게',branchName:'본점',ownerName:'가상대표',plan:'free',acknowledged:true,dpaAgreed:true});
+await call('customer','/api/account',{action:'onboard',storeName:'고객 가게',branchName:'본점',ownerName:'가상대표',plan:'basic',acknowledged:true,dpaAgreed:true});
 ok('HQ sees summary',(await call('hq','/api/admin')).data.total,1);
 ok('customer has no HQ entry',(await call('customer','/api/account')).data.hq,false);
 ok('HQ flag server assigned',(await call('hq','/api/account')).data.hq,true);
@@ -25,10 +25,13 @@ await q('INSERT INTO stores VALUES(?,?,?,?)',id('legacy'),JSON.stringify(seed())
 const fixture=(await call('legacy','/api/store')).data.state;
 const employee=(i)=>({...structuredClone(fixture.employees[0]),id:'capacity-'+i,name:'가상'+i,email:'capacity'+i+'@example.invalid',phone:'01000000000',branchId:'branch-main',status:'재직',contract:{...fixture.employees[0].contract,employer:'가상',workplace:'본점'}});
 customer=await call('customer','/api/store');customer.data.state.employees=[0,1,2].map(employee);
-let saved=await call('customer','/api/store',{state:customer.data.state,version:customer.data.version},{method:'PUT'});ok('free three employees save',saved.status,200);
+let saved=await call('customer','/api/store',{state:customer.data.state,version:customer.data.version},{method:'PUT'});ok('three employees save',saved.status,200);
 let fourth=await call('customer','/api/store',{state:{...saved.data.state,employees:[...saved.data.state.employees,employee(3)]},version:saved.data.version},{method:'PUT'});
-ok('fourth employee capacity dialog code',fourth.data.code,'CAPACITY_EXCEEDED');
-ok('over limit never persists',(await call('customer','/api/store')).data.state.employees.length,3);
+ok('no employee limit (fourth employee saves)',fourth.status,200);
+// 지점 수는 고른 요금(지점 1곳)을 넘으면 저장하지 않는다
+const extra=await call('customer','/api/store',{state:{...fourth.data.state,branches:[...fourth.data.state.branches,{id:'b2',name:'2호점',address:''}]},version:fourth.data.version},{method:'PUT'});
+ok('branch over chosen count gets capacity code',extra.data.code,'CAPACITY_EXCEEDED');
+ok('over branch count never persists',(await call('customer','/api/store')).data.state.branches.length,1);
 ok('checkout cannot fake payment',(await call('customer','/api/account',{action:'checkout'})).data.code,'BILLING_NOT_READY');
 console.log('HQ/capacity checks: '+count+' passed');
 await closeAll();

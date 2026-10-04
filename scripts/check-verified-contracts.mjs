@@ -28,7 +28,7 @@ await q('UPDATE app_users SET email_verified=1 WHERE email=?','owner@example.inv
 failMail=true;r=await call('/api/auth',{action:'sendVerification'},other,configured);ok('provider failure has no usable verification token',r.status===503&&!await q('SELECT * FROM auth_verifications WHERE email=?','other@example.invalid').first());failMail=false;
 // 비밀번호 찾기 메일은 이제 Supabase Auth가 보낸다(앱의 Resend 발송 아님). 돌아올 주소가 이 사이트의 재설정 화면인지 확인.
 {const before=mail.length;const r=await call('/api/auth',{action:'recover',email:'staff@example.invalid'},'',configured);const rec=auth.calls.filter(c=>c.path==='/recover').at(-1);ok('recovery mail is delegated to Supabase Auth with same-site reset link',r.status===200&&mail.length===before&&rec.body.email==='staff@example.invalid'&&new URLSearchParams(rec.search).get('redirect_to')==='https://qa.local/login?mode=reset');}
-await call('/api/account',{action:'onboard',storeName:'가상 계약 검수',branchName:'본점',ownerName:'가상 대표',plan:'starter',acknowledged:true,dpaAgreed:true},owner);
+await call('/api/account',{action:'onboard',storeName:'가상 계약 검수',branchName:'본점',ownerName:'가상 대표',plan:'pro',acknowledged:true,dpaAgreed:true},owner);
 let codeState=(await call('/api/staff-join',null,owner)).data;await call('/api/staff-join',{action:'code',branchId:'branch-main',version:codeState.version},owner);codeState=(await call('/api/staff-join',null,owner)).data;
 await call('/api/staff-join',{action:'apply',code:codeState.codes[0].code,name:'가상 직원',phone:'01000000000',profile:{address:'가상 주소',joined:'2026-09-23',note:'테스트'}},staff);
 codeState=(await call('/api/staff-join',null,owner)).data;assert.equal((await call('/api/staff-join',{action:'review',approve:true,payType:'시급',wage:10320,id:codeState.requests[0].id,version:codeState.version},owner)).status,200);
@@ -75,7 +75,7 @@ await call('/api/contracts',{action:'receipt',id,version:detail.version,confirme
 const events=(await call('/api/contracts?id='+id,null,owner)).data.events;ok('signature and delivery history retained',events.length>=6&&events[0].status==='waiting');
 r=await call('/api/contracts?id='+id+'&download=1',null,staff);ok('download contains both names, timestamps and hash',r.status===200&&r.data.includes('가상 대표')&&r.data.includes('가상 직원')&&r.data.includes(detail.document_hash)&&r.headers.get('content-disposition').startsWith('attachment'));
 await fixture(raw=>{raw.employees[0].status='퇴사';raw._members=[]});ok('former employee can retain previously signed copy',(await call('/api/contracts?id='+id+'&download=1',null,staff)).status===200);
-await fixture(raw=>{raw._account.plan='free'});ok('free plan cannot create new electronic contract',(await call('/api/contracts',create,owner)).status===403);ok('free plan retains old copies',(await call('/api/contracts?id='+id+'&download=1',null,owner)).status===200);
+await fixture(raw=>{raw._account.status='cancelled'});ok('ended trial cannot create new electronic contract',(await call('/api/contracts',create,owner)).status===403);ok('ended trial retains old copies',(await call('/api/contracts?id='+id+'&download=1',null,owner)).status===200);
 ok('cross origin contract mutation rejected',(await call('/api/contracts',create,owner,base,{origin:'https://bad.invalid'})).status===403);
 
 const documentAction=(action,token=staff,extra={})=>call('/api/documents',{kind:'contract',id,action,...extra},token);
@@ -87,7 +87,7 @@ ok('download request does not pretend saved',!(await documentAction('download'))
 ok('explicit employee save is recorded',(await documentAction('saved')).data.activity.saved_at);
 ok('owner sees employee document activity',(await call('/api/contracts?id='+id,null,owner)).data.envelope.activity.saved_at);
 const staffId=(await q('SELECT id FROM app_users WHERE email=?','staff@example.invalid').first()).id;
-await fixture(raw=>{raw._account.plan='multi';raw.employees[0].status='재직';raw._members=[{employeeId,userId:staffId}];raw.payrollRuns={'2026-09:branch-main':{locked:true,month:'2026-09',payDate:'2026-09-25',revision:1,rows:[{employeeId,name:'Synthetic staff',earnings:[{name:'Base',amount:100,formula:'1 x 100'}],deductions:[],gross:100,deduction:0,net:100}]}}});
+await fixture(raw=>{raw._account.plan='pro';raw._account.status='trialing';raw.employees[0].status='재직';raw._members=[{employeeId,userId:staffId}];raw.payrollRuns={'2026-09:branch-main':{locked:true,month:'2026-09',payDate:'2026-09-25',revision:1,rows:[{employeeId,name:'Synthetic staff',earnings:[{name:'Base',amount:100,formula:'1 x 100'}],deductions:[],gross:100,deduction:0,net:100}]}}});
 const send={action:'send',runKey:'2026-09:branch-main',employeeId};
 ok('employee cannot send payroll',(await call('/api/documents',send,staff)).status===403);
 ok('owner sends locked payslip in app',(await call('/api/documents',send,owner)).status===200);

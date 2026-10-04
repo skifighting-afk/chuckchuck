@@ -19,15 +19,15 @@ const qrConfirm=async kind=>{await staff.click(`button:has-text("${kind}")`);awa
 let joinLink,qrLink,qrPng;
 
 await step('사장님 가입 (약관 동의)',async()=>{
- await owner.goto(B+'/signup?role=owner&plan=starter',{waitUntil:'networkidle'});
+ await owner.goto(B+'/signup?role=owner&plan=pro',{waitUntil:'networkidle'});
  await owner.fill('input[placeholder="실명을 입력해 주세요"]',OWNER.name);await owner.fill('input[type=email]',OWNER.email);await owner.fill('input[aria-label="비밀번호"]',OWNER.password);
  if(!await owner.locator('.auth-agree input[required]').count())throw Error('약관 동의 체크가 필수가 아니에요');
  await owner.check('.auth-agree input');await owner.click('text=계정 만들고 다음으로');await owner.locator('#store-name').waitFor();
 });
-await step('가게 만들기 (처리위탁 동의, 14일 체험)',async()=>{
+await step('가게 만들기 (요금 고르기·처리위탁 동의·30일 체험)',async()=>{
  await owner.fill('#store-name','점검식당');await owner.fill('#owner-name',OWNER.name);await owner.locator('.industry-picker label').first().click();await owner.click('text=다음으로 →');
  for(const b of await owner.getByRole('checkbox').all())await b.click();
- await owner.click('text=14일 체험으로 가게 열기');await owner.waitForURL(/\/app/);await owner.getByText('점검식당').first().waitFor();
+ await owner.click('text=30일 무료 체험 시작');await owner.waitForURL(/\/app/);await owner.getByText('점검식당').first().waitFor();
 });
 await step('가입용 근로조건 정하고 가입 링크 만들기',async()=>{
  await owner.goto(B+'/staff-requests',{waitUntil:'networkidle'});

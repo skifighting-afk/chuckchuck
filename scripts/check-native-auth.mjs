@@ -24,7 +24,7 @@ test('session token not stored in app database',!await appDbContains(staffToken)
 test('account created through service role with metadata',auth.calls.some(c=>c.path==='/admin/users'&&c.body.user_metadata?.role==='employee'&&c.body.email==='staff@example.invalid'));
 r=await call('/api/account',null,staffToken);test('native session resolves employee role',r.data.user?.role==='employee'&&r.data.user?.authMethod==='email');
 test('unverified email is honest',r.data.user.emailVerified===false);
-r=await call('/api/account',{action:'onboard',plan:'free',storeName:'x',branchName:'x',ownerName:'x',acknowledged:true,dpaAgreed:true},staffToken);test('employee cannot accidentally create owner store',r.status===403);
+r=await call('/api/account',{action:'onboard',plan:'basic',storeName:'x',branchName:'x',ownerName:'x',acknowledged:true,dpaAgreed:true},staffToken);test('employee cannot accidentally create owner store',r.status===403);
 r=await call('/api/auth',{action:'register',agree:true,email:'STAFF@example.invalid',password,name:'검수',role:'employee'});test('case insensitive duplicate rejected',r.status===409);
 r=await call('/api/auth',{action:'login',email:'staff@example.invalid',password:'wrong password'});test('wrong password denied',r.status===401);
 r=await call('/api/auth',{action:'login',email:'unknown@example.invalid',password:'wrong password'});test('unknown and wrong login share response',r.status===401&&r.data.error==='이메일 또는 비밀번호를 확인해 주세요.');
@@ -45,8 +45,8 @@ r=await call('/api/account',null,ownerToken);test('changed terms version asks co
 r=await call('/api/auth',{action:'consent'},ownerToken);test('re-consent requires explicit agree',r.status===400);
 r=await call('/api/auth',{action:'consent',agree:true});test('re-consent requires login',r.status===401);
 r=await call('/api/auth',{action:'consent',agree:true},ownerToken);test('re-consent recorded',r.status===200&&(await call('/api/account',null,ownerToken)).data.consentRequired===false);
-r=await call('/api/account',{action:'onboard',plan:'starter',storeName:'가상 가입 검수',branchName:'본점',ownerName:'검수 대표',acknowledged:true},ownerToken);test('store creation requires processing agreement',r.status===400&&r.data.code==='DPA_REQUIRED');
-r=await call('/api/account',{action:'onboard',plan:'starter',storeName:'가상 가입 검수',branchName:'본점',ownerName:'검수 대표',acknowledged:true,dpaAgreed:true},ownerToken);test('native owner creates their own store',r.status===201);
+r=await call('/api/account',{action:'onboard',plan:'pro',storeName:'가상 가입 검수',branchName:'본점',ownerName:'검수 대표',acknowledged:true},ownerToken);test('store creation requires processing agreement',r.status===400&&r.data.code==='DPA_REQUIRED');
+r=await call('/api/account',{action:'onboard',plan:'pro',storeName:'가상 가입 검수',branchName:'본점',ownerName:'검수 대표',acknowledged:true,dpaAgreed:true},ownerToken);test('native owner creates their own store',r.status===201);
 const dpa=JSON.parse((await sql`SELECT data FROM stores LIMIT 1`)[0].data)._account.dpa;test('processing agreement version and time stored with store',!!dpa?.version&&!!dpa?.agreedAt&&dpa.by.startsWith('native:'));
 let state=(await call('/api/store',null,ownerToken)).data;
 await call('/api/staff-join',{action:'code',branchId:'branch-main',version:state.version},ownerToken);

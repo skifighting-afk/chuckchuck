@@ -5,7 +5,7 @@ import {authedTest} from './test-auth.mjs';import {closeAll} from './test-db.mjs
 const T=await authedTest({domain:'example.invalid'}),{q,sql,headersFor,id}=T,env=T.env;
 let n=0;const ok=(label,v)=>{assert.ok(v,label);console.log(`${++n}. PASS ${label}`)};
 async function call(user,path,body,method){const r=await api(new Request('https://qa.local'+path,{method:method||(body?'POST':'GET'),headers:{origin:'https://qa.local',...(await headersFor(user))},...(body?{body:JSON.stringify(body)}:{})}),env);return {status:r.status,body:await r.json().catch(()=>null),raw:r}}
-await call('boss','/api/account',{action:'onboard',storeName:'출퇴근 검수',branchName:'본점',ownerName:'가상대표',plan:'starter',acknowledged:true,dpaAgreed:true});
+await call('boss','/api/account',{action:'onboard',storeName:'출퇴근 검수',branchName:'본점',ownerName:'가상대표',plan:'pro',acknowledged:true,dpaAgreed:true});
 const DAY=86400000,now=Date.now();
 // 직원 1명 + 기록 12,000건(예전 한도 1만 건 초과): 3년 전부터 오늘 전까지
 let s=(await call('boss','/api/store')).body.state;

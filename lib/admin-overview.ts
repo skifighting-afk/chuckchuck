@@ -1,4 +1,4 @@
-import {isPlan,monthlyPrice,planLimits,plans,trialStatus} from './plans';
+import {planId,monthlyPrice,planLimits,plans,trialStatus,branchCount} from './plans';
 import {industryName,industries} from './industries';
 
 // Project aggregate counts in SQL; never load employee profiles or contracts into the HQ response.
@@ -24,7 +24,7 @@ export const adminProjection=`WITH records AS (
 
 function parsed(value:any,fallback:any){try{return typeof value==='string'?JSON.parse(value):value??fallback}catch{return fallback}}
 export function summarizeStore(row:any,now=Date.now()){
- const a=parsed(row.account,null),plan=isPlan(a?.plan)?a.plan:'legacy',limits=planLimits(a);
+ const a=parsed(row.account,null),plan=planId(a?.plan)||'legacy',limits=planLimits(a);
  const branches=(parsed(row.branches,[]) as any[]).map(b=>({name:String(b.name||'매장'),employees:Number(b.employees)||0,limit:limits.employees}));
  const remaining=a?.trialEndsAt?(Date.parse(a.trialEndsAt)-now)/86400000:null;
  const status=trialStatus(a,now),support=parsed(row.support,null);
@@ -33,7 +33,7 @@ export function summarizeStore(row:any,now=Date.now()){
   trialEndsAt:status==='trialing'||status==='expired'?a?.trialEndsAt||null:null,
   daysLeft:status==='trialing'&&remaining!==null?Math.max(0,Math.ceil(remaining)):null,
   trialEnding:status==='trialing'&&remaining!==null&&remaining<=7,
-  monthlyQuote:isPlan(plan)?monthlyPrice(plan,Number(a?.storeSlots)||2):null,
+  monthlyQuote:plan!=='legacy'?monthlyPrice(plan,branchCount(a)):null,
   branchLimit:limits.branches,branches,employees:branches.reduce((n,b)=>n+b.employees,0),
   atCapacity:branches.length>=limits.branches||branches.some(b=>b.employees>=b.limit),
   employeeCapacity:branches.some(b=>b.employees>=b.limit),
@@ -52,7 +52,7 @@ export function adminOverview(stores:AdminStore[],now=Date.now()){
  for(const s of stores){
   totals.branches+=s.branches.length;totals.employees+=s.employees;
   totals.pendingJoins+=s.pendingJoins;totals.pendingCorrections+=s.pendingCorrections;totals.failedMail+=s.failedMail;
-  totals.trialing+=Number(s.status==='trialing');totals.free+=Number(s.status==='free');totals.expired+=Number(['expired','cancelled'].includes(s.status));
+  totals.trialing+=Number(s.status==='trialing');totals.free+=Number(s.status==='active');totals.expired+=Number(['expired','cancelled'].includes(s.status));
   totals.trialEnding+=Number(s.trialEnding);totals.employeeCapacity+=Number(s.employeeCapacity);totals.overCapacity+=Number(s.overCapacity);totals.attentionStores+=Number(needsAttention(s));totals.supportOpen+=Number(s.support.status==='확인 중');totals.dataIssues+=Number(s.dataIssue);
   const p=distribution.find(p=>p.id===s.plan)!;p.count++;p.trialing+=Number(s.status==='trialing');p.expired+=Number(['expired','cancelled'].includes(s.status));
   if(s.status==='trialing'){totals.trialMonthlyQuote+=s.monthlyQuote||0;p.monthlyQuote+=s.monthlyQuote||0}

@@ -57,7 +57,7 @@ r=await call('/api/auth');assert.equal(r.data.authenticated,true);assert.equal(r
 r=await handler(new Request(SUPA+'/functions/v1/api/account',{headers:{origin:APP,apikey:'anon',authorization:'Bearer anon','oai-authenticated-user-id':'native:hacker','oai-authenticated-user-email':'hq@example.kr'}}));
 assert.equal(r.status,401,'토큰 없이 신원 헤더만으로는 로그인되면 안 됨');
 
-r=await call('/api/account',{method:'POST',body:{action:'onboard',plan:'starter',storeName:'척척식당',branchName:'본점',ownerName:'김사장',acknowledged:true,dpaAgreed:true}});
+r=await call('/api/account',{method:'POST',body:{action:'onboard',plan:'pro',storeName:'척척식당',branchName:'본점',ownerName:'김사장',acknowledged:true,dpaAgreed:true}});
 assert.equal(r.status,201,JSON.stringify(r.data));assert.equal(r.data.storeName,'척척식당');
 r=await call('/api/account');assert.equal(r.data.onboarded,true);assert.equal(r.data.user.emailVerified,false);
 r=await call('/api/store');assert.equal(r.status,200,JSON.stringify(r.data).slice(0,300));
@@ -78,7 +78,7 @@ const owner=session;
 r=await call('/api/auth',{method:'POST',body:{action:'register',agree:true,email:'staff@example.kr',password:'staff-pass-55',name:'이직원',role:'employee'}});assert.equal(r.status,200);
 const staff=r.data.session;
 r=await call('/api/account',{token:staff.access_token});assert.equal(r.data.user.role,'employee');
-r=await call('/api/account',{method:'POST',token:staff.access_token,body:{action:'onboard',plan:'free',storeName:'x',branchName:'y',ownerName:'z',acknowledged:true,dpaAgreed:true}});assert.equal(r.status,403);
+r=await call('/api/account',{method:'POST',token:staff.access_token,body:{action:'onboard',plan:'basic',storeName:'x',branchName:'y',ownerName:'z',acknowledged:true,dpaAgreed:true}});assert.equal(r.status,403);
 r=await call('/api/admin',{token:owner.access_token});assert.equal(r.status,403,'일반 사장님은 본사 화면 불가');
 
 console.log('PASS: Supabase 함수 — CORS·출처 차단, 가입·로그인·로그아웃, 신원 헤더 위조 차단, 매장 등록, 비밀번호 재설정, 직원 역할, 본사 권한.');

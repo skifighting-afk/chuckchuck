@@ -21,7 +21,7 @@ export async function operationsApi(request:Request,env:{DB:D1Database}){
  if(b.version!==row.version)return json({error:'새로운 변경이 있습니다. 새로고침하고 다시 처리해 주세요.'},409);
  const now=new Date().toISOString(),actor={id:userId,name:self?.name||request.headers.get('oai-authenticated-user-email')||'사장님'};
  let label='',target='';
- if(['requestLeave','reviewLeave'].includes(b.action)&&!hasFeature(data._account,'leave'))return json({error:'휴가 신청·승인은 사장님 5 요금제부터 이용할 수 있어요.'},403);
+ if(['requestLeave','reviewLeave'].includes(b.action)&&!hasFeature(data._account,'leave'))return json({error:'휴가 신청·승인은 베이직부터 이용할 수 있어요.'},403);
  if(b.action==='requestLeave'){
   const parsed=leaveSchema.safeParse(b);if(!parsed.success)return json({error:parsed.error.issues[0].message},400);const p=parsed.data;
   if(access!=='owner'&&p.employeeId!==self?.id)return json({error:'본인 휴가만 신청할 수 있어요.'},403);
