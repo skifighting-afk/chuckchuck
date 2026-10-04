@@ -712,6 +712,12 @@ PASS 146. 모두 채움
 PASS 147. 이미 있는 근무는 인원에 포함, 휴가자는 제외 → 못 채운 1명
 PASS 148. 적게 일한 직원부터
 PASS: 근무 가능 시간 초안.
+PASS 149. PDF header/trailer
+PASS 150. two pages
+PASS 151. startxref points to xref
+PASS 152. every xref offset points to its object
+PASS 153. empty input refused
+PASS: PDF 저장.
 
 ── check-claims
 PASS: 과장·허위 문구 검사 (화면·홈페이지).
