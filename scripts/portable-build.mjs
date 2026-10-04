@@ -30,6 +30,7 @@ await writeFile('dist/client/index.html',html);
 await writeFile('dist/client/404.html',html); // GitHub Pages: 모든 주소를 화면 앱으로
 await writeFile('dist/client/.nojekyll','');
 if(appDomain)await writeFile('dist/client/CNAME',appDomain.trim()+'\n');
+await writeFile('dist/client/version.json',JSON.stringify({sha:process.env.GITHUB_SHA||'local',builtAt:new Date().toISOString()})+'\n'); // 작업 004: 배포 후 점검이 새 화면이 올라왔는지 확인
 
 // 테스트가 불러 쓰는 서버 묶음
 await mkdir('dist/server',{recursive:true});

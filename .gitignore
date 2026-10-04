@@ -47,3 +47,4 @@ next-env.d.ts
 /node_modules
 /supabase/functions/api/index.js
 /supabase/.temp
+smoke-failure.png

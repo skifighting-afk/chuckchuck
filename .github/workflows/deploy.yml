@@ -198,6 +198,25 @@ jobs:
           echo "GET /api/auth → $code" | tee -a ci-logs/12-health.log
           cat ci-logs/12-health.json | tee -a ci-logs/12-health.log
           [ "$code" = "200" ]
+      # 작업 004: 실제 주소에서 가입 → 가게 만들기 → 로그아웃 → 다시 로그인. 점검 계정은 끝나고 지운다.
+      - uses: actions/setup-node@v4
+        if: steps.fresh.outputs.ok == 'yes' && steps.cfg.outputs.supabase == 'yes'
+        with:
+          node-version: 22
+      - name: 배포 후 실제 점검
+        if: steps.fresh.outputs.ok == 'yes' && steps.cfg.outputs.supabase == 'yes'
+        env:
+          SMOKE_URL: ${{ steps.origin.outputs.primary }}
+          EXPECT_SHA: ${{ github.sha }}
+        run: |
+          set -o pipefail
+          npm install --prefix /tmp/pw --no-audit --no-fund playwright@1.56.0 >/dev/null
+          ln -sfn /tmp/pw/node_modules node_modules
+          /tmp/pw/node_modules/.bin/playwright install --with-deps chromium >/dev/null
+          node scripts/smoke-prod.mjs 2>&1 | tee ci-logs/13-smoke.log
+      - name: 점검 실패 화면 보관
+        if: failure()
+        run: cp smoke-failure.png ci-logs/13-smoke-failure.png 2>/dev/null || true
       - name: 기록 보관
         if: always()
         uses: actions/upload-artifact@v4
