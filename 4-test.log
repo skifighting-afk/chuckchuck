@@ -488,56 +488,60 @@ PASS 30. employee consent cannot be skipped
 PASS 31. stale version rejected
 PASS 32. changed work conditions block old contract signature
 PASS 33. unverified employee cannot sign
-PASS 34. both signatures commit without pretending email sent
-PASS 35. unconfigured delivery is marked setup required
-PASS 36. signed status reaches employee current contract
-PASS 37. repeated signature is rejected
-PASS 38. signed request cannot be withdrawn
-PASS 39. database prevents changing signed document snapshot
-PASS 40. failed email is not marked delivered
-PASS 41. provider acceptance is distinct from employee receipt
-PASS 42. copy email contains actual immutable signed HTML
-PASS 43. duplicate delivery does not resend accepted email
-PASS 44. owner cannot confirm employee received copy
-PASS 45. employee receipt requires explicit checkbox
-PASS 46. employee can record receipt
-PASS 47. signature and delivery history retained
-PASS 48. download contains both names, timestamps and hash
-PASS 49. former employee can retain previously signed copy
-PASS 50. ended trial cannot create new electronic contract
-PASS 51. ended trial retains old copies
-PASS 52. cross origin contract mutation rejected
-PASS 53. outsider cannot read image document
-PASS 54. owner cannot mark employee download
-PASS 55. save confirmation requires prior download
-PASS 56. employee view records receipt separately
-PASS 57. download request does not pretend saved
-PASS 58. explicit employee save is recorded
-PASS 59. owner sees employee document activity
-PASS 60. employee cannot send payroll
-PASS 61. owner sends locked payslip in app
-PASS 62. repeat send idempotent
-PASS 63. employee sees own sent payroll
-PASS 64. app payslip includes employee number and pay date
-PASS 65. outsider sees no payroll
-PASS 66. outsider cannot fetch payroll by id
-PASS 67. unlocked payroll cannot send
-PASS 68. revised payroll sends a new immutable copy
-PASS 69. new revision has independent pending download
-PASS 70. latest payslip is marked current
-PASS 71. older payslip is marked replaced
-PASS 72. reopened payroll marks sent payslip as under review
-PASS 73. unrelated store writes do not block sending
-PASS 74. owner list carries activity without per-row queries
-PASS 75. unlinked employee gives a clear message
-PASS 76. former employee still opens own payslip copy
-PASS 77. cross origin document action denied
-PASS 78. new contract revision can be requested
-PASS 79. unsigned contract image is blocked
-PASS 80. in-app signing works with password without email service
-PASS 81. app signing sends no email
-PASS 82. app signature preserves truthful email verification state
-82/82 passed; no external email or real signatures sent.
+PASS 34. 작업 039: non-PNG drawing rejected
+PASS 35. 작업 039: oversized drawing rejected
+PASS 36. both signatures commit without pretending email sent
+PASS 37. 작업 039: hand signature kept with hash
+PASS 38. 작업 039: list omits image but flags it
+PASS 39. unconfigured delivery is marked setup required
+PASS 40. signed status reaches employee current contract
+PASS 41. repeated signature is rejected
+PASS 42. signed request cannot be withdrawn
+PASS 43. database prevents changing signed document snapshot
+PASS 44. failed email is not marked delivered
+PASS 45. provider acceptance is distinct from employee receipt
+PASS 46. copy email contains actual immutable signed HTML
+PASS 47. duplicate delivery does not resend accepted email
+PASS 48. owner cannot confirm employee received copy
+PASS 49. employee receipt requires explicit checkbox
+PASS 50. employee can record receipt
+PASS 51. signature and delivery history retained
+PASS 52. download contains both names, timestamps and hash
+PASS 53. former employee can retain previously signed copy
+PASS 54. ended trial cannot create new electronic contract
+PASS 55. ended trial retains old copies
+PASS 56. cross origin contract mutation rejected
+PASS 57. outsider cannot read image document
+PASS 58. owner cannot mark employee download
+PASS 59. save confirmation requires prior download
+PASS 60. employee view records receipt separately
+PASS 61. download request does not pretend saved
+PASS 62. explicit employee save is recorded
+PASS 63. owner sees employee document activity
+PASS 64. employee cannot send payroll
+PASS 65. owner sends locked payslip in app
+PASS 66. repeat send idempotent
+PASS 67. employee sees own sent payroll
+PASS 68. app payslip includes employee number and pay date
+PASS 69. outsider sees no payroll
+PASS 70. outsider cannot fetch payroll by id
+PASS 71. unlocked payroll cannot send
+PASS 72. revised payroll sends a new immutable copy
+PASS 73. new revision has independent pending download
+PASS 74. latest payslip is marked current
+PASS 75. older payslip is marked replaced
+PASS 76. reopened payroll marks sent payslip as under review
+PASS 77. unrelated store writes do not block sending
+PASS 78. owner list carries activity without per-row queries
+PASS 79. unlinked employee gives a clear message
+PASS 80. former employee still opens own payslip copy
+PASS 81. cross origin document action denied
+PASS 82. new contract revision can be requested
+PASS 83. unsigned contract image is blocked
+PASS 84. in-app signing works with password without email service
+PASS 85. app signing sends no email
+PASS 86. app signature preserves truthful email verification state
+86/86 passed; no external email or real signatures sent.
 
 ── check-pay-rules
 PASS 1. overnight shift worked hours
