@@ -1070,7 +1070,7 @@ PASS 36. 2026-03-31: no attendance in the future
 PASS: 체험 화면 숫자(급여·명세서·임금대장 합계).
 
 ── check-error-messages
-PASS: 오류 문구 355개 모두 다음 행동 안내 포함.
+PASS: 오류 문구 366개 모두 다음 행동 안내 포함.
 PASS: 오류 번호·로그 개인정보 제거.
 
 ── check-attendance-table
@@ -1198,6 +1198,9 @@ PASS: 서버 오류 알림 (10분 3건 · 1시간 1번 · 개인정보 없음).
 ── check-cron
 PASS: 서비스 상태(/api/status).
 PASS: 매일 작업 (비밀값·체험 종료 알림 7일·1일 각 한 번).
+
+── check-support
+PASS: 문의하기 (내 문의만 보기·본사만 답변·하루 10건).
 
 > chuckchuck@0.1.0 check:function
 > node scripts/check-supabase-function.mjs
