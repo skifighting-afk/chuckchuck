@@ -1,11 +1,1 @@
-접근성 문제 10건:
-390px /start [axe color-contrast] Elements must meet minimum color contrast ratio thresholds — p:nth-child(1) | .saas-footer-operator > p:nth-child(2) | .saas-footer-operator > p:nth-child(3)
-390px /calculator [axe color-contrast] Elements must meet minimum color contrast ratio thresholds — p:nth-child(1) | p:nth-child(2) | .saas-footer-operator > p:nth-child(3)
-390px /signup?role=owner [axe color-contrast] Elements must meet minimum color contrast ratio thresholds — p:nth-child(1) | p:nth-child(2) | p:nth-child(3)
-390px /login?role=owner [axe color-contrast] Elements must meet minimum color contrast ratio thresholds — p:nth-child(1) | p:nth-child(2) | p:nth-child(3)
-390px /employee [axe color-contrast] Elements must meet minimum color contrast ratio thresholds — p:nth-child(1) | p:nth-child(2) | p:nth-child(3)
-1280px /start [axe color-contrast] Elements must meet minimum color contrast ratio thresholds — p:nth-child(1) | .saas-footer-operator > p:nth-child(2) | .saas-footer-operator > p:nth-child(3)
-1280px /calculator [axe color-contrast] Elements must meet minimum color contrast ratio thresholds — p:nth-child(1) | p:nth-child(2) | .saas-footer-operator > p:nth-child(3)
-1280px /signup?role=owner [axe color-contrast] Elements must meet minimum color contrast ratio thresholds — p:nth-child(1) | p:nth-child(2) | p:nth-child(3)
-1280px /login?role=owner [axe color-contrast] Elements must meet minimum color contrast ratio thresholds — p:nth-child(1) | p:nth-child(2) | p:nth-child(3)
-1280px /employee [axe color-contrast] Elements must meet minimum color contrast ratio thresholds — p:nth-child(1) | p:nth-child(2) | p:nth-child(3)
+접근성 점검 통과: 12개 화면 × 2개 크기 (axe 포함)
