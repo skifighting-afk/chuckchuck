@@ -1,7 +1,7 @@
 // 인스타 릴스 자동 만들기: topics.json의 질문 하나 → 세로 영상(1080×1920, 약 15~25초) + 글 + 표지.
 // 화면 카드는 Chromium으로 찍고, ffmpeg로 이어 붙인다(H.264·30fps·AAC 48kHz, 인스타 릴스 규격).
 // 사용: node scripts/reels/make.mjs [--index N] [--out 폴더]
-//   --index 없으면 2026-10-06부터 하루에 하나씩 차례로 고른다.
+//   --index 없으면 2026-10-05부터 하루에 하나씩 차례로 고른다.
 import {chromium} from 'playwright';
 import {execFileSync} from 'node:child_process';
 import {mkdirSync,readFileSync,writeFileSync,existsSync} from 'node:fs';
@@ -9,7 +9,7 @@ import {join,resolve} from 'node:path';
 
 const arg=(k,d)=>{const i=process.argv.indexOf(k);return i>0?process.argv[i+1]:d};
 const topics=JSON.parse(readFileSync(new URL('./topics.json',import.meta.url),'utf8'));
-const START=Date.UTC(2026,9,6);
+const START=Date.UTC(2026,9,5);
 const day=Math.floor((Date.now()+9*3600000-START)/86400000);
 const index=Number(arg('--index',String(((day%topics.length)+topics.length)%topics.length)));
 const t=topics[index];if(!t)throw Error('주제 번호가 범위를 벗어났어요: '+index);
