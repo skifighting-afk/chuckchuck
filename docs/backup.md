@@ -32,3 +32,4 @@ psql "$DB_URL" -c "select (select count(*) from stores) stores,(select count(*) 
 
 | 날짜 | 백업 날짜 | 결과 | 한 사람 |
 |---|---|---|---|
+| 2026-10-05 | 2026-10-05 | 성공: 모든 테이블 행 수 일치, 핵심 테이블·보호 함수 확인 (Actions 실행 37303929279) | 자동(restore-drill) |
