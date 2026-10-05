@@ -4,9 +4,8 @@ import {TextSizeToggle,applyTextSize} from './text-size';
 applyTextSize();
 import {InstallButton,registerSW} from './install';
 import {TransferOwner,TransferOffers} from './transfer';
-import {LegalPage,OperatorFooter} from './legal-page';
-import {Landing,PricingPage} from './public-pages';
-import {StatusPage} from './status-page';
+import {OperatorFooter} from './operator-footer';
+import {Landing} from './public-pages';
 import {BizStatus,CancelSubscription,RefundPolicy,PaymentHistory,ServiceNotices,TrialBanner,PlanChangeQuote,RefundEstimate,TaxInvoice} from './billing';
 registerSW();
 import {VerifyEmail} from './verify-email';
@@ -25,6 +24,10 @@ const Help=lazy(()=>import('./help').then(x=>({default:x.Help})));
 const LiveQr=lazy(()=>import('./live-qr').then(x=>({default:x.LiveQr})));
 const Withdraw=lazy(()=>import('./withdraw').then(x=>({default:x.Withdraw})));
 const TeamApp=lazy(()=>import('./team'));
+// 가이드 93: 약관·요금·상태 화면은 열 때만 불러온다
+const LegalPage=lazy(()=>import('./legal-page').then(x=>({default:x.LegalPage})));
+const PricingPage=lazy(()=>import('./public-pages').then(x=>({default:x.PricingPage})));
+const StatusPage=lazy(()=>import('./status-page').then(x=>({default:x.StatusPage})));
 
 import {ArrowRight,Check,Store,ShieldCheck,ArrowLeft,LogOut,CreditCard,Clock3,Users} from 'lucide-react';
 import {plans,planId,money,monthlyPrice,periodPrice,TRIAL_DAYS,type PlanId} from '../lib/plans';

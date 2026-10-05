@@ -1,7 +1,7 @@
 // 작업 013·014·015: 이용약관·개인정보 처리방침 화면과 화면 아래 운영자 정보
 import {ArrowLeft} from 'lucide-react';
 import {TERMS,PRIVACY,type LegalDoc} from '../lib/legal-docs';
-import {OPERATOR,operatorLines,ftcLink} from '../lib/operator';
+import {OperatorInfo} from './operator-footer';
 
 const REPO='https://github.com/skifighting-afk/chuckchuck';
 export function LegalPage({privacy}:{privacy:boolean}){
@@ -18,12 +18,4 @@ export function LegalPage({privacy}:{privacy:boolean}){
   <section id="operator"><h2>운영자 정보</h2><OperatorInfo/></section>
   <a href="/start" className="saas-back"><ArrowLeft size={16}/> 처음 화면으로</a>
  </main>;
-}
-export function OperatorInfo(){
- const link=ftcLink(OPERATOR.bizNo);
- return <dl className="operator-info">{operatorLines().map(([k,v])=><div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}{link&&<div><dt>사업자 정보</dt><dd><a href={link} target="_blank" rel="noopener">공정거래위원회에서 확인</a></dd></div>}</dl>;
-}
-export function OperatorFooter(){
- const l=Object.fromEntries(operatorLines()),link=ftcLink(OPERATOR.bizNo);
- return <div className="saas-footer-operator"><p>{OPERATOR.service} · 상호 {l['상호']} · 대표자 {l['대표자']} · 사업자등록번호 {l['사업자등록번호']}{link&&<> (<a href={link} target="_blank" rel="noopener">사업자 정보 확인</a>)</>}</p><p>통신판매업 신고번호 {l['통신판매업 신고번호']} · 주소 {l['주소']} · 전화 {l['전화']} · 이메일 {l['이메일']}</p><p>개인정보 보호책임자 {l['개인정보 보호책임자']} · 호스팅 제공자 {l['호스팅 제공자']}</p></div>;
 }
