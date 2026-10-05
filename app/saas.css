@@ -89,3 +89,4 @@ html.large-text .saas-shell main,html.large-text .t-work,html.large-text [role=d
 .try-tiles a::after{content:'체험하기';grid-column:2;justify-self:start;margin-top:8px;background:#15643f;color:#fff;font-size:14px;font-weight:700;border-radius:999px;padding:6px 14px}
 .saas-account .try-first{margin:24px 0}
 .try-links a{display:inline-flex;align-items:center;min-height:44px}
+.footer-insta{display:inline-flex;align-items:center;min-height:44px;font-weight:700;color:#12634b}

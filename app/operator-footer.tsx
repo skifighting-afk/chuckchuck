@@ -6,5 +6,5 @@ export function OperatorInfo(){
 }
 export function OperatorFooter(){
  const l=Object.fromEntries(operatorLines()),link=ftcLink(OPERATOR.bizNo);
- return <div className="saas-footer-operator"><p>{OPERATOR.service} · 상호 {l['상호']} · 대표자 {l['대표자']} · 사업자등록번호 {l['사업자등록번호']}{link&&<> (<a href={link} target="_blank" rel="noopener">사업자 정보 확인</a>)</>}</p><p>통신판매업 신고번호 {l['통신판매업 신고번호']} · 주소 {l['주소']} · 전화 {l['전화']} · 이메일 {l['이메일']}</p><p>개인정보 보호책임자 {l['개인정보 보호책임자']} · 호스팅 제공자 {l['호스팅 제공자']}</p></div>;
+ return <div className="saas-footer-operator"><p>{OPERATOR.service} · 상호 {l['상호']} · 대표자 {l['대표자']} · 사업자등록번호 {l['사업자등록번호']}{link&&<> (<a href={link} target="_blank" rel="noopener">사업자 정보 확인</a>)</>}</p><p>통신판매업 신고번호 {l['통신판매업 신고번호']} · 주소 {l['주소']} · 전화 {l['전화']} · 이메일 {l['이메일']}</p><p>개인정보 보호책임자 {l['개인정보 보호책임자']} · 호스팅 제공자 {l['호스팅 제공자']}</p><p><a className="footer-insta" href="https://www.instagram.com/chukchukbot/" target="_blank" rel="noopener">인스타그램 @chukchukbot</a></p></div>;
 }
