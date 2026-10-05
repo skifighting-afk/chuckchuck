@@ -31,7 +31,10 @@ test('forged QR blocked',(await attendance('in','invalid')).status===403);
 state=await get();const foreign=await call('owner','/api/store',{action:'attendanceQr',branchId:'b2',version:state.version});
 const other=new URL(foreign.data.attendanceQrUrl).searchParams.get('attendanceQr');
 test('other branch QR blocked',(await attendance('in',other)).status===403);
-test('valid QR clock in',(await attendance('in',token)).status===200);
+{const stale=(await call('staff','/api/store')).data.version;state=await get();await call('owner','/api/store',{action:'attendanceQr',branchId:'b2',version:state.version});
+ test('출퇴근은 화면 버전이 오래돼도 기록됨(동시에 여러 직원이 찍는 경우)',(await call('staff','/api/store',{action:'attendance',kind:'in',employeeId:eid,qrToken:token,version:stale})).status===200);
+ test('다른 작업은 오래된 버전이면 여전히 막힘',(await call('owner','/api/store',{action:'attendanceQr',branchId:'b2',version:stale})).status===409);}
+test('duplicate in blocked',(await attendance('in',token)).status===400);
 test('duplicate in blocked',(await attendance('in',token)).status===400);
 test('clock out without QR blocked',(await attendance('out')).data.code==='QR_REQUIRED');
 test('break does not require QR',(await attendance('break')).status===200);

@@ -668,3 +668,20 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('지급일 없으면 걸림',payslipMissing(payslipText('가게','2027-01','',good)).includes('임금지급일'));
  console.log('PASS: 명세서 필수 기재사항 확정·발송 점검.');
 }
+// 가이드 30: 약한 신호에서 출퇴근 다시 보내기
+{
+ const {sendWithRetry,RETRY_DELAYS_MS}=await import('../lib/retry.ts');
+ const noWait=async()=>{};
+ let n=0;let r=await sendWithRetry(async()=>{n++;if(n<3)throw new TypeError('Failed to fetch');return {ok:true,status:200}},{kind:'in',wait:noWait});
+ ok('인터넷 오류 두 번 뒤 성공',r.ok&&r.retried===2);
+ n=0;r=await sendWithRetry(async()=>{n++;if(n===1)throw new TypeError('x');return {ok:false,status:400,error:'이미 출근한 직원입니다.'}},{kind:'in',wait:noWait});
+ ok('다시 보냈는데 이미 출근 → 앞 요청이 저장된 것으로 성공',r.ok&&r.alreadyDone);
+ n=0;r=await sendWithRetry(async()=>{n++;return {ok:false,status:400,error:'이미 출근한 직원입니다.'}},{kind:'in',wait:noWait});
+ ok('첫 요청부터 이미 출근이면 실패로 알림',!r.ok&&n===1);
+ n=0;r=await sendWithRetry(async()=>{n++;return {ok:false,status:403,error:'QR'}},{kind:'in',wait:noWait});
+ ok('QR 오류(403)는 다시 보내지 않음',!r.ok&&n===1);
+ n=0;r=await sendWithRetry(async()=>{n++;return {ok:false,status:503}},{kind:'out',wait:noWait});
+ ok('계속 실패하면 포기 표시',r.gaveUp&&n===RETRY_DELAYS_MS.length+1);
+ ok('다시 보내기는 움직이는 QR 유효시간(60초) 안에 끝남',RETRY_DELAYS_MS.reduce((a,b)=>a+b,0)<50000);
+ console.log('PASS: 출퇴근 다시 보내기.');
+}

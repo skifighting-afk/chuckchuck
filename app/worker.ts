@@ -83,7 +83,8 @@ export async function api(request:Request,env:Env){
  if(access!=='owner'&&(request.method==='PUT'||!['attendance','request'].includes(b.action)))return json({error:'이 작업은 사장님만 할 수 있어요. 사장님께 요청해 주세요.'},403);
  if(access!=='owner'&&b.action==='attendance'&&b.employeeId!==self!.id)return json({error:'본인 출퇴근만 기록할 수 있어요. 내 계정으로 로그인했는지 확인해 주세요.'},403);
  if(access!=='owner'&&b.action==='request'){const target=state.attendance.find(a=>a.id===b.id);if(!target||target.employeeId!==self!.id)return json({error:'본인 출퇴근만 정정 요청할 수 있어요.'},403);}
- if(b.version!==version)return json({error:'다른 화면의 변경 사항이 있습니다. 새로고침 후 다시 시도해 주세요.'},409);
+ // 출퇴근은 화면이 조금 오래돼도 지금 서버 기록을 기준으로 처리한다(같은 시각에 여러 직원이 찍어도 막지 않음). 저장은 아래 version 조건으로 원자적.
+ if(b.action!=='attendance'&&b.version!==version)return json({error:'다른 화면의 변경 사항이 있습니다. 새로고침 후 다시 시도해 주세요.'},409);
  const fail=(message:string)=>{throw new Error(message)};
  const log=(action:string,target:string,before:any,after:any,reason='')=>audit.push({id:crypto.randomUUID(),at:new Date().toISOString(),actor,action,target,before,after,reason});
  const enqueue=(key:string,to:string,subject:string,body:string)=>{if(!outbox.some(m=>m.key===key))outbox.push({id:crypto.randomUUID(),key,to,subject,body,status:to?'발송 대기':'수신 주소 필요',createdAt:new Date().toISOString(),providerId:null})};
