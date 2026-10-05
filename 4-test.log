@@ -86,28 +86,30 @@ PASS 4. employee cannot fetch QR secret
 PASS 5. employee cannot issue QR
 PASS 6. forged QR blocked
 PASS 7. other branch QR blocked
-PASS 8. valid QR clock in
-PASS 9. duplicate in blocked
-PASS 10. clock out without QR blocked
-PASS 11. break does not require QR
-PASS 12. resume does not require QR
-PASS 13. normal save preserves QR
-PASS 14. valid QR clock out
-PASS 15. reopening QR keeps printed token
-PASS 16. rotation invalidates old QR
-PASS 17. rotated QR works
-PASS 18. owner turns on moving QR
-PASS 19. employee cannot open live QR
-PASS 20. live QR not available for static branch
-PASS 21. live token shape
-PASS 22. printed QR rejected in moving mode
-PASS 23. forged live token rejected
-PASS 24. live token works right away
-PASS 25. live token photographed 90s ago rejected
-PASS 26. fresh live token works
-PASS 27. back to printed QR
-PASS 28. owner manual correction path retained
-28/28 passed
+PASS 8. 출퇴근은 화면 버전이 오래돼도 기록됨(동시에 여러 직원이 찍는 경우)
+PASS 9. 다른 작업은 오래된 버전이면 여전히 막힘
+PASS 10. duplicate in blocked
+PASS 11. duplicate in blocked
+PASS 12. clock out without QR blocked
+PASS 13. break does not require QR
+PASS 14. resume does not require QR
+PASS 15. normal save preserves QR
+PASS 16. valid QR clock out
+PASS 17. reopening QR keeps printed token
+PASS 18. rotation invalidates old QR
+PASS 19. rotated QR works
+PASS 20. owner turns on moving QR
+PASS 21. employee cannot open live QR
+PASS 22. live QR not available for static branch
+PASS 23. live token shape
+PASS 24. printed QR rejected in moving mode
+PASS 25. forged live token rejected
+PASS 26. live token works right away
+PASS 27. live token photographed 90s ago rejected
+PASS 28. fresh live token works
+PASS 29. back to printed QR
+PASS 30. owner manual correction path retained
+30/30 passed
 
 ── check-correction-input
 PASS 10 correction-input cases: KST, invalid dates/hours, valid, reversed, overnight, excessive break, missing reason, active shift, missing start
@@ -933,6 +935,13 @@ PASS 280. 고정 상여는 계산방법 없어도 됨
 PASS 281. 빈 계산방법은 "(계산방법: )"로 찍지 않음
 PASS 282. 지급일 없으면 걸림
 PASS: 명세서 필수 기재사항 확정·발송 점검.
+PASS 283. 인터넷 오류 두 번 뒤 성공
+PASS 284. 다시 보냈는데 이미 출근 → 앞 요청이 저장된 것으로 성공
+PASS 285. 첫 요청부터 이미 출근이면 실패로 알림
+PASS 286. QR 오류(403)는 다시 보내지 않음
+PASS 287. 계속 실패하면 포기 표시
+PASS 288. 다시 보내기는 움직이는 QR 유효시간(60초) 안에 끝남
+PASS: 출퇴근 다시 보내기.
 
 ── check-claims
 PASS: 과장·허위 문구 검사 (화면·홈페이지).
