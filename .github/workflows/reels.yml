@@ -22,7 +22,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   reel:
@@ -69,6 +69,14 @@ jobs:
           name: reel
           path: reel-out/
           retention-days: 14
+      - name: 미리보기 브랜치에 올리기 (올리지 않고 만들기만 했을 때)
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.post != 'true'
+        run: |
+          cd reel-out && rm -f voice-*.wav music.wav screen-*.png
+          git init -q && git checkout -q -b reel-preview
+          git -c user.name=reel-bot -c user.email=reel-bot@users.noreply.github.com add -A
+          git -c user.name=reel-bot -c user.email=reel-bot@users.noreply.github.com commit -qm "릴스 미리보기"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" reel-preview
       - name: 인스타에 올리기
         if: github.event_name == 'schedule' || github.event.inputs.post == 'true'
         env:
