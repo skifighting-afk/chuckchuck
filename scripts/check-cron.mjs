@@ -20,5 +20,7 @@ await mod.trialReminders(env,now+6*day,notify);
 assert.deepEqual(sent.map(x=>x[0]),['cron-a'],'7일 알림 받은 가게도 1일 전에는 한 번 더');
 const ok=await call('test-cron');assert.equal(ok.status,200,'올바른 비밀값이면 실행');
 for(const o of ['cron-a','cron-b','cron-c','cron-d'])await env.DB.prepare('DELETE FROM stores WHERE owner=?').bind(o).run();
+const st=await (await api(new Request('https://qa.local/api/status'),env)).json();assert.ok(st.ok&&st.db&&Array.isArray(st.notices),'서비스 상태: DB 연결과 안내 목록');
+console.log('PASS: 서비스 상태(/api/status).');
 console.log('PASS: 매일 작업 (비밀값·체험 종료 알림 7일·1일 각 한 번).');
 await closeAll();

@@ -41,6 +41,7 @@ const PUBLIC_PAGES=[
  ['/terms','terms.html','이용약관 · 척척사장봇','척척사장봇 이용약관'],
  ['/privacy','privacy.html','개인정보 처리방침 · 척척사장봇','척척사장봇 개인정보 처리방침'],
  ['/refund','refund.html','해지·환불 규정 · 척척사장봇','척척사장봇 해지·환불 규정'],
+ ['/status','status.html','서비스 상태 · 척척사장봇','척척사장봇 서버와 데이터베이스가 정상인지, 최근 서비스 안내를 확인해요.'],
 ];
 for(const [path,file,title,desc] of PUBLIC_PAGES){
  const page=html.replace('<meta name="robots" content="noindex,nofollow">','<link rel="canonical" href="'+site+path+'"><meta property="og:type" content="website"><meta property="og:site_name" content="척척사장봇"><meta property="og:title" content="'+esc(title)+'"><meta property="og:description" content="'+esc(desc)+'"><meta property="og:url" content="'+site+path+'"><meta property="og:image" content="'+site+'/icon-512.png"><meta property="og:locale" content="ko_KR">')
