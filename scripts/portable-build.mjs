@@ -28,8 +28,28 @@ for(const f of ['cheokcheoki-guide.png','favicon.svg','cheokcheoki-welcome.png',
 const supabaseOrigin=new URL(supabaseUrl).origin;
 const csp=["default-src 'self'","script-src 'self'","style-src 'self' 'unsafe-inline'","img-src 'self' data: blob:","media-src 'self' blob: mediastream:","font-src 'self' data:",`connect-src 'self' ${supabaseOrigin}`,"object-src 'none'","base-uri 'self'","form-action 'self'","worker-src 'self' blob:","manifest-src 'self'","upgrade-insecure-requests"].join('; ');
 const html='<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="'+csp+'"><meta name="referrer" content="strict-origin-when-cross-origin"><title>척척사장봇 · 직원 관리</title><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#185b45"><meta name="description" content="입사부터 출퇴근, 급여와 계약까지. 함께 일하는 사람을 위한 매장 관리."><link rel="icon" href="/favicon.svg"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/icon-192.png"><meta name="apple-mobile-web-app-title" content="척척사장봇"><link rel="stylesheet" href="/app.css"></head><body><div id="root"></div><script type="module" src="/app.js"></script></body></html>';
-await writeFile('dist/client/index.html',html);
-await writeFile('dist/client/404.html',html); // GitHub Pages: 모든 주소를 화면 앱으로
+await writeFile('dist/client/404.html',html); // GitHub Pages: 모든 주소를 화면 앱으로(로그인 화면은 검색에 안 나오게 noindex)
+// 가이드 23: 로그인 없이 보는 공개 화면은 검색에 나오게 각자 제목·설명을 가진 HTML로 따로 둔다(GitHub Pages는 /pricing → pricing.html).
+const site='https://'+(appDomain?.trim()||'chukchukapp.kr');
+const esc=v=>v.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+const PUBLIC_PAGES=[
+ ['/','index.html','척척사장봇 · 직원 출근부터 월급 정리까지','앱 설치 없이 휴대폰으로 쓰는 작은 가게 매장 관리. 직원 등록, 근무표, QR 출퇴근, 급여 계산과 명세서, 전자근로계약서까지. 30일 무료, 카드 등록 없음.'],
+ ['/pricing','pricing.html','요금 안내 · 척척사장봇','베이직 월 9,900원부터, 프로(매장 QR 출퇴근) 월 14,900원부터(1지점, VAT 포함). 직원 수 제한 없이 지점 수로만 정해요. 30일 무료.'],
+ ['/calculator','calculator.html','주휴수당·인건비 계산기 · 척척사장봇','시급과 근무 시간만 넣으면 주휴수당, 월 인건비, 4대보험 사장님 부담까지 바로 계산해요. 로그인 없이 무료.'],
+ ['/help','help.html','자주 묻는 질문 · 척척사장봇','출퇴근 QR, 근무표, 급여 계산, 근로계약서, 요금과 체험에 대해 자주 묻는 질문을 모았어요.'],
+ ['/start','start.html','시작하기 · 척척사장봇','사장님은 가게를 만들고, 직원은 가입 링크로 합류해요.'],
+ ['/terms','terms.html','이용약관 · 척척사장봇','척척사장봇 이용약관'],
+ ['/privacy','privacy.html','개인정보 처리방침 · 척척사장봇','척척사장봇 개인정보 처리방침'],
+ ['/refund','refund.html','해지·환불 규정 · 척척사장봇','척척사장봇 해지·환불 규정'],
+];
+for(const [path,file,title,desc] of PUBLIC_PAGES){
+ const page=html.replace('<meta name="robots" content="noindex,nofollow">','<link rel="canonical" href="'+site+path+'"><meta property="og:type" content="website"><meta property="og:site_name" content="척척사장봇"><meta property="og:title" content="'+esc(title)+'"><meta property="og:description" content="'+esc(desc)+'"><meta property="og:url" content="'+site+path+'"><meta property="og:image" content="'+site+'/icon-512.png"><meta property="og:locale" content="ko_KR">')
+  .replace(/<title>[^<]*<\/title>/,'<title>'+esc(title)+'</title>').replace(/<meta name="description" content="[^"]*">/,'<meta name="description" content="'+esc(desc)+'">');
+ if(page.includes('noindex'))throw new Error('공개 화면에 noindex가 남았어요: '+path);
+ await writeFile('dist/client/'+file,page);
+}
+await writeFile('dist/client/sitemap.xml','<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'+PUBLIC_PAGES.map(([p])=>'  <url><loc>'+site+p+'</loc></url>').join('\n')+'\n</urlset>\n');
+await writeFile('dist/client/robots.txt','User-agent: *\nAllow: /\nDisallow: /app\nDisallow: /admin\nDisallow: /account\nDisallow: /contracts\nDisallow: /manager\nSitemap: '+site+'/sitemap.xml\n');
 await writeFile('dist/client/.nojekyll','');
 if(appDomain)await writeFile('dist/client/CNAME',appDomain.trim()+'\n');
 await writeFile('dist/client/version.json',JSON.stringify({sha:process.env.GITHUB_SHA||'local',builtAt:new Date().toISOString()})+'\n'); // 작업 004: 배포 후 점검이 새 화면이 올라왔는지 확인

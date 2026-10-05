@@ -127,7 +127,7 @@ export async function nativeAuth(request:Request,env:Env){
   if(b.action==='register'){
    if(!validPassword(b.password))return json({error:'비밀번호는 8~128자로 입력해 주세요. 단순 반복이나 연속 숫자는 피해 주세요.'},400);
    if(!['owner','employee'].includes(b.role)||typeof b.name!=='string'||!b.name.trim()||b.name.length>80)return json({error:'이름과 가입할 역할을 확인해 주세요.'},400);
-   if(b.agree!==true)return json({error:'이용약관과 개인정보 처리방침에 동의해 주세요.',code:'CONSENT_REQUIRED'},400);
+   if(b.agree!==true)return json({error:'만 14세 이상인지 확인하고 이용약관과 개인정보 처리방침에 동의해 주세요.',code:'CONSENT_REQUIRED'},400);
    if(await env.DB.prepare('SELECT 1 AS x FROM app_users WHERE email=?').bind(email).first())return json({error:'이 이메일로 가입할 수 없어요. 기존 회원이라면 로그인해 주세요.'},409);
    // 가입 즉시 쓸 수 있게 만든다. 이메일 확인은 앱의 '이메일 확인' 단계에서 따로 한다.
    const created=await gotrue(env,'/admin/users',{method:'POST',admin:true,body:{email,password:b.password,email_confirm:true,user_metadata:{name:b.name.trim(),role:b.role}}});
