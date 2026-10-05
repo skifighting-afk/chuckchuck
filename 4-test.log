@@ -62,21 +62,24 @@ HQ/capacity checks: 36 passed
 13. PASS salary fields not returned
 14. PASS no employee capacity limit
 15. PASS industry counts
-16. PASS plan filtering
-17. PASS overview independent of filter
-18. PASS branch name search
-19. PASS queue filter
-20. PASS unmatched search empty
-21. PASS page clamped
-22. PASS server page50
-23. PASS second page count
-24. PASS search spans all pages
-25. PASS six months buckets
-26. PASS industry onboarding created
-27. PASS industry in account view
-28. PASS industry reaches HQ
-29. PASS unlisted industry rejected
-HQ analytics and onboarding checks: 29 passed
+16. PASS 사용 흐름: 5단계, 첫 단계는 전체 가게 수
+17. PASS 각 단계는 전체 가게 수 이하
+18. PASS 사용 흐름에 개인정보 없음
+19. PASS plan filtering
+20. PASS overview independent of filter
+21. PASS branch name search
+22. PASS queue filter
+23. PASS unmatched search empty
+24. PASS page clamped
+25. PASS server page50
+26. PASS second page count
+27. PASS search spans all pages
+28. PASS six months buckets
+29. PASS industry onboarding created
+30. PASS industry in account view
+31. PASS industry reaches HQ
+32. PASS unlisted industry rejected
+HQ analytics and onboarding checks: 32 passed
 
 ── check-attendance-qr
 PASS 1. branch save
