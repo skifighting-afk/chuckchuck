@@ -57,7 +57,9 @@ export function parse(text:string,people:Person[],today:string):Parsed{
  const w=parseWage(text);if(w)p.wage=w;
  const times=parseTimes(text);
  if(times){const d=parseDate(text,today);const br=/휴게\s*(\d+)\s*(분|시간)/.exec(text);p.shift={date:d||today,...times,breakMinutes:br?Number(br[1])*(br[2]==='시간'?60:1):legalBreak(times.start,times.end),guessedDate:!d}}
- if(/명세서/.test(text))p.verb=/보내|전송|발송|줘\b|주세요|돌려/.test(text)&&!/보여|보기|열어/.test(text)?'payslip-send':'payslip-view';
+ const question=/어떻게|방법|뭐야|언제|며칠|꼭|의무|줘야|해야\s*해|되나|돼\?|과태료|벌금|안\s*쓰면|안\s*주면/.test(text);
+ if(question&&!who&&!w&&!times){}
+ else if(/명세서/.test(text))p.verb=/보내|전송|발송|줘\b|주세요|돌려/.test(text)&&!/보여|보기|열어/.test(text)?'payslip-send':'payslip-view';
  else if(/계약서/.test(text))p.verb='contract';
  else if(/QR|큐알|qr/.test(text))p.verb='qr';
  else if(/(새|신규)\s*직원|등록해|추가해/.test(text)&&!who&&!times)p.verb='register';

@@ -981,3 +981,26 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('그 직원 명세서',reply('그 직원 명세서 보여줘',t,a.branchId,d,now,[],{employeeId:'e1'}).actions[0].type==='openPayslip');
  console.log('PASS: 척척 비서 앞 대화 기억.');
 }
+// 척척 비서 질문 100가지
+{
+ const {KB,matchKB,answerKB}=await import('../dist/server/assistant.js');
+ const {reply}=await import('../dist/server/assistant.js');
+ ok('질문 100가지 이상',KB.length>=100&&new Set(KB.map(x=>x.id)).size===KB.length);
+ const miss=KB.filter(it=>matchKB(it.q)?.id!==it.id).map(it=>it.id);ok('예시 질문마다 자기 항목으로 감'+(miss.length?' '+miss.join(','):''),!miss.length);
+ const t=normalizeTeam(null);delete t.legacy;const [a]=t.employees;t.employees=[{...a,id:'e1',name:'김예시',status:'재직',payType:'시급',wage:9000,weeklyHours:12,joined:'2025-11-01',birthMonth:'2010-03'}];
+ t.shifts=[{id:'s1',employeeId:'e1',date:'2026-10-06',start:'09:00',end:'15:00',breakMinutes:30}];t.attendance=[{id:'a1',employeeId:'e1',start:'2026-10-02T00:00:00.000Z',end:null,breakMinutes:0}];t.payrollRuns={};
+ const d='2026-10-05',now=Date.parse(d+'T14:00:00+09:00'),c={s:t,branch:a.branchId,date:d,now,es:t.employees,ids:new Set(['e1']),text:''};
+ let bad=[];for(const it of KB){try{const o=answerKB(it,c);if(!o.lines.length||o.lines.some(l=>!l||l.includes('undefined')||l.includes('NaN')))bad.push(it.id)}catch(e){bad.push(it.id+':'+e.message)}}
+ ok('100가지 모두 답이 나옴'+(bad.length?' '+bad.join(','):''),!bad.length);
+ ok('내일 근무자',reply('내일 누가 일해?',t,a.branchId,d,now).lines[0].includes('김예시 09:00–15:00'));
+ ok('최저시급 미달 찾기',reply('최저시급보다 적게 받는 직원 있어?',t,a.branchId,d,now).lines[0].includes('김예시 9,000원'));
+ ok('퇴근 누락',reply('퇴근 안 찍은 사람 있어?',t,a.branchId,d,now).lines[0].includes('10월 2일'));
+ ok('18세 미만',reply('18세 미만 직원 있어?',t,a.branchId,d,now).lines[0].includes('김예시'));
+ ok('곧 1년',reply('곧 1년 되는 직원은?',t,a.branchId,d,now).lines[0].includes('11월 1일'));
+ ok('노무 상식: 주휴 조건',reply('주휴수당 조건이 뭐야?',t,a.branchId,d,now).lines[0].includes('15시간'));
+ ok('질문은 명령으로 안 감',reply('명세서는 어떻게 보내?',t,a.branchId,d,now).actions.every(x=>x.type!=='sendPayslip'));
+ ok('계약서 안 쓴 직원 목록',reply('계약서 안 쓴 직원은?',t,a.branchId,d,now).lines[0].includes('김예시'));
+ ok('명령은 그대로',reply('명세서 다 보내줘',t,a.branchId,d,now).actions[0].type==='go');
+ ok('개인 주휴는 개인 답',reply('김예시 주휴 받을 수 있어?',t,a.branchId,d,now).lines[0].includes('김예시님 이번 주'));
+ console.log('PASS: 척척 비서 질문 100가지.');
+}

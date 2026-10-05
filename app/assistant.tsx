@@ -3,7 +3,7 @@
 // 대화형 AI를 부르지 않고 lib/assistant.ts 규칙으로 읽고 답한다.
 import {useEffect,useMemo,useRef,useState} from 'react';
 import {type Team,today} from '../lib/team-model';
-import {assistantBrief,reply,type Action,type Reply,type Memo} from '../lib/assistant';
+import {assistantBrief,reply,KB,type Action,type Reply,type Memo} from '../lib/assistant';
 import {type Target} from '../lib/close-check';
 
 type Msg={id:number,from:'me'|'bot',lines:string[],actions?:Action[],done?:Record<number,string>,tone?:string};
@@ -11,7 +11,7 @@ const CHIPS=['오늘 누가 일해?','누가 지각했어?','이번 달 인건�
 const PAGE_OF:Record<Target,string>={attendance:'출퇴근 기록',employees:'직원 관리',operations:'휴가·공지',contracts:'근로계약서',payroll:'급여·명세서',schedule:'근무 스케줄',reports:'인건비 리포트'};
 
 export function AssistantDock({state,branch,page,run}:{state:Team,branch:string,page:string,run:(a:Action)=>Promise<string>}){
- const [open,setOpen]=useState(false),[q,setQ]=useState(''),[msgs,setMsgs]=useState<Msg[]>([]),[busy,setBusy]=useState(-1),faq=useRef<{q:string,a:string}[]>([]),log=useRef<HTMLDivElement>(null),seq=useRef(1),memo=useRef<Memo>({});
+ const [open,setOpen]=useState(false),[list,setList]=useState(false),[q,setQ]=useState(''),[msgs,setMsgs]=useState<Msg[]>([]),[busy,setBusy]=useState(-1),faq=useRef<{q:string,a:string}[]>([]),log=useRef<HTMLDivElement>(null),seq=useRef(1),memo=useRef<Memo>({});
  const brief=useMemo(()=>assistantBrief(state,branch,page,today()).slice(0,4),[state,branch,page]);
  const urgent=brief.filter(b=>b.tone==='red'||b.tone==='amber').length;
  useEffect(()=>{log.current?.scrollTo({top:log.current.scrollHeight,behavior:'smooth'})},[msgs]);
@@ -30,7 +30,7 @@ export function AssistantDock({state,branch,page,run}:{state:Team,branch:string,
     <div className="ast-msg bot"><p className="ast-title">{page==='홈'?'오늘 가게':page} · 지금 볼 것</p><ul className="ast-brief">{brief.map((b,i)=><li key={i} className={b.tone||''}>{b.text}{b.target&&PAGE_OF[b.target]!==page&&<button type="button" onClick={()=>{run({type:'go',target:b.target!,label:''});setOpen(false)}}>{PAGE_OF[b.target]} 열기</button>}</li>)}</ul></div>
     {msgs.map(m=><div key={m.id} className={'ast-msg '+m.from+(m.tone?' '+m.tone:'')}>{m.lines.map((l,i)=><p key={i}>{l}</p>)}{m.actions&&m.actions.length>0&&<div className="ast-acts">{m.actions.map((a,i)=>m.done?.[i]?<span key={i} className="ast-done" role="status">✓ {m.done[i]}</span>:<button type="button" key={i} disabled={busy>=0} className={i===0?'primary':''} onClick={()=>act(m,i)}>{busy===m.id*100+i?'하는 중…':a.label}</button>)}</div>}</div>)}
    </div>
-   <div className="ast-chips">{CHIPS.map(c=><button type="button" key={c} onClick={()=>ask(c)}>{c}</button>)}</div>
+   {list&&<div className="ast-list" role="region" aria-label="물어볼 수 있는 것">{[...new Set(KB.map(k=>k.group))].map(g=><section key={g}><h3>{g}</h3>{KB.filter(k=>k.group===g).map(k=><button type="button" key={k.id} onClick={()=>{setList(false);ask(k.q)}}>{k.q}</button>)}</section>)}</div>}<div className="ast-chips"><button type="button" className="ast-all" aria-expanded={list} onClick={()=>setList(!list)}>{list?'목록 닫기':`물어볼 수 있는 것 ${KB.length}가지`}</button>{CHIPS.map(c=><button type="button" key={c} onClick={()=>ask(c)}>{c}</button>)}</div>
    <form className="ast-input" onSubmit={e=>{e.preventDefault();ask(q)}}><label htmlFor="ast-q" className="sr-only">척척 비서에게 말하기</label><input id="ast-q" value={q} onChange={e=>setQ(e.target.value)} placeholder="예: 김민지 내일 9시부터 6시 근무" autoComplete="off"/><button type="submit">보내기</button></form>
   </aside>
   {open&&<div className="ast-scrim" onClick={()=>setOpen(false)} aria-hidden="true"/>}

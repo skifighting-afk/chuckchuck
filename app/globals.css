@@ -457,3 +457,8 @@ summary{cursor:pointer;padding-block:4px}
 @media(max-width:767px){.ast-fab{bottom:calc(76px + env(safe-area-inset-bottom))}}
 @keyframes ast-in{from{transform:translateX(24px);opacity:.6}to{transform:none;opacity:1}}@media(prefers-reduced-motion:reduce){.ast-dock.open{animation:none}}
 .ast-chips button{min-height:44px}.ast-brief li button{min-height:44px;padding:8px 12px}.assistant-brief li button{min-height:44px}.month-cell{min-height:58px}
+.ast-list{max-height:45%;overflow-y:auto;border-top:1px solid var(--ck-line);background:#fff;padding:8px 14px 12px}
+.ast-list h3{font-size:13px;color:var(--ck-green);margin:10px 0 6px}
+.ast-list section{display:flex;flex-wrap:wrap;gap:6px}.ast-list section h3{width:100%}
+.ast-list button{min-height:44px;padding:0 12px;border-radius:12px;border:1px solid #dfe8e2;background:#f6f9f7;color:var(--ck-ink);font-size:14px;text-align:left}
+.ast-chips .ast-all{background:var(--ck-green);color:#fff;border-color:var(--ck-green);font-weight:700}

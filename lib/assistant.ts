@@ -4,6 +4,7 @@ import {type Team,kdate,missing,calculate,duration} from './team-model';
 import {monthPatterns} from './attendance-check';
 import {ratesFor} from './pay-rules';
 import {parse,type Parsed} from './assistant-intents';
+import {matchKB,answerKB} from './assistant-kb';
 import {todayTasks,todayBoard,homeAlerts,budgetStatus,plannedLabor,type Target} from './close-check';
 import {checkDay} from './attendance-check';
 
@@ -119,6 +120,7 @@ export function reply(text:string,s:Team,branch:string,date:string,now=Date.now(
  const who=es.find(e=>e.id===p.employeeId);
  const r:Reply={lines:[],actions:[]};
  const done=(x:Reply)=>{x.memo={employeeId:who?.id||memo.employeeId,lastVerb:p.verb||(p.wage?'wage':p.shift?'shift':memo.lastVerb),pending:x.lines.some(l=>l.includes('이름을 같이 말해')||l.includes('이름을 말해'))?text:undefined};return x};
+ {const kb=!who&&!p.wage&&!p.shift?matchKB(text):null;if(kb){const o=answerKB(kb,{s,branch,date,now,es,ids,who,text});r.lines.push(...o.lines);r.actions.push(...o.actions);return done(r)}}
  if(nameOnly&&who){if(guessed)r.lines.push(guessed);const row=calculate(s,date.slice(0,7)).find(x=>x.employeeId===who.id);r.lines.push(`${who.name}님 · ${who.payType} ${won(who.wage)}원 · 주 ${who.weeklyHours}시간 · ${who.employment} · 계약 ${who.contract.status}`);if(row)r.lines.push(`이번 달 ${row.hours.toFixed(1)}시간 일했고 실수령 ${won(row.net)}원(확정 전 포함)이에요.`);if(missing(who).length)r.lines.push('덜 채워진 정보: '+missing(who).join(', '));r.lines.push('이어서 "시급 11000", "내일 9시부터 6시", "명세서 보내줘", "계약서 써줘"처럼 말하면 이 직원으로 처리해요.');r.actions.push({type:'openPayslip',employeeId:who.id,month:date.slice(0,7),label:'명세서 보기'},{type:'link',href:'/contracts',label:'계약서 만들기·보내기'});return done(r)}
  const month=date.slice(0,7),run=(s.payrollRuns as any)[month+':'+branch],prevMonth=new Date(Date.parse(month+'-01T00:00:00Z')-86400000).toISOString().slice(0,7),prevRun=(s.payrollRuns as any)[prevMonth+':'+branch];
  if(p.wage){
@@ -139,6 +141,8 @@ export function reply(text:string,s:Team,branch:string,date:string,now=Date.now(
  if(p.verb==='qr'){r.lines.push('매장 출퇴근 QR을 띄울게요. 직원은 이 QR을 찍어야 출근·퇴근·휴게가 기록돼요.');r.actions.push({type:'qr',label:'QR 띄우기'})}
  if(p.verb==='register'){r.lines.push('새 직원은 가입 링크를 보내면 직원이 직접 정보를 넣고, 사장님은 승인함에서 수락만 하면 돼요. 직접 입력할 수도 있어요.');r.actions.push({type:'go',target:'employees',label:'직원 관리 열기'})}
  if(r.lines.length)return done(r);
+ // 질문 100가지(가게 기록 답 · 노무 상식 · 사용법). 특정 직원의 주휴·급여 질문은 아래 개인 답이 먼저.
+ {const kb=matchKB(text);if(kb&&!(who&&(p.topic==='juhu'||p.topic==='pay'))){const o=answerKB(kb,{s,branch,date,now,es,ids,who,text});r.lines.push(...o.lines);r.actions.push(...o.actions);return done(r)}}
  const tol=((s.settings as any).attendanceTolerance||'normal'),f=checkDay(date,s.shifts.filter(x=>ids.has(x.employeeId)),s.attendance.filter(a=>ids.has(a.employeeId)),tol,now),board=todayBoard(s,branch,date,f,now,tol==='lenient'?10:tol==='strict'?0:5);
  switch(p.topic){
   case 'working':{const w=board.rows.filter(x=>['working','late','extra'].includes(x.status)),left=board.rows.filter(x=>['planned','noshow'].includes(x.status));
@@ -155,3 +159,4 @@ export function reply(text:string,s:Team,branch:string,date:string,now=Date.now(
  if(!r.lines.length){const hits=searchAnswers(faq,text,2);if(hits.length)for(const h of hits)r.lines.push(h.q+' — '+h.a);else r.lines.push('그 말은 아직 잘 모르겠어요. "도움말"이라고 쓰면 제가 할 수 있는 일을 알려 드려요.')}
  return done(r);
 }
+export {KB,matchKB,answerKB} from './assistant-kb';
