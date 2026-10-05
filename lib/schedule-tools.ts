@@ -100,3 +100,22 @@ export function draftFromAvailability(needs: Need[], availability: Record<string
   }
   return {made, unfilled};
 }
+
+// 가이드 81: 근무표를 짤 때 가산수당이 붙는 근무를 미리 보여 준다(5명 이상 사업장).
+// 야간: 22~06시 근무(휴게는 근무 시간 비율로 뺌). 연장: 하루 8시간 넘는 시간과 주 40시간 넘는 시간 중 큰 쪽(겹쳐 세지 않음).
+const toMin = (hm: string) => Number(hm.slice(0, 2)) * 60 + Number(hm.slice(3, 5));
+export function premiumPreview(shifts: Shift[], weekStart: string, names: Record<string, string>) {
+  const end = new Date(Date.parse(weekStart + 'T00:00:00Z') + 7 * 86400000).toISOString().slice(0, 10);
+  const by = new Map<string, {night: number; daily: number; total: number}>();
+  for (const s of shifts.filter(x => x.date >= weekStart && x.date < end)) {
+    const a = toMin(s.start), b0 = toMin(s.end), b = b0 <= a ? b0 + 1440 : b0, span = b - a;
+    if (span <= 0) continue;
+    let night = 0; for (let t = a; t < b; t++) { const m = t % 1440; if (m >= 1320 || m < 360) night++; }
+    const keep = (span - Math.min(span, s.breakMinutes)) / span, worked = (span - Math.min(span, s.breakMinutes)) / 60;
+    const r = by.get(s.employeeId) || {night: 0, daily: 0, total: 0};
+    r.night += night * keep / 60; r.daily += Math.max(0, worked - 8); r.total += worked;
+    by.set(s.employeeId, r);
+  }
+  return [...by.entries()].map(([id, r]) => ({employeeId: id, name: names[id] || '직원', night: Math.round(r.night * 10) / 10, overtime: Math.round(Math.max(r.daily, r.total - 40) * 10) / 10, total: Math.round(r.total * 10) / 10}))
+    .filter(x => x.night > 0 || x.overtime > 0);
+}

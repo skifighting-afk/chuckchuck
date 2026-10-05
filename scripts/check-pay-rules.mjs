@@ -708,3 +708,28 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('쉼표는 이스케이프',t.includes('LOCATION:본점\\, 1층'));
  console.log('PASS: 근무표 달력 파일.');
 }
+// 가이드 81: 근무표 가산수당 미리 보기
+{
+ const {premiumPreview}=await import('../lib/schedule-tools.ts');
+ const sh=(id,date,start,end,brk=60)=>({id:id+date,employeeId:id,date,start,end,breakMinutes:brk});
+ const week=['2026-10-05','2026-10-06','2026-10-07','2026-10-08','2026-10-09'];
+ const shifts=[...week.map(d=>sh('a',d,'09:00','19:00')),sh('b','2026-10-06','20:00','02:00',0),sh('c','2026-10-07','09:00','13:00',0)];
+ const p=premiumPreview(shifts,'2026-10-05',{a:'가',b:'나',c:'다'}),g=id=>p.find(x=>x.employeeId===id);
+ ok('하루 9시간×5일 = 연장 5시간(주 45시간과 같음, 겹쳐 세지 않음)',g('a').overtime===5&&g('a').total===45);
+ ok('20~02시 근무 = 야간 4시간',g('b').night===4&&g('b').overtime===0);
+ ok('가산 없는 직원은 목록에서 빠짐',!g('c'));
+ ok('다음 주 근무는 세지 않음',premiumPreview([sh('a','2026-10-12','22:00','06:00',0)],'2026-10-05',{}).length===0);
+ console.log('PASS: 근무표 가산수당 미리 보기.');
+}
+// 가이드 77: 인건비 예산
+{
+ const {budgetStatus,plannedLabor,todayTasks}=await import('../dist/server/close-check.js');
+ const t=normalizeTeam(null);delete t.legacy;const e=t.employees[0];e.payType='시급';e.wage=10000;e.status='재직';
+ t.employees=[e];t.shifts=[{id:'s1',employeeId:e.id,date:'2026-10-06',start:'09:00',end:'19:00',breakMinutes:60}];
+ ok('예상 인건비 = 근무표 9시간 × 시급',plannedLabor(t,e.branchId,'2026-10')===90000);
+ ok('예산 없으면 표시 안 함',budgetStatus(t,e.branchId,'2026-10')===null);
+ t.settings.laborBudget=95000;const b=budgetStatus(t,e.branchId,'2026-10');
+ ok('예산 90% 넘으면 경고',b.near&&!b.over&&todayTasks(t,e.branchId,'2026-10-05').some(x=>x.key==='budget'));
+ t.settings.laborBudget=200000;ok('예산 여유 있으면 오늘 할 일 없음',!todayTasks(t,e.branchId,'2026-10-05').some(x=>x.key==='budget'));
+ console.log('PASS: 인건비 예산.');
+}

@@ -3,7 +3,7 @@
 import {useEffect,useState} from 'react';
 import {type Team} from '../lib/team-model';
 import {todayTasks,monthChecklist,type Target} from '../lib/close-check';
-export const TARGET_PAGE:Record<Target,string>={attendance:'출퇴근 기록',employees:'직원 관리',operations:'휴가·공지',contracts:'근로계약서',payroll:'급여·명세서',schedule:'근무 스케줄'};
+export const TARGET_PAGE:Record<Target,string>={attendance:'출퇴근 기록',employees:'직원 관리',operations:'휴가·공지',contracts:'근로계약서',payroll:'급여·명세서',schedule:'근무 스케줄',reports:'인건비 리포트'};
 function useOps(skip=false){const [ops,setOps]=useState<any>(null);useEffect(()=>{if(skip)return;fetch('/api/operations').then(r=>r.ok?r.json():null).then(setOps).catch(()=>{})},[]);return ops}
 export function TodayTasks({s,branch,today,go,demo}:{s:Team,branch:string,today:string,go:(t:Target)=>void,demo?:boolean}){
  const ops=useOps(!!demo),[docs,setDocs]=useState<any[]|null>(null);
