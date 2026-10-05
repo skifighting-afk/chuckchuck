@@ -839,5 +839,12 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('끝난 근무에 기록 없으면 미출근',st('e4').status==='missed'&&b.attention===2);
  ok('자정 넘는 근무는 26시까지 그림',st('e3').to===26&&b.hi>=26&&b.lo<=9);
  ok('지금 위치 표시',Math.abs(b.now-(14+10/60))<0.01);
+ t.employees.push(mk('e5','마'),mk('e6','바'));t.shifts.push({id:'s6',employeeId:'e6',date:d,start:'08:00',end:'10:00',breakMinutes:0});
+ t.attendance.push({id:'a5',employeeId:'e5',start:iso('12:00'),end:null,breakMinutes:0},{id:'a6',employeeId:'e6',start:iso('07:58'),end:iso('10:01'),breakMinutes:0},{id:'a7',employeeId:'e5',start:iso('07:00'),end:iso('07:30'),breakMinutes:0});
+ const f2=checkDay(d,t.shifts,t.attendance,'normal',now),b2=todayBoard(t,a.branchId,d,f2,now);
+ ok('근무표 없는 출근도 막대로',b2.rows.some(r=>r.employeeId==='e5'&&r.status==='extra'&&r.label.includes('근무 중')));
+ ok('근무표 없이 왔다 간 기록',b2.rows.some(r=>r.employeeId==='e5'&&r.status==='done'&&r.to>r.from));
+ ok('퇴근한 사람은 퇴근 시각',b2.rows.find(r=>r.employeeId==='e6').label==='퇴근 10:01'&&b2.lo<=7);
+ const late=todayBoard(t,a.branchId,d,f2,Date.parse(d+'T23:59:00+09:00'));ok('밤에는 지금 표시가 범위 밖이면 없음',late.now===null||late.now<=late.hi);
  console.log('PASS: 홈 오늘 근무 막대.');
 }
