@@ -2,10 +2,10 @@
 > chuckchuck@0.1.0 build
 > node scripts/portable-build.mjs
 
-화면 묶음: app.js 303KB, 필요할 때 받는 조각 16개 691KB
+화면 묶음: app.js 304KB, 필요할 때 받는 조각 16개 691KB
   team-Llx2zR4r.js 411KB
   capacity-dialog-C6abEiYy.js 158KB
-  admin-desk-54oHEXOx.js 23KB
+  admin-desk-C2M_lBu1.js 23KB
   browser-Cbn702-H.js 23KB
   staff-join-D5X7GWsD.js 20KB
   contracts-desk-DZyQ8hRY.js 12KB

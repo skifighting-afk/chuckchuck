@@ -402,6 +402,7 @@ PASS: 세금계산서 정보·발행 요청.
 PASS: 기간제 만료 안내 메일 준비.
 PASS: 결제 내역.
 PASS: 해지 예약.
+PASS: 사업자등록번호 입력.
 
 ── check-simple-join
 1. PASS owner creates short code
@@ -884,6 +885,13 @@ PASS 238. 기간제 서식
 PASS 239. 단시간 서식: 요일별 근로시간
 PASS 240. 연소근로자 서식: 7시간·35시간, 가족관계증명서, 제67조
 PASS: 2025 표준 근로계약서.
+PASS 241. 키가 없으면 미확인
+PASS 242. 형식이 틀리면 미확인
+PASS 243. 계속사업자
+PASS 244. 휴업·폐업
+PASS 245. 등록되지 않은 번호
+PASS 246. 조회 실패도 가입은 막지 않음(미확인)
+PASS: 사업자 상태조회.
 
 ── check-claims
 PASS: 과장·허위 문구 검사 (화면·홈페이지).
@@ -959,7 +967,7 @@ PASS 36. 2026-03-31: no attendance in the future
 PASS: 체험 화면 숫자(급여·명세서·임금대장 합계).
 
 ── check-error-messages
-PASS: 오류 문구 352개 모두 다음 행동 안내 포함.
+PASS: 오류 문구 354개 모두 다음 행동 안내 포함.
 PASS: 오류 번호·로그 개인정보 제거.
 
 ── check-attendance-table
