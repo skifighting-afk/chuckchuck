@@ -41,7 +41,7 @@ export default function Platform(){
  const reload=async()=>{setError('');setStatus('loading');try{const r=await fetch('/api/account');const d:any=await r.json();if(r.status===401){setStatus('anonymous');return}if(!r.ok)throw Error(d.error);setAccount(d);setStatus('ready')}catch(e){setError(e instanceof Error?e.message:'연결할 수 없습니다.');setStatus('error')}};
  useEffect(()=>{if(!['/demo','/try','/start','/calculator','/help','/refund','/admin','/admin/login'].includes(path))reload()},[]);
  if(path==='/admin/login')return <Shell><main className="native-auth-wrap"><AuthForm role="owner" next="/admin" account={null} admin/></main></Shell>;
- if(path==='/admin')return <Shell><AdminDesk/></Shell>;
+ if(path==='/admin')return <Shell><AdminDesk/><section className="saas-account" aria-label="본사 알림"><p className="saas-fine">서버 오류가 10분 안에 3번 넘게 나면 이 기기로 알림을 보내요.</p><PushToggle/></section></Shell>;
  if(path==='/verify-email')return <Shell><VerifyEmail/></Shell>;
  if(path==='/withdraw')return <Shell><DeviceSessions/><PushToggle/><Withdraw/></Shell>;
  if(path==='/calculator')return <Shell><Calculator/></Shell>;

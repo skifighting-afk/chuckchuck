@@ -1,0 +1,20 @@
+// 가이드 44: 서버 오류가 잇달아 나면 본사에 한 번 알림
+import assert from 'node:assert/strict';
+import {authedTest} from './test-auth.mjs';import {closeAll} from './test-db.mjs';
+import {recordServerError,ALERT_COOLDOWN_MS,ALERT_WINDOW_MS} from '../lib/ops-alert.ts';
+const {env}=await authedTest();
+await env.DB.prepare("DELETE FROM ops_alerts").run();
+const sent=[];const notify=async m=>{sent.push(m)};
+const t0=Date.now();
+assert.equal(await recordServerError(env.DB,'/api/store','E-AAA',notify,t0),false,'1건은 알림 없음');
+assert.equal(await recordServerError(env.DB,'/api/store','E-BBB',notify,t0+1000),false,'2건도 알림 없음');
+assert.equal(await recordServerError(env.DB,'/api/store','E-CCC',notify,t0+2000),true,'10분 안 3건이면 알림');
+assert.ok(sent[0].body.includes('E-CCC')&&sent[0].body.includes('3건')&&!/@/.test(sent[0].body),'오류 번호·건수만, 개인정보 없음');
+assert.equal(await recordServerError(env.DB,'/api/store','E-DDD',notify,t0+3000),false,'1시간 안에는 다시 안 보냄');
+assert.equal(await recordServerError(env.DB,'/api/x','E-EEE',notify,t0+ALERT_WINDOW_MS+5000),false,'창이 지나면 다시 1건부터');
+await recordServerError(env.DB,'/api/x','E-F',notify,t0+ALERT_COOLDOWN_MS+1000);await recordServerError(env.DB,'/api/x','E-G',notify,t0+ALERT_COOLDOWN_MS+2000);
+assert.equal(await recordServerError(env.DB,'/api/x','E-H',notify,t0+ALERT_COOLDOWN_MS+3000),true,'1시간 뒤에는 다시 알림');
+assert.equal(sent.length,2);
+await env.DB.prepare("DELETE FROM ops_alerts").run();
+console.log('PASS: 서버 오류 알림 (10분 3건 · 1시간 1번 · 개인정보 없음).');
+await closeAll();

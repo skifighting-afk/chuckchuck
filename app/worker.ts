@@ -1,4 +1,5 @@
 import {authLimit} from './auth-api';
+import {recordServerError} from '../lib/ops-alert';
 import {documentsApi} from './documents-api';
 import {serverError,reportError} from '../lib/errors';
 import {payslipText,payslipProblems} from '../lib/payslip';
@@ -28,7 +29,14 @@ import {same} from '../lib/same';
 import {findShiftConflict} from '../lib/schedule-tools';
 const esc=(s:any)=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
 export function slipText(row:any,month:string,date:string,store:string){return payslipText(store,month,date,row)}
+// 가이드 44: 모든 요청을 감싸서 서버 오류(5xx)가 잇달아 나면 본사에 알린다.
 export async function api(request:Request,env:Env){
+ const path=new URL(request.url).pathname;let res:Response;
+ try{res=await route(request,env)}catch(e){res=serverError('api',e)}
+ if(res.status>=500&&res.status!==503){const id=await res.clone().json().then((d:any)=>d?.errorId).catch(()=>undefined);await recordServerError(env.DB as any,path,id,m=>notifyUser(env as any,env.HQ_NATIVE_USER_ID,m)).catch(e=>reportError('ops-alert',e))}
+ return res;
+}
+async function route(request:Request,env:Env){
  const path=new URL(request.url).pathname;
  // 작업 056: 기한이 지난 탈퇴 예약을 로그인·계정 요청 때 조금씩 마무리한다.
  if(path==='/api/auth'||path==='/api/account')await processDeletions(env).catch(e=>{reportError('withdraw-purge',e);return 0});
