@@ -6,6 +6,7 @@ import {chromium} from 'playwright';
 import {execFileSync} from 'node:child_process';
 import {mkdirSync,readFileSync,writeFileSync,existsSync} from 'node:fs';
 import {join,resolve} from 'node:path';
+import {predict} from './predict.mjs';
 
 const arg=(k,d)=>{const i=process.argv.indexOf(k);return i>0?process.argv[i+1]:d};
 const topics=JSON.parse(readFileSync(new URL('./topics.json',import.meta.url),'utf8'));
@@ -40,8 +41,8 @@ const pages=[
  ...cards.map((c,i)=>shell(`<div class="brand" style="color:#15643f"><i>척</i>척척사장봇</div><span class="tag" style="margin-top:120px;background:#15643f;color:#fff">${i+1} / ${cards.length}</span><p style="margin-top:56px">${esc(c)}</p><div class="foot" style="color:#4b5d53">${esc(t.q)}</div>`,'#f4f7f5','#10251b')),
  shell(`<div class="brand"><i>척</i>척척사장봇</div><h1 style="margin-top:160px">${law?'이런 계산,<br>앱이 대신 해요':'더 쉽게,<br>척척.'}</h1><p style="margin-top:56px;font-size:60px;color:#d9eadf">주휴수당 · 급여명세서 · 근로계약서 · QR 출퇴근</p><div class="foot"><div style="font-size:56px;color:#c8f169;font-weight:900">30일 무료 · 프로필 링크</div><div style="margin-top:12px;color:#d9eadf">chukchukapp.kr${law?' · 자세한 상담은 고용노동부 1350':''}</div></div>`,'#15643f','#ffffff'),
 ];
-// 카드별 보여 줄 시간(초): 질문 3초, 답은 글자 수에 맞춰 4~6초, 마지막 3.5초
-const secs=[3,...cards.map(c=>Math.min(6,Math.max(4,c.length/18))),3.5];
+// 카드별 보여 줄 시간(초): 질문 3초, 답은 초당 9자 읽는 속도로 3.5~7초, 마지막 3.5초
+const secs=[3,...cards.map(c=>Math.min(7,Math.max(3.5,c.replace(/\s/g,"").length/9))),3.5];
 
 const browser=await chromium.launch(process.env.PW_CHROMIUM?{executablePath:process.env.PW_CHROMIUM}:{});
 const page=await browser.newPage({viewport:{width:1080,height:1920},deviceScaleFactor:1});
@@ -61,5 +62,6 @@ execFileSync('ffmpeg',['-y','-loglevel','error',...inputs,'-f','lavfi','-t',tota
 const tags='#자영업 #자영업자 #사장님 #소상공인 #알바관리 #직원관리 #노무상식 #주휴수당 #최저시급 #근로계약서 #급여명세서 #척척사장봇';
 const caption=`${t.q}\n\n${t.a}\n\n${law?'※ 일반적인 기준이에요. 사정마다 다를 수 있으니 애매하면 고용노동부 상담센터(1350)에 확인하세요.\n\n':''}이런 계산과 서류, 척척사장봇이 대신 해요. 30일 무료 · 카드 등록 없이 👉 프로필 링크\n\n${tags}`;
 writeFileSync(join(out,'caption.txt'),caption);
-writeFileSync(join(out,'meta.json'),JSON.stringify({index,id:t.id,q:t.q,seconds:Number(total.toFixed(1)),cover:join(out,'card-0.png')},null,1));
-console.log(`릴스 만듦: ${index}번 "${t.q}" · ${total.toFixed(1)}초 → ${mp4}`);
+const pred=predict({q:t.q,cards,secs,audio:false});
+writeFileSync(join(out,'meta.json'),JSON.stringify({index,id:t.id,q:t.q,group:t.group,seconds:Number(total.toFixed(1)),cover:join(out,'card-0.png'),predict:pred,timeline:secs.map((sec,i)=>({label:i===0?'질문':i===secs.length-1?'마무리':'답 '+i,sec:Math.round(sec*10)/10,cps:i>0&&i<secs.length-1?Math.round(cards[i-1].replace(/\s/g,'').length/sec*10)/10:null}))},null,1));
+console.log(`릴스 만듦: ${index}번 "${t.q}" · ${total.toFixed(1)}초 · 예상 점수 ${pred.score} → ${mp4}`);
