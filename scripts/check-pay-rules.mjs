@@ -594,3 +594,21 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('조회 실패도 가입은 막지 않음(미확인)',(await checkBusiness('1234567891',{NTS_API_KEY:'k'},reply(null,500))).status==='미확인'&&(await checkBusiness('1234567891',{NTS_API_KEY:'k'},async()=>{throw Error('x')})).status==='미확인');
  console.log('PASS: 사업자 상태조회.');
 }
+// 작업 013·014·015: 운영자 정보와 약관·개인정보 처리방침
+{
+ const {TERMS,PRIVACY,legalMarkdown}=await import('../dist/server/legal-docs.js');
+ const {LEGAL}=await import('../lib/legal.ts');
+ const {operatorLines,operatorMissing,formatBizNo,ftcLink,OPERATOR}=await import('../lib/operator.ts');
+ const {readFileSync}=await import('node:fs');
+ ok('약관·방침 판이 동의 판과 같음',TERMS.version===LEGAL.terms.version&&PRIVACY.version===LEGAL.privacy.version);
+ ok('docs/legal 문서가 코드와 같음(node scripts/legal-md.mjs)',readFileSync('docs/legal/terms.md','utf8')===legalMarkdown(TERMS)&&readFileSync('docs/legal/privacy.md','utf8')===legalMarkdown(PRIVACY));
+ ok('이전 판 목록에 지금 판이 있음',TERMS.history.some(h=>h.version===TERMS.version)&&PRIVACY.history.some(h=>h.version===PRIVACY.version));
+ ok('처리위탁 조항은 #processing',PRIVACY.sections.some(s=>s.id==='processing'));
+ const text=JSON.stringify(PRIVACY.sections);
+ for(const w of ['Supabase','Resend','국외 이전','보호책임자','휴가 증빙','결제 기록','118'])ok('개인정보 처리방침에 '+w,text.includes(w));
+ ok('검토 전이면 표시',!TERMS.reviewed?legalMarkdown(TERMS).includes('법률 검토 전'):true);
+ ok('운영자 정보 9줄, 빈 값은 확인 필요',operatorLines().length===9&&operatorLines({...OPERATOR,company:''}).some(([k,v])=>k==='상호'&&v==='확인 필요'));
+ ok('빠진 항목 목록',operatorMissing({...OPERATOR,company:'척척',representative:''}).includes('대표자')&&!operatorMissing({...OPERATOR,company:'척척'}).includes('상호'));
+ ok('사업자번호 표기·공정위 링크',formatBizNo('1234567891')==='123-45-67891'&&ftcLink('123-45-67891').endsWith('wrkr_no=1234567891')&&ftcLink('')==='');
+ console.log('PASS: 운영자 정보·약관·개인정보 처리방침.');
+}
