@@ -220,10 +220,11 @@ jobs:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           EMAIL_FROM: ${{ vars.EMAIL_FROM }}
           VAPID_SUBJECT: ${{ vars.VAPID_SUBJECT }}
+          NTS_API_KEY: ${{ secrets.NTS_API_KEY }}
         run: |
           set -o pipefail
           args=("APP_ORIGIN=${{ steps.origin.outputs.origins }}")
-          for v in HQ_ADMIN_EMAIL HQ_NATIVE_USER_ID RESEND_API_KEY EMAIL_FROM VAPID_PUBLIC_KEY VAPID_PRIVATE_KEY VAPID_SUBJECT; do
+          for v in HQ_ADMIN_EMAIL HQ_NATIVE_USER_ID RESEND_API_KEY EMAIL_FROM VAPID_PUBLIC_KEY VAPID_PRIVATE_KEY VAPID_SUBJECT NTS_API_KEY; do
             [ -n "${!v}" ] && args+=("$v=${!v}")
           done
           supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" "${args[@]}" 2>&1 | sed -E 's/=.*/=***/' | tee ci-logs/10-secrets.log

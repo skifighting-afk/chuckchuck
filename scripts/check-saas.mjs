@@ -78,4 +78,9 @@ r=await account('free',{action:'undoCancel'});assert.equal(r.status,200);assert.
 {const raw=JSON.parse((await q('SELECT data FROM stores WHERE owner=?',id('free')).first()).data);raw._account.cancelAt=new Date(Date.now()-1000).toISOString();await q('UPDATE stores SET data=?,version=version+1 WHERE owner=?',JSON.stringify(raw),id('free')).run();}
 assert.equal((await account('free')).data.account.status,'cancelled','after period end: read only');
 console.log('PASS: 해지 예약.');
+// 작업 011: 가게 등록 때 사업자등록번호(선택) — 키 없으면 미확인, 잘못된 번호는 다시 입력
+assert.equal((await account('biz1',{...setup('basic'),bizNo:'12345'})).status,400);
+assert.equal((await account('biz1',{...setup('basic'),bizNo:'123-45-67891'})).status,201);
+assert.equal((await account('biz1')).data.account.bizCheck.status,'미확인');
+console.log('PASS: 사업자등록번호 입력.');
 await closeAll();

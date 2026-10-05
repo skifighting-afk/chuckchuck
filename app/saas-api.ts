@@ -1,4 +1,5 @@
 import {confirmSigner} from './auth-api';
+import {checkBusiness} from '../lib/nts';
 import {isIndustry,industryName} from '../lib/industries';
 import {serverError} from '../lib/errors';
 import {isHQ} from './admin-api';
@@ -6,7 +7,7 @@ import {normalizeTeam} from '../lib/team-model';
 import {hydrateAttendance} from './attendance-store';
 import {LEGAL,consentCurrent} from '../lib/legal';
 import {plans,planId,TRIAL_DAYS,trialStatus,planLimits,monthlyPrice,periodPrice,capacityError,branchCount,MAX_BRANCHES,CONTRACTS_FREE_PER_MONTH,CONTRACT_EXTRA_PRICE,trialNotice,validBizNo} from '../lib/plans';
-type Env={DB:D1Database,HQ_ADMIN_EMAIL?:string,HQ_NATIVE_USER_ID?:string};
+type Env={DB:D1Database,HQ_ADMIN_EMAIL?:string,HQ_NATIVE_USER_ID?:string,NTS_API_KEY?:string};
 const json=(v:unknown,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 export async function resolveStore(db:D1Database,userId:string){
   // Owners keep their existing store even if a stale invite also exists.
@@ -24,7 +25,7 @@ export function accountView(a:any,contractsThisMonth=0){
  const plan=planId(a?.plan),branches=branchCount(a),months=[1,6,12].includes(Number(a?.months))?Number(a.months):1;
  return {plan,planName:plan?plans[plan].name:null,deletion:a?.deletion||null,status:trialStatus(a),trialEndsAt:a?.trialEndsAt||null,createdAt:a?.createdAt||null,autoRenew:false,
   storeSlots:branches,limits:planLimits(a),months,monthlyPrice:plan?monthlyPrice(plan,branches):0,periodPrice:plan?periodPrice(plan,branches,months as 1|6|12):0,vatIncluded:true,qr:plan==='pro'||trialStatus(a)==='trialing',
-  notice:trialNotice(a),cancelAt:a?.cancelAt||null,transfer:a?.transfer&&Date.parse(a.transfer.expiresAt)>Date.now()?{toEmail:a.transfer.toEmail,expiresAt:a.transfer.expiresAt}:null,periodStart:a?.periodStart||null,billing:a?.billing||null,invoiceRequests:(a?.invoiceRequests||[]).slice(-24),
+  notice:trialNotice(a),cancelAt:a?.cancelAt||null,bizCheck:a?.bizCheck||null,transfer:a?.transfer&&Date.parse(a.transfer.expiresAt)>Date.now()?{toEmail:a.transfer.toEmail,expiresAt:a.transfer.expiresAt}:null,periodStart:a?.periodStart||null,billing:a?.billing||null,invoiceRequests:(a?.invoiceRequests||[]).slice(-24),
   contracts:{thisMonth:contractsThisMonth,free:CONTRACTS_FREE_PER_MONTH,extra:Math.max(0,contractsThisMonth-CONTRACTS_FREE_PER_MONTH),extraPrice:CONTRACT_EXTRA_PRICE}};
 }
 export async function accountApi(request:Request,env:Env){
@@ -70,13 +71,16 @@ export async function accountApi(request:Request,env:Env){
    if(b.acknowledged!==true)return json({error:'체험 운영 안내를 확인해 주세요.'},400);
    // 작업 017: 직원 개인정보는 사장님이 처리자, 척척사장봇은 수탁자다. 처리위탁 내용에 동의해야 가게를 만든다.
    if(b.dpaAgreed!==true)return json({error:'직원 개인정보 처리위탁 내용을 확인하고 동의해 주세요.',code:'DPA_REQUIRED'},400);
+   // 작업 011: 사업자등록번호(선택) — 국세청 상태조회, 확인이 안 돼도 가입은 받고 '미확인'으로
+   if(b.bizNo!==undefined&&b.bizNo!==''&&!validBizNo(String(b.bizNo)))return json({error:'사업자등록번호 10자리를 다시 확인해 주세요. 모르면 비워 두고 나중에 넣어도 돼요.'},400);
+   const bizCheck=b.bizNo?await checkBusiness(String(b.bizNo),env):null;
    const state=normalizeTeam(null);
    state.store={name:b.storeName.trim(),branch:b.branchName.trim()};
    state.branches=[{id:'branch-main',name:b.branchName.trim(),address:''}];
    state.employees=[];state.shifts=[];state.attendance=[];state.adjustments={};state.payrollRuns={};state.requests=[];delete state.legacy;
    state.settings={accountantName:'',accountantEmail:'',autoPayslip:false,autoContract:false,autoAccountant:false,employerName:b.ownerName.trim(),fivePlus:false};
    const now=new Date().toISOString();
-   const next={...state,_account:{industry:b.industry||null,plan:chosen,storeSlots:branches,months,status:'trialing',createdAt:now,trialEndsAt:new Date(Date.now()+TRIAL_DAYS*86400000).toISOString(),trialUsed:true,acknowledgedAt:now,noticeVersion:'pricing-2026-10',dpa:{version:LEGAL.dpa.version,agreedAt:now,by:id},autoRenew:false},_audit:[],_outbox:[],_members:[],_invitations:[]};
+   const next={...state,_account:{industry:b.industry||null,plan:chosen,storeSlots:branches,months,status:'trialing',createdAt:now,trialEndsAt:new Date(Date.now()+TRIAL_DAYS*86400000).toISOString(),trialUsed:true,acknowledgedAt:now,noticeVersion:'pricing-2026-10',dpa:{version:LEGAL.dpa.version,agreedAt:now,by:id},autoRenew:false,...(bizCheck?{bizCheck}:{})},_audit:[],_outbox:[],_members:[],_invitations:[]};
    const result=await env.DB.prepare('INSERT OR IGNORE INTO stores(owner,data,version,updated_at) VALUES(?,?,?,?)').bind(id,JSON.stringify(next),1,now).run();
    if(!result.meta.changes)return json({error:'이미 매장이 생성되었습니다. 새로고침해 주세요.'},409);
    return json(view(next),201);
@@ -123,6 +127,9 @@ export async function accountApi(request:Request,env:Env){
    if(typeof b.month!=='string'||!/^\d{4}-(0[1-9]|1[0-2])$/.test(b.month))return json({error:'발행받을 달을 골라 주세요.'},400);
    const list=data._account.invoiceRequests||[];if(list.some((r:any)=>r.month===b.month&&r.status!=='취소'))return json({error:'그 달은 이미 요청했어요. 요청 내역을 확인해 주세요.'},409);
    data._account.invoiceRequests=[...list,{id:crypto.randomUUID(),month:b.month,at:new Date().toISOString(),status:'요청',bizNo:data._account.billing.bizNo}].slice(-60);
+  }else if(b.action==='bizCheck'){
+   if(!validBizNo(String(b.bizNo||'')))return json({error:'사업자등록번호 10자리를 다시 확인해 주세요.'},400);
+   data._account.bizCheck=await checkBusiness(String(b.bizNo),env);
   }else if(b.action==='cancelSubscription'){
    // 작업 018: 해지 신청 — 이번 결제 기간이 끝날 때까지 쓰고, 그 뒤로는 조회·내려받기만
    if(trialStatus(data._account)!=='active'||!data._account.periodStart)return json({error:'결제 중인 이용권이 없어요. 체험 중이면 \'체험 그만두기\'를 이용해 주세요.'},400);
@@ -144,7 +151,7 @@ export async function accountApi(request:Request,env:Env){
    if(b.confirm!==true)return json({error:'체험 종료 확인이 필요합니다.'},400);
    if(trialStatus(data._account)!=='trialing')return json({error:'진행 중인 체험이 없어요. 지금 상태 그대로 조회와 내려받기를 이용하시면 돼요.'},400);data._account.status='cancelled';data._account.cancelledAt=new Date().toISOString();
   }else return json({error:'이 작업은 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},400);
-  data._audit=[...(data._audit||[]),{id:crypto.randomUUID(),at:new Date().toISOString(),actor:{id,name:email,email},action:b.action==='endTrial'?'체험 종료':b.action==='billingInfo'?'세금계산서 정보 저장':b.action==='taxInvoiceRequest'?'세금계산서 발행 요청':b.action==='cancelSubscription'?'해지 신청':b.action==='undoCancel'?'해지 취소':b.action==='transferStart'?'가게 대표 변경 요청':b.action==='transferCancel'?'가게 대표 변경 취소':'요금제 변경',target:'이용권',before:null,after:{plan:data._account.plan,status:trialStatus(data._account)},reason:'계정 관리'}];
+  data._audit=[...(data._audit||[]),{id:crypto.randomUUID(),at:new Date().toISOString(),actor:{id,name:email,email},action:b.action==='endTrial'?'체험 종료':b.action==='billingInfo'?'세금계산서 정보 저장':b.action==='taxInvoiceRequest'?'세금계산서 발행 요청':b.action==='bizCheck'?'사업자 상태 조회':b.action==='cancelSubscription'?'해지 신청':b.action==='undoCancel'?'해지 취소':b.action==='transferStart'?'가게 대표 변경 요청':b.action==='transferCancel'?'가게 대표 변경 취소':'요금제 변경',target:'이용권',before:null,after:{plan:data._account.plan,status:trialStatus(data._account)},reason:'계정 관리'}];
   const saved=await env.DB.prepare('UPDATE stores SET data=?,version=?,updated_at=? WHERE owner=? AND version=?').bind(JSON.stringify(data),linked.row.version+1,new Date().toISOString(),id,linked.row.version).run();
   return saved.meta.changes?json(view(data)):json({error:'다른 변경이 있습니다. 새로고침해 주세요.'},409);
  }catch(error){return serverError('account',error,'계정 정보를 처리하지 못했어요. 잠시 뒤 다시 시도해 주세요.')}

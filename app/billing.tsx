@@ -66,3 +66,9 @@ export function RefundPolicy(){
   <h2>탈퇴하면</h2><p>탈퇴 전에 가게 데이터를 내려받아 두세요. 근로계약서·임금 서류는 근로기준법에 따라 3년 보관해야 해요. 결제 기록은 전자상거래법에 따라 5년 보관해요.</p>
   <p className="saas-fine"><a href="/account">← 계정·요금제로</a></p></main>
 }
+/** 작업 011: 사업자 상태(국세청 조회) */
+export function BizStatus({a,reload}:{a:any,reload:()=>Promise<void>}){
+ const c=a.bizCheck,[no,setNo]=useState(c?.bizNo||''),[busy,setBusy]=useState(false),[err,setErr]=useState('');
+ return <section className="auth-card t-gap"><h2>사업자 확인</h2><p>{c?<><b>{c.status}</b>{c.status==='미확인'&&c.reason?` · ${c.reason}`:''} · {c.bizNo.replace(/^(\d{3})(\d{2})(\d{5})$/,'$1-$2-$3')} · {new Date(c.checkedAt).toLocaleDateString('ko-KR')} 조회</>:'아직 사업자등록번호를 넣지 않았어요.'}</p>
+  <div className="t-wrapactions"><label className="saas-field">사업자등록번호<input inputMode="numeric" maxLength={12} value={no} onChange={e=>setNo(e.target.value)}/></label><button className="saas-secondary" disabled={busy||!validBizNo(no)} onClick={async()=>{setBusy(true);setErr('');try{await post({action:'bizCheck',bizNo:no});await reload()}catch(e){setErr((e as Error).message)}finally{setBusy(false)}}}>{c?'다시 조회':'국세청에 확인'}</button></div>{err&&<p className="saas-error" role="alert">{err}</p>}</section>
+}

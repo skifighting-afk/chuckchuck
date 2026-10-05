@@ -580,3 +580,17 @@ console.log('PASS: 요율 연간 갱신 경고.');
  Object.assign(e,{birthMonth:'2010-01'});t=standardContractDraft(s,e);ok('연소근로자 서식: 7시간·35시간, 가족관계증명서, 제67조',t.includes('연소근로자(18세 미만인 자)')&&t.includes('1주에 35시간')&&t.includes('가족관계기록사항')&&t.includes('제67조'));
  console.log('PASS: 2025 표준 근로계약서.');
 }
+
+// 작업 011: 국세청 사업자 상태조회
+{
+ const {checkBusiness}=await import('../dist/server/nts.js');
+ const reply=(row,status=200)=>async(url,o)=>{reply.last={url,body:JSON.parse(o.body)};return new Response(JSON.stringify({data:row?[row]:[]}),{status})};
+ ok('키가 없으면 미확인',(await checkBusiness('123-45-67891',{})).status==='미확인');
+ ok('형식이 틀리면 미확인',(await checkBusiness('123',{NTS_API_KEY:'k'},reply({}))).status==='미확인');
+ let r=await checkBusiness('123-45-67891',{NTS_API_KEY:'k'},reply({b_no:'1234567891',b_stt_cd:'01',tax_type:'부가가치세 일반과세자'}));
+ ok('계속사업자',r.status==='계속사업자'&&reply.last.body.b_no[0]==='1234567891'&&reply.last.url.includes('nts-businessman/v1/status'));
+ ok('휴업·폐업',(await checkBusiness('1234567891',{NTS_API_KEY:'k'},reply({b_stt_cd:'02'}))).status==='휴업자'&&(await checkBusiness('1234567891',{NTS_API_KEY:'k'},reply({b_stt_cd:'03'}))).status==='폐업자');
+ ok('등록되지 않은 번호',(await checkBusiness('1234567891',{NTS_API_KEY:'k'},reply({b_stt_cd:'',tax_type:'국세청에 등록되지 않은 사업자등록번호입니다.'}))).status==='등록되지 않음');
+ ok('조회 실패도 가입은 막지 않음(미확인)',(await checkBusiness('1234567891',{NTS_API_KEY:'k'},reply(null,500))).status==='미확인'&&(await checkBusiness('1234567891',{NTS_API_KEY:'k'},async()=>{throw Error('x')})).status==='미확인');
+ console.log('PASS: 사업자 상태조회.');
+}

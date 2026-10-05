@@ -40,7 +40,7 @@ export function summarizeStore(row:any,now=Date.now()){
   overCapacity:branches.length>limits.branches||branches.some(b=>b.employees>b.limit),
   pendingJoins:Number(row.pendingJoins)||0,pendingCorrections:Number(row.pendingCorrections)||0,failedMail:Number(row.failedMail)||0,
   dataIssue:!row.valid||!row.name,
-  biz:{status:['수동 확인','불일치'].includes(support?.biz?.status)?support.biz.status:'확인 전',reason:support?.biz?.reason||'',at:support?.biz?.at||null},support:{status:['미확인','확인 중','처리 완료'].includes(support?.status)?support.status:'미확인',note:typeof support?.note==='string'?support.note:'',history:Array.isArray(support?.history)?support.history:[]}};
+  biz:['수동 확인','불일치'].includes(support?.biz?.status)?{status:support.biz.status,reason:support.biz.reason||'',at:support.biz.at||null}:a?.bizCheck?.status==='계속사업자'?{status:'자동 확인',reason:'국세청 상태조회: 계속사업자',at:a.bizCheck.checkedAt}:a?.bizCheck&&a.bizCheck.status!=='미확인'?{status:'불일치',reason:'국세청 상태조회: '+a.bizCheck.status,at:a.bizCheck.checkedAt}:{status:'확인 전',reason:a?.bizCheck?.reason||'',at:null},support:{status:['미확인','확인 중','처리 완료'].includes(support?.status)?support.status:'미확인',note:typeof support?.note==='string'?support.note:'',history:Array.isArray(support?.history)?support.history:[]}};
 }
 export type AdminStore=ReturnType<typeof summarizeStore>;
 export function needsAttention(s:AdminStore){return !!(s.pendingJoins+s.pendingCorrections+s.failedMail||s.trialEnding||s.overCapacity||s.dataIssue||s.support.status==='확인 중')}

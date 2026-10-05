@@ -21,6 +21,7 @@ const env = {
   VAPID_PUBLIC_KEY: read('VAPID_PUBLIC_KEY'),
   VAPID_PRIVATE_KEY: read('VAPID_PRIVATE_KEY'),
   VAPID_SUBJECT: read('VAPID_SUBJECT'),
+  NTS_API_KEY: read('NTS_API_KEY'),
 };
 // 허용할 화면 주소. 여러 개면 쉼표로 구분하고, 첫 번째가 메일 링크 등에 쓰는 대표 주소다.
 const origins = (read('APP_ORIGIN') || '').split(',').map(s => s.trim().replace(/\/$/, '')).filter(Boolean);
