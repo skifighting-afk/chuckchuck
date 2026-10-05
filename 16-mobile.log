@@ -3,12 +3,12 @@ PASS public-start · 이전과 0% 다름
 PASS public-login · 이전과 0% 다름
 PASS public-signup · 이전과 0% 다름
 PASS public-calculator · 이전과 0% 다름
-PASS public-help · 이전과 0% 다름
+PASS public-help · 이전과 4.77% 다름
 PASS public-refund · 이전과 0% 다름
 PASS public-terms · 이전과 0% 다름
 PASS public-pricing · 이전과 0% 다름
-PASS public-status · 이전과 0.06% 다름
-PASS public-privacy · 이전과 11.34% 다름
+PASS public-status · 이전과 0.17% 다름
+PASS public-privacy · 이전과 0% 다름
 PASS demo-home · 이전과 0% 다름
 PASS demo-employees · 이전과 0% 다름
 PASS demo-attendance · 이전과 0% 다름
@@ -48,5 +48,5 @@ PASS demo-reports (큰 글씨)
 PASS demo-stores (큰 글씨)
 PASS demo-settings (큰 글씨)
 PASS demo-guide (큰 글씨)
-이전 실행과 2% 넘게 달라진 화면: public-privacy 11.34%
+이전 실행과 2% 넘게 달라진 화면: public-help 4.77%
 390px 화면 25개(보통·큰 글씨): 가로 넘침 없음

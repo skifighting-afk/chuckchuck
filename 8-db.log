@@ -1,6 +1,0 @@
-Connecting to remote database...
-Do you want to push these migrations to the remote database?
- • 20261005110000_accountant_shares.sql
- [Y/n] 
-Applying migration 20261005110000_accountant_shares.sql...
-Finished supabase db push.

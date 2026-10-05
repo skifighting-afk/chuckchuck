@@ -1070,7 +1070,7 @@ PASS 36. 2026-03-31: no attendance in the future
 PASS: 체험 화면 숫자(급여·명세서·임금대장 합계).
 
 ── check-error-messages
-PASS: 오류 문구 376개 모두 다음 행동 안내 포함.
+PASS: 오류 문구 390개 모두 다음 행동 안내 포함.
 PASS: 오류 번호·로그 개인정보 제거.
 
 ── check-attendance-table
@@ -1204,6 +1204,25 @@ PASS: 문의하기 (내 문의만 보기·본사만 답변·하루 10건).
 
 ── check-share
 PASS: 세무사 공유 링크 (확정 급여만·끄기·만료·열람 기록·토큰 해시만 저장).
+
+── check-password
+1. PASS 직원은 남의 비밀번호 초기화 못 함
+2. PASS 사장님이 직원 임시 비밀번호 발급
+3. PASS 예전 비밀번호로는 로그인 안 됨
+4. PASS 임시 비밀번호로 로그인
+5. PASS 로그인하면 새 비밀번호를 정하라고 함
+6. PASS 쉬운 비밀번호는 안 됨
+7. PASS 새 비밀번호 저장
+8. PASS 바꾼 뒤에는 다시 묻지 않음
+9. PASS 사장님 기록에 초기화가 남음
+10. PASS 본사가 아니면 이메일로 초기화 못 함
+11. PASS 본사가 사장님 임시 비밀번호 발급
+12. PASS 본사 발급은 접근 기록에 남음
+13. PASS 로그인 없이 비밀번호 찾기 요청
+14. PASS 요청은 본사 문의함으로
+15. PASS 전화번호 없으면 거절
+16. PASS 같은 곳에서 한 시간 3번까지
+PASS: 메일 없이 비밀번호 찾기.
 
 > chuckchuck@0.1.0 check:function
 > node scripts/check-supabase-function.mjs
