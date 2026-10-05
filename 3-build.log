@@ -4,8 +4,8 @@
 
 [33m[INEFFECTIVE_DYNAMIC_IMPORT] [0mapp/public-pages.tsx is dynamically imported by app/platform.tsx but also statically imported by app/platform.tsx, dynamic import will not move module into another chunk.
 
-화면 묶음: app.js 316KB, 필요할 때 받는 조각 21개 750KB
-  team-Bu3gQ5qK.js 299KB
+화면 묶음: app.js 316KB, 필요할 때 받는 조각 21개 758KB
+  team-Dq8Jxe7D.js 307KB
   capacity-dialog-DnQe6-85.js 159KB
   attendance-scan-HGeHRpbR.js 132KB
   admin-desk-BpenjxTf.js 23KB

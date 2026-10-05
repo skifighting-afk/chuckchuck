@@ -7,22 +7,23 @@ PASS public-help · 이전과 0% 다름
 PASS public-refund · 이전과 0% 다름
 PASS public-terms · 이전과 0% 다름
 PASS public-pricing · 이전과 0% 다름
-PASS public-status · 이전과 0.06% 다름
+PASS public-status · 이전과 0.12% 다름
 PASS public-privacy · 이전과 0% 다름
-PASS demo-home · 이전과 0% 다름
-PASS demo-employees · 이전과 0% 다름
-PASS demo-attendance · 이전과 0% 다름
-PASS demo-schedule · 이전과 0% 다름
-PASS demo-payroll · 이전과 0% 다름
-PASS demo-contracts · 이전과 0% 다름
-PASS demo-retirement · 이전과 0% 다름
-PASS demo-outbox · 이전과 0% 다름
-PASS demo-operations · 이전과 0% 다름
-PASS demo-manual · 이전과 0% 다름
-PASS demo-reports · 이전과 0% 다름
-PASS demo-stores · 이전과 0% 다름
-PASS demo-settings · 이전과 0% 다름
-PASS demo-guide · 이전과 0% 다름
+PASS demo-home · 이전과 49.44% 다름
+PASS demo-employees · 이전과 0.17% 다름
+PASS demo-attendance · 이전과 0.71% 다름
+PASS demo-schedule · 이전과 0.56% 다름
+PASS demo-payroll · 이전과 1.19% 다름
+PASS demo-contracts · 이전과 0.53% 다름
+PASS demo-retirement · 이전과 0.68% 다름
+PASS demo-outbox · 이전과 1.15% 다름
+PASS demo-operations · 이전과 0.92% 다름
+PASS demo-manual · 이전과 1.63% 다름
+PASS demo-reports · 이전과 0.52% 다름
+PASS demo-stores · 이전과 0.71% 다름
+PASS demo-settings · 이전과 0.31% 다름
+PASS demo-guide · 이전과 0.16% 다름
+PASS demo-staff
 PASS public-home (큰 글씨)
 PASS public-start (큰 글씨)
 PASS public-login (큰 글씨)
@@ -48,4 +49,6 @@ PASS demo-reports (큰 글씨)
 PASS demo-stores (큰 글씨)
 PASS demo-settings (큰 글씨)
 PASS demo-guide (큰 글씨)
-390px 화면 25개(보통·큰 글씨): 가로 넘침 없음
+PASS demo-staff (큰 글씨)
+이전 실행과 2% 넘게 달라진 화면: demo-home 49.44%
+390px 화면 26개(보통·큰 글씨): 가로 넘침 없음
