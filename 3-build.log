@@ -2,13 +2,13 @@
 > chuckchuck@0.1.0 build
 > node scripts/portable-build.mjs
 
-화면 묶음: app.js 320KB, 필요할 때 받는 조각 16개 692KB
-  team-CVp7Ehie.js 412KB
-  capacity-dialog-CPqtyk93.js 158KB
-  admin-desk-DfA4GobT.js 23KB
-  browser-Cbn702-H.js 23KB
-  staff-join-rmp31SN-.js 20KB
-  contracts-desk-DZyQ8hRY.js 12KB
-  document-delivery-j379lLNs.js 10KB
-  help-C_IYzngV.js 8KB
+화면 묶음: app.js 329KB, 필요할 때 받는 조각 16개 690KB
+  team-CNV7WFYi.js 410KB
+  capacity-dialog-B3RRSwkJ.js 158KB
+  admin-desk-CHlHb3aI.js 23KB
+  browser-C_Gn-gHr.js 23KB
+  staff-join-D112FKH3.js 20KB
+  contracts-desk-VV4tbkv_.js 12KB
+  document-delivery-Ctj9Ef6S.js 10KB
+  help-B0A_SV8B.js 8KB
 척척사장봇 화면·서버 함수 빌드 완료
