@@ -772,3 +772,19 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('같은 요일(월) 반복 표시',p.repeatDay==='월');
  console.log('PASS: 한 달 근태 요약.');
 }
+// 가이드 65·66: 신고 자료
+{
+ const {withholdingSummary,insuranceChanges,filingCsv}=await import('../lib/tax-filing.ts');
+ const ins={국민연금:{status:'가입'},건강보험:{status:'가입'},고용보험:{status:'가입'}};
+ const emps=[{id:'a',name:'가',joined:'2026-10-05',status:'재직',taxMode:'4대보험 자동',income:'근로소득',weeklyHours:40,wage:2500000,payType:'월급',role:'홀',insurances:ins},
+  {id:'b',name:'나',joined:'2025-01-01',endDate:'2026-10-20',status:'퇴사',taxMode:'사업소득 3.3%',income:'사업소득',weeklyHours:10,wage:12000,payType:'시급',role:'주방',insurances:{}}];
+ const rows=[{employeeId:'a',name:'가',gross:2500000,deductions:[{name:'근로소득세',amount:31000},{name:'지방소득세',amount:3100}]},{employeeId:'b',name:'나',gross:480000,deductions:[]}];
+ const w=withholdingSummary(rows,emps);
+ ok('A01 근로소득 1명·소득세 합계',w[0].code==='A01'&&w[0].people===1&&w[0].incomeTax===31000&&w[0].localTax===3100);
+ ok('A25 사업소득 3% + 지방 0.3%',w[1].code==='A25'&&w[1].incomeTax===14400&&w[1].localTax===1440);
+ const c=insuranceChanges(emps,'2026-10');
+ ok('그달 입사는 취득, 그달 퇴사는 상실',c.acquire.map(x=>x.name).join()==='가'&&c.lose.map(x=>x.name).join()==='나'&&c.acquire[0].monthlyPay===2500000);
+ const csv=filingCsv('2026-10',rows,emps);
+ ok('CSV에 주민번호는 빈칸(직접 기입)',csv.includes('주민등록번호(직접 기입)')&&csv.includes('A01 근로소득 간이세액'));
+ console.log('PASS: 신고 자료.');
+}
