@@ -796,3 +796,15 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('업종을 안 고르면 기본 예시',starterManuals(null).length===2&&starterManuals('unknown').length===2);
  console.log('PASS: 업종별 매뉴얼 예시.');
 }
+// 가이드 79: 연간 합계
+{
+ const {yearSummary,yearSummaryCsv}=await import('../lib/year-summary.ts');
+ const row=(g,tax)=>({employeeId:'e',name:'가',gross:g,net:g-tax-9000,earnings:[{name:'기본급',amount:g-100000},{name:'식대',amount:100000,taxFree:true}],deductions:[{name:'국민연금',amount:9000},{name:'근로소득세',amount:tax}]});
+ const runs={'2026-01:m':{locked:true,month:'2026-01',rows:[row(2000000,20000)]},'2026-02:m':{locked:true,month:'2026-02',rows:[row(2100000,22000)]},'2026-03:m':{locked:false,month:'2026-03',rows:[row(9999999,1)]},'2025-12:m':{locked:true,month:'2025-12',rows:[row(1,1)]}};
+ const y=yearSummary(runs,'2026')[0];
+ ok('확정한 그해 달만 더함',y.months.join()==='2026-01,2026-02'&&y.gross===4100000);
+ ok('비과세·과세 대상 나눔',y.taxFree===200000&&y.taxable===3900000);
+ ok('공제 항목별 합계',y['국민연금']===18000&&y['근로소득세']===42000);
+ ok('CSV 머리말',yearSummaryCsv(runs,'2026').includes('2026년 연간 급여 합계'));
+ console.log('PASS: 연간 급여 합계.');
+}
