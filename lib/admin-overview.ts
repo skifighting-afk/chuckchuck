@@ -20,6 +20,10 @@ export const adminProjection=`WITH records AS (
  (SELECT count(*) FROM jsonb_array_elements(CASE WHEN jsonb_typeof(doc->'_joinApplications')='array' THEN doc->'_joinApplications' ELSE '[]'::jsonb END) j WHERE j.value->>'status'='pending') AS "pendingJoins",
  (SELECT count(*) FROM jsonb_array_elements(CASE WHEN jsonb_typeof(doc->'requests')='array' THEN doc->'requests' ELSE '[]'::jsonb END) q WHERE q.value->>'status'='승인 대기') AS "pendingCorrections",
  (SELECT count(*) FROM jsonb_array_elements(CASE WHEN jsonb_typeof(doc->'_outbox')='array' THEN doc->'_outbox' ELSE '[]'::jsonb END) m WHERE m.value->>'status' IN ('발송 실패','결과 확인 필요','수신 주소 필요')) AS "failedMail"
+,
+ (jsonb_typeof(doc->'shifts')='array' AND jsonb_array_length(doc->'shifts')>0) AS "hasShift",
+ EXISTS(SELECT 1 FROM attendance_records ar WHERE ar.owner=r.owner) AS "hasAttendance",
+ EXISTS(SELECT 1 FROM jsonb_each(CASE WHEN jsonb_typeof(doc->'payrollRuns')='object' THEN doc->'payrollRuns' ELSE '{}'::jsonb END) pr WHERE pr.value->>'locked'='true') AS "hasPayroll"
  FROM records r ORDER BY updated_at DESC,owner ASC`;
 
 function parsed(value:any,fallback:any){try{return typeof value==='string'?JSON.parse(value):value??fallback}catch{return fallback}}
@@ -38,11 +42,15 @@ export function summarizeStore(row:any,now=Date.now()){
   atCapacity:branches.length>=limits.branches||branches.some(b=>b.employees>=b.limit),
   employeeCapacity:branches.some(b=>b.employees>=b.limit),
   overCapacity:branches.length>limits.branches||branches.some(b=>b.employees>b.limit),
+  // 가이드 56: 사용 흐름(개인정보 없이 예/아니오만)
+  steps:{employee:false,shift:!!row.hasShift,attendance:!!row.hasAttendance,payroll:!!row.hasPayroll},
   pendingJoins:Number(row.pendingJoins)||0,pendingCorrections:Number(row.pendingCorrections)||0,failedMail:Number(row.failedMail)||0,
   dataIssue:!row.valid||!row.name,
   biz:['수동 확인','불일치'].includes(support?.biz?.status)?{status:support.biz.status,reason:support.biz.reason||'',at:support.biz.at||null}:a?.bizCheck?.status==='계속사업자'?{status:'자동 확인',reason:'국세청 상태조회: 계속사업자',at:a.bizCheck.checkedAt}:a?.bizCheck&&a.bizCheck.status!=='미확인'?{status:'불일치',reason:'국세청 상태조회: '+a.bizCheck.status,at:a.bizCheck.checkedAt}:{status:'확인 전',reason:a?.bizCheck?.reason||'',at:null},support:{status:['미확인','확인 중','처리 완료'].includes(support?.status)?support.status:'미확인',note:typeof support?.note==='string'?support.note:'',history:Array.isArray(support?.history)?support.history:[]}};
 }
 export type AdminStore=ReturnType<typeof summarizeStore>;
+/** 가이드 56: 가입 → 첫 직원 → 근무표 → 출퇴근 → 급여 확정까지 몇 곳이 갔는지 */
+export function funnel(stores:AdminStore[]){const n=stores.length,c=(f:(s:AdminStore)=>boolean)=>stores.filter(f).length;return [{step:'가게 만들기',count:n},{step:'첫 직원 연결',count:c(s=>s.employees>0)},{step:'근무표 짜기',count:c(s=>s.steps.shift)},{step:'첫 출퇴근 기록',count:c(s=>s.steps.attendance)},{step:'첫 급여 확정',count:c(s=>s.steps.payroll)}].map(x=>({...x,percent:n?Math.round(x.count/n*100):0}))}
 export function needsAttention(s:AdminStore){return !!(s.pendingJoins+s.pendingCorrections+s.failedMail||s.trialEnding||s.overCapacity||s.dataIssue||s.support.status==='확인 중')}
 export function adminOverview(stores:AdminStore[],now=Date.now()){
  const current=new Date(now+9*3600000);
@@ -59,7 +67,7 @@ export function adminOverview(stores:AdminStore[],now=Date.now()){
   const created=Date.parse(s.createdAt||'');
   if(Number.isFinite(created)&&created<=now){if(created>=now-30*86400000)totals.newCustomers30d++;const m=months.find(m=>m.month===new Date(created+9*3600000).toISOString().slice(0,7));if(m)m.count++}else totals.unknownCreatedAt++;
  }
- return {totals,distribution,months,industries:[...industries.map(i=>i.name),'미선택'].map(name=>({name,count:stores.filter(s=>s.industry===name).length}))};
+ return {totals,distribution,months,funnel:funnel(stores),industries:[...industries.map(i=>i.name),'미선택'].map(name=>({name,count:stores.filter(s=>s.industry===name).length}))};
 }
 export function filterAdminStores(stores:AdminStore[],params:URLSearchParams){
  const q=(params.get('q')||'').trim().slice(0,100).toLocaleLowerCase();
