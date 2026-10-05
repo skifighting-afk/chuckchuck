@@ -1,5 +1,5 @@
 {
- "at": "2026-10-05T12:07:19.974Z",
+ "at": "2026-10-05T12:10:22.364Z",
  "changedPercent": {
   "public-home": 0,
   "public-start": 0,
@@ -21,7 +21,7 @@
   "demo-outbox": 0,
   "demo-operations": 0,
   "demo-manual": 0,
-  "demo-reports": 15.09,
+  "demo-reports": 0,
   "demo-stores": 0,
   "demo-settings": 0,
   "demo-guide": 0
