@@ -54,7 +54,7 @@ const pages=[
  shell(`<div class="brand"><i>척</i>척척사장</div><h1 style="margin-top:160px">${law?'이런 계산,<br>앱이 대신 해요':'더 쉽게,<br>척척.'}</h1><p style="margin-top:56px;font-size:60px;color:#d9eadf">주휴수당 · 급여명세서 · 근로계약서 · QR 출퇴근</p><div class="foot"><div style="font-size:56px;color:#c8f169;font-weight:900">30일 무료 · 프로필 링크</div><div style="margin-top:12px;color:#d9eadf">chukchukapp.kr${law?' · 자세한 상담은 고용노동부 1350':''}</div></div>`,'#15643f','#ffffff'),
 ];
 // 카드마다 읽어 줄 대사(숫자 쉼표·기호는 읽기 좋게 정리)
-const speak=s=>s.replace(/(\d),(?=\d{3})/g,'$1').replace(/[·→👉※]/g,', ').replace(/\s+/g,' ').trim();
+const speak=s=>s.replace(/(\d),(?=\d{3})/g,'$1').replace(/%/g,'퍼센트').replace(/[()]/g,', ').replace(/[·→👉※]/g,', ').replace(/\s*,\s*([.!?])/g,'$1').replace(/(,\s*){2,}/g,', ').replace(/\s+/g,' ').trim();
 const lines=[t.q,...cards,...scr.shots.map((_,i)=>i===0?`척척사장 앱에선 ${scr.label} 화면에서 바로 볼 수 있어요.`:'복잡한 정리는 앱이 대신 해 줘요.'),law?'이런 계산, 척척사장이 대신 해요. 삼십일 무료, 프로필 링크에서 시작해 보세요.':'척척사장, 삼십일 무료예요. 프로필 링크에서 시작해 보세요.'].map(speak);
 // 글만 보여 줄 때 시간(초): 질문 3초, 답은 초당 9자로 3.5~7초, 앱 화면 3.5초, 마지막 3.5초
 const secs=[3,...cards.map(c=>Math.min(7,Math.max(3.5,c.replace(/\s/g,"").length/9))),...scr.shots.map(()=>3.5),3.5];
