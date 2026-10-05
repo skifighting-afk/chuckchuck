@@ -12,6 +12,10 @@ on:
         description: '주제 번호 (비우면 오늘 차례)'
         required: false
         default: ''
+      indexes:
+        description: '미리보기 여러 개 (쉼표로 주제 번호, 올리지 않음)'
+        required: false
+        default: ''
       post:
         description: '인스타에 올리기'
         type: boolean
@@ -62,7 +66,9 @@ jobs:
           python -c "from melo.api import TTS" && echo "REEL_PYTHON=$(which python)" >> "$GITHUB_ENV"
       - name: 릴스 만들기
         run: |
-          if [ -n "${{ github.event.inputs.index }}" ]; then node scripts/reels/make.mjs --index "${{ github.event.inputs.index }}" --out reel-out; else node scripts/reels/make.mjs --out reel-out; fi
+          if [ -n "${{ github.event.inputs.indexes }}" ]; then
+            for i in $(echo "${{ github.event.inputs.indexes }}" | tr ',' ' '); do node scripts/reels/make.mjs --index "$i" --out "reel-out/$i"; done
+          elif [ -n "${{ github.event.inputs.index }}" ]; then node scripts/reels/make.mjs --index "${{ github.event.inputs.index }}" --out reel-out; else node scripts/reels/make.mjs --out reel-out; fi
       - name: 만든 영상 보관
         uses: actions/upload-artifact@v4
         with:
@@ -72,13 +78,13 @@ jobs:
       - name: 미리보기 브랜치에 올리기 (올리지 않고 만들기만 했을 때)
         if: github.event_name == 'workflow_dispatch' && github.event.inputs.post != 'true'
         run: |
-          cd reel-out && rm -f voice-*.wav music.wav screen-*.png
+          cd reel-out && find . \( -name 'voice-*.wav' -o -name 'music.wav' -o -name 'screen-*.png' \) -delete
           git init -q && git checkout -q -b reel-preview
           git -c user.name=reel-bot -c user.email=reel-bot@users.noreply.github.com add -A
           git -c user.name=reel-bot -c user.email=reel-bot@users.noreply.github.com commit -qm "릴스 미리보기"
           git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" reel-preview
       - name: 인스타에 올리기
-        if: github.event_name == 'schedule' || github.event.inputs.post == 'true'
+        if: github.event_name == 'schedule' || (github.event.inputs.post == 'true' && github.event.inputs.indexes == '')
         env:
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
