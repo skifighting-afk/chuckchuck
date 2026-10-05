@@ -1,0 +1,94 @@
+# 가이드 18: 백업 되살리기 연습 (분기마다, 또는 Actions → "백업 되살리기 연습" → Run workflow)
+# - 가장 최근 암호화 백업을 받아 풀고, 빈 로컬 Supabase DB에 되살려 본다. 운영 DB는 건드리지 않는다.
+# - 백업 안의 행 수와 되살린 행 수가 테이블마다 같은지 확인하고 걸린 시간을 남긴다.
+# - 저장소가 공개라서 로그에는 테이블 이름·일치 여부·시간만 남기고 행 수·내용은 찍지 않는다.
+name: 백업 되살리기 연습
+on:
+  schedule:
+    - cron: '0 21 1 1,4,7,10 *'   # 1·4·7·10월 2일 06:00 (한국 시간)
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: restore-drill
+  cancel-in-progress: false
+jobs:
+  drill:
+    runs-on: ubuntu-latest
+    env:
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: 준비물 확인
+        run: |
+          if [ -z "$BACKUP_PASSPHRASE" ]; then echo "::error::BACKUP_PASSPHRASE가 없어 백업을 열 수 없어요 (docs/backup.md)"; exit 1; fi
+      - name: 가장 최근 백업 내려받기
+        run: |
+          set -euo pipefail
+          id=$(gh api "repos/${{ github.repository }}/actions/artifacts?per_page=100" --jq '[.artifacts[]|select(.name|startswith("db-backup-"))|select(.expired==false)]|sort_by(.created_at)|last|.id // empty')
+          if [ -z "$id" ]; then echo "::error::보관 중인 백업이 없어요. Actions → DB 백업을 먼저 실행하세요."; exit 1; fi
+          name=$(gh api "repos/${{ github.repository }}/actions/artifacts/$id" --jq .name)
+          echo "BACKUP_NAME=$name" >> "$GITHUB_ENV"
+          gh api "repos/${{ github.repository }}/actions/artifacts/$id/zip" > backup.zip
+          mkdir -p dl && unzip -q backup.zip -d dl && cd dl && sha256sum -c checksum.txt
+      - name: 풀기
+        run: |
+          set -euo pipefail
+          mkdir -p restore
+          start=$(date +%s)
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:BACKUP_PASSPHRASE -in dl/chukchuk-db-*.tar.gz.enc | tar -xzf - -C restore/
+          echo "T_DECRYPT=$(( $(date +%s) - start ))" >> "$GITHUB_ENV"
+          ls restore
+          ver=$(grep -m1 -oE 'Dumped from database version [0-9]+' restore/schema.sql | grep -oE '[0-9]+$' || echo 15)
+          echo "PG_MAJOR=$ver" >> "$GITHUB_ENV"
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: 빈 로컬 DB 켜기 (운영과 같은 Postgres 버전)
+        run: |
+          set -euo pipefail
+          # 이 작업 안에서만 고친다(커밋하지 않음): DB 버전을 백업과 맞추고, 저장소 마이그레이션은 적용하지 않는다.
+          printf '\n[db]\nmajor_version = %s\n' "$PG_MAJOR" >> supabase/config.toml
+          mkdir -p /tmp/no-migrations && mv supabase/migrations /tmp/no-migrations/
+          start=$(date +%s)
+          supabase db start
+          echo "T_START=$(( $(date +%s) - start ))" >> "$GITHUB_ENV"
+      - name: 되살리기
+        env:
+          DB: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+        run: |
+          set -euo pipefail
+          start=$(date +%s)
+          psql "$DB" -v ON_ERROR_STOP=1 -q -f restore/schema.sql > /dev/null
+          psql "$DB" -v ON_ERROR_STOP=1 -q -c "set session_replication_role = replica" -f restore/data.sql > /dev/null
+          echo "T_RESTORE=$(( $(date +%s) - start ))" >> "$GITHUB_ENV"
+      - name: 확인 (테이블마다 백업 행 수 = 되살린 행 수)
+        env:
+          DB: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+        run: |
+          set -euo pipefail
+          # data.sql(COPY 형식)에서 테이블별 행 수를 센다
+          awk '/^COPY /{t=$2;n=0;on=1;next} on&&/^\\\.$/{print t" "n;on=0;next} on{n++}' restore/data.sql | sed 's/"//g' > expected.txt
+          bad=0; ok=0
+          while read -r table n; do
+            got=$(psql "$DB" -tAc "select count(*) from $table")
+            if [ "$got" = "$n" ]; then ok=$((ok+1)); else bad=$((bad+1)); echo "::error::$table 행 수가 달라요"; fi
+          done < expected.txt
+          for t in stores app_users attendance_records contract_envelopes payslip_documents payments; do
+            psql "$DB" -tAc "select to_regclass('public.$t') is not null" | grep -q t || { echo "::error::$t 테이블이 없어요"; bad=$((bad+1)); }
+          done
+          psql "$DB" -tAc "select count(*) from pg_proc where proname in ('purge_store','payslip_guard')" | grep -q '^2$' || { echo "::error::보호 함수(purge_store, payslip_guard)가 없어요"; bad=$((bad+1)); }
+          {
+            echo "## 백업 되살리기 연습"
+            echo "- 백업: $BACKUP_NAME (Postgres $PG_MAJOR)"
+            echo "- 테이블 $ok개 행 수 일치, 불일치 $bad개"
+            echo "- 걸린 시간: 복호화 ${T_DECRYPT}초 · DB 켜기 ${T_START}초 · 되살리기 ${T_RESTORE}초"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+          [ "$bad" = 0 ]
+      - name: 정리
+        if: always()
+        run: |
+          supabase stop --no-backup || true
+          rm -rf restore dl backup.zip expected.txt
