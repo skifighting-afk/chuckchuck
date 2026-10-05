@@ -733,3 +733,30 @@ console.log('PASS: 요율 연간 갱신 경고.');
  t.settings.laborBudget=200000;ok('예산 여유 있으면 오늘 할 일 없음',!todayTasks(t,e.branchId,'2026-10-05').some(x=>x.key==='budget'));
  console.log('PASS: 인건비 예산.');
 }
+// 가이드 87: 재직·경력증명서
+{
+ const {certificateText}=await import('../lib/certificate.ts');
+ const e={name:'김예시',joined:'2025-03-02',status:'재직',role:'홀',employment:'단시간',birthMonth:'2000-07'};
+ const t=certificateText('재직',{name:'척척식당',owner:'김사장'},e,'2026-10-05','은행 제출');
+ ok('재직증명서: 이름·기간·업무·용도·발급일',t.startsWith('재직증명서')&&t.includes('2025년 3월 2일 ~ 현재')&&t.includes('담당 업무 : 홀')&&t.includes('용도 : 은행 제출')&&t.includes('2026년 10월 5일'));
+ ok('생년월만, 주민번호 칸 없음',t.includes('생년월 : 2000년 7월')&&!t.includes('주민'));
+ const left={...e,status:'퇴사',endDate:'2026-08-31'};
+ ok('퇴사자는 경력증명서로 기간 끝 표시',certificateText('경력',{name:'척척식당',owner:'김사장'},left,'2026-10-05').includes('2025년 3월 2일 ~ 2026년 8월 31일'));
+ let threw=false;try{certificateText('재직',{name:'a',owner:'b'},left,'2026-10-05')}catch{threw=true}
+ ok('퇴사자 재직증명서는 막음',threw);
+ console.log('PASS: 재직·경력증명서.');
+}
+// 가이드 78: 퇴사 정리
+{
+ const {offboardingChecklist,offboardingText}=await import('../lib/offboarding.ts');
+ const ins={국민연금:{status:'가입'},건강보험:{status:'가입'},고용보험:{status:'가입'},산재보험:{status:'가입'}};
+ const c=offboardingChecklist({name:'가',joined:'2025-03-01',weeklyHours:20,insurances:ins},'2026-12-31');
+ ok('퇴직일은 마지막 근무 다음 날',c.retire==='2027-01-01');
+ ok('1년·주15시간 이상이면 퇴직금 14일 안 지급',c.severance&&c.items.find(x=>x.title==='퇴직금 지급').due==='2027-01-15');
+ ok('국민연금·고용보험 상실신고는 다음 달 15일',c.items.find(x=>x.title.startsWith('국민연금')).due==='2027-02-15');
+ ok('건강보험 상실신고 14일',c.items.find(x=>x.title.startsWith('건강보험')).due==='2027-01-15');
+ const short=offboardingChecklist({name:'나',joined:'2026-06-01',weeklyHours:30,insurances:{}},'2026-10-31');
+ ok('1년 미만은 퇴직금 대상 아님, 보험 미가입이면 신고 항목 없음',!short.severance&&!short.items.some(x=>x.title.includes('상실')));
+ ok('문서로 만들기',offboardingText({name:'가',joined:'2025-03-01',weeklyHours:20,insurances:ins},'2026-12-31').includes('가 퇴사 정리'));
+ console.log('PASS: 퇴사 정리.');
+}
