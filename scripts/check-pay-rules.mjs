@@ -612,3 +612,18 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('사업자번호 표기·공정위 링크',formatBizNo('1234567891')==='123-45-67891'&&ftcLink('123-45-67891').endsWith('wrkr_no=1234567891')&&ftcLink('')==='');
  console.log('PASS: 운영자 정보·약관·개인정보 처리방침.');
 }
+// 가이드 19: 홈페이지 요금이 앱 요금과 같은지
+{
+ const {plans,CONTRACT_EXTRA_PRICE}=await import('../lib/plans.ts');
+ const {readFileSync}=await import('node:fs');
+ const site=readFileSync('homepage/src/mocks/site.ts','utf8');
+ const tiers=id=>JSON.stringify(plans[id].tiers).replace(/\s/g,'');
+ const m=k=>(site.match(new RegExp(k+':\\s*(\\[\\[[^\\n]*?\\]\\])'))||[])[1]?.replace(/\s/g,'');
+ ok('홈페이지 베이직 요금 = 앱',m('basic')===tiers('basic'));
+ ok('홈페이지 프로 요금 = 앱',m('pro')===tiers('pro'));
+ ok('홈페이지 지점 추가 요금 = 앱',site.includes(`EXTRA_PER_BRANCH = ${plans.pro.extraPerBranch};`));
+ ok('홈페이지 계약서 추가 요금 = 앱',site.includes(`CONTRACT_EXTRA_PRICE = ${CONTRACT_EXTRA_PRICE};`));
+ ok('홈페이지에 예전 요금제 이름 없음',!/사장님5|사장님10|여러매장 요금|VAT 별도|14일 동안/.test(readFileSync('homepage/src/pages/pricing/page.tsx','utf8')+site));
+ ok('홈페이지가 예전 임시 주소를 가리키지 않음',!site.includes('chatgpt.site'));
+ console.log('PASS: 홈페이지 요금 = 앱 요금.');
+}

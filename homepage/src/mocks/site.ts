@@ -55,7 +55,7 @@ export const SEO_META: Record<string, SeoMeta> = {
   "/": {
     title: "척척사장봇 | 직원 출근부터 월급 정리까지",
     description:
-      "앱 설치 없이 휴대폰으로 여는 매장 관리 비서, 척척사장봇. 직원 출퇴근, 근무표, 급여 정리를 한곳에서 확인하세요. 무료 요금제는 카드 등록 없이 쓸 수 있고 지금은 실제 결제가 없어요.",
+      "앱 설치 없이 휴대폰으로 여는 매장 관리 비서, 척척사장봇. 직원 출퇴근, 근무표, 급여 정리를 한곳에서 확인하세요. 가입 후 30일은 카드 등록 없이 무료이고, 자동 결제는 없어요.",
     keywords: "척척사장봇, 척척이, 매장 직원관리, 출퇴근 관리, 근무표, 급여 정리, 소상공인",
   },
   "/product": {
@@ -67,7 +67,7 @@ export const SEO_META: Record<string, SeoMeta> = {
   "/pricing": {
     title: "이용 요금 | 척척사장봇 요금제",
     description:
-      "무료(매장 1곳·직원 3명), 사장님5 월 19,900원, 사장님10 월 29,900원, 여러매장(매장당 월 29,900원·VAT 별도) 요금제를 안내해요. 무료는 기간 제한이 없고, 유료는 14일 동안 한 번 체험하며 실제 결제는 없어요.",
+      "베이직 월 9,900원부터, 프로(QR 출퇴근) 월 14,900원부터(1지점, VAT 포함). 직원 수 제한 없이 지점 수로만 요금이 정해지고, 가입 후 30일은 무료예요.",
     keywords: "척척사장봇 요금, 매장 관리 요금제, 출퇴근 관리 가격, 소상공인 요금",
   },
   "/guide": {
@@ -117,21 +117,21 @@ export const SEO_META: Record<string, SeoMeta> = {
 export const EXTERNAL = {
   // 역할별 진입 URL — 사장님과 직원이 각자 맞는 화면으로 들어간다.
   // 사장님: 가게 만들기(회원가입) + 로그인
-  ownerSignup: "https://onjang-restaurant-kr.skifighting.chatgpt.site/signup?role=owner&plan=free",
-  ownerLogin: "https://onjang-restaurant-kr.skifighting.chatgpt.site/login?role=owner",
+  ownerSignup: "https://chukchukapp.kr/signup?role=owner&plan=basic",
+  ownerLogin: "https://chukchukapp.kr/login?role=owner",
   // 직원: 직원 가입·가게 합류 + 로그인
-  employeeSignup: "https://onjang-restaurant-kr.skifighting.chatgpt.site/employee",
-  employeeLogin: "https://onjang-restaurant-kr.skifighting.chatgpt.site/login?role=employee",
-  demo: "https://onjang-restaurant-kr.skifighting.chatgpt.site/demo",
+  employeeSignup: "https://chukchukapp.kr/employee",
+  employeeLogin: "https://chukchukapp.kr/login?role=employee",
+  demo: "https://chukchukapp.kr/demo",
   // 공개 "무료로 시작하기"·체험 CTA는 운영 앱의 체험 화면(/demo)으로 보낸다.
   // "내 가게 열기" CTA는 운영 앱 /start로 보내 앱 안의 사장님/직원 역할 선택을 쓴다.
-  appStart: "https://onjang-restaurant-kr.skifighting.chatgpt.site/start",
-  starter: "https://onjang-restaurant-kr.skifighting.chatgpt.site/signup?role=owner&plan=starter",
-  team: "https://onjang-restaurant-kr.skifighting.chatgpt.site/signup?role=owner&plan=team",
-  multi: "https://onjang-restaurant-kr.skifighting.chatgpt.site/signup?role=owner&plan=multi",
+  appStart: "https://chukchukapp.kr/start",
+  starter: "https://chukchukapp.kr/signup?role=owner&plan=basic",
+  team: "https://chukchukapp.kr/signup?role=owner&plan=pro",
+  multi: "https://chukchukapp.kr/signup?role=owner&plan=pro",
   // 실제 앱의 직원 가입 주소와 사장님 신청 관리 화면.
-  employee: "https://onjang-restaurant-kr.skifighting.chatgpt.site/employee",
-  staffRequests: "https://onjang-restaurant-kr.skifighting.chatgpt.site/staff-requests",
+  employee: "https://chukchukapp.kr/employee",
+  staffRequests: "https://chukchukapp.kr/staff-requests",
 };
 
 /* 역할별 시작 경로 — 사장님 / 직원 두 버전으로 진입을 분리한다.
@@ -216,14 +216,13 @@ export const HERO = {
 };
 
 export const TRIAL_NOTE =
-  "지금은 화면 먼저 보는 사전 체험이에요 · 사장님 가입은 초대 없이 · 카드 등록 없음";
+  "30일 무료 체험 · 카드 등록 없음 · 자동 결제 없음";
 
 export const PRICING_DISCLAIMER =
   "지금은 판매 준비용 가격이에요. 정식 판매 전에 가격과 조건이 바뀔 수 있어요.";
 
-export const FREE_BILLING_NOTE = "무료 요금제는 기간 제한 없이 쓸 수 있어요.";
 export const PAID_BILLING_NOTE =
-  "유료 요금제는 14일 동안 한 번 체험할 수 있어요 · 실제 결제 없음 · 자동 결제 없음";
+  "가입 후 30일 동안 프로 기능까지 무료 · 카드 등록 없음 · 자동 결제 없음";
 
 export interface NavLinkItem {
   label: string;
@@ -637,146 +636,119 @@ export interface Plan {
   features: PlanFeature[];
 }
 
-const FREE_FEATURES: PlanFeature[] = [
-  { label: "직원 직접 가입·합류 신청" },
-  { label: "근무표" },
-  { label: "출퇴근 기록" },
-  { label: "정정 승인" },
-  { label: "매장 QR 출근 화면" },
-  { label: "매장 공지", preview: true },
+// 요금은 운영 앱 lib/plans.ts와 같아야 한다(scripts/check-claims.mjs가 비교). 모든 금액은 VAT 포함.
+export const PLAN_TIERS = {
+  basic: [[1, 9900], [3, 14900], [5, 18900]] as [number, number][],
+  pro: [[1, 14900], [3, 19900], [5, 23900]] as [number, number][],
+};
+export const EXTRA_PER_BRANCH = 3900;
+export const CONTRACT_FREE_PER_MONTH = 1;
+export const CONTRACT_EXTRA_PRICE = 3000;
+export const TERM_DISCOUNTS = [
+  { months: 1, rate: 0 },
+  { months: 6, rate: 0.1 },
+  { months: 12, rate: 0.2 },
 ];
+/** 지점 수에 맞는 월 요금(VAT 포함). 6지점부터 지점당 추가. */
+export function monthlyPrice(plan: keyof typeof PLAN_TIERS, branches: number) {
+  const tiers = PLAN_TIERS[plan];
+  for (const [upTo, price] of tiers) if (branches <= upTo) return price;
+  const [last, top] = tiers[tiers.length - 1];
+  return top + (branches - last) * EXTRA_PER_BRANCH;
+}
+const won = (v: number) => `${v.toLocaleString("ko-KR")}원`;
 
-const PAID_FEATURES: PlanFeature[] = [
-  { label: "급여 마감" },
-  { label: "근로계약서 (작성·양측 서명·사본 보관)" },
-  { label: "휴가 승인", preview: true },
-  { label: "인건비 보고서", preview: true },
+const BASIC_FEATURES: PlanFeature[] = [
+  { label: "직원 수 제한 없음" },
+  { label: "근무표 · 대타·교대 요청" },
+  { label: "출퇴근 기록 · 정정 승인" },
+  { label: "급여 계산 · 임금명세서 · 임금대장" },
+  { label: `전자근로계약서 (월 ${CONTRACT_FREE_PER_MONTH}장 무료, 추가 1장 ${won(CONTRACT_EXTRA_PRICE)})` },
+  { label: "휴가 · 공지 · 매장 매뉴얼" },
 ];
 
 export const PLANS: Plan[] = [
   {
-    id: "free",
-    name: "무료",
-    tagline: "작게 시작해 보는 가게",
-    limit: "매장 1곳 · 직원 3명",
-    price: "월 0원",
-    priceNote: "",
-    total: "기간 제한 없음 · 카드 등록 없음",
+    id: "basic",
+    name: "베이직",
+    tagline: "근무표·급여·계약을 한곳에서",
+    limit: `2~3지점 ${won(monthlyPrice("basic", 3))} · 4~5지점 ${won(monthlyPrice("basic", 5))}`,
+    price: `월 ${won(monthlyPrice("basic", 1))}`,
+    priceNote: "1지점 · VAT 포함",
+    total: `6지점부터 지점당 월 ${won(EXTRA_PER_BRANCH)} 추가`,
     highlight: false,
-    cta: "무료로 시작하기",
-    url: EXTERNAL.demo,
-    note: FREE_BILLING_NOTE,
-    features: FREE_FEATURES,
-  },
-  {
-    id: "starter",
-    name: "사장님5",
-    tagline: "직원 5명 이하 가게",
-    limit: "매장 1곳 · 직원 5명 이하",
-    price: "월 19,900원",
-    priceNote: "VAT 별도",
-    total: "합계 21,890원 (VAT 포함)",
-    highlight: false,
-    cta: "14일 체험 시작하기",
+    cta: "30일 무료로 시작하기",
     url: EXTERNAL.starter,
     note: PAID_BILLING_NOTE,
-    features: [...FREE_FEATURES, ...PAID_FEATURES],
+    features: BASIC_FEATURES,
   },
   {
-    id: "team",
-    name: "사장님10",
-    tagline: "직원 10명 이하 가게",
-    limit: "매장 1곳 · 직원 10명 이하",
-    price: "월 29,900원",
-    priceNote: "VAT 별도",
-    total: "합계 32,890원 (VAT 포함)",
+    id: "pro",
+    name: "프로",
+    tagline: "베이직 전부 + 매장 QR 출퇴근",
+    limit: `2~3지점 ${won(monthlyPrice("pro", 3))} · 4~5지점 ${won(monthlyPrice("pro", 5))}`,
+    price: `월 ${won(monthlyPrice("pro", 1))}`,
+    priceNote: "1지점 · VAT 포함",
+    total: `6지점부터 지점당 월 ${won(EXTRA_PER_BRANCH)} 추가`,
     highlight: true,
-    cta: "14일 체험 시작하기",
+    cta: "30일 무료로 시작하기",
     url: EXTERNAL.team,
     note: PAID_BILLING_NOTE,
-    features: [...FREE_FEATURES, ...PAID_FEATURES],
-  },
-  {
-    id: "multi",
-    name: "여러매장",
-    tagline: "가게가 2곳 이상인 사장님",
-    limit: "매장당 직원 10명 이하 · 2곳~10곳",
-    price: "매장당 월 29,900원",
-    priceNote: "VAT 별도",
-    total: "2곳 59,800원 · 3곳 89,700원 (VAT 별도)",
-    extra: "2곳 합계 65,780원 · 3곳 98,670원 (VAT 포함)",
-    highlight: false,
-    cta: "여러 매장 체험 준비",
-    url: EXTERNAL.multi,
-    note: PAID_BILLING_NOTE,
-    features: [
-      ...FREE_FEATURES,
-      ...PAID_FEATURES,
-      { label: "여러 가게 통합 비교", preview: true },
-    ],
+    features: [...BASIC_FEATURES, { label: "매장 QR 출퇴근 (30초마다 바뀌는 QR)" }],
   },
 ];
 
-export const MULTI_STORE_PRICE_PER_STORE = 29900;
-export const MULTI_STORE_MIN = 2;
-export const MULTI_STORE_MAX = 10;
-
-export const VAT_RATE = 0.1;
-
 export const PRICING_VAT_NOTE =
-  "안내된 모든 요금은 VAT 별도이고, VAT 포함 합계도 함께 표시해요.";
+  "안내된 모든 요금은 VAT 포함 금액이에요. 6개월 구독은 10%, 12개월 구독은 20% 할인돼요.";
 
 export const PRICING_LIMIT_NOTE =
-  "직원 수 한도는 매장별로 재직 중인 직원과 입사 준비 중인 직원을 합쳐 계산해요. 퇴사자와 사장님 계정은 제외돼요.";
+  "직원 수는 제한이 없어요. 요금은 지점(매장) 수로만 정해져요.";
 
+// 순서(번호)는 다른 페이지가 FAQS[n]으로 골라 쓰므로 바꾸지 않는다. 답은 운영 앱 도움말(lib/faq.ts)과 맞춘다.
 export const FAQS = [
   {
     q: "설치가 필요한가요?",
-    a: "아니요. 앱을 설치하지 않고 휴대폰이나 컴퓨터에서 브라우저로 열어서 사용해요.",
+    a: "아니요. 휴대폰이나 컴퓨터 브라우저로 열어서 써요. 홈 화면에 추가하면 앱처럼 열려요.",
   },
   {
-    q: "무료로도 쓸 수 있나요?",
-    a: "네. 무료 요금제는 매장 1곳, 직원 3명까지 기간 제한 없이 쓸 수 있어요. 카드 등록 없이 시작하고, 지금은 실제 결제가 없어요.",
+    q: "무료로 써 볼 수 있나요?",
+    a: "네. 가입하면 가게당 한 번 30일 동안 프로 기능까지 무료로 쓸 수 있어요. 카드를 등록하지 않아요.",
   },
   {
-    q: "유료 요금제는 어떻게 체험하나요?",
-    a: "유료 요금제(사장님5·사장님10·여러매장)는 14일 동안 한 번 체험할 수 있어요. 카드 등록 없이 체험하고, 지금은 실제 결제와 자동 결제가 없어요.",
+    q: "체험이 끝나면 자동으로 결제되나요?",
+    a: "아니요. 자동 결제와 자동 갱신은 없어요. 체험이 끝나도 기록 조회와 내려받기는 계속되고, 새로 저장하려면 요금제를 결제해요. 지금은 결제 서비스 연결 전이라 실제 결제는 없어요.",
   },
   {
     q: "지금 바로 가입할 수 있나요?",
-    a: "네. 사장님은 이메일·비밀번호로 가입해 가게를 만들 수 있어요. 직원도 이메일로 계정을 만들고 가게 코드를 넣어 합류를 신청하고, 사장님이 수락하면 연결돼요.",
+    a: "네. 사장님은 이메일·비밀번호로 가입해 바로 가게를 만들 수 있어요. 직원은 사장님이 보낸 가입 링크로 신청하고, 사장님이 수락하면 연결돼요.",
   },
   {
     q: "출퇴근은 어떻게 기록하나요?",
-    a: "직원이 자기 휴대폰으로 출퇴근과 휴게를 기록해요. 매장 QR을 찍으면 출근 화면이 열리고, 본인 확인 후 출근 버튼을 눌러야 기록돼요. QR 스캔만으로 자동 출근되지는 않아요.",
+    a: "프로 요금제(체험 포함)는 매장 QR을 찍은 뒤 출근·퇴근 버튼을 눌러요. 베이직은 QR 없이 앱 버튼으로 기록해요. QR을 찍기만 해서는 기록되지 않고, 위치는 기록하지 않아요.",
   },
   {
-    q: "급여가 자동으로 계산되나요?",
-    a: "근무 기록에 입력한 수당과 공제를 더해 급여를 정리해요. 법정수당을 완전 자동으로 계산하지는 않아요.",
+    q: "급여는 어디까지 자동으로 계산되나요?",
+    a: "기본급, 주휴수당, 5명 이상 사업장의 연장·야간·휴일 가산, 4대보험과 근로소득세를 계산해요. 공휴일 유급휴일 수당 같은 일부 항목은 사장님이 확인해 넣어야 해요. 계산 결과는 참고 자료이고, 최종 금액은 사장님이 확인해 주세요.",
   },
   {
-    q: "여러 매장도 관리할 수 있나요?",
-    a: "네. 가게가 2곳 이상이면 여러매장 요금제에서 매장당 직원 10명 이하까지 사전 체험으로 여러 가게를 비교할 수 있어요. 여러매장 요금은 매장당 월 29,900원(VAT 별도)이고 2곳부터 시작해요. 2곳 합계는 59,800원, 3곳은 89,700원(VAT 별도)이에요.",
+    q: "지점이 여러 곳이에요.",
+    a: "요금은 지점 수 구간으로 정해져요. 1지점, 2~3지점, 4~5지점 요금이 있고 6지점부터는 지점당 월 3,900원이 더해져요. 앱에서 지점별 화면을 바꿔 가며 관리하고 지점끼리 비교할 수 있어요.",
   },
   {
     q: "휴가 신청도 되나요?",
-    a: "네. 휴가 신청과 사장님 승인, 잔여일수 차감은 유료 요금제 사전 체험에서 쓸 수 있어요.",
+    a: "네. 직원이 휴가를 신청하면 사장님이 승인하고, 잔여일수가 줄어요. 5명 이상 사업장이면 입사일 기준 연차도 계산해 보여 줘요.",
   },
   {
-    q: "요금제마다 직원 수 한도가 어떻게 되나요?",
-    a: "무료는 직원 3명, 사장님5는 직원 5명 이하, 사장님10은 직원 10명 이하까지예요. 여러매장은 매장당 직원 10명 이하이고 2곳부터 시작해요. 한도는 매장별로 재직 중인 직원과 입사 준비 중인 직원을 합쳐 계산하고, 퇴사자와 사장님 계정은 제외해요.",
+    q: "직원 수 제한이 있나요?",
+    a: "없어요. 요금은 지점 수로만 정해지고, 직원은 몇 명이든 같은 요금이에요.",
   },
   {
-    q: "근로계약서는 언제 쓸 수 있나요?",
-    a: "근로계약서는 사장님5(월 19,900원) 이상 유료 요금제에서 제공돼요. 사장님10과 여러매장에도 포함돼요. 사장님이 근로조건을 작성해 성명·동의로 먼저 서명하면, 연결된 직원이 본문을 확인한 뒤 본인 성명·동의와 현재 비밀번호로 서명해요. 본문과 양측 서명 기록이 보관되고 사본을 내려받을 수 있어요. 직원 가입 신청 때 보는 근로계약 초안 확인은 실제 서명과 별개예요. 이메일 계정은 서명 전에 이메일 확인이 필요해요. 무료 요금제는 계약 없이 가입 신청만 하고, 계약을 설정하지 않은 매장은 직원 화면에 준비 중으로 안내돼요. 앱에서 양측 확인·서명과 사본을 관리해요. 이메일 인증·발송은 연결 준비 중이에요.",
-  },
-  {
-    q: "직원은 어떻게 가게에 연결하나요?",
-    a: "기본은 직원이 직접 가입하는 방식이에요. 직원은 이메일로 계정을 만들고 가게 코드를 확인한 뒤 이름·연락처·주소·첫 근무일을 입력하고, 사장님이 미리 설정한 근로계약 초안을 확인해 가입을 신청해요. 신청 후에는 사장님의 승인을 기다리고, 수락하면 직원 본인 화면이 열려요. 사장님은 직원 가입 신청 관리에서 매장별 조건을 설정하고 신청 정보와 계약을 검토해 수락해요. 수락 전에는 직원이 매장 정보를 볼 수 없어요.",
+    q: "근로계약서는 어떻게 쓰나요?",
+    a: "모든 요금제에서 고용노동부 표준 근로계약서 양식으로 작성하고, 사장님과 직원이 앱에서 확인·서명해요. 전자근로계약서는 월 1장 무료이고 추가 1장은 3,000원이에요. 공인 인증서 서명은 아니고, 로그인한 계정 확인과 성명·동의(선택적으로 손서명)를 기록해요.",
   },
   {
     q: "로그인은 어떻게 하나요?",
-    a: "회원가입과 로그인은 이메일·비밀번호로 진행해요. 비밀번호 찾기 이메일 발송은 아직 연결 전이에요.",
+    a: "이메일·비밀번호로 가입하고 로그인해요. 비밀번호 찾기 메일은 메일 발송 연결 후에 보내 드려요.",
   },
 ];
 
@@ -825,7 +797,7 @@ export const EMPLOYEE_JOIN_FLOW = [
 
 export const EMPLOYEE_JOIN_NOTES = [
   "수락 전에는 직원이 매장 정보를 볼 수 없어요.",
-  "가입 신청 때 보는 근로계약 초안 확인은 실제 서명과 별개예요. 근로계약 기능은 사장님5 이상이고, 무료는 계약 없이 가입 신청만 해요.",
+  "가입 신청 때 보는 근로계약 초안 확인은 실제 서명과 별개예요. 실제 근로계약서는 수락 후 사장님이 작성해 양측이 서명해요.",
   "계약을 아직 설정하지 않은 매장은 직원 화면에 준비 중으로 안내돼요.",
   "사장님이 직원 정보를 직접 입력해 등록하거나, 이미 가입한 직원 계정과 연결하는 보조 방법도 있어요.",
 ];
@@ -850,7 +822,7 @@ export const CONTRACT_DRAFT = {
   sourceUrl: "https://www.moel.go.kr/mainpop2.do",
   note: "앱에서 양측 확인·서명과 사본을 관리해요. 이메일 인증·발송은 연결 준비 중이에요.",
   signupNote:
-    "가입 신청 때 보는 근로계약 초안 확인은 실제 서명과 별개예요. 근로계약 기능은 사장님5 이상이고, 무료는 계약 없이 가입 신청만 해요. 계약을 설정하지 않은 매장은 직원 화면에 준비 중으로 안내돼요.",
+    "가입 신청 때 보는 근로계약 초안 확인은 실제 서명과 별개예요. 실제 근로계약서는 수락 후 사장님이 작성해 양측이 서명해요. 계약을 설정하지 않은 매장은 직원 화면에 준비 중으로 안내돼요.",
 };
 
 export interface RoadmapItem {

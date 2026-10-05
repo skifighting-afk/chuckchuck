@@ -14,25 +14,21 @@ import {
   PRICING_DISCLAIMER,
   PRICING_LIMIT_NOTE,
   PRICING_VAT_NOTE,
+  monthlyPrice,
 } from "@/mocks/site";
 
-const FREE_BASIC = [
-  "직원 직접 가입·합류 신청",
-  "근무표",
-  "출퇴근 기록",
-  "정정 승인",
-  "매장 QR 출근 화면",
-  "매장 공지 (사전 체험 제공)",
+const COMPARE: [string, string, string][] = [
+  ["직원 수", "제한 없음", "제한 없음"],
+  ["근무표 · 대타·교대 요청", "포함", "포함"],
+  ["출퇴근 기록 · 정정 승인", "앱 버튼으로 기록", "앱 버튼 + 매장 QR"],
+  ["매장 QR 출퇴근 (30초마다 바뀌는 QR)", "—", "포함"],
+  ["급여 계산 · 임금명세서 · 임금대장", "포함", "포함"],
+  ["전자근로계약서", "월 1장 무료 · 추가 3,000원", "월 1장 무료 · 추가 3,000원"],
+  ["휴가 · 공지 · 매장 매뉴얼", "포함", "포함"],
+  ["여러 지점 비교", "지점 2곳 이상", "지점 2곳 이상"],
 ];
 
-const PAID_EXTRA = [
-  "급여 마감",
-  "근로계약서 (근로조건 작성·양측 서명·사본 다운로드)",
-  "휴가 승인 (사전 체험 제공)",
-  "인건비 보고서 (사전 체험 제공)",
-];
-
-const MULTI_EXTRA = ["여러 가게 통합 비교 (사전 체험 제공)"];
+const TIER_ROWS: [string, number][] = [["1지점", 1], ["2~3지점", 3], ["4~5지점", 5]];
 
 const PRICING_NOTES = [
   {
@@ -43,7 +39,7 @@ const PRICING_NOTES = [
   {
     icon: "ri-shield-check-line",
     title: "체험이 끝나도 자동 결제는 없어요",
-    body: "유료 요금제는 14일 동안 한 번 체험할 수 있어요. 체험이 끝나도 자동으로 결제되지 않아요.",
+    body: "가입 후 30일 동안 프로 기능까지 무료예요. 체험이 끝나도 자동으로 결제되지 않고, 기록 조회와 내려받기는 계속돼요.",
   },
   {
     icon: "ri-price-tag-3-line",
@@ -52,7 +48,7 @@ const PRICING_NOTES = [
   },
 ];
 
-const PRICING_FAQS = [FAQS[2], FAQS[3], FAQS[1], FAQS[6], FAQS[9]];
+const PRICING_FAQS = [FAQS[1], FAQS[2], FAQS[8], FAQS[6], FAQS[9]];
 
 const CONTRACT_ITEMS = ["근로조건 작성", "양측 확인·서명", "계약서 사본 다운로드"];
 
@@ -61,27 +57,27 @@ export default function Pricing() {
     <>
       <Seo
         title="이용 요금 | 척척사장봇 요금제"
-        description="척척사장봇 요금제는 무료(매장 1곳·직원 3명), 사장님5 월 19,900원, 사장님10 월 29,900원, 여러매장(매장당 월 29,900원)으로 구성됩니다. 무료는 기간 제한 없이, 유료는 14일 동안 한 번 체험할 수 있어요."
+        description="척척사장봇 요금제는 베이직(1지점 월 9,900원부터)과 프로(QR 출퇴근 포함, 1지점 월 14,900원부터) 두 가지예요. 모든 금액 VAT 포함, 직원 수 제한 없음, 가입 후 30일 무료."
         path="/pricing"
         keywords="척척사장봇 요금, 매장 관리 요금, 출퇴근 관리 가격, 소상공인 요금제"
       />
       <PageHero
         label="이용 요금"
         title="가게 규모에 맞춰 고르세요"
-        lead="무료 요금제로 시작하고, 필요할 때 유료 요금제를 14일 동안 체험할 수 있어요. 지금은 판매 준비용 가격이고, 실제 결제는 없어요."
+        lead="베이직과 프로 두 가지예요. 직원 수 제한 없이 지점 수로만 요금이 정해지고, 가입 후 30일은 카드 등록 없이 무료예요."
         actions={
           <a
             href={EXTERNAL.demo}
             className="flex min-h-[56px] items-center justify-center whitespace-nowrap rounded-md bg-primary-600 px-7 text-[17px] font-semibold text-background-50 transition-colors hover:bg-primary-700"
           >
-            무료로 시작하기
+            30일 무료로 시작하기
           </a>
         }
       />
 
       <section className="bg-background-50 py-16 md:py-20">
         <Container>
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-5 md:grid-cols-2">
             {PLANS.map((plan) => (
               <PlanCard key={plan.id} plan={plan} />
             ))}
@@ -100,80 +96,39 @@ export default function Pricing() {
           <Reveal className="max-w-2xl">
             <SectionLabel>무엇이 다른가요</SectionLabel>
             <h2 className="mt-4 font-heading text-[28px] font-bold leading-[1.24] tracking-tight text-foreground-950 md:text-[36px]">
-              무료는 기본, 유료는 계약·급여까지
+              차이는 매장 QR 출퇴근 하나예요
             </h2>
             <p className="mt-4 text-[18px] leading-relaxed text-foreground-700">
-              무료와 유료의 차이를 한눈에 확인하세요. 무료는 기간 제한이 없고, 근로계약서·급여 정리는
-              유료 요금제에 포함돼요.
+              급여·계약·근무표는 두 요금제 모두 같아요. 직원이 매장에 와서 QR을 찍어야 출퇴근이 기록되게 하고 싶다면 프로를 고르세요.
             </p>
           </Reveal>
 
-          <div className="mt-8 grid gap-5 lg:grid-cols-3">
-            <Reveal className="rounded-lg border border-background-200 bg-background-50 p-6">
-              <h3 className="font-heading text-[20px] font-bold text-foreground-950">
-                무료에 포함
-              </h3>
-              <ul className="mt-4 space-y-3">
-                {FREE_BASIC.map((item) => (
-                  <li key={item} className="flex items-start gap-2.5 text-[16px] leading-relaxed text-foreground-800">
-                    <i className="ri-check-line mt-0.5 flex-none text-[18px] text-primary-600" />
-                    {item}
-                  </li>
+          <Reveal delay={60} className="mt-8 overflow-x-auto rounded-lg border border-background-200 bg-background-50">
+            <table className="w-full min-w-[560px] text-left text-[16px]">
+              <thead className="bg-background-100 text-foreground-900">
+                <tr>
+                  <th scope="col" className="px-5 py-4 font-semibold">기능</th>
+                  <th scope="col" className="px-5 py-4 font-semibold">베이직</th>
+                  <th scope="col" className="px-5 py-4 font-semibold">프로</th>
+                </tr>
+              </thead>
+              <tbody>
+                {COMPARE.map(([name, basic, pro]) => (
+                  <tr key={name} className="border-t border-background-200">
+                    <th scope="row" className="px-5 py-4 font-medium text-foreground-900">{name}</th>
+                    <td className="px-5 py-4 text-foreground-700">{basic}</td>
+                    <td className="px-5 py-4 text-foreground-700">{pro}</td>
+                  </tr>
                 ))}
-              </ul>
-            </Reveal>
-
-            <Reveal delay={60} className="rounded-lg border border-primary-300 bg-primary-50/60 p-6">
-              <h3 className="font-heading text-[20px] font-bold text-foreground-950">
-                유료에서 더해져요
-              </h3>
-              <ul className="mt-4 space-y-3">
-                {PAID_EXTRA.map((item) => (
-                  <li key={item} className="flex items-start gap-2.5 text-[16px] leading-relaxed text-foreground-800">
-                    <i className="ri-check-line mt-0.5 flex-none text-[18px] text-primary-700" />
-                    {item}
-                  </li>
+                {TIER_ROWS.map(([label, n]) => (
+                  <tr key={label} className="border-t border-background-200 bg-background-100/60">
+                    <th scope="row" className="px-5 py-4 font-medium text-foreground-900">월 요금 · {label}</th>
+                    <td className="tabular px-5 py-4 text-foreground-900">{monthlyPrice("basic", n).toLocaleString("ko-KR")}원</td>
+                    <td className="tabular px-5 py-4 text-foreground-900">{monthlyPrice("pro", n).toLocaleString("ko-KR")}원</td>
+                  </tr>
                 ))}
-              </ul>
-            </Reveal>
-
-            <Reveal delay={120} className="rounded-lg border border-background-200 bg-background-50 p-6">
-              <h3 className="font-heading text-[20px] font-bold text-foreground-950">
-                여러매장에서 더해져요
-              </h3>
-              <ul className="mt-4 space-y-3">
-                {MULTI_EXTRA.map((item) => (
-                  <li key={item} className="flex items-start gap-2.5 text-[16px] leading-relaxed text-foreground-800">
-                    <i className="ri-check-line mt-0.5 flex-none text-[18px] text-primary-600" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </Reveal>
-          </div>
-
-          <Reveal delay={160} className="mt-5 rounded-lg border border-background-200 bg-background-50 p-6">
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="flex h-11 w-11 flex-none items-center justify-center rounded-md bg-accent-100 text-accent-700">
-                <i className="ri-file-text-line text-[22px]" />
-              </span>
-              <h3 className="font-heading text-[20px] font-bold text-foreground-950">근로계약서</h3>
-              <span className="rounded-full bg-secondary-100 px-3 py-1 text-[14px] font-semibold text-secondary-900">
-                사장님5 이상 유료 요금제
-              </span>
-            </div>
-            <ul className="mt-4 flex flex-wrap gap-x-8 gap-y-3">
-              {CONTRACT_ITEMS.map((item) => (
-                <li key={item} className="flex items-start gap-2.5 text-[16px] leading-relaxed text-foreground-800">
-                  <i className="ri-check-line mt-0.5 flex-none text-[18px] text-accent-600" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-            <p className="mt-4 text-[15px] leading-relaxed text-foreground-600">
-              근로계약서는 사장님5(월 19,900원)부터 제공돼요. 앱에서 양측 확인·서명과 사본을
-              관리해요. 이메일 인증·발송은 연결 준비 중이에요.
-            </p>
+              </tbody>
+            </table>
           </Reveal>
         </Container>
       </section>
@@ -182,13 +137,12 @@ export default function Pricing() {
         <Container>
           <div className="grid gap-8 lg:grid-cols-[1fr_1.1fr] lg:items-start lg:gap-14">
             <Reveal>
-              <SectionLabel>여러매장 요금 계산</SectionLabel>
+              <SectionLabel>요금 계산</SectionLabel>
               <h2 className="mt-4 font-heading text-[28px] font-bold leading-[1.24] tracking-tight text-foreground-950 md:text-[36px]">
-                가게 수를 골라 보세요
+                내 가게는 얼마일까요
               </h2>
               <p className="mt-4 text-[18px] leading-relaxed text-foreground-700">
-                2곳부터 10곳까지, 가게 수에 따라 요금을 바로 확인할 수 있어요. 매장당 직원 10명 이하까지
-                쓸 수 있어요.
+                요금제, 지점 수, 구독 기간을 고르면 결제 금액을 바로 보여 드려요. 6개월은 10%, 12개월은 20% 할인돼요.
               </p>
             </Reveal>
             <Reveal delay={80}>

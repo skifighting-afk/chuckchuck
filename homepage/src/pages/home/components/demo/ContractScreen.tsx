@@ -123,7 +123,7 @@ export default function ContractScreen() {
                 가상 데이터 체험
               </span>
               <span className="whitespace-nowrap rounded-full bg-primary-100 px-3 py-1 text-[14px] font-semibold text-primary-800">
-                유료 기능 예시 · 사장님5부터
+                모든 요금제 · 월 1장 무료
               </span>
             </div>
           </div>
@@ -165,7 +165,7 @@ export default function ContractScreen() {
       <div className="mt-4 rounded-md border border-background-200 bg-background-50 p-4">
         <p className="text-[15px] font-semibold text-foreground-800">앱에서 제공하는 계약 관련 기능</p>
         <p className="mt-1 text-[14px] leading-relaxed text-foreground-600">
-          근로계약서는 사장님5(월 19,900원) 이상 유료 요금제에서 제공돼요.
+          근로계약서는 모든 요금제에서 쓸 수 있어요. 월 1장 무료, 추가 1장 3,000원이에요.
         </p>
         <ul className="mt-2.5 flex flex-wrap gap-x-6 gap-y-2">
           {REAL_FEATURES.map((item) => (

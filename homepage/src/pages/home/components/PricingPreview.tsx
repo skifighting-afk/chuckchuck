@@ -15,11 +15,11 @@ export default function PricingPreview() {
             가게 규모에 맞춰 고르세요
           </h2>
           <p className="mt-4 text-[18px] leading-relaxed text-foreground-700">
-            무료로 시작하고, 필요할 때 유료 요금제를 14일 동안 체험할 수 있어요.
+            베이직과 프로 두 가지예요. 직원 수 제한 없이 지점 수로만 요금이 정해지고, 가입 후 30일은 무료예요.
           </p>
         </Reveal>
 
-        <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-10 grid gap-5 md:grid-cols-2">
           {PLANS.map((plan) => (
             <PlanCard key={plan.id} plan={plan} />
           ))}

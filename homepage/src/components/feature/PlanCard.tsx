@@ -26,7 +26,7 @@ export default function PlanCard({ plan }: PlanCardProps) {
         <h3 className="font-heading text-[22px] font-bold text-foreground-950">{plan.name}</h3>
         {plan.highlight ? (
           <span className="rounded-full bg-primary-600 px-3 py-1 text-[14px] font-semibold text-background-50">
-            직원 10명까지
+            QR 출퇴근 포함
           </span>
         ) : null}
       </div>

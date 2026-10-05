@@ -98,7 +98,7 @@ export default function Product() {
                   근로계약서 작성·양측 서명
                 </h3>
                 <span className="rounded-full border border-accent-300 bg-accent-100 px-2.5 py-0.5 text-[13px] font-semibold text-accent-900">
-                  사장님5 이상
+                  모든 요금제
                 </span>
               </div>
               <ol className="mt-3 space-y-1.5 text-[16px] leading-relaxed text-foreground-700">
@@ -156,7 +156,7 @@ export default function Product() {
                 나란히 볼 수 있어요. “이 매장 열기”를 누르면 그 가게로 바로 전환돼요.
               </p>
               <p className="mt-4 text-[16px] leading-relaxed text-foreground-600">
-                여러 가게 통합 비교는 여러매장 요금제에서 사전 체험으로 쓸 수 있어요. 매출이 연결되어
+                여러 가게 비교는 지점이 2곳 이상인 모든 요금제에서 쓸 수 있어요. 매출이 연결되어
                 있지 않아 매출이나 이익률은 보여주지 않아요.
               </p>
             </Reveal>
