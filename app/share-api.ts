@@ -9,7 +9,7 @@ export function shareCsv(store:string,run:any){
  const names=[...new Set((run.rows||[]).flatMap((r:any)=>(r.deductions||[]).map((d:any)=>d.name)))] as string[];
  const head=['성명','직원번호','근무시간','총지급',...names,'공제 합계','실지급'];
  const body=(run.rows||[]).map((r:any)=>[r.name,employeeNumber(r.employeeId),Number(r.hours||0).toFixed(2),r.gross,...names.map(n=>(r.deductions||[]).find((d:any)=>d.name===n)?.amount||0),r.deduction,r.net]);
- return '﻿'+[[`${store} ${run.month} 급여 자료 (지급일 ${run.payDate||''}) · 척척사장봇 읽기 전용 링크`],head,...body].map(r=>r.map(cell).join(',')).join('\r\n');
+ return '﻿'+[[`${store} ${run.month} 급여 자료 (지급일 ${run.payDate||''}) · 척척사장 읽기 전용 링크`],head,...body].map(r=>r.map(cell).join(',')).join('\r\n');
 }
 export async function shareApi(request:Request,env:{DB:D1Database}){
  const url=new URL(request.url);
@@ -29,7 +29,7 @@ export async function shareApi(request:Request,env:{DB:D1Database}){
   const own=await env.DB.prepare('SELECT data FROM stores WHERE owner=?').bind(uid).first<any>();if(!own)return json({error:'세무사 링크는 사장님만 만들 수 있어요.'},403);
   if(request.method==='GET'){const rows=(await env.DB.prepare('SELECT hash,run_key,label,created_at,expires_at,revoked_at,views FROM accountant_shares WHERE owner=? ORDER BY created_at DESC LIMIT 30').bind(uid).all<any>()).results;return json({shares:rows.map((r:any)=>({id:r.hash.slice(0,16),runKey:r.run_key,label:r.label,createdAt:r.created_at,expiresAt:r.expires_at,revoked:!!r.revoked_at,views:(typeof r.views==='string'?JSON.parse(r.views):r.views||[]).length,active:!r.revoked_at&&Date.parse(r.expires_at)>Date.now()}))})}
   if(request.method!=='POST')return json({error:'이 방법으로는 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},405);
-  if(request.headers.get('origin')!==url.origin)return json({error:'요청 출처를 확인할 수 없어요. 척척사장봇 화면을 새로고침한 뒤 다시 시도해 주세요.'},403);
+  if(request.headers.get('origin')!==url.origin)return json({error:'요청 출처를 확인할 수 없어요. 척척사장 화면을 새로고침한 뒤 다시 시도해 주세요.'},403);
   let b:any;try{b=JSON.parse(await request.text())}catch{return json({error:'요청 내용이 올바르지 않아요. 새로고침한 뒤 다시 시도해 주세요.'},400)}
   if(b.action==='revoke'){const r=await env.DB.prepare("UPDATE accountant_shares SET revoked_at=? WHERE owner=? AND substr(hash,1,16)=? AND revoked_at IS NULL RETURNING hash").bind(new Date().toISOString(),uid,String(b.id||'')).first();return r?json({ok:true}):json({error:'끌 링크를 찾지 못했어요. 목록을 새로고침해 주세요.'},404)}
   if(b.action!=='create')return json({error:'이 작업은 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},400);

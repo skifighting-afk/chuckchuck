@@ -157,7 +157,7 @@ export default function BrandFilm() {
                   <img
                     src={FILM_POSTER}
                     alt="출근 확인부터 급여 정리까지의 흐름을 보여주는 가상 예시 영상 포스터"
-                    title="척척사장봇 40초 기능 미리보기"
+                    title="척척사장 40초 기능 미리보기"
                     className="absolute inset-0 h-full w-full object-cover"
                   />
                   <video

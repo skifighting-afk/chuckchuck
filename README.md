@@ -1,4 +1,4 @@
-# 척척사장봇
+# 척척사장
 
 매장 사장님을 위한 직원·출퇴근·근무표·급여·근로계약 관리 앱.
 
@@ -38,7 +38,7 @@
 | Secret (선택) | `HQ_ADMIN_EMAIL` | 본사 화면을 쓸 이메일. 앱에서 이메일 확인을 마쳐야 열림 |
 | Secret (선택) | `HQ_NATIVE_USER_ID` | 본사 계정 ID(`native:<uuid>`) |
 | Secret (선택) | `RESEND_API_KEY` | 이메일 확인·계약서 사본 메일 발송 |
-| Variable (선택) | `EMAIL_FROM` | 보내는 사람 주소 (예: `척척사장봇 <no-reply@example.kr>`) |
+| Variable (선택) | `EMAIL_FROM` | 보내는 사람 주소 (예: `척척사장 <no-reply@example.kr>`) |
 
 Settings → Pages의 Source는 **GitHub Actions**로 둔다.
 

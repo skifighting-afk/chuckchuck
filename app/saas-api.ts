@@ -48,7 +48,7 @@ export async function accountApi(request:Request,env:Env){
    // 작업 041: 기간제 계약 만료 30일 전 — 사장님 이메일로 보낼 안내를 전송함에 한 번 준비(실제 발송은 메일 서비스 연결 후 전송함에서)
    if(linked?.access==='owner'&&data&&email){const today=new Date(Date.now()+9*3600000).toISOString().slice(0,10),until=new Date(Date.now()+9*3600000+30*86400000).toISOString().slice(0,10);
     const due=(data.employees||[]).filter((e:any)=>e.status!=='퇴사'&&e.endDate&&e.endDate>=today&&e.endDate<=until),box=data._outbox||[],add=due.filter((e:any)=>!box.some((m:any)=>m.key==='expiry:'+e.id+':'+e.endDate));
-    if(add.length){data._outbox=[...box,...add.map((e:any)=>({id:crypto.randomUUID(),key:'expiry:'+e.id+':'+e.endDate,to:email,subject:`[척척사장봇] ${e.name}님 기간제 계약이 ${e.endDate}에 끝나요`,body:`${data.store?.name||''} ${e.name}님의 근로계약이 ${e.endDate}에 끝나요.\n\n계속 일한다면 새 계약서를 작성해 서명받고, 끝난다면 마지막 급여와 퇴직금 대상 여부를 확인해 주세요.\n(기간제 근로자를 2년 넘게 쓰면 기간의 정함이 없는 근로자로 봅니다 — 기간제법 제4조)`,status:'발송 대기',createdAt:new Date().toISOString(),providerId:null}))].slice(-500);
+    if(add.length){data._outbox=[...box,...add.map((e:any)=>({id:crypto.randomUUID(),key:'expiry:'+e.id+':'+e.endDate,to:email,subject:`[척척사장] ${e.name}님 기간제 계약이 ${e.endDate}에 끝나요`,body:`${data.store?.name||''} ${e.name}님의 근로계약이 ${e.endDate}에 끝나요.\n\n계속 일한다면 새 계약서를 작성해 서명받고, 끝난다면 마지막 급여와 퇴직금 대상 여부를 확인해 주세요.\n(기간제 근로자를 2년 넘게 쓰면 기간의 정함이 없는 근로자로 봅니다 — 기간제법 제4조)`,status:'발송 대기',createdAt:new Date().toISOString(),providerId:null}))].slice(-500);
      const r=await env.DB.prepare('UPDATE stores SET data=?,version=version+1,updated_at=? WHERE owner=? AND version=?').bind(JSON.stringify(data),new Date().toISOString(),id,linked.row.version).run();if(!r.meta.changes)data._outbox=box}}
    const v:any=view(data);
    if(linked?.access==='owner')v.payments=(await env.DB.prepare('SELECT order_id,plan,store_slots,months,amount,status,method,receipt_url,paid_at,period_start,period_end,refunded_amount FROM payments WHERE owner=? ORDER BY created_at DESC LIMIT 24').bind(id).all<any>()).results;
@@ -57,7 +57,7 @@ export async function accountApi(request:Request,env:Env){
    if(email&&v.user.emailVerified&&linked?.access!=='owner'){const rows=await env.DB.prepare("SELECT owner,data FROM stores WHERE lower(try_jsonb(data)#>>'{_account,transfer,toEmail}')=lower(?)").bind(email).all<any>();v.transferOffers=rows.results.map((r:any)=>{const d=JSON.parse(r.data);return Date.parse(d._account.transfer.expiresAt)>Date.now()?{owner:r.owner,storeName:d.store?.name||'',fromEmail:d._account.transfer.fromEmail||'',expiresAt:d._account.transfer.expiresAt}:null}).filter(Boolean)}
    return json(v)}
   if(request.method!=='POST')return json({error:'이 방법으로는 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},405);
-  if(request.headers.get('origin')!==new URL(request.url).origin)return json({error:'요청 출처를 확인할 수 없어요. 척척사장봇 화면을 새로고침한 뒤 다시 시도해 주세요.'},403);
+  if(request.headers.get('origin')!==new URL(request.url).origin)return json({error:'요청 출처를 확인할 수 없어요. 척척사장 화면을 새로고침한 뒤 다시 시도해 주세요.'},403);
   const raw=await request.text();if(raw.length>12000)return json({error:'보낸 내용이 너무 커요. 내용을 줄여서 다시 시도해 주세요.'},413);
   let b:any;try{b=JSON.parse(raw)}catch{return json({error:'요청을 읽지 못했어요. 새로고침한 뒤 다시 시도해 주세요.'},400)}
   if(b.action==='onboard'){
@@ -70,7 +70,7 @@ export async function accountApi(request:Request,env:Env){
    for(const key of ['storeName','branchName','ownerName'])if(typeof b[key]!=='string'||!b[key].trim()||b[key].trim().length>80)return json({error:'매장명·지점명·사장님 성함을 80자 이내로 입력해 주세요.'},400);
    if(b.industry!==undefined&&!isIndustry(b.industry))return json({error:'업종을 목록에서 선택해 주세요.'},400);
    if(b.acknowledged!==true)return json({error:'체험 운영 안내를 확인해 주세요.'},400);
-   // 작업 017: 직원 개인정보는 사장님이 처리자, 척척사장봇은 수탁자다. 처리위탁 내용에 동의해야 가게를 만든다.
+   // 작업 017: 직원 개인정보는 사장님이 처리자, 척척사장은 수탁자다. 처리위탁 내용에 동의해야 가게를 만든다.
    if(b.dpaAgreed!==true)return json({error:'직원 개인정보 처리위탁 내용을 확인하고 동의해 주세요.',code:'DPA_REQUIRED'},400);
    // 작업 011: 사업자등록번호(선택) — 국세청 상태조회, 확인이 안 돼도 가입은 받고 '미확인'으로
    if(b.bizNo!==undefined&&b.bizNo!==''&&!validBizNo(String(b.bizNo)))return json({error:'사업자등록번호 10자리를 다시 확인해 주세요. 모르면 비워 두고 나중에 넣어도 돼요.'},400);

@@ -25,7 +25,7 @@ export default function AppShell({ activeMenu, onNavigate, children }: AppShellP
     <div className="flex w-full min-w-0 bg-background-100">
       <aside className="hidden w-[212px] flex-none flex-col border-r border-background-200 bg-background-50 lg:flex">
         <div className="border-b border-background-200 p-4">
-          <p className="font-heading text-[17px] font-bold text-foreground-950">척척사장봇</p>
+          <p className="font-heading text-[17px] font-bold text-foreground-950">척척사장</p>
           <div className="mt-3 flex w-full items-center justify-between rounded-md border border-background-200 bg-background-50 px-3 py-2.5 text-[15px] font-medium text-foreground-900">
             <span className="flex min-w-0 items-center gap-2">
               <i className="ri-store-2-line text-[18px] text-primary-700" />
@@ -34,7 +34,7 @@ export default function AppShell({ activeMenu, onNavigate, children }: AppShellP
             <i className="ri-arrow-down-s-line flex-none text-[18px] text-foreground-600" />
           </div>
         </div>
-        <nav className="flex-1 space-y-1 p-2.5" aria-label="척척사장봇 메뉴 (예시)">
+        <nav className="flex-1 space-y-1 p-2.5" aria-label="척척사장 메뉴 (예시)">
           {APP_MENU.map((item) => {
             const isActive = item.label === activeMenu;
             return (
@@ -89,7 +89,7 @@ export default function AppShell({ activeMenu, onNavigate, children }: AppShellP
           {mobileOpen ? (
             <nav
               className="absolute inset-x-0 top-full z-20 border-b border-background-200 bg-background-50 p-2"
-              aria-label="척척사장봇 메뉴 (예시)"
+              aria-label="척척사장 메뉴 (예시)"
             >
               {APP_MENU.map((item) => {
                 const isActive = item.label === activeMenu;

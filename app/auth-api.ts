@@ -101,7 +101,7 @@ export async function nativeAuth(request:Request,env:Env){
    if(!await authLimit(env,'verify-minute:'+id,1,60000)||!await authLimit(env,'verify-hour:'+id,5,3600000))return json({error:'메일함을 확인해 주세요. 다시 받기는 1분 뒤, 한 시간에 최대 5번 가능해요.'},429);
    const token=randomToken(),hash=await digest(token);
    await env.DB.prepare('INSERT INTO auth_verifications(token_hash,user_id,email,expires_at,created_at) VALUES(?,?,?,?,?)').bind(hash,id,user.email,Date.now()+30*60000,Date.now()).run();
-   try{await sendMail(env,{to:user.email,subject:'척척사장봇 · 이메일을 확인해 주세요',text:'본인이 만든 척척사장봇 계정이라면 아래 주소에서 이메일 확인을 눌러 주세요. 30분 동안 사용할 수 있어요. 요청하지 않았다면 누르지 않아도 됩니다.\n\n'+new URL('/verify-email#token='+token,request.url).href,key:'verify-'+hash});}
+   try{await sendMail(env,{to:user.email,subject:'척척사장 · 이메일을 확인해 주세요',text:'본인이 만든 척척사장 계정이라면 아래 주소에서 이메일 확인을 눌러 주세요. 30분 동안 사용할 수 있어요. 요청하지 않았다면 누르지 않아도 됩니다.\n\n'+new URL('/verify-email#token='+token,request.url).href,key:'verify-'+hash});}
    catch{await env.DB.prepare('DELETE FROM auth_verifications WHERE token_hash=?').bind(hash).run();return json({error:'인증메일을 보내지 못했어요. 잠시 뒤 다시 시도해 주세요.'},503)}
    await env.DB.prepare('DELETE FROM auth_verifications WHERE user_id=? AND token_hash<>?').bind(id,hash).run();
    return json({ok:true,message:'인증메일을 보냈어요. 메일함과 스팸함을 확인해 주세요.'});

@@ -5,7 +5,7 @@ export async function renderPages(title:string,text:string,footer:string,type:'i
  await document.fonts.ready;const canvas=document.createElement('canvas');canvas.width=PAGE_W;canvas.height=PAGE_H;const ctx=canvas.getContext('2d')!;ctx.font='26px sans-serif';
  const lines:string[]=[];for(const paragraph of text.split('\n')){let line='';for(const ch of paragraph){if(ctx.measureText(line+ch).width>1080){lines.push(line);line=''}line+=ch;}lines.push(line)}
  const blobs:Blob[]=[],count=Math.max(1,Math.ceil(lines.length/LINES));
- for(let p=0;p<count;p++){ctx.fillStyle='white';ctx.fillRect(0,0,PAGE_W,PAGE_H);ctx.fillStyle='#155b45';ctx.font='bold 32px sans-serif';ctx.fillText('척척사장봇 · '+title,80,90);ctx.fillStyle='#172e27';ctx.font='26px sans-serif';lines.slice(p*LINES,(p+1)*LINES).forEach((line,i)=>ctx.fillText(line,80,165+i*43));ctx.font='20px sans-serif';ctx.fillText(footer+' · '+(p+1)+' / '+count,80,1685);blobs.push(await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(Error('이미지를 만들지 못했어요.')),type,0.9)))}
+ for(let p=0;p<count;p++){ctx.fillStyle='white';ctx.fillRect(0,0,PAGE_W,PAGE_H);ctx.fillStyle='#155b45';ctx.font='bold 32px sans-serif';ctx.fillText('척척사장 · '+title,80,90);ctx.fillStyle='#172e27';ctx.font='26px sans-serif';lines.slice(p*LINES,(p+1)*LINES).forEach((line,i)=>ctx.fillText(line,80,165+i*43));ctx.font='20px sans-serif';ctx.fillText(footer+' · '+(p+1)+' / '+count,80,1685);blobs.push(await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(Error('이미지를 만들지 못했어요.')),type,0.9)))}
  return blobs;
 }
 /** 여러 문서를 한 PDF로(합본). docs: [{title,text,footer}] */

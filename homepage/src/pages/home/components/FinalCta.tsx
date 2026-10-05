@@ -23,7 +23,7 @@ export default function FinalCta() {
             척척 맡겨보세요.
           </h2>
           <p className="mx-auto mt-6 max-w-xl text-[18px] leading-relaxed text-background-100">
-            직원 출근부터 월급 정리까지. 척척사장봇이 사장님의 할 일을 한곳에 모아 가게의 흐름을
+            직원 출근부터 월급 정리까지. 척척사장이 사장님의 할 일을 한곳에 모아 가게의 흐름을
             정리해 드려요.
           </p>
 

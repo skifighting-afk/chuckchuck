@@ -3,7 +3,7 @@
 export const LEGAL = {
   terms: {version: '2026-10-04-prelaunch', title: '이용약관(판매 준비 안내)', path: '/terms'},
   privacy: {version: '2026-10-04-prelaunch', title: '개인정보 처리방침(데이터 이용 안내)', path: '/privacy'},
-  // 가게(사장님)가 직원 개인정보 처리를 척척사장봇에 맡기는 조항 (개인정보 보호법 제26조)
+  // 가게(사장님)가 직원 개인정보 처리를 척척사장에 맡기는 조항 (개인정보 보호법 제26조)
   dpa: {version: '2026-10-04-v1', title: '직원 개인정보 처리위탁', path: '/privacy#processing'},
 } as const;
 export const consentCurrent = (u: {terms_version?: string | null; privacy_version?: string | null}) =>

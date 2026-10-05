@@ -35,10 +35,10 @@ export default function Guide() {
   return (
     <>
       <Seo
-        title="시작 방법 | 척척사장봇 시작 안내"
+        title="시작 방법 | 척척사장 시작 안내"
         description="화면 먼저 체험하고, 사장님은 이메일로 가입해 내 가게를 만든 뒤, 직원은 이메일 가입 후 합류를 신청하고 사장님이 수락하는 순서를 안내해요. 매장 QR은 출근·퇴근 때 스캔하는 방식이에요."
         path="/guide"
-        keywords="척척사장봇 시작 방법, 내 가게 만들기, 직원 연결, 매장 QR 출근, 사용 시작"
+        keywords="척척사장 시작 방법, 내 가게 만들기, 직원 연결, 매장 QR 출근, 사용 시작"
       />
       <PageHero
         label="시작 방법"

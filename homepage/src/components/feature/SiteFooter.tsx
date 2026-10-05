@@ -13,7 +13,7 @@ export default function SiteFooter() {
           <div className="md:col-span-5">
             <Logo tone="dark" />
             <p className="mt-5 max-w-sm text-[16px] leading-relaxed text-background-200">
-              사장님 옆의 든든한 매장 비서, 척척사장봇. 근무표부터 출퇴근, 급여 마감까지 바쁜
+              사장님 옆의 든든한 매장 비서, 척척사장. 근무표부터 출퇴근, 급여 마감까지 바쁜
               사장님의 할 일을 한곳에 모아요.
             </p>
             <p className="mt-5 max-w-sm text-[16px] leading-relaxed text-background-200">
@@ -89,7 +89,7 @@ export default function SiteFooter() {
                 <TextSizeToggle />
                 <MotionToggle />
               </div>
-              <p className="whitespace-nowrap">© 2026 척척사장봇</p>
+              <p className="whitespace-nowrap">© 2026 척척사장</p>
             </div>
           </div>
         </div>

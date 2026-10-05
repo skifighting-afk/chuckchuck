@@ -1,4 +1,4 @@
-# 척척사장봇 — Claude 인수 현황 (2026-10-04)
+# 척척사장 — Claude 인수 현황 (2026-10-04)
 
 원본 인계 문서: `START-HERE.txt`, `NEXT-CODEX.txt` (변경 없음)
 

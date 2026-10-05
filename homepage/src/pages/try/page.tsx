@@ -14,7 +14,7 @@ export default function Try() {
     return (
       <>
         <Seo
-          title="내 출근 기록 | 척척사장봇 직원 체험"
+          title="내 출근 기록 | 척척사장 직원 체험"
           description="QR로 열린 직원 화면이에요. 실제 개인정보 입력 없이 출근·휴게·퇴근 버튼만 눌러 보는 가상 직원 체험이에요. 모든 기록은 화면에서만 동작하는 예시예요."
           path="/try"
           keywords="직원 출근 체험, QR 출근, 매장 근태 체험"
@@ -63,10 +63,10 @@ export default function Try() {
   return (
     <>
       <Seo
-        title="화면 먼저 보기 | 척척사장봇 사전 체험"
-        description="회원가입 없이 척척사장봇 화면을 먼저 눌러 보세요. 이번 달 예상 급여와 오늘 출근 상태를 요약으로 보고, 급여·출퇴근·근무표 상세를 한 동작으로 열어볼 수 있어요. 모든 화면은 가상 예시예요."
+        title="화면 먼저 보기 | 척척사장 사전 체험"
+        description="회원가입 없이 척척사장 화면을 먼저 눌러 보세요. 이번 달 예상 급여와 오늘 출근 상태를 요약으로 보고, 급여·출퇴근·근무표 상세를 한 동작으로 열어볼 수 있어요. 모든 화면은 가상 예시예요."
         path="/try"
-        keywords="척척사장봇 사전 체험, 매장 관리 화면, 출퇴근 데모, 급여 데모, 근무표 데모"
+        keywords="척척사장 사전 체험, 매장 관리 화면, 출퇴근 데모, 급여 데모, 근무표 데모"
       />
       <section className="border-b border-background-200 bg-background-50">
         <Container>

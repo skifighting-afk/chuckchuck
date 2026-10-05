@@ -20,7 +20,7 @@ export async function manualApi(request:Request,env:{DB:D1Database}){
   return json(view());
  }
  if(request.method!=='POST')return json({error:'이 방법으로는 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},405);
- if(request.headers.get('origin')!==url.origin)return json({error:'요청 출처를 확인할 수 없어요. 척척사장봇 화면을 새로고침한 뒤 다시 시도해 주세요.'},403);
+ if(request.headers.get('origin')!==url.origin)return json({error:'요청 출처를 확인할 수 없어요. 척척사장 화면을 새로고침한 뒤 다시 시도해 주세요.'},403);
  const raw=await request.text();if(raw.length>MANUAL_LIMITS.imageBytes*1.4+2000)return json({error:'보낸 내용이 너무 커요. 사진을 줄여서 다시 올려 주세요.'},413);
  let b:any;try{b=JSON.parse(raw)}catch{return json({error:'요청을 읽지 못했어요. 새로고침한 뒤 다시 시도해 주세요.'},400)}
  const now=new Date().toISOString();

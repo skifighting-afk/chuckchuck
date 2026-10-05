@@ -11,15 +11,15 @@ export default function Contact() {
   return (
     <>
       <Seo
-        title="도입 준비 안내 | 척척사장봇 사전 체험"
-        description="척척사장봇 도입 준비 안내입니다. 별도의 문의 폼 대신 화면 먼저 보는 사전 체험으로 시작해요. 사장님은 초대 없이 가게를 만들고, 직원은 직접 가입해 합류를 신청하고 사장님이 수락해 연결해요."
+        title="도입 준비 안내 | 척척사장 사전 체험"
+        description="척척사장 도입 준비 안내입니다. 별도의 문의 폼 대신 화면 먼저 보는 사전 체험으로 시작해요. 사장님은 초대 없이 가게를 만들고, 직원은 직접 가입해 합류를 신청하고 사장님이 수락해 연결해요."
         path="/contact"
-        keywords="척척사장봇 도입 안내, 사전 체험 안내, 매장 관리 시작"
+        keywords="척척사장 도입 안내, 사전 체험 안내, 매장 관리 시작"
       />
       <PageHero
         label="도입 준비 안내"
         title="문의 폼 대신, 준비된 체험으로"
-        lead="지금은 별도의 문의 폼을 운영하지 않아요. 대신 화면 먼저 보는 사전 체험으로 척척사장봇을 먼저 경험해 보세요. 사장님은 초대 없이 시작할 수 있어요."
+        lead="지금은 별도의 문의 폼을 운영하지 않아요. 대신 화면 먼저 보는 사전 체험으로 척척사장을 먼저 경험해 보세요. 사장님은 초대 없이 시작할 수 있어요."
         actions={
           <div className="flex flex-col gap-3 sm:flex-row">
             <a
@@ -102,7 +102,7 @@ export default function Contact() {
             <Reveal delay={80}>
               <div className="rounded-lg border border-background-200 bg-background-50 p-6">
                 <p className="text-[17px] leading-relaxed text-foreground-700">
-                  척척사장봇은 지금 정식 판매 전 준비 단계라서 별도의 도입 문의 폼을 운영하지 않아요.
+                  척척사장은 지금 정식 판매 전 준비 단계라서 별도의 도입 문의 폼을 운영하지 않아요.
                   확인되지 않은 문의 창구를 안내하거나, 보내지 않은 문의를 보낸 것처럼 처리하지 않아요.
                 </p>
                 <p className="mt-4 text-[17px] leading-relaxed text-foreground-700">

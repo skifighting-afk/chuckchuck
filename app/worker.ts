@@ -97,7 +97,7 @@ async function route(request:Request,env:Env){
  if(raw?._account?.deletion)return json({error:'탈퇴를 예약해 가게가 읽기 전용이에요. 계정 화면에서 예약을 취소하면 다시 저장할 수 있어요.',code:'WITHDRAW_PENDING'},403);
  if(raw?._account&&!canWrite(raw._account))return json({error:'체험이 끝났어요. 기록 조회·내려받기는 계속 되고, 계정·요금제 화면에서 요금제를 결제하면 다시 저장할 수 있어요.',code:'TRIAL_ENDED'},403);
  if(!['PUT','POST'].includes(request.method))return json({error:'이 방법으로는 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},405);
- if(request.headers.get('origin')!==new URL(request.url).origin)return json({error:'요청 출처를 확인할 수 없어요. 척척사장봇 화면을 새로고침한 뒤 다시 시도해 주세요.'},403);
+ if(request.headers.get('origin')!==new URL(request.url).origin)return json({error:'요청 출처를 확인할 수 없어요. 척척사장 화면을 새로고침한 뒤 다시 시도해 주세요.'},403);
  const text=await request.text();if(text.length>1500000)return json({error:'한 번에 저장할 수 있는 양을 넘었어요. 오래된 기록을 정리하거나 나눠서 저장해 주세요.'},413);
  let b:any;try{b=JSON.parse(text)}catch{return json({error:'요청을 읽지 못했어요. 새로고침한 뒤 다시 시도해 주세요.'},400)}
  if(access!=='owner'&&(request.method==='PUT'||!['attendance','request'].includes(b.action)))return json({error:'이 작업은 사장님만 할 수 있어요. 사장님께 요청해 주세요.'},403);

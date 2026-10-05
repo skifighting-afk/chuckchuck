@@ -1,6 +1,6 @@
-# 척척사장봇 작업 지시서 (100개)
+# 척척사장 작업 지시서 (100개)
 
-너는 척척사장봇 저장소(skifighting-afk/chuckchuck, 브랜치 main)를 맡은 개발자다. 아래 100개 작업을 순서대로 끝까지 진행해.
+너는 척척사장 저장소(skifighting-afk/chuckchuck, 브랜치 main)를 맡은 개발자다. 아래 100개 작업을 순서대로 끝까지 진행해.
 
 ## 먼저 읽을 것
 - README.md, docs/handoff/HANDOFF-CLAUDE.md

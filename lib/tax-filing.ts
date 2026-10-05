@@ -31,7 +31,7 @@ export function insuranceChanges(employees: Emp[], month: string) {
 const cell = (v: unknown) => '"' + String(v ?? '').replace(/^[=+@-]/, "'$&").replace(/"/g, '""') + '"';
 export function filingCsv(month: string, rows: Row[], employees: Emp[]) {
   const w = withholdingSummary(rows, employees), c = insuranceChanges(employees, month);
-  const lines: unknown[][] = [[`${month} 신고 자료 (척척사장봇 · 신고 대행 아님 · 금액은 홈택스·EDI에서 다시 확인)`], [],
+  const lines: unknown[][] = [[`${month} 신고 자료 (척척사장 · 신고 대행 아님 · 금액은 홈택스·EDI에서 다시 확인)`], [],
     ['원천징수이행상황신고서', '코드', '인원', '총지급액', '소득세', '지방소득세(별도 신고)'], ...w.map(x => ['', x.code + ' ' + x.label, x.people, x.gross, x.incomeTax, x.localTax]), [],
     ['4대보험 자격취득', '성명', '취득일(입사일)', '월 보수액(추정)', '주 소정근로시간', '직종', '가입 보험', '주민등록번호(직접 기입)'], ...c.acquire.map(x => ['', x.name, x.date, x.monthlyPay, x.weeklyHours, x.job, x.insurances, '']), [],
     ['4대보험 자격상실', '성명', '마지막 근무일', '가입 보험', '상실 사유(직접 기입)', '주민등록번호(직접 기입)'], ...c.lose.map(x => ['', x.name, x.date, x.insurances, '', ''])];

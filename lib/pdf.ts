@@ -1,7 +1,7 @@
 // 작업 039(PDF): 페이지 이미지(JPEG)를 A4 PDF 한 파일로. 글꼴을 넣지 않아 한글이 깨지지 않고 휴대폰에서 바로 저장된다.
 export type PdfPage = {jpeg: Uint8Array; width: number; height: number};
 const A4 = [595.28, 841.89];
-export function imagesToPdf(pages: PdfPage[], title = '척척사장봇 문서'): Uint8Array<ArrayBuffer> {
+export function imagesToPdf(pages: PdfPage[], title = '척척사장 문서'): Uint8Array<ArrayBuffer> {
   if (!pages.length) throw Error('PDF로 만들 페이지가 없어요.');
   const enc = new TextEncoder(), parts: Uint8Array[] = [], offsets: number[] = [];
   let size = 0;

@@ -2,7 +2,7 @@
 // 값이 비어 있으면 화면에 '확인 필요'로 보인다. 실제 값은 사업자등록증·통신판매업 신고증 기준으로 채운다.
 // 값을 채우면 lib/legal.ts의 약관·방침 판(version)도 함께 올린다(다시 동의 받기).
 export const OPERATOR = {
-  service: '척척사장봇',
+  service: '척척사장',
   company: '',            // 상호
   representative: '',     // 대표자
   bizNo: '',              // 사업자등록번호 10자리(숫자만)

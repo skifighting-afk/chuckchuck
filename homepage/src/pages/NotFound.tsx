@@ -6,8 +6,8 @@ export default function NotFound() {
   return (
     <>
       <Seo
-        title="페이지를 찾을 수 없습니다 | 척척사장봇"
-        description="요청하신 페이지를 찾을 수 없습니다. 척척사장봇 홈페이지에서 제품소개, 요금제, 시작가이드를 확인하세요."
+        title="페이지를 찾을 수 없습니다 | 척척사장"
+        description="요청하신 페이지를 찾을 수 없습니다. 척척사장 홈페이지에서 제품소개, 요금제, 시작가이드를 확인하세요."
         path="/"
       />
       <section className="flex min-h-[60vh] items-center bg-background-50">

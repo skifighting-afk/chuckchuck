@@ -14,10 +14,10 @@ const officer = O.privacyOfficer.name ? `${O.privacyOfficer.name}${O.privacyOffi
 const company = show(O.company);
 
 export const TERMS: LegalDoc = {
-  key: 'terms', title: '척척사장봇 이용약관', version: LEGAL.terms.version, effective: '2026-10-04', reviewed: false,
+  key: 'terms', title: '척척사장 이용약관', version: LEGAL.terms.version, effective: '2026-10-04', reviewed: false,
   history: [{version: LEGAL.terms.version, effective: '2026-10-04', note: '판매 준비판(운영자 정보 확정 전, 법률 검토 전 초안)'}],
   sections: [
-    {id: 't1', title: '제1조 (목적)', body: [`이 약관은 ${company}(이하 "회사")가 제공하는 매장 관리 서비스 "척척사장봇"(이하 "서비스")의 이용 조건과 절차, 회사와 회원의 권리·의무를 정합니다.`]},
+    {id: 't1', title: '제1조 (목적)', body: [`이 약관은 ${company}(이하 "회사")가 제공하는 매장 관리 서비스 "척척사장"(이하 "서비스")의 이용 조건과 절차, 회사와 회원의 권리·의무를 정합니다.`]},
     {id: 't2', title: '제2조 (용어)', body: [
       '- "회원": 이 약관에 동의하고 계정을 만든 사람. 사장님 회원과 직원 회원이 있습니다.',
       '- "사장님 회원": 가게(매장)를 만들고 직원·근무·급여 기록을 관리하는 회원.',
@@ -81,10 +81,10 @@ export const TERMS: LegalDoc = {
 };
 
 export const PRIVACY: LegalDoc = {
-  key: 'privacy', title: '척척사장봇 개인정보 처리방침', version: LEGAL.privacy.version, effective: '2026-10-04', reviewed: false,
+  key: 'privacy', title: '척척사장 개인정보 처리방침', version: LEGAL.privacy.version, effective: '2026-10-04', reviewed: false,
   history: [{version: LEGAL.privacy.version, effective: '2026-10-04', note: '판매 준비판(운영자 정보 확정 전, 법률 검토 전 초안)'}],
   sections: [
-    {id: 'p0', title: '들어가며', body: [`${company}(이하 "회사")는 척척사장봇을 운영하며 개인정보 보호법을 지킵니다. 이 방침은 회사가 어떤 개인정보를 왜 받고, 얼마나 보관하고, 누구에게 맡기는지 알려 드립니다.`]},
+    {id: 'p0', title: '들어가며', body: [`${company}(이하 "회사")는 척척사장을 운영하며 개인정보 보호법을 지킵니다. 이 방침은 회사가 어떤 개인정보를 왜 받고, 얼마나 보관하고, 누구에게 맡기는지 알려 드립니다.`]},
     {id: 'p1', title: '1. 처리하는 개인정보와 목적', body: [
       {rows: [
         ['구분', '항목', '목적'],
