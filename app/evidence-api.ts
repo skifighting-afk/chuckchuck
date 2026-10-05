@@ -3,7 +3,7 @@ import {serverError,reportError} from '../lib/errors';
 import {canWrite,hasFeature} from '../lib/plans';
 const json=(v:unknown,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 export async function evidenceApi(request:Request,env:{DB:D1Database}){
- const user=request.headers.get('oai-authenticated-user-id');if(!user)return json({error:'로그인이 필요해요.'},401);
+ const user=request.headers.get('oai-authenticated-user-id');if(!user)return json({error:'로그인한 뒤 다시 시도해 주세요.'},401);
  try{
  const linked=await resolveStore(env.DB,user);if(!linked||linked.access==='revoked')return json({error:'볼 권한이 없어요. 내 계정으로 로그인했는지 확인해 주세요.'},403);
  const data=JSON.parse(linked.row.data),self=data._members?.find((m:any)=>m.userId===user)?.employeeId,url=new URL(request.url);
@@ -14,7 +14,7 @@ export async function evidenceApi(request:Request,env:{DB:D1Database}){
   if(id){const file=await env.DB.prepare('SELECT mime,body,bytes FROM leave_evidence WHERE owner=? AND leave_id=? AND id=? AND expires_at>?').bind(linked.owner,leaveId,id,now).first();return file?json(file):json({error:'파일이 없거나 30일 보관 기간이 끝났어요. 필요하면 직원에게 다시 받아 주세요.'},404)}
   const list=await env.DB.prepare('SELECT id,mime,bytes,created_at,expires_at FROM leave_evidence WHERE owner=? AND leave_id=? AND expires_at>? ORDER BY created_at').bind(linked.owner,leaveId,now).all();return json({files:list.results});
  }
- if(request.headers.get('origin')!==url.origin)return json({error:'요청 출처를 확인할 수 없어요.'},403);
+ if(request.headers.get('origin')!==url.origin)return json({error:'요청 출처를 확인할 수 없어요. 척척사장봇 화면을 새로고침한 뒤 다시 시도해 주세요.'},403);
  if(request.method==='DELETE'){if(!id)return json({error:'파일을 선택해 주세요.'},400);await env.DB.prepare('DELETE FROM leave_evidence WHERE owner=? AND leave_id=? AND id=?').bind(linked.owner,leaveId,id).run();return json({ok:true})}
  if(request.method!=='POST')return json({error:'이 방법으로는 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},405);
  if(!canWrite(data._account)||!hasFeature(data._account,'leave'))return json({error:'휴가 기능을 이용할 수 있는 요금제를 확인해 주세요.'},403);

@@ -20,7 +20,7 @@ export async function staffJoinApi(request:Request,env:{DB:D1Database}){
   return reply({owner:false,email,name:displayName(request),connected:!!linked&&linked.access!=='revoked',requests:(rows.results||[]).flatMap((row:any)=>{const d:StoreData=JSON.parse(row.data);return (d._joinApplications||[]).filter((a)=>a.userId===uid).map((a)=>({id:a.id,name:a.name,status:a.status,storeName:d.store.name,branchName:d.branches.find((b)=>b.id===a.branchId)?.name,createdAt:a.createdAt,profile:a.profile,contractText:a.contractText,confirmedAt:a.confirmedAt}))})});
  }
  if(request.method!=='POST'||request.headers.get('origin')!==new URL(request.url).origin)return reply({error:'요청을 읽지 못했어요. 새로고침한 뒤 다시 시도해 주세요.'},403);
- const raw=await request.text();if(raw.length>16000)return reply({error:'입력 내용이 너무 깁니다.'},413);
+ const raw=await request.text();if(raw.length>16000)return reply({error:'입력 내용이 너무 길어요. 줄여서 다시 저장해 주세요.'},413);
  const b=JSON.parse(raw);if(b.action==='preview'||b.action==='apply')b.code=normalizeJoinCode(b.code);
  if(b.action==='preview'){
   if(!b.code)return reply({error:'가게 코드를 다시 확인해 주세요.'},400);

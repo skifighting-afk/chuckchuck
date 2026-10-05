@@ -4,7 +4,7 @@ import {sendPush,type PushEnv} from '../lib/webpush';
 const json=(v:unknown,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store'}});
 type Env=PushEnv&{DB:D1Database};
 export async function pushApi(request:Request,env:Env){
- const user=request.headers.get('oai-authenticated-user-id');if(!user)return json({error:'로그인이 필요해요.'},401);
+ const user=request.headers.get('oai-authenticated-user-id');if(!user)return json({error:'로그인한 뒤 다시 시도해 주세요.'},401);
  try{
   if(request.method==='GET'){const n=await env.DB.prepare('SELECT count(*) AS n FROM push_subscriptions WHERE user_id=?').bind(user).first<any>();return json({publicKey:env.VAPID_PUBLIC_KEY||null,devices:Number(n?.n||0)})}
   if(request.method!=='POST'||request.headers.get('origin')!==new URL(request.url).origin)return json({error:'요청을 확인할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},403);

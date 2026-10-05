@@ -6,7 +6,7 @@ import {canWrite,hasFeature} from '../lib/plans';
 import type {StoreData,Operations} from '../lib/store-data';
 const json=(v:any,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store'}});
 export async function managerApi(request:Request,env:{DB:D1Database}){
- const uid=request.headers.get('oai-authenticated-user-id');if(!uid)return json({error:'로그인해 주세요.'},401);
+ const uid=request.headers.get('oai-authenticated-user-id');if(!uid)return json({error:'로그인한 뒤 다시 시도해 주세요.'},401);
  try{
  const link=await resolveStore(env.DB,uid);if(link?.access!=='manager')return json({error:'위임받은 매니저만 이용할 수 있어요.'},403);
  const d:StoreData=JSON.parse(link.row.data),self=d.employees.find((e)=>e.id===d._members?.find((m)=>m.userId===uid)?.employeeId)!,permissions:string[]=self.managerPermissions||[];
@@ -17,7 +17,7 @@ export async function managerApi(request:Request,env:{DB:D1Database}){
  const raw=await request.text();if(raw.length>10000)return json({error:'입력 용량 초과'},413);const b=JSON.parse(raw);
  const permission=({saveShift:'schedule',reviewCorrection:'attendance',reviewLeave:'leave',postNotice:'notices'} as any)[b.action];
  if(!permission||!permissions.includes(permission))return json({error:'사장님이 맡기지 않은 업무예요. 필요하면 사장님께 권한을 요청해 주세요.'},403);
- if(!canWrite(d._account))return json({error:'체험이 끝나 지금은 조회만 할 수 있어요. 무료 요금제로 바꾸면 다시 저장할 수 있어요.'},403);
+ if(!canWrite(d._account))return json({error:'체험이 끝나 지금은 조회·내려받기만 할 수 있어요. 계정·요금제 화면에서 요금제를 결제하면 다시 저장할 수 있어요.'},403);
  if(b.version!==link.row.version)return json({error:'다른 변경이 있어요. 새로고침 후 확인해 주세요.'},409);
  const now=new Date().toISOString(),actor={id:uid,name:self.name,email:self.email};let target='',before:any=null,after:any=null;
  if(b.action==='saveShift'){

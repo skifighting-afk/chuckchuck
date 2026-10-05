@@ -56,7 +56,7 @@ export async function accountApi(request:Request,env:Env){
    if(email&&v.user.emailVerified&&linked?.access!=='owner'){const rows=await env.DB.prepare("SELECT owner,data FROM stores WHERE lower(try_jsonb(data)#>>'{_account,transfer,toEmail}')=lower(?)").bind(email).all<any>();v.transferOffers=rows.results.map((r:any)=>{const d=JSON.parse(r.data);return Date.parse(d._account.transfer.expiresAt)>Date.now()?{owner:r.owner,storeName:d.store?.name||'',fromEmail:d._account.transfer.fromEmail||'',expiresAt:d._account.transfer.expiresAt}:null}).filter(Boolean)}
    return json(v)}
   if(request.method!=='POST')return json({error:'이 방법으로는 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},405);
-  if(request.headers.get('origin')!==new URL(request.url).origin)return json({error:'요청 출처를 확인할 수 없습니다.'},403);
+  if(request.headers.get('origin')!==new URL(request.url).origin)return json({error:'요청 출처를 확인할 수 없어요. 척척사장봇 화면을 새로고침한 뒤 다시 시도해 주세요.'},403);
   const raw=await request.text();if(raw.length>12000)return json({error:'보낸 내용이 너무 커요. 내용을 줄여서 다시 시도해 주세요.'},413);
   let b:any;try{b=JSON.parse(raw)}catch{return json({error:'요청을 읽지 못했어요. 새로고침한 뒤 다시 시도해 주세요.'},400)}
   if(b.action==='onboard'){

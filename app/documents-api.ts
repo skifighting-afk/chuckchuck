@@ -21,9 +21,9 @@ export function payslipState(state:any,doc:{run_key:string,revision:number}){
 
 
 export async function documentsApi(request:Request,env:{DB:D1Database}&PushEnv){
- const uid=request.headers.get('oai-authenticated-user-id');if(!uid)return json({error:'로그인해 주세요.'},401);
+ const uid=request.headers.get('oai-authenticated-user-id');if(!uid)return json({error:'로그인한 뒤 다시 시도해 주세요.'},401);
  const url=new URL(request.url);let b:any={};
- if(request.method==='POST'){if(request.headers.get('origin')!==url.origin)return json({error:'이 화면에서 다시 시도해 주세요.'},403);const text=await request.text();if(text.length>4000)return json({error:'보낸 내용이 너무 커요. 내용을 줄여서 다시 시도해 주세요.'},413);try{b=JSON.parse(text)}catch{return json({error:'요청을 확인해 주세요.'},400)}}
+ if(request.method==='POST'){if(request.headers.get('origin')!==url.origin)return json({error:'이 화면에서 다시 시도해 주세요.'},403);const text=await request.text();if(text.length>4000)return json({error:'보낸 내용이 너무 커요. 내용을 줄여서 다시 시도해 주세요.'},413);try{b=JSON.parse(text)}catch{return json({error:'요청 내용이 올바르지 않아요. 새로고침한 뒤 다시 시도해 주세요.'},400)}}
  else if(request.method!=='GET')return json({error:'이 방법으로는 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},405);
  try{
  if(b.action==='send'){

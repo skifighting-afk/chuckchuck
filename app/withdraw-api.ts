@@ -70,11 +70,11 @@ export async function processDeletions(env:AuthEnv,limit=3){
 /** POST /api/withdraw {action:'withdraw',password,confirm:'탈퇴'} 또는 {action:'cancelWithdraw'} */
 export async function withdrawApi(request:Request,env:AuthEnv){
  const id=request.headers.get('oai-authenticated-user-id');
- if(!id)return json({error:'로그인해 주세요.'},401);
+ if(!id)return json({error:'로그인한 뒤 다시 시도해 주세요.'},401);
  if(request.method!=='POST')return json({error:'이 방법으로는 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},405);
  if(request.headers.get('origin')!==new URL(request.url).origin)return json({error:'이 화면에서 다시 시도해 주세요.'},403);
  const raw=await request.text();if(raw.length>2000)return json({error:'보낸 내용이 너무 커요. 내용을 줄여서 다시 시도해 주세요.'},413);
- let b:any;try{b=JSON.parse(raw)}catch{return json({error:'요청을 확인해 주세요.'},400)}
+ let b:any;try{b=JSON.parse(raw)}catch{return json({error:'요청 내용이 올바르지 않아요. 새로고침한 뒤 다시 시도해 주세요.'},400)}
  if(!b||!['withdraw','cancelWithdraw'].includes(b.action))return json({error:'이 작업은 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},400);
  try{return await withdrawAction(request,env,b,await resolveStore(env.DB,id))}
  catch(e){return serverError('withdraw',e,'탈퇴를 처리하지 못했어요. 잠시 뒤 다시 시도해 주세요.')}

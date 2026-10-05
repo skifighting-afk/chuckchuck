@@ -58,7 +58,7 @@ export async function nativeAuth(request:Request,env:Env){
  }
  if(request.method!=='POST'||request.headers.get('origin')!==new URL(request.url).origin)return json({error:'이 화면에서 다시 시도해 주세요.'},403);
  try{
-  const raw=await request.text();if(raw.length>5000)return json({error:'입력 내용이 너무 깁니다.'},413);
+  const raw=await request.text();if(raw.length>5000)return json({error:'입력 내용이 너무 길어요. 줄여서 다시 저장해 주세요.'},413);
   let b:any;try{b=JSON.parse(raw)}catch{return json({error:'입력 내용을 확인해 주세요.'},400)}if(!b||typeof b!=='object')return json({error:'입력 내용을 확인해 주세요.'},400);const email=typeof b.email==='string'?b.email.trim().toLowerCase():'';
   if(b.action==='logout'||b.action==='legacy'){
    // 작업 060: 기본은 이 기기만, everywhere=true면 모든 기기에서 로그아웃
@@ -66,7 +66,7 @@ export async function nativeAuth(request:Request,env:Env){
    return json({ok:true,session:null});
   }
   if(b.action==='sessions'){
-   const token=bearer(request);if(!token||token===env.SUPABASE_ANON_KEY)return json({error:'로그인이 필요해요.'},401);
+   const token=bearer(request);if(!token||token===env.SUPABASE_ANON_KEY)return json({error:'로그인한 뒤 다시 시도해 주세요.'},401);
    const me=await gotrue(env,'/user',{token}).catch(()=>null);const authId=(me as any)?.data?.id;if(!(me as any)?.ok||!authId)return json({error:'다시 로그인해 주세요.'},401);
    try{const rows=await env.DB.prepare('SELECT created_at,updated_at,user_agent FROM auth.sessions WHERE user_id=? ORDER BY updated_at DESC LIMIT 20').bind(authId).all<any>();
     return json({sessions:(rows.results||[]).map((r:any)=>({createdAt:r.created_at,lastUsedAt:r.updated_at||r.created_at,device:deviceName(r.user_agent||'')}))})}

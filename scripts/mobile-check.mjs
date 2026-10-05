@@ -27,8 +27,16 @@ for(const [name,path] of pages){
  }
  console.log(`${failures.some(f=>f.startsWith(name+':'))?'FAIL':'PASS'} ${name}${report[name]!==undefined?` · 이전과 ${report[name]}% 다름`:''}`);
 }
+// 가이드 33: 글씨 크게(가 크게) 켠 상태에서도 가로 넘침이 없어야 한다
+await page.evaluate(()=>localStorage.setItem('chukchuk-large-text','1'));
+for(const [name,path] of pages){
+ await page.goto(B+path,{waitUntil:'networkidle'}).catch(()=>{});await page.waitForTimeout(300);
+ const over=await page.evaluate(()=>{document.documentElement.classList.add('large-text');const w=document.documentElement.clientWidth,bad=[];for(const el of document.querySelectorAll('body *')){const r=el.getBoundingClientRect();if(r.width>0&&r.right>w+1&&getComputedStyle(el).position!=='fixed'){let p=el.parentElement,clipped=false;while(p&&p!==document.body){const o=getComputedStyle(p).overflowX;if(o==='auto'||o==='scroll'||o==='hidden'||o==='clip'){clipped=true;break}p=p.parentElement}if(!clipped)bad.push((el.tagName.toLowerCase())+(el.className&&typeof el.className==='string'?'.'+el.className.split(' ')[0]:'')+' '+Math.round(r.right)+'px')}}return {scroll:document.documentElement.scrollWidth>w+1,bad:bad.slice(0,5)}});
+ if(over.scroll||over.bad.length){failures.push(`${name}(큰 글씨): 가로 넘침 ${over.bad.join(', ')||'(scrollWidth)'}`);await page.screenshot({path:`${OUT}/${name}-large.png`,fullPage:true})}
+ console.log(`${failures.some(f=>f.startsWith(name+'(큰 글씨)'))?'FAIL':'PASS'} ${name} (큰 글씨)`);
+}
 writeFileSync(`${OUT}/report.json`,JSON.stringify({at:new Date().toISOString(),changedPercent:report,failures},null,1));
 const changed=Object.entries(report).filter(([,v])=>v>2);if(changed.length)console.log('이전 실행과 2% 넘게 달라진 화면:',changed.map(([k,v])=>`${k} ${v}%`).join(', '));
 await browser.close();await srv.close();
 if(failures.length){console.error(failures.join('\n'));process.exit(1)}
-console.log(`390px 화면 ${pages.length}개: 가로 넘침 없음`);
+console.log(`390px 화면 ${pages.length}개(보통·큰 글씨): 가로 넘침 없음`);

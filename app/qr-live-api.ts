@@ -4,7 +4,7 @@ import {serverError} from '../lib/errors';
 import {liveToken} from '../lib/qr-live';
 const json=(v:unknown,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store'}});
 export async function qrLiveApi(request:Request,env:{DB:D1Database}){
- const user=request.headers.get('oai-authenticated-user-id');if(!user)return json({error:'로그인이 필요해요.'},401);
+ const user=request.headers.get('oai-authenticated-user-id');if(!user)return json({error:'로그인한 뒤 다시 시도해 주세요.'},401);
  try{
   const linked=await resolveStore(env.DB,user);if(!linked||linked.access!=='owner')return json({error:'매장 QR 화면은 사장님 계정으로 열어 주세요.'},403);
   const data=JSON.parse(linked.row.data),branch=new URL(request.url).searchParams.get('branch')||'';
