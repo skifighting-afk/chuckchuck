@@ -28,6 +28,8 @@ const TeamApp=lazy(()=>import('./team'));
 const LegalPage=lazy(()=>import('./legal-page').then(x=>({default:x.LegalPage})));
 const PricingPage=lazy(()=>import('./public-pages').then(x=>({default:x.PricingPage})));
 const StatusPage=lazy(()=>import('./status-page').then(x=>({default:x.StatusPage})));
+const Support=lazy(()=>import('./support').then(x=>({default:x.Support})));
+const SupportDesk=lazy(()=>import('./support').then(x=>({default:x.SupportDesk})));
 
 import {ArrowRight,Check,Store,ShieldCheck,ArrowLeft,LogOut,CreditCard,Clock3,Users} from 'lucide-react';
 import {plans,planId,money,monthlyPrice,periodPrice,TRIAL_DAYS,type PlanId} from '../lib/plans';
@@ -46,7 +48,7 @@ export default function Platform(){
  const reload=async()=>{setError('');setStatus('loading');try{const r=await fetch('/api/account');const d:any=await r.json();if(r.status===401){setStatus('anonymous');return}if(!r.ok)throw Error(d.error);setAccount(d);setStatus('ready')}catch(e){setError(e instanceof Error?e.message:'연결할 수 없습니다.');setStatus('error')}};
  useEffect(()=>{if(!['/demo','/try','/start','/calculator','/help','/refund','/admin','/admin/login'].includes(path))reload()},[]);
  if(path==='/admin/login')return <Shell><main className="native-auth-wrap"><AuthForm role="owner" next="/admin" account={null} admin/></main></Shell>;
- if(path==='/admin')return <Shell><AdminDesk/><section className="saas-account" aria-label="본사 알림"><p className="saas-fine">서버 오류가 10분 안에 3번 넘게 나면 이 기기로 알림을 보내요.</p><PushToggle/></section></Shell>;
+ if(path==='/admin')return <Shell><AdminDesk/><SupportDesk/><section className="saas-account" aria-label="본사 알림"><p className="saas-fine">서버 오류가 10분 안에 3번 넘게 나면 이 기기로 알림을 보내요.</p><PushToggle/></section></Shell>;
  if(path==='/verify-email')return <Shell><VerifyEmail/></Shell>;
  if(path==='/withdraw')return <Shell><DeviceSessions/><PushToggle/><Withdraw/></Shell>;
  if(path==='/calculator')return <Shell><Calculator/></Shell>;
@@ -63,6 +65,7 @@ export default function Platform(){
  if(status==='anonymous'&&path==='/')return <Shell><Landing/></Shell>;
  if(status==='anonymous'||path==='/login')return <Login account={account} role={(query.has('reset')||query.get('mode')==='reset')?'owner':qrEntry?'employee':path==='/employee'?'employee':query.get('role')==='employee'?'employee':path==='/signup'?'owner':query.get('role')==='owner'?'owner':undefined} next={qrEntry|| (query.get('role')==='employee'?'/employee':path==='/employee'?'/employee'+location.search:invite?'/?invite='+encodeURIComponent(invite):query.get('next')==='/account'?'/account':path==='/signup'?'/signup?plan='+(planId(query.get('plan'))?query.get('plan'):'free'):'/app')}/>;
  if(account?.consentRequired)return <ConsentGate onDone={reload}/>;
+ if(path==='/support')return <Shell><Support/></Shell>;
  if(path==='/contracts')return <Shell><ContractsDesk/></Shell>;
  if(path==='/manager'&&account.onboarded)return <Shell><ManagerDesk/></Shell>;
  if(path==='/employee')return <Shell><StaffJoin/></Shell>;
@@ -79,7 +82,7 @@ function ConsentGate({onDone}:{onDone:()=>Promise<void>}){
  const [agree,setAgree]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState('');
  const submit=async()=>{if(busy||!agree)return;setBusy(true);setError('');try{const r=await fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'consent',agree:true})});const d:any=await r.json();if(!r.ok)throw Error(d.error);await onDone()}catch(e){setError(e instanceof Error?e.message:'동의를 저장하지 못했어요.')}finally{setBusy(false)}};
  return <Shell><main className="auth-card"><h1>안내 내용이 바뀌었어요</h1><p>계속 이용하려면 바뀐 이용약관과 개인정보 처리방침을 확인해 주세요.</p><label className="saas-check"><Checkbox checked={agree} onCheckedChange={v=>setAgree(v===true)} aria-label="이용약관과 개인정보 처리방침 동의"/><span><a href="/terms" target="_blank" rel="noopener">이용약관</a>과 <a href="/privacy" target="_blank" rel="noopener">개인정보 처리방침</a>을 읽고 동의해요.</span></label>{error&&<p role="alert" className="saas-error">{error}</p>}<Button className="saas-primary" disabled={busy||!agree} onClick={submit}>{busy?'저장하고 있어요…':'동의하고 계속하기'}</Button><a href="/logout">로그아웃</a></main></Shell>}
-function Shell({children}:{children:ReactNode}){return <div className="saas-shell"><header className="saas-nav"><a className="saas-brand" href="/start"><span><Store size={22}/></span>척척사장봇<small>매장 일을 척척</small></a><a href="/app">내 매장 <ArrowRight size={16}/></a></header>{children}<footer className="saas-footer"><span>함께 일하는 사람을 위한 매장 관리</span><a href="/calculator">주휴수당 계산기</a><a href="/pricing">요금</a><a href="/status">서비스 상태</a><a href="/refund">해지·환불</a><a href="/terms">이용약관</a><a href="/privacy"><b>개인정보 처리방침</b></a><OperatorFooter/></footer></div>}
+function Shell({children}:{children:ReactNode}){return <div className="saas-shell"><header className="saas-nav"><a className="saas-brand" href="/start"><span><Store size={22}/></span>척척사장봇<small>매장 일을 척척</small></a><a href="/app">내 매장 <ArrowRight size={16}/></a></header>{children}<footer className="saas-footer"><span>함께 일하는 사람을 위한 매장 관리</span><a href="/calculator">주휴수당 계산기</a><a href="/pricing">요금</a><a href="/status">서비스 상태</a><a href="/support">문의하기</a><a href="/refund">해지·환불</a><a href="/terms">이용약관</a><a href="/privacy"><b>개인정보 처리방침</b></a><OperatorFooter/></footer></div>}
 function Login({account,next,role}:{account:any,next:string,role?:'owner'|'employee'}){
  if(!role)return <Shell><main className="auth-card" style={{maxWidth:600,margin:'40px auto'}}><h1>어떤 일을 하시나요?</h1><p>내 역할을 고르면 바로 시작할 수 있어요.</p><a className="saas-primary" href="/login?role=owner">사장님으로 시작</a><a className="saas-secondary" href="/login?role=employee">직원으로 시작</a><a href="/demo">가입 없이 먼저 체험하기</a></main></Shell>;
  return <Shell><main className="native-auth-wrap"><AuthForm role={role} next={next} account={account}/></main></Shell>;

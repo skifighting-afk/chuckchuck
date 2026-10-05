@@ -1,4 +1,5 @@
 import {authLimit} from './auth-api';
+import {supportApi} from './support-api';
 import {cronApi} from './cron-api';
 import {recordServerError} from '../lib/ops-alert';
 import {documentsApi} from './documents-api';
@@ -62,6 +63,7 @@ async function route(request:Request,env:Env){
  if(path==='/api/evidence')return evidenceApi(request,env);
  if(path==='/api/manual')return manualApi(request,env);
  if(path==='/api/push')return pushApi(request,env);
+ if(path==='/api/support')return supportApi(request,env);
  if(path==='/api/qr-live')return qrLiveApi(request,env);
  if(path==='/api/export')return exportApi(request,env);
  if(path==='/api/withdraw')return withdrawApi(request,env);

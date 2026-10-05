@@ -1,0 +1,23 @@
+// 가이드 97: 문의하기 — 회원은 자기 문의만, 본사만 답변
+import assert from 'node:assert/strict';
+import {api} from '../dist/server/index.js';
+import {authedTest} from './test-auth.mjs';import {closeAll} from './test-db.mjs';
+const t=await authedTest({env:{HQ_ADMIN_EMAIL:'hq@example.invalid'}}),{headersFor}=t,env=t.env;
+const call=async(user,body,path='/api/support')=>{const r=await api(new Request('https://test.local'+path,{method:body?'POST':'GET',headers:{origin:'https://test.local','content-type':'application/json',...(await headersFor(user))},...(body?{body:JSON.stringify(body)}:{})}),env);return {status:r.status,data:await r.json()}};
+await env.DB.prepare('DELETE FROM support_tickets').run();
+assert.equal((await call('alice',{action:'create',category:'없는종류',body:'안녕하세요 문의'})).status,400,'종류 확인');
+assert.equal((await call('alice',{action:'create',category:'사용 방법',body:'짧'})).status,400,'너무 짧은 내용');
+const c=await call('alice',{action:'create',category:'오류·문제',body:'급여 확정 버튼이 안 눌려요 E-ABC123'});assert.equal(c.status,201,'문의 남기기');
+assert.equal((await call('alice')).data.tickets.length,1,'내 문의 보기');
+assert.equal((await call('bob')).data.tickets.length,0,'남의 문의는 안 보임');
+assert.equal((await call('bob',null,'/api/support?all=1')).data.tickets.length,0,'본사가 아니면 전체 목록 대신 내 문의만');
+assert.equal((await call('bob',{action:'reply',id:c.data.id,reply:'x'})).status,403,'본사가 아니면 답변 못 함');
+const all=await call('hq',null,'/api/support?all=1');assert.equal(all.data.tickets.length,1,'본사는 전체 문의');
+assert.equal((await call('hq',{action:'reply',id:c.data.id,reply:'설정에서 지급일을 넣어 주세요.'})).status,200,'본사 답변');
+const mine=(await call('alice')).data.tickets[0];assert.ok(mine.status==='답변 완료'&&mine.reply.includes('지급일'),'회원이 답변 확인');
+for(let i=0;i<9;i++)await call('carol',{action:'create',category:'기타',body:'반복 문의 '+i});
+await call('carol',{action:'create',category:'기타',body:'반복 문의 9'});
+assert.equal((await call('carol',{action:'create',category:'기타',body:'반복 문의 10'})).status,429,'하루 10건 제한');
+await env.DB.prepare('DELETE FROM support_tickets').run();
+console.log('PASS: 문의하기 (내 문의만 보기·본사만 답변·하루 10건).');
+await closeAll();

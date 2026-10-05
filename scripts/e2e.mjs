@@ -84,6 +84,11 @@ await step('가이드 52: 계산기 결과를 이미지로 저장',async()=>{
  const [dl]=await Promise.all([owner.waitForEvent('download'),owner.click('text=계산 결과 이미지로 저장·공유')]);
  const path=await dl.path();const {statSync}=await import('node:fs');if(statSync(path).size<5000)throw Error('이미지가 너무 작아요');
 });
+await step('가이드 97: 문의하기',async()=>{
+ await owner.goto(B+'/support',{waitUntil:'networkidle'});
+ await owner.fill('#support-body','급여 화면에서 지급일을 어디서 바꾸나요?');await owner.click('text=문의 남기기');
+ await owner.getByText('문의를 남겼어요').waitFor();await owner.getByText('급여 화면에서 지급일을 어디서 바꾸나요?').waitFor();
+});
 await step('작업 100: 도움말 검색',async()=>{
  await owner.goto(B+'/help',{waitUntil:'networkidle'});await owner.getByRole('heading',{name:'자주 묻는 질문'}).waitFor();
  if(await owner.locator('.help-item').count()<30)throw Error('도움말이 30개보다 적어요');

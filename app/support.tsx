@@ -1,0 +1,28 @@
+// 가이드 97: 문의하기(회원) · 문의 답변(본사)
+import {useEffect,useState} from 'react';
+const post=async(body:any)=>{const r=await fetch('/api/support',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const d:any=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||'처리하지 못했어요.');return d};
+const when=(v?:string)=>v?new Date(v).toLocaleString('ko-KR',{dateStyle:'short',timeStyle:'short'}):'';
+export function Support(){
+ const [data,setData]=useState<any>(null),[category,setCategory]=useState('사용 방법'),[body,setBody]=useState(''),[busy,setBusy]=useState(false),[msg,setMsg]=useState(''),[err,setErr]=useState('');
+ const load=()=>fetch('/api/support').then(r=>r.json()).then(setData).catch(()=>setErr('문의 목록을 불러오지 못했어요. 새로고침해 주세요.'));
+ useEffect(()=>{load()},[]);
+ const send=async()=>{setBusy(true);setErr('');setMsg('');try{await post({action:'create',category,body});setBody('');setMsg('문의를 남겼어요. 답변이 오면 알림(켜 둔 경우)과 이 화면으로 알려 드려요.');await load()}catch(e){setErr((e as Error).message)}finally{setBusy(false)}};
+ return <main className="saas-policy"><span className="saas-kicker">문의하기</span><h1>무엇을 도와드릴까요?</h1>
+  <p>먼저 <a href="/help">자주 묻는 질문</a>을 보면 바로 해결될 수 있어요. 오류라면 화면에 나온 오류 번호(E-로 시작)를 함께 적어 주세요.</p>
+  <section className="auth-card"><label className="saas-field" htmlFor="support-cat">문의 종류<select id="support-cat" value={category} onChange={e=>setCategory(e.target.value)}>{(data?.categories||['사용 방법']).map((c:string)=><option key={c}>{c}</option>)}</select></label>
+   <label className="saas-field" htmlFor="support-body">내용<textarea id="support-body" rows={6} maxLength={3000} value={body} onChange={e=>setBody(e.target.value)} placeholder="어떤 화면에서 무엇을 하려다 어떻게 됐는지 적어 주세요. 직원 주민번호·계좌번호 같은 정보는 적지 마세요."/></label>
+   <button type="button" className="saas-primary" disabled={busy||body.trim().length<5} onClick={send}>{busy?'보내는 중…':'문의 남기기'}</button>
+   {msg&&<p className="saas-success" role="status">{msg}</p>}{err&&<p className="saas-error" role="alert">{err}</p>}</section>
+  <h2>내 문의</h2>{data?.tickets?.length?<ul className="support-list">{data.tickets.map((t:any)=><li key={t.id}><p><b>[{t.category}]</b> {t.body}</p><small>{when(t.created_at)} · {t.status}</small>{t.reply&&<div className="support-reply"><b>답변</b><p>{t.reply}</p><small>{when(t.replied_at)}</small></div>}</li>)}</ul>:<p>아직 남긴 문의가 없어요.</p>}
+ </main>;
+}
+export function SupportDesk(){
+ const [rows,setRows]=useState<any[]|null>(null),[reply,setReply]=useState<Record<string,string>>({}),[err,setErr]=useState('');
+ const load=()=>fetch('/api/support?all=1').then(r=>r.json()).then((d:any)=>setRows(d.tickets||[])).catch(()=>setErr('문의를 불러오지 못했어요.'));
+ useEffect(()=>{load()},[]);
+ if(!rows)return null;
+ const open=rows.filter(r=>r.status==='접수').length;
+ return <section className="hq-panel" id="support"><h2>문의 {open?<b>답변 기다림 {open}건</b>:'· 모두 답변함'}</h2>{err&&<p className="saas-error">{err}</p>}
+  <ul className="support-list">{rows.slice(0,50).map(t=><li key={t.id}><p><b>[{t.category}]</b> {t.store||'가게 없음'} · {t.role} · <small>{when(t.created_at)}</small></p><p>{t.body}</p>
+   {t.reply?<div className="support-reply"><b>보낸 답변</b><p>{t.reply}</p></div>:<div><textarea rows={3} maxLength={3000} aria-label="답변" value={reply[t.id]||''} onChange={e=>setReply({...reply,[t.id]:e.target.value})}/><button type="button" className="saas-secondary" disabled={!reply[t.id]?.trim()} onClick={async()=>{try{await post({action:'reply',id:t.id,reply:reply[t.id]});await load()}catch(e){setErr((e as Error).message)}}}>답변 보내기</button></div>}</li>)}</ul></section>;
+}
