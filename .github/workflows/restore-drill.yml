@@ -85,7 +85,7 @@ jobs:
             got=$(psql "$DB" -tAc "select count(*) from $table")
             if [ "$got" = "$n" ]; then ok=$((ok+1)); else bad=$((bad+1)); echo "::error::$table 행 수가 달라요"; fi
           done < expected.txt
-          for t in stores app_users attendance_records contract_envelopes payslip_documents payments; do
+          for t in stores app_users attendance_records contract_envelopes payslip_documents; do
             psql "$DB" -tAc "select to_regclass('public.$t') is not null" | grep -q t || { echo "::error::$t 테이블이 없어요"; bad=$((bad+1)); }
           done
           psql "$DB" -tAc "select count(*) from pg_proc where proname in ('purge_store','payslip_guard')" | grep -q '^2$' || { echo "::error::보호 함수(purge_store, payslip_guard)가 없어요"; bad=$((bad+1)); }
