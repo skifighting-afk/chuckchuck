@@ -378,7 +378,7 @@ summary{cursor:pointer;padding-block:4px}
 .month-cell{display:flex;flex-direction:column;align-items:stretch;gap:3px;min-height:96px;text-align:left;background:#fff;border:1px solid var(--ck-line);border-radius:10px;padding:6px;color:var(--ck-ink);min-width:0;overflow:hidden}
 .month-cell.out{opacity:.4}.month-cell.today{border:2px solid var(--ck-green)}
 .month-cell:hover{background:#f4faf6}.month-cell:focus-visible{outline:3px solid var(--ck-green);outline-offset:1px}
-.month-day{font-weight:700;font-size:14px;display:flex;gap:4px;align-items:baseline;min-width:0}.month-day small{font-size:11px;font-weight:500;color:#a12a2a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.month-day{font-weight:700;font-size:14px;display:flex;gap:4px;align-items:baseline;min-width:0}.month-day small{font-size:12px;font-weight:500;color:#a12a2a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .month-cell.sun .month-day{color:#a12a2a}
 .month-count{display:none;align-self:flex-start;background:var(--ck-soft);color:var(--ck-green);border-radius:999px;padding:2px 7px;font-size:12px;font-weight:700}
 .month-list{display:grid;gap:2px;font-size:12px;line-height:1.35}.month-list>span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:var(--ck-soft);border-radius:5px;padding:1px 4px}.month-list i{font-style:normal;color:var(--ck-muted)}
@@ -404,3 +404,5 @@ summary{cursor:pointer;padding-block:4px}
 .home-overview>*{min-width:0;max-width:100%}.home-overview{grid-template-columns:minmax(0,1fr)}.assistant-ask button{flex:none}.assistant-brief li span{min-width:0;overflow-wrap:anywhere}.home-pay-note,.home-pay-budget em{overflow-wrap:anywhere}
 .today-now .today-track{grid-area:auto;width:100%}.assistant-brief li{flex-wrap:wrap}.assistant-brief li span{flex:1 1 220px}.assistant-brief li button{margin-left:20px}
 .att-day-schedule .panel-heading{flex-wrap:wrap;gap:10px}.att-day-schedule .panel-heading h2{white-space:nowrap}.att-qr-tip{padding:0 20px}
+.today-scale{color:#56665d}.att-day-schedule .t-inline button{opacity:1}.att-day-schedule .t-inline .secondary{color:#13261d;background:#fff;border-color:#9fb3a7}.att-day-schedule .t-inline .primary{color:#fff;background:#15643f}.ledger-why summary{min-height:48px}
+.att-day-schedule .t-inline button{font-size:15px}
