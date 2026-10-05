@@ -1,4 +1,4 @@
-PASS public-home · 이전과 43.45% 다름
+PASS public-home · 이전과 0% 다름
 PASS public-start · 이전과 0% 다름
 PASS public-login · 이전과 0% 다름
 PASS public-signup · 이전과 0% 다름
@@ -6,23 +6,23 @@ PASS public-calculator · 이전과 0% 다름
 PASS public-help · 이전과 0% 다름
 PASS public-refund · 이전과 0% 다름
 PASS public-terms · 이전과 0% 다름
-PASS public-pricing · 이전과 39.78% 다름
-PASS public-status · 이전과 0.19% 다름
+PASS public-pricing · 이전과 0% 다름
+PASS public-status · 이전과 0.07% 다름
 PASS public-privacy · 이전과 0% 다름
-PASS demo-home · 이전과 47.1% 다름
-PASS demo-employees · 이전과 14.45% 다름
-PASS demo-attendance · 이전과 46.85% 다름
-PASS demo-schedule · 이전과 22.43% 다름
-PASS demo-payroll · 이전과 16.28% 다름
-PASS demo-contracts · 이전과 19.92% 다름
-PASS demo-retirement · 이전과 23.04% 다름
-PASS demo-outbox · 이전과 31.13% 다름
-PASS demo-operations · 이전과 21.04% 다름
-PASS demo-manual · 이전과 25.13% 다름
-PASS demo-reports · 이전과 14.65% 다름
-PASS demo-stores · 이전과 16.78% 다름
-PASS demo-settings · 이전과 19.86% 다름
-PASS demo-guide · 이전과 18.52% 다름
+PASS demo-home · 이전과 0.04% 다름
+PASS demo-employees · 이전과 0% 다름
+PASS demo-attendance · 이전과 0.16% 다름
+PASS demo-schedule · 이전과 0% 다름
+PASS demo-payroll · 이전과 4.13% 다름
+PASS demo-contracts · 이전과 0% 다름
+PASS demo-retirement · 이전과 0% 다름
+PASS demo-outbox · 이전과 0% 다름
+PASS demo-operations · 이전과 0% 다름
+PASS demo-manual · 이전과 0% 다름
+PASS demo-reports · 이전과 0% 다름
+PASS demo-stores · 이전과 0% 다름
+PASS demo-settings · 이전과 0% 다름
+PASS demo-guide · 이전과 0% 다름
 PASS demo-staff · 이전과 0% 다름
 PASS public-home (큰 글씨)
 PASS public-start (큰 글씨)
@@ -50,5 +50,5 @@ PASS demo-stores (큰 글씨)
 PASS demo-settings (큰 글씨)
 PASS demo-guide (큰 글씨)
 PASS demo-staff (큰 글씨)
-이전 실행과 2% 넘게 달라진 화면: public-home 43.45%, public-pricing 39.78%, demo-home 47.1%, demo-employees 14.45%, demo-attendance 46.85%, demo-schedule 22.43%, demo-payroll 16.28%, demo-contracts 19.92%, demo-retirement 23.04%, demo-outbox 31.13%, demo-operations 21.04%, demo-manual 25.13%, demo-reports 14.65%, demo-stores 16.78%, demo-settings 19.86%, demo-guide 18.52%
+이전 실행과 2% 넘게 달라진 화면: demo-payroll 4.13%
 390px 화면 26개(보통·큰 글씨): 가로 넘침 없음
