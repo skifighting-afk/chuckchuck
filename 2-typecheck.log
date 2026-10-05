@@ -2,3 +2,4 @@
 > chuckchuck@0.1.0 check
 > tsc --noEmit
 
+lib/team-model.ts(18,58): error TS2741: Property 'healthCertUntil' is missing in type '{ id: `${string}-${string}-${string}-${string}-${string}`; name: string; email: string; address: string; phone: string; joined: string; branchId: string; role: "홀"; access: "직원"; managerPermissions: never[]; employment: "단시간"; ... 15 more ...; notes: string; }' but required in type '{ status: "입사 준비" | "재직" | "퇴사"; id: string; email: string; name: string; role: "홀" | "주방" | "매니저"; wage: number; phone: string; joined: string; income: "미검토" | "근로소득" | "사업소득" | "기타소득"; contract: { ...; }; ... 23 more ...; probation?: { ...; } | undefined; }'.
