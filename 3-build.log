@@ -4,13 +4,13 @@
 
 [33m[INEFFECTIVE_DYNAMIC_IMPORT] [0mapp/public-pages.tsx is dynamically imported by app/platform.tsx but also statically imported by app/platform.tsx, dynamic import will not move module into another chunk.
 
-화면 묶음: app.js 316KB, 필요할 때 받는 조각 21개 758KB
-  team-Dq8Jxe7D.js 307KB
-  capacity-dialog-DnQe6-85.js 159KB
+화면 묶음: app.js 318KB, 필요할 때 받는 조각 22개 784KB
+  team-CvFQSgr-.js 329KB
+  capacity-dialog-DBMiFRJb.js 159KB
   attendance-scan-HGeHRpbR.js 132KB
   admin-desk-BpenjxTf.js 23KB
-  browser-BKwwOwVF.js 23KB
-  legal-page-DUKwd9FL.js 22KB
-  staff-join-BWmwXwEX.js 20KB
-  contracts-desk-Dyo9Iz9-.js 12KB
+  browser-DTUVK0L1.js 23KB
+  legal-page-DvKuBxZF.js 22KB
+  staff-join-GrbPt9sQ.js 20KB
+  document-delivery-CfM4yfu-.js 14KB
 척척사장봇 화면·서버 함수 빌드 완료

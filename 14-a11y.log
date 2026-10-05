@@ -1,1 +1,7 @@
-접근성 점검 통과: 12개 화면 × 2개 크기 (axe 포함)
+접근성 문제 6건:
+390px /demo?screen=home [axe color-contrast] Elements must meet minimum color contrast ratio thresholds — .today-scale > span:nth-child(1) | .today-scale > span:nth-child(2) | .today-scale > span:nth-child(3)
+390px /demo?screen=attendance [axe color-contrast] Elements must meet minimum color contrast ratio thresholds — .t-inline > .secondary[type="button"] | .t-inline > .primary[type="button"]
+390px /demo?screen=payroll 누르는 곳 35px: 임금대장은 왜 있나요?
+1280px /demo?screen=home [axe color-contrast] Elements must meet minimum color contrast ratio thresholds — .today-scale > span:nth-child(1) | .today-scale > span:nth-child(2) | .today-scale > span:nth-child(3)
+1280px /demo?screen=attendance [axe color-contrast] Elements must meet minimum color contrast ratio thresholds — .t-inline > .secondary[type="button"] | .t-inline > .primary[type="button"]
+1280px /demo?screen=payroll 누르는 곳 35px: 임금대장은 왜 있나요?
