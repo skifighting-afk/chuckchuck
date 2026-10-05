@@ -22,6 +22,6 @@ jobs:
           if [ -z "${CRON_SECRET:-}" ]; then echo "::warning::SUPABASE_DB_PASSWORD가 없어 매일 작업을 건너뛰어요"; exit 0; fi
           url=$(node -p "require('./deploy.config.json').SUPABASE_URL"); anon=$(node -p "require('./deploy.config.json').SUPABASE_ANON_KEY")
           code=$(curl -s -o out.json -w '%{http_code}' -X POST -H "apikey: $anon" -H "Authorization: Bearer $anon" -H "x-cron-secret: $CRON_SECRET" "$url/functions/v1/api/cron")
-          echo "POST /api/cron → $code"; cat out.json; echo
+          echo "::notice::POST /api/cron → $code $(head -c 300 out.json)"
           echo "## 매일 작업: $(cat out.json)" >> "$GITHUB_STEP_SUMMARY"
           [ "$code" = "200" ]
