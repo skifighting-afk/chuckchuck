@@ -1070,7 +1070,7 @@ PASS 36. 2026-03-31: no attendance in the future
 PASS: 체험 화면 숫자(급여·명세서·임금대장 합계).
 
 ── check-error-messages
-PASS: 오류 문구 366개 모두 다음 행동 안내 포함.
+PASS: 오류 문구 376개 모두 다음 행동 안내 포함.
 PASS: 오류 번호·로그 개인정보 제거.
 
 ── check-attendance-table
@@ -1201,6 +1201,9 @@ PASS: 매일 작업 (비밀값·체험 종료 알림 7일·1일 각 한 번).
 
 ── check-support
 PASS: 문의하기 (내 문의만 보기·본사만 답변·하루 10건).
+
+── check-share
+PASS: 세무사 공유 링크 (확정 급여만·끄기·만료·열람 기록·토큰 해시만 저장).
 
 > chuckchuck@0.1.0 check:function
 > node scripts/check-supabase-function.mjs
