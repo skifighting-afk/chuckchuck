@@ -1,5 +1,5 @@
-PASS public-home · 이전과 20.05% 다름
-PASS public-start · 이전과 23.84% 다름
+PASS public-home · 이전과 12.82% 다름
+PASS public-start · 이전과 6.01% 다름
 PASS public-login · 이전과 0% 다름
 PASS public-signup · 이전과 0% 다름
 PASS public-calculator · 이전과 0% 다름
@@ -7,23 +7,23 @@ PASS public-help · 이전과 0% 다름
 PASS public-refund · 이전과 0% 다름
 PASS public-terms · 이전과 0% 다름
 PASS public-pricing · 이전과 0% 다름
-PASS public-status · 이전과 0.07% 다름
+PASS public-status · 이전과 0.06% 다름
 PASS public-privacy · 이전과 0% 다름
-PASS demo-home · 이전과 27.79% 다름
-PASS demo-employees · 이전과 16.87% 다름
-PASS demo-attendance · 이전과 14.33% 다름
-PASS demo-schedule · 이전과 24.01% 다름
-PASS demo-payroll · 이전과 17.34% 다름
-PASS demo-contracts · 이전과 23.67% 다름
-PASS demo-retirement · 이전과 27.43% 다름
-PASS demo-outbox · 이전과 38.49% 다름
-PASS demo-operations · 이전과 26.85% 다름
-PASS demo-manual · 이전과 32.07% 다름
-PASS demo-reports · 이전과 20.87% 다름
-PASS demo-stores · 이전과 22.95% 다름
-PASS demo-settings · 이전과 22.39% 다름
-PASS demo-guide · 이전과 19.92% 다름
-PASS demo-staff · 이전과 9.41% 다름
+PASS demo-home · 이전과 0% 다름
+PASS demo-employees · 이전과 0% 다름
+PASS demo-attendance · 이전과 0% 다름
+PASS demo-schedule · 이전과 0% 다름
+PASS demo-payroll · 이전과 0% 다름
+PASS demo-contracts · 이전과 0% 다름
+PASS demo-retirement · 이전과 0% 다름
+PASS demo-outbox · 이전과 0% 다름
+PASS demo-operations · 이전과 0% 다름
+PASS demo-manual · 이전과 0% 다름
+PASS demo-reports · 이전과 0% 다름
+PASS demo-stores · 이전과 0% 다름
+PASS demo-settings · 이전과 0% 다름
+PASS demo-guide · 이전과 0% 다름
+PASS demo-staff · 이전과 0% 다름
 PASS public-home (큰 글씨)
 PASS public-start (큰 글씨)
 PASS public-login (큰 글씨)
@@ -50,5 +50,5 @@ PASS demo-stores (큰 글씨)
 PASS demo-settings (큰 글씨)
 PASS demo-guide (큰 글씨)
 PASS demo-staff (큰 글씨)
-이전 실행과 2% 넘게 달라진 화면: public-home 20.05%, public-start 23.84%, demo-home 27.79%, demo-employees 16.87%, demo-attendance 14.33%, demo-schedule 24.01%, demo-payroll 17.34%, demo-contracts 23.67%, demo-retirement 27.43%, demo-outbox 38.49%, demo-operations 26.85%, demo-manual 32.07%, demo-reports 20.87%, demo-stores 22.95%, demo-settings 22.39%, demo-guide 19.92%, demo-staff 9.41%
+이전 실행과 2% 넘게 달라진 화면: public-home 12.82%, public-start 6.01%
 390px 화면 26개(보통·큰 글씨): 가로 넘침 없음
