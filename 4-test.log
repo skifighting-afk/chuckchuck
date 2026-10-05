@@ -94,25 +94,27 @@ PASS 9. 다른 작업은 오래된 버전이면 여전히 막힘
 PASS 10. duplicate in blocked
 PASS 11. duplicate in blocked
 PASS 12. clock out without QR blocked
-PASS 13. break does not require QR
-PASS 14. resume does not require QR
-PASS 15. normal save preserves QR
-PASS 16. valid QR clock out
-PASS 17. reopening QR keeps printed token
-PASS 18. rotation invalidates old QR
-PASS 19. rotated QR works
-PASS 20. owner turns on moving QR
-PASS 21. employee cannot open live QR
-PASS 22. live QR not available for static branch
-PASS 23. live token shape
-PASS 24. printed QR rejected in moving mode
-PASS 25. forged live token rejected
-PASS 26. live token works right away
-PASS 27. live token photographed 90s ago rejected
-PASS 28. fresh live token works
-PASS 29. back to printed QR
-PASS 30. owner manual correction path retained
-30/30 passed
+PASS 13. 휴게 시작도 QR 필요(눌러 놓고 잊는 일 막기)
+PASS 14. QR 찍고 휴게 시작
+PASS 15. 휴게 끝도 QR 필요
+PASS 16. QR 찍고 휴게 끝
+PASS 17. normal save preserves QR
+PASS 18. valid QR clock out
+PASS 19. reopening QR keeps printed token
+PASS 20. rotation invalidates old QR
+PASS 21. rotated QR works
+PASS 22. owner turns on moving QR
+PASS 23. employee cannot open live QR
+PASS 24. live QR not available for static branch
+PASS 25. live token shape
+PASS 26. printed QR rejected in moving mode
+PASS 27. forged live token rejected
+PASS 28. live token works right away
+PASS 29. live token photographed 90s ago rejected
+PASS 30. fresh live token works
+PASS 31. back to printed QR
+PASS 32. owner manual correction path retained
+32/32 passed
 
 ── check-correction-input
 PASS 10 correction-input cases: KST, invalid dates/hours, valid, reversed, overnight, excessive break, missing reason, active shift, missing start
@@ -1052,6 +1054,50 @@ PASS 378. 글에서 읽은 것과 원래 값이 같음
 PASS 379. 공제 없음
 PASS 380. 명세서가 아닌 글은 null
 PASS: 명세서 칸 보기.
+PASS 381. 휴게 시작 30분
+PASS 382. 30분 지나면 휴게 아님
+PASS 383. 휴게 끝을 안 눌러도 퇴근 때 30분만 빠짐
+PASS 384. 일찍 끝내면 실제 쉰 20분
+PASS 385. 지난 휴게가 정리된 뒤 새 휴게 가능
+PASS 386. 길이 없는 휴게는 끝낼 때까지
+PASS 387. 정리하면 60분
+PASS 388. 모르는 기록
+PASS: 휴게 자동 끝.
+PASS 389. 9시부터 6시 → 09:00–18:00
+PASS 390. 오후 2시~10시
+PASS 391. 09:00-15:30
+PASS 392. 9시 반부터 3시
+PASS 393. 밤 10시부터 2시(다음 날)
+PASS 394. 시간 없으면 null
+PASS 395. 내일·모레
+PASS 396. 10월 8일 · 10/8
+PASS 397. 수요일 · 다음주 월요일
+PASS 398. 8일(지난 날이면 다음 달)
+PASS 399. 날짜 없으면 null
+PASS 400. 시급·월급 만원
+PASS 401. 법정 휴게
+PASS 402. 임금 바꾸기 카드(긴 이름 우선)
+PASS 403. 최저시급 경고
+PASS 404. 근무 넣기 카드
+PASS 405. 임금+근무 한 번에
+PASS 406. 없는 이름은 새 직원 등록
+PASS 407. 확정 전이면 급여 화면으로
+PASS 408. 지난달 확정분 모두 보내기
+PASS 409. 한 명만 보내기
+PASS 410. 명세서 보기
+PASS 411. QR · 계약서
+PASS 412. 누가 일해
+PASS 413. 인건비
+PASS 414. 개인 급여
+PASS 415. 도움말
+PASS 416. 모르는 말
+PASS 417. FAQ로 답
+PASS 418. 분석: 주 15시간 경계
+PASS 419. 분석: 1년 근속 임박
+PASS 420. 분석: 다음 주 비었음
+PASS 421. 주휴 질문
+PASS 422. 분석해줘
+PASS: 척척 비서 말 알아듣기·분석.
 
 ── check-claims
 PASS: 과장·허위 문구 검사 (화면·홈페이지).
