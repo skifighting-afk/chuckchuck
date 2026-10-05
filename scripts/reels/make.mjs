@@ -7,6 +7,7 @@ import {execFileSync} from 'node:child_process';
 import {mkdirSync,readFileSync,writeFileSync,existsSync} from 'node:fs';
 import {join,resolve} from 'node:path';
 import {predict} from './predict.mjs';
+import {makeMusic} from './music.mjs';
 
 const arg=(k,d)=>{const i=process.argv.indexOf(k);return i>0?process.argv[i+1]:d};
 const topics=JSON.parse(readFileSync(new URL('./topics.json',import.meta.url),'utf8'));
@@ -57,11 +58,13 @@ let last='v0',offset=secs[0];
 for(let i=1;i<pngs.length;i++){const o=`x${i}`;filters.push(`[${last}][v${i}]xfade=transition=fade:duration=${FADE}:offset=${offset.toFixed(2)}[${o}]`);last=o;offset+=secs[i]}
 const total=secs.reduce((a,b)=>a+b,0)+FADE;
 const mp4=join(out,'reel.mp4');
-execFileSync('ffmpeg',['-y','-loglevel','error',...inputs,'-f','lavfi','-t',total.toFixed(2),'-i','anullsrc=channel_layout=stereo:sample_rate=48000','-filter_complex',filters.join(';'),'-map',`[${last}]`,'-map',`${pngs.length}:a`,'-c:v','libx264','-profile:v','high','-pix_fmt','yuv420p','-r','30','-g','60','-c:a','aac','-b:a','128k','-ar','48000','-shortest','-movflags','+faststart',mp4],{stdio:'inherit'});
+// 배경음: 코드로 만든 곡(저작권 문제 없음). --mute면 소리 없이
+const mute=process.argv.includes('--mute'),wav=join(out,'music.wav');const music=mute?null:makeMusic(total+0.2,index,wav);
+execFileSync('ffmpeg',['-y','-loglevel','error',...inputs,...(mute?['-f','lavfi','-t',total.toFixed(2),'-i','anullsrc=channel_layout=stereo:sample_rate=48000']:['-i',wav]),'-filter_complex',filters.join(';'),'-map',`[${last}]`,'-map',`${pngs.length}:a`,'-c:v','libx264','-profile:v','high','-pix_fmt','yuv420p','-r','30','-g','60','-c:a','aac','-b:a','128k','-ar','48000','-shortest','-movflags','+faststart',mp4],{stdio:'inherit'});
 
 const tags='#자영업 #자영업자 #사장님 #소상공인 #알바관리 #직원관리 #노무상식 #주휴수당 #최저시급 #근로계약서 #급여명세서 #척척사장봇';
 const caption=`${t.q}\n\n${t.a}\n\n${law?'※ 일반적인 기준이에요. 사정마다 다를 수 있으니 애매하면 고용노동부 상담센터(1350)에 확인하세요.\n\n':''}이런 계산과 서류, 척척사장봇이 대신 해요. 30일 무료 · 카드 등록 없이 👉 프로필 링크\n\n${tags}`;
 writeFileSync(join(out,'caption.txt'),caption);
-const pred=predict({q:t.q,cards,secs,audio:false});
-writeFileSync(join(out,'meta.json'),JSON.stringify({index,id:t.id,q:t.q,group:t.group,seconds:Number(total.toFixed(1)),cover:join(out,'card-0.png'),predict:pred,timeline:secs.map((sec,i)=>({label:i===0?'질문':i===secs.length-1?'마무리':'답 '+i,sec:Math.round(sec*10)/10,cps:i>0&&i<secs.length-1?Math.round(cards[i-1].replace(/\s/g,'').length/sec*10)/10:null}))},null,1));
+const pred=predict({q:t.q,cards,secs,audio:!mute});
+writeFileSync(join(out,'meta.json'),JSON.stringify({index,id:t.id,q:t.q,group:t.group,seconds:Number(total.toFixed(1)),cover:join(out,'card-0.png'),predict:pred,music,timeline:secs.map((sec,i)=>({label:i===0?'질문':i===secs.length-1?'마무리':'답 '+i,sec:Math.round(sec*10)/10,cps:i>0&&i<secs.length-1?Math.round(cards[i-1].replace(/\s/g,'').length/sec*10)/10:null}))},null,1));
 console.log(`릴스 만듦: ${index}번 "${t.q}" · ${total.toFixed(1)}초 · 예상 점수 ${pred.score} → ${mp4}`);
