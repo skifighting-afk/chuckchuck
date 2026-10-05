@@ -788,3 +788,11 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('CSV에 주민번호는 빈칸(직접 기입)',csv.includes('주민등록번호(직접 기입)')&&csv.includes('A01 근로소득 간이세액'));
  console.log('PASS: 신고 자료.');
 }
+// 가이드 55: 업종별 매뉴얼 예시
+{
+ const {starterManuals}=await import('../lib/industry-starter.ts');
+ const c=starterManuals('cafe','2026-10-05T00:00:00Z');
+ ok('카페는 오픈·마감 예시 2개, 모든 지점에 보임',c.length===2&&c[0].title.includes('(예시)')&&c.every(m=>m.branchId==='all'&&m.steps.length>=3));
+ ok('업종을 안 고르면 기본 예시',starterManuals(null).length===2&&starterManuals('unknown').length===2);
+ console.log('PASS: 업종별 매뉴얼 예시.');
+}
