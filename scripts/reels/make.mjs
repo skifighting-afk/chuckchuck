@@ -53,9 +53,22 @@ const pages=[
  ...scr.shots.map((f,i)=>phone(f,scr.label,i)),
  shell(`<div class="brand"><i>척</i>척척사장</div><h1 style="margin-top:160px">${law?'이런 계산,<br>앱이 대신 해요':'더 쉽게,<br>척척.'}</h1><p style="margin-top:56px;font-size:60px;color:#d9eadf">주휴수당 · 급여명세서 · 근로계약서 · QR 출퇴근</p><div class="foot"><div style="font-size:56px;color:#c8f169;font-weight:900">30일 무료 · 프로필 링크</div><div style="margin-top:12px;color:#d9eadf">chukchukapp.kr${law?' · 자세한 상담은 고용노동부 1350':''}</div></div>`,'#15643f','#ffffff'),
 ];
+// 소수는 목소리 모델이 점을 건너뛰어(1.5 → "1 5") 한글로 바꿔 읽힌다: 1.5 → 일 점 오
+const D='영일이삼사오육칠팔구';
+const sino=n=>{n=Number(n);if(!n)return '영';let r='';const u=[[10000,'만'],[1000,'천'],[100,'백'],[10,'십']];for(const [v,w] of u){const q=Math.floor(n/v);if(q){r+=(q===1&&v<10000?'':v===10000?sino(q):D[q])+w;n%=v}}return r+(n?D[n]:'')};
+const decimals=s=>s.replace(/(\d+)\.(\d+)/g,(_,a,b)=>sino(a)+' 점 '+[...b].map(d=>D[d]).join('')+' ');
 // 카드마다 읽어 줄 대사(숫자 쉼표·기호는 읽기 좋게 정리)
-const speak=s=>s.replace(/(\d),(?=\d{3})/g,'$1').replace(/%/g,'퍼센트').replace(/[()]/g,', ').replace(/[·→👉※]/g,', ').replace(/\s*,\s*([.!?])/g,'$1').replace(/(,\s*){2,}/g,', ').replace(/\s+/g,' ').trim();
-const lines=[t.q,...cards,...scr.shots.map((_,i)=>i===0?`척척사장 앱에선 ${scr.label} 화면에서 바로 볼 수 있어요.`:'복잡한 정리는 앱이 대신 해 줘요.'),law?'이런 계산, 척척사장이 대신 해요. 삼십일 무료, 프로필 링크에서 시작해 보세요.':'척척사장, 삼십일 무료예요. 프로필 링크에서 시작해 보세요.'].map(speak);
+const WORDS={QR:'큐알',PDF:'피디에프',CSV:'씨에스브이',CCTV:'씨씨티비',PC:'피씨',VAT:'부가세',xlsx:'엑셀',csv:'씨에스브이'};
+const speak=s=>decimals(s.replace(/(\d),(?=\d{3})/g,'$1')).replace(/[A-Za-z]{2,}/g,w=>WORDS[w]||w).replace(/×/g,' 곱하기 ').replace(/÷/g,' 나누기 ').replace(/=/g,' 은 ').replace(/~/g,'부터 ').replace(/[\[\]"“”>]/g,' ').replace(/%/g,'퍼센트').replace(/[()]/g,', ').replace(/[·→👉※]/g,', ').replace(/\s*,\s*([.!?])/g,'$1').replace(/(,\s*){2,}/g,', ').replace(/\s+/g,' ').trim();
+// 대사는 say.json(주제마다 말하듯 쓴 대본)에서. 없으면 카드 글을 그대로 읽는다.
+const SAY=JSON.parse(readFileSync(new URL('./say.json',import.meta.url),'utf8'))[t.id];
+const body=cards.map(()=>'');
+if(SAY){const L=SAY[1];L.forEach((l,j)=>{const k=Math.min(cards.length-1,Math.floor(j*cards.length/L.length));body[k]=(body[k]?body[k]+' ':'')+l})}else cards.forEach((c,i)=>body[i]=c);
+const pick=(arr,k=0)=>arr[(index+k)%arr.length];
+const appLine1=[`척척사장에선 ${scr.label} 화면에서 바로 보여요.`,`앱에선 이렇게, ${scr.label} 화면에서 한눈에!`,`척척사장 ${scr.label} 화면이에요. 진짜 쉽죠?`];
+const appLine2=['복잡한 건 앱이 알아서 해요!','버튼 한 번이면 끝이에요.','사장님은 확인만 하시면 돼요!'];
+const outro=law?['이런 계산, 이제 척척사장한테 맡기세요! 삼십 일 무료예요.','머리 아픈 계산은 척척사장이 할게요. 프로필 링크 눌러 보세요!','사장님 일, 이제 척척 하세요! 삼십 일 무료예요.']:['척척사장, 삼십 일 무료로 써 보세요!','사장님 일, 이제 척척 하세요! 프로필 링크에 있어요.','오늘 꿀팁 도움 됐으면, 프로필 링크로 놀러 오세요!'];
+const lines=[SAY?SAY[0]:t.q,...body,...scr.shots.map((_,i)=>i===0?pick(appLine1):pick(appLine2,1)),pick(outro,2)].map(speak);
 // 글만 보여 줄 때 시간(초): 질문 3초, 답은 초당 9자로 3.5~7초, 앱 화면 3.5초, 마지막 3.5초
 const secs=[3,...cards.map(c=>Math.min(7,Math.max(3.5,c.replace(/\s/g,"").length/9))),...scr.shots.map(()=>3.5),3.5];
 
@@ -68,9 +81,9 @@ await browser.close();
 const PITCH=Number(process.env.REEL_PITCH||'1.18');
 const probe=f=>Number(execFileSync('ffprobe',['-v','error','-show_entries','format=duration','-of','csv=p=0',f]).toString().trim());
 const voices=[];let voice=null;
+writeFileSync(join(out,'lines.json'),JSON.stringify(lines));
 if(!has('--no-voice')){
  try{
-  writeFileSync(join(out,'lines.json'),JSON.stringify(lines));
   execFileSync(process.env.REEL_PYTHON||'python3',[new URL('./tts.py',import.meta.url).pathname,join(out,'lines.json'),out],{stdio:'inherit',timeout:900000});
   for(let i=0;i<lines.length;i++){const raw=join(out,`voice-${i}.wav`);if(!existsSync(raw)){voices.push(null);continue}
    const sr=Number(execFileSync('ffprobe',['-v','error','-select_streams','a:0','-show_entries','stream=sample_rate','-of','csv=p=0',raw]).toString().trim())||44100;
