@@ -38,8 +38,23 @@ export function Calculator(){
     </dl>
     {e.pensionHealthExcluded&&<p className="footnote">월 60시간 미만 근무라 국민연금·건강보험은 보통 적용 제외로 계산했어요(고용·산재는 적용).</p>}
     <p className="footnote">한 달 = 4.345주로 환산. 주휴수당은 소정근로일을 개근한 주에 생겨요. 근로소득세·휴일근로·국민연금 상·하한은 넣지 않은 간단 계산이에요. 실제 급여는 출퇴근 기록으로 계산해야 정확해요.</p>
-    <a className="saas-primary" href="/signup?role=owner">이 조건으로 30일 무료 시작 →</a>
+    <a className="saas-primary" href="/signup?role=owner">이 조건으로 30일 무료 시작 →</a><button type="button" className="saas-secondary" onClick={()=>shareResult({wage:Number(wage),daily:Number(daily),days:Number(days),year,e})}>계산 결과 이미지로 저장·공유</button>
    </section>
   </div>
  </main>;
+}
+
+/** 가이드 52: 계산 결과를 이미지(PNG)로 만들어 휴대폰 공유창으로 보내거나 저장 */
+async function shareResult({wage,daily,days,year,e}:{wage:number,daily:number,days:number,year:number,e:any}){
+ const W=720,H=860,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d')!;
+ g.fillStyle='#f7f9f8';g.fillRect(0,0,W,H);g.fillStyle='#12634b';g.fillRect(0,0,W,120);
+ g.fillStyle='#fff';g.font='bold 40px sans-serif';g.fillText('주휴수당·인건비 계산',40,75);
+ g.fillStyle='#17251f';g.font='28px sans-serif';g.fillText(`시급 ${won(wage)}원 · 하루 ${daily}시간 · 주 ${days}일`,40,180);
+ const rows:[string,string][]=[['주휴수당(1주)',won(e.week.juhu)+'원'],['1주 합계',won(e.week.total)+'원'],['월 급여(세전)',won(e.month.gross)+'원'],['직원 공제',won(e.month.employeeDeduction)+'원'],['직원 실수령',won(e.month.net)+'원'],['사장님 부담 4대보험',won(e.month.employerInsurance)+'원'],['월 총 인건비',won(e.month.laborCost)+'원']];
+ rows.forEach(([k,v],i)=>{const y=260+i*72;g.fillStyle=i===6?'#e6f2ec':'#fff';g.fillRect(40,y-44,W-80,60);g.fillStyle='#526359';g.font='26px sans-serif';g.fillText(k,64,y);g.fillStyle='#17251f';g.font='bold 30px sans-serif';const tw=g.measureText(v).width;g.fillText(v,W-64-tw,y)});
+ g.fillStyle='#526359';g.font='22px sans-serif';g.fillText(`${year}년 최저임금·4대보험 요율 기준 · 참고용 추정`,40,H-70);g.fillText('chukchukapp.kr/calculator',40,H-36);
+ const blob:Blob|null=await new Promise(r=>c.toBlob(r,'image/png'));if(!blob)return;
+ const file=new File([blob],'인건비계산.png',{type:'image/png'});
+ try{if((navigator as any).canShare?.({files:[file]})){await navigator.share({files:[file],title:'주휴수당·인건비 계산'});return}}catch(err){if((err as Error)?.name==='AbortError')return}
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='인건비계산.png';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000);
 }

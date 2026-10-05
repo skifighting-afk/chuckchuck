@@ -79,6 +79,11 @@ await step('작업 096: 사장님 홈에 오늘 할 일',async()=>{
  await owner.click('button.text-size-toggle[title]');if(!await owner.evaluate(()=>document.documentElement.classList.contains('large-text')))throw Error('글씨 크게 안 됨');await owner.reload({waitUntil:'networkidle'});if(!await owner.evaluate(()=>document.documentElement.classList.contains('large-text')))throw Error('글씨 크게 설정이 유지되지 않음');await owner.click('button.text-size-toggle[title]');
  const text=await owner.locator('.today-tasks').innerText();if(!/근로계약서 미체결|처리할 일이 없어요/.test(text))throw Error('오늘 할 일 내용 이상: '+text);
 });
+await step('가이드 52: 계산기 결과를 이미지로 저장',async()=>{
+ await owner.goto(B+'/calculator',{waitUntil:'networkidle'});
+ const [dl]=await Promise.all([owner.waitForEvent('download'),owner.click('text=계산 결과 이미지로 저장·공유')]);
+ const path=await dl.path();const {statSync}=await import('node:fs');if(statSync(path).size<5000)throw Error('이미지가 너무 작아요');
+});
 await step('작업 100: 도움말 검색',async()=>{
  await owner.goto(B+'/help',{waitUntil:'networkidle'});await owner.getByRole('heading',{name:'자주 묻는 질문'}).waitFor();
  if(await owner.locator('.help-item').count()<30)throw Error('도움말이 30개보다 적어요');
