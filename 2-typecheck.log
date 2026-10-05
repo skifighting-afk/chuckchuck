@@ -2,5 +2,3 @@
 > chuckchuck@0.1.0 check
 > tsc --noEmit
 
-app/saas-api.ts(84,426): error TS2339: Property '_manuals' does not exist on type '{ store: { name: string; branch: string; }; employees: { status: "입사 준비" | "재직" | "퇴사"; id: string; email: string; name: string; role: "홀" | "주방" | "매니저"; wage: number; phone: string; joined: string; ... 25 more ...; probation?: { ...; } | undefined; }[]; ... 11 more ...; scheduleTemplates?: { ...; }[] | undefined; }'.
-app/saas-api.ts(84,449): error TS2339: Property '_manuals' does not exist on type '{ store: { name: string; branch: string; }; employees: { status: "입사 준비" | "재직" | "퇴사"; id: string; email: string; name: string; role: "홀" | "주방" | "매니저"; wage: number; phone: string; joined: string; ... 25 more ...; probation?: { ...; } | undefined; }[]; ... 11 more ...; scheduleTemplates?: { ...; }[] | undefined; }'.

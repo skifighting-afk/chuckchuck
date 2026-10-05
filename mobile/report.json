@@ -1,5 +1,5 @@
 {
- "at": "2026-10-05T12:37:38.650Z",
+ "at": "2026-10-05T12:40:39.100Z",
  "changedPercent": {
   "public-home": 0,
   "public-start": 0,
@@ -10,13 +10,13 @@
   "public-refund": 0,
   "public-terms": 0,
   "public-pricing": 0,
-  "public-status": 0.05,
+  "public-status": 0.04,
   "public-privacy": 0,
   "demo-home": 0,
   "demo-employees": 0,
   "demo-attendance": 0,
   "demo-schedule": 0,
-  "demo-payroll": 0.06,
+  "demo-payroll": 0,
   "demo-contracts": 0,
   "demo-retirement": 0,
   "demo-outbox": 0,
