@@ -66,6 +66,7 @@ await build({input:'lib/labor-estimate.ts',output:{file:'dist/server/labor-estim
 await build({input:'lib/income-tax.ts',output:{file:'dist/server/income-tax.js',format:'esm',minify:false}});
 await build({input:'lib/annual-leave.ts',output:{file:'dist/server/annual-leave.js',format:'esm',minify:false}});
 await build({input:'lib/close-check.ts',output:{file:'dist/server/close-check.js',format:'esm',minify:false}});
+await build({input:'lib/assistant.ts',output:{file:'dist/server/assistant.js',format:'esm',minify:false}});
 await build({input:'lib/employer-insurance.ts',output:{file:'dist/server/employer-insurance.js',format:'esm',minify:false}});
 await build({input:'lib/bulk-members.ts',output:{file:'dist/server/bulk-members.js',format:'esm',minify:false}});
 await build({input:'lib/faq.ts',output:{file:'dist/server/faq.js',format:'esm',minify:false}});

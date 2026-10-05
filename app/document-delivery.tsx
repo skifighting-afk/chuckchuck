@@ -1,3 +1,5 @@
+import {PayslipView} from './payslip-view';
+import {parsePayslip} from '../lib/payslip';
 import {useEffect,useState} from 'react';
 import {renderPages,documentsPdf,saveBlob} from './doc-render';
 export function DocumentStatus({activity}:{activity:any}){return <span>{activity?.viewed_at?'확인함':'확인 대기 중'} · {activity?.saved_at?'직원 저장 확인':activity?.download_requested_at?'다운로드 요청됨 · 저장 확인 대기':'다운로드 대기 중'}</span>}
@@ -32,5 +34,5 @@ export function PayslipDesk({month,branch,rows,locked}:{month:string,branch?:str
  <button onClick={load}>상태 새로 확인</button>
  {mine.map(d=><div key={d.id} style={{padding:'16px 0',borderBottom:'1px solid #ddd'}}><button onClick={()=>open(d)}>{d.document.name} · {d.document.month} · 수정본 {d.revision} 열기</button><p><b>{STATE_LABEL[d.state]||''}</b></p><p><DocumentStatus activity={d.activity}/></p></div>)}
  {!mine.length&&<p>이번 달 보낸 명세서가 아직 없어요.</p>}
- {selected&&<>{selected.state!=='current'&&<p role="status"><b>{STATE_LABEL[selected.state]}</b></p>}<pre className="t-document">{selected.document.text}</pre><DocumentDownload key={selected.id} kind="payslip" id={selected.id} onChange={load}/></>}</section>
+ {selected&&<>{selected.state!=='current'&&<p role="status"><b>{STATE_LABEL[selected.state]}</b></p>}{(()=>{const v=parsePayslip(selected.document.text);return v?<PayslipView v={v}/>:<pre className="t-document">{selected.document.text}</pre>})()}<DocumentDownload key={selected.id} kind="payslip" id={selected.id} onChange={load}/></>}</section>
 }

@@ -145,7 +145,7 @@ await step('급여 확정 (지급일·확인 체크)',async()=>{
 await step('명세서 보내기 → 직원이 열어 봄 (확인 기록)',async()=>{
  await owner.click('button:has-text("직원 앱으로 보내기")');await owner.getByText(/보냄 · 수정본 1/).first().waitFor();
  await staff.goto(B+'/app',{waitUntil:'networkidle'});await staff.getByRole("button",{name:"급여",exact:true}).click();await staff.locator('button:has-text("수정본 1 열기")').click();
- await staff.getByText('임금지급일:').waitFor();await staff.getByText(/확인함/).first().waitFor();
+ await staff.locator('.slip dt',{hasText:'임금지급일'}).waitFor();await staff.locator('.slip-net b').waitFor();await staff.getByText(/확인함/).first().waitFor();
  const act=await srv.db.q("SELECT viewed_at FROM document_activity WHERE kind='payslip'").first();if(!act?.viewed_at)throw Error('명세서 열람 기록이 없어요'); const [dl]=await Promise.all([staff.waitForEvent('download'),staff.click('button:has-text("PDF로 저장")')]);const pdfPath=await dl.path();const head=(await import('node:fs')).readFileSync(pdfPath).subarray(0,8).toString('latin1');if(!head.startsWith('%PDF-1.4'))throw Error('PDF 저장 실패: '+head+' '+dl.suggestedFilename());
 });
 await step('근로계약서: 사장님 서명 → 직원 서명 → 사본',async()=>{

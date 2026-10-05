@@ -66,17 +66,20 @@ export function budgetStatus(s:Team,branch:string,month:string){
 }
 
 // 새 홈 화면(시안 A+B): 오늘 근무 막대. 근무표 한 줄마다 지금 상태를 붙이고, 막대를 그릴 시간 범위를 정한다.
-export type BoardStatus='working'|'late'|'done'|'missed'|'planned'|'extra';
+export type BoardStatus='working'|'late'|'done'|'missed'|'noshow'|'planned'|'extra';
 export type BoardRow={id:string,employeeId:string,name:string,start:string,end:string,from:number,to:number,status:BoardStatus,label:string};
 const hourOf=(t:string)=>Number(t.slice(0,2))+Number(t.slice(3,5))/60;
 const kTime=(iso:string)=>new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Seoul',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(iso));
-export function todayBoard(s:Team,branch:string,date:string,findings:{kind:string,employeeId:string,shiftId?:string,minutes?:number,attendanceId?:string}[],now=Date.now()){
+export function todayBoard(s:Team,branch:string,date:string,findings:{kind:string,employeeId:string,shiftId?:string,minutes?:number,attendanceId?:string}[],now=Date.now(),tolMinutes=5){
  const people=s.employees.filter(e=>e.branchId===branch),ids=new Set(people.map(e=>e.id)),name=(id:string)=>people.find(e=>e.id===id)?.name||'직원';
  const recs=s.attendance.filter(a=>ids.has(a.employeeId)&&kdate(a.start)===date);
  const rows:BoardRow[]=s.shifts.filter(x=>ids.has(x.employeeId)&&x.date===date).sort((a,b)=>a.start.localeCompare(b.start)).map(x=>{
   const from=hourOf(x.start),to=hourOf(x.end)+(x.end<=x.start?24:0),f=findings.filter(f=>f.shiftId===x.id);
   const late=f.find(f=>f.kind==='지각'),att=late?.attendanceId?recs.find(a=>a.id===late.attendanceId):recs.find(a=>a.employeeId===x.employeeId);
   const open=att&&(!att.end||Date.parse(att.end)>now),status:BoardStatus=f.some(f=>f.kind==='미출근')?'missed':open?(late?'late':'working'):att?'done':late?'late':'planned';
+  // 출근 시각이 지났는데 아직 기록이 없으면(근무가 끝나기 전) '출근 기록 없음'
+  const startMs=Date.parse(x.date+'T'+x.start+':00+09:00'),waited=Math.floor((now-startMs)/60000);
+  if(status==='planned'&&waited>tolMinutes){const label=waited>=60?Math.floor(waited/60)+'시간 '+(waited%60)+'분째 출근 기록 없음':waited+'분째 출근 기록 없음';return {id:x.id,employeeId:x.employeeId,name:name(x.employeeId),start:x.start,end:x.end,from,to,status:'noshow' as BoardStatus,label};}
   const label=status==='missed'?'미출근':status==='late'?(late?.minutes||0)+'분 늦음':status==='working'?kTime(att!.start)+' 출근 · 근무 중':status==='done'?'퇴근 '+kTime(att!.end!):x.start+' 출근 예정';
   return {id:x.id,employeeId:x.employeeId,name:name(x.employeeId),start:x.start,end:x.end,from,to,status,label};
  });
@@ -86,5 +89,18 @@ export function todayBoard(s:Team,branch:string,date:string,findings:{kind:strin
  let lo=Math.floor(Math.min(9,...rows.map(r=>r.from))),hi=Math.ceil(Math.max(lo+8,...rows.map(r=>r.to)));if(hi-lo>24)hi=lo+24;
  const working=new Set(rows.filter(r=>r.status==='working'||r.status==='late'||r.status==='extra').map(r=>r.employeeId)).size;
  const left=rows.filter(r=>r.status==='planned').length;
- return {rows,lo,hi,now:nowH>=lo&&nowH<=hi?nowH:null,working,left,attention:rows.filter(r=>r.status==='late'||r.status==='missed').length};
+ return {rows,lo,hi,now:nowH>=lo&&nowH<=hi?nowH:null,working,left,attention:rows.filter(r=>r.status==='late'||r.status==='missed'||r.status==='noshow').length};
+}
+
+// 홈 알림: 사장님이 지금 알아야 할 출퇴근 문제(QR 안 찍음 등). 급한 순서대로.
+export type HomeAlert={key:string,tone:'red'|'amber',title:string,detail:string,target:Target};
+export function homeAlerts(s:Team,branch:string,date:string,board:{rows:BoardRow[]}):HomeAlert[]{
+ const out:HomeAlert[]=[];const ids=new Set(s.employees.filter(e=>e.branchId===branch).map(e=>e.id)),name=(id:string)=>s.employees.find(e=>e.id===id)?.name||'직원';
+ for(const r of board.rows){
+  if(r.status==='noshow')out.push({key:'noshow-'+r.id,tone:'red',title:`${r.name}님이 출근 QR을 아직 안 찍었어요`,detail:`${r.start} 출근 예정 · ${r.label}`,target:'attendance'});
+  else if(r.status==='missed')out.push({key:'missed-'+r.id,tone:'red',title:`${r.name}님 출근 기록이 없어요`,detail:`${r.start}–${r.end} 근무가 기록 없이 끝났어요`,target:'attendance'});
+  else if(r.status==='late')out.push({key:'late-'+r.id,tone:'amber',title:`${r.name}님 ${r.label}`,detail:`${r.start} 출근 예정이었어요`,target:'attendance'});
+ }
+ for(const a of s.attendance)if(ids.has(a.employeeId)&&!a.end&&kdate(a.start)<date)out.push({key:'out-'+a.id,tone:'amber',title:`${name(a.employeeId)}님이 퇴근 QR을 안 찍었어요`,detail:`${Number(kdate(a.start).slice(5,7))}월 ${Number(kdate(a.start).slice(8))}일 출근 뒤 퇴근 기록이 없어요`,target:'attendance'});
+ return out.sort((a,b)=>(a.tone===b.tone?0:a.tone==='red'?-1:1));
 }

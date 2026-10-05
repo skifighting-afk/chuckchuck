@@ -1,14 +1,17 @@
 'use client';
 // 작업 054: 직원 일괄 등록(엑셀 붙여넣기 → 미리보기 → 등록)
 import {useState} from 'react';
-import {Btn} from './team-ui';
+import {Btn,saveFile} from './team-ui';
+import {readXlsx,readCsv,toBulkText} from '../lib/xlsx-read';
 import {type Team,won} from '../lib/team-model';
 import {parseBulk,BULK_COLUMNS} from '../lib/bulk-members';
 export function BulkMembers({s,branch,busy,update,done}:{s:Team,branch:string,busy:boolean,update:(s:Team,close?:boolean)=>Promise<any>,done:(m:string)=>void}){
- const [text,setText]=useState(''),employer=s.settings.employerName||'',workplace=[s.store.name,s.branches.find(b=>b.id===branch)?.name].filter((v,i,a)=>v&&a.indexOf(v)===i).join(' '),rows=text.trim()?parseBulk(text,branch,s.employees.map(e=>e.email),{workplace,employer}):[];
+ const [text,setText]=useState(''),[fileMsg,setFileMsg]=useState(''),employer=s.settings.employerName||'',workplace=[s.store.name,s.branches.find(b=>b.id===branch)?.name].filter((v,i,a)=>v&&a.indexOf(v)===i).join(' '),rows=text.trim()?parseBulk(text,branch,s.employees.map(e=>e.email),{workplace,employer}):[];
  const good=rows.filter(r=>r.member),bad=rows.filter(r=>r.errors.length),room=150-s.employees.length;
  return <>
-  <p>엑셀·구글 시트에서 아래 순서의 열을 복사해 붙여 넣으세요. 첫 줄이 제목(이름…)이면 건너뛰어요.</p>
+  <div className="bulk-file"><label className="bulk-drop"><input type="file" accept=".xlsx,.csv,.tsv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" onChange={async e=>{const f=e.target.files?.[0];e.target.value='';if(!f)return;setFileMsg('');try{const rows=/\.xlsx$/i.test(f.name)?await readXlsx(await f.arrayBuffer()):readCsv(await f.text());if(!rows.length)throw Error('파일에 내용이 없어요.');setText(toBulkText(rows));setFileMsg(`${f.name}에서 ${rows.length}줄을 읽었어요. 아래 미리보기를 확인해 주세요.`)}catch(err){setFileMsg(err instanceof Error?err.message:'파일을 읽지 못했어요. .xlsx나 .csv로 저장해 다시 올려 주세요.')}}}/><b>엑셀 파일 올리기</b><span>.xlsx · .csv · 첫 번째 시트를 읽어요</span></label><Btn onClick={()=>saveFile('직원등록-양식.csv','\uFEFF'+[BULK_COLUMNS.join(','),'김민지,010-1234-5678,minji@example.com,2026-10-05,시급,10320,20,홀'].join('\n'),'text/csv;charset=utf-8')}>엑셀 양식 받기</Btn></div>
+  {fileMsg&&<p role="status" className="bulk-file-msg">{fileMsg}</p>}
+  <p>파일 대신 엑셀·구글 시트에서 아래 순서의 열을 복사해 붙여 넣어도 돼요. 첫 줄이 제목(이름…)이면 건너뛰어요.</p>
   <p className="footnote">{BULK_COLUMNS.join(' · ')} — 급여형태가 비면 시급, 이름·연락처·이메일·급여는 꼭 필요해요. 주 소정시간이 비면 시급 20시간·월급 40시간, 직무가 비면 홀로 넣고, 근무장소는 이 지점, 사업주는 설정의 이름으로 채워요. 상태는 '입사 준비'로 등록되니 근로조건을 확인한 뒤 재직으로 바꿔 주세요.</p>
   {!employer&&<p className="saas-error" role="alert">설정에서 사업주 이름을 먼저 입력해 주세요. 계약서에 들어가는 정보라 일괄 등록에 필요해요.</p>}
   <textarea className="bulk-input" rows={8} value={text} onChange={e=>setText(e.target.value)} placeholder={'김민지\t010-1234-5678\tminji@example.com\t2026-10-05\t시급\t10320\t20\t홀'} aria-label="직원 표 붙여넣기"/>

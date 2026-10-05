@@ -848,3 +848,60 @@ console.log('PASS: 요율 연간 갱신 경고.');
  const late=todayBoard(t,a.branchId,d,f2,Date.parse(d+'T23:59:00+09:00'));ok('밤에는 지금 표시가 범위 밖이면 없음',late.now===null||late.now<=late.hi);
  console.log('PASS: 홈 오늘 근무 막대.');
 }
+// 직원 엑셀 파일 등록: .xlsx·CSV 읽기
+{
+ const {readFileSync}=await import('node:fs');
+ const {readXlsx,readCsv,toBulkText,serialDate}=await import('../lib/xlsx-read.ts');
+ const {parseBulk}=await import('../dist/server/bulk-members.js');
+ const buf=readFileSync(new URL('./fixtures/staff.xlsx',import.meta.url));
+ const rows=await readXlsx(buf.buffer.slice(buf.byteOffset,buf.byteOffset+buf.byteLength));
+ ok('엑셀 제목 줄+2줄',rows.length===3&&rows[0][0]==='이름');
+ const text=toBulkText(rows);
+ ok('앞 0 빠진 휴대폰 번호 복구',text.includes('01012345678'));
+ ok('엑셀 날짜 숫자 → 날짜',text.includes('2026-10-05'));
+ ok('따옴표·쉼표 글자 그대로',rows[2][0]==='박"따옴",쉼표');
+ const parsed=parseBulk(text,'b1',[],{workplace:'가게',employer:'사장'});
+ ok('엑셀에서 읽은 두 명 모두 등록 가능',parsed.filter(r=>r.member).length===2);
+ ok('일련번호 변환',serialDate(46300)==='2026-10-05');
+ const csv=readCsv('﻿이름,연락처\n"홍,길동","010-1"\r\n\n이순신,010-2');
+ ok('CSV 따옴표·빈 줄',csv.length===3&&csv[1][0]==='홍,길동'&&csv[2][1]==='010-2');
+ ok('탭 CSV',readCsv('a\tb\nc\td')[1][1]==='d');
+ console.log('PASS: 직원 엑셀 파일 읽기.');
+}
+// 홈 알림·비서
+{
+ const {todayBoard,homeAlerts}=await import('../dist/server/close-check.js');
+ const {assistantBrief,searchAnswers}=await import('../dist/server/assistant.js');
+ const {checkDay}=await import('../lib/attendance-check.ts');
+ const {FAQ}=await import('../dist/server/faq.js');
+ const t=normalizeTeam(null);delete t.legacy;const [a]=t.employees;const mk=(id,name)=>({...a,id,name,status:'재직'});
+ t.employees=[mk('e1','가'),mk('e2','나'),mk('e3','다')];const d='2026-10-05',iso=h=>new Date(Date.parse(d+'T'+h+':00+09:00')).toISOString();
+ t.shifts=[{id:'s1',employeeId:'e1',date:d,start:'13:00',end:'20:00',breakMinutes:0},{id:'s2',employeeId:'e2',date:d,start:'09:00',end:'18:00',breakMinutes:0}];
+ t.attendance=[{id:'a2',employeeId:'e2',start:iso('09:20'),end:null,breakMinutes:0},{id:'a3',employeeId:'e3',start:'2026-10-03T00:00:00.000Z',end:null,breakMinutes:0}];
+ const now=Date.parse(d+'T14:10:00+09:00'),f=checkDay(d,t.shifts,t.attendance,'normal',now),b=todayBoard(t,a.branchId,d,f,now);
+ ok('출근 시각 지났는데 기록 없음',b.rows.find(r=>r.employeeId==='e1').status==='noshow'&&b.rows.find(r=>r.employeeId==='e1').label==='1시간 10분째 출근 기록 없음');
+ ok('허용 오차 안이면 아직 예정',todayBoard(t,a.branchId,d,f,Date.parse(d+'T13:03:00+09:00')).rows.find(r=>r.employeeId==='e1').status==='planned');
+ const al=homeAlerts(t,a.branchId,d,b);
+ ok('알림: QR 안 찍음이 맨 앞',al[0].key==='noshow-s1'&&al[0].title.includes('출근 QR'));
+ ok('알림: 지각·퇴근 누락',al.some(x=>x.key==='late-s2')&&al.some(x=>x.key==='out-a3'&&x.title.includes('퇴근 QR')));
+ for(const page of ['홈','출퇴근 기록','근무 스케줄','급여·명세서','직원 관리','휴가·공지']){const br=assistantBrief(t,a.branchId,page,d,now);ok('비서 '+page+' 안내',br.length>0&&br.every(x=>x.text.length>5))}
+ ok('비서 홈: 지금 상황 요약',assistantBrief(t,a.branchId,'홈',d,now)[0].text.includes('오늘 근무 2명'));
+ ok('비서 출퇴근: 알림 그대로',assistantBrief(t,a.branchId,'출퇴근 기록',d,now).some(x=>x.tone==='red'));
+ const empty=normalizeTeam(null);delete empty.legacy;empty.employees=[];ok('직원 없으면 가입 링크 안내',assistantBrief(empty,a.branchId,'홈',d,now)[0].text.includes('가입 링크'));
+ const items=FAQ.flatMap(g=>g.items);ok('질문 검색: 주휴수당',searchAnswers(items,'주휴수당은 어떻게 계산하나요?').length>0);
+ ok('질문 검색: 짧은 말은 무시',searchAnswers(items,'아').length===0);
+ console.log('PASS: 홈 알림·척척 비서.');
+}
+// 명세서 칸 보기: 저장된 글을 다시 나눠 읽기
+{
+ const {payslipText,parsePayslip,payslipFromRow}=await import('../lib/payslip.ts');
+ const row={employeeId:'3fa9c1d2-77ab',name:'김예시',hours:86.5,days:12,earnings:[{name:'기본급',amount:892680,formula:'10,320원 × 86.5시간'},{name:'주휴수당',amount:165120,formula:'(20/40) × 8시간 × 10,320원 × 4주'}],deductions:[{name:'사업소득 원천징수',amount:34900,formula:'3.3%'}],gross:1057800,deduction:34900,net:1022900,note:'9월분'};
+ const v=parsePayslip(payslipText('척척식당','2026-09','2026-10-10',row)),r=payslipFromRow('척척식당','2026-09','2026-10-10',row);
+ ok('칸 보기: 지급·공제 항목',v.earnings.length===2&&v.earnings[1].formula.startsWith('(20/40)')&&v.deductions[0].amount===34900);
+ ok('칸 보기: 합계·실지급',v.gross===1057800&&v.deduction===34900&&v.net===1022900&&v.note==='9월분');
+ ok('칸 보기: 기본 정보',v.info.find(x=>x[0]==='임금지급일')[1]==='2026-10-10'&&v.info.find(x=>x[0]==='근무')[1]==='12일 · 86.50시간');
+ ok('글에서 읽은 것과 원래 값이 같음',JSON.stringify(v.info)===JSON.stringify(r.info)&&v.net===r.net);
+ const none=parsePayslip(payslipText('가','2026-09','2026-10-10',{...row,deductions:[],deduction:0,net:1057800,note:''}));ok('공제 없음',none.deductions.length===0&&none.net===1057800);
+ ok('명세서가 아닌 글은 null',parsePayslip('안녕하세요')===null);
+ console.log('PASS: 명세서 칸 보기.');
+}

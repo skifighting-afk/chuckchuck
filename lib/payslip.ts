@@ -50,3 +50,29 @@ export function payslipMissing(text: string) {
 export function payslipProblems(store: string, month: string, payDate: string, rows: PayslipRow[]) {
   return rows.map(r => ({name: r.name, missing: payslipMissing(payslipText(store, month, payDate, r))})).filter(x => x.missing.length);
 }
+
+// 명세서를 칸으로 보여 주기 위한 구조. 저장된 명세서는 글(payslipText)이라 다시 나눠 읽는다.
+export type PayslipView = {title: string; info: [string, string][]; earnings: Item[]; gross: number; deductions: Item[]; deduction: number; net: number; note?: string};
+const num = (v: string) => Number(v.replace(/[^\d-]/g, '')) || 0;
+export function payslipFromRow(store: string, month: string, payDate: string, row: PayslipRow): PayslipView {
+  const info: [string, string][] = [['성명', row.name], ['직원번호', employeeNumber(row.employeeId)], ['임금지급일', payDate]];
+  if (row.days !== undefined || row.hours !== undefined) info.push(['근무', `${row.days ?? 0}일 · ${(row.hours ?? 0).toFixed(2)}시간`]);
+  return {title: `${store} · ${month} 임금명세서`, info, earnings: row.earnings, gross: row.gross, deductions: row.deductions, deduction: row.deduction, net: row.net, note: row.note || undefined};
+}
+export function parsePayslip(text: string): PayslipView | null {
+  const lines = text.split('\n'), v: PayslipView = {title: lines[0] || '임금명세서', info: [], earnings: [], gross: 0, deductions: [], deduction: 0, net: 0};
+  let part: 'info' | 'earn' | 'deduct' | 'end' = 'info';
+  for (const line of lines.slice(1)) {
+    if (!line.trim()) continue;
+    if (line === '[지급 항목]') { part = 'earn'; continue }
+    if (line === '[공제 항목]') { part = 'deduct'; continue }
+    const total = /^(임금 총액|공제 총액|실지급액): (.+)$/.exec(line);
+    if (total) { if (total[1] === '임금 총액') v.gross = num(total[2]); else if (total[1] === '공제 총액') v.deduction = num(total[2]); else { v.net = num(total[2]); part = 'end' } continue }
+    if (line.startsWith('비고: ')) { v.note = line.slice(4); continue }
+    if (part === 'info') { const m = /^([^:]+): (.*)$/.exec(line); if (m) v.info.push([m[1] === '근무일수' ? '근무' : m[1], m[1] === '근무일수' ? m[2].replace(' · 총 근로시간: ', ' · ') : m[2]]); continue }
+    if (line === '공제 없음') continue;
+    const m = /^(.+?): (-?[\d,]+)원(?: \((?:계산방법: )?(.*)\))?$/.exec(line);
+    if (m && (part === 'earn' || part === 'deduct')) (part === 'earn' ? v.earnings : v.deductions).push({name: m[1], amount: num(m[2]), formula: m[3] || ''});
+  }
+  return v.earnings.length || v.net ? v : null;
+}
