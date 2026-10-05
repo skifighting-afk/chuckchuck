@@ -2,7 +2,7 @@
 import {useEffect,useState} from 'react';
 export function StatusPage(){
  const [s,setS]=useState<any>(null),[err,setErr]=useState(''),[build,setBuild]=useState<any>(null);
- const check=async()=>{setErr('');try{const r=await fetch('/api/status');const d=await r.json();setS({...d,ok:r.ok})}catch{setS(null);setErr('서버에 연결하지 못했어요. 인터넷 연결을 확인하고 다시 확인해 주세요.')}};
+ const check=async()=>{setErr('');try{const r=await fetch('/api/status');const d:any=await r.json();setS({...d,ok:r.ok})}catch{setS(null);setErr('서버에 연결하지 못했어요. 인터넷 연결을 확인하고 다시 확인해 주세요.')}};
  useEffect(()=>{check();fetch('/version.json').then(r=>r.json()).then(setBuild).catch(()=>{})},[]);
  const good=s?.ok&&s?.db;
  return <main className="saas-policy"><span className="saas-kicker">서비스 상태</span><h1>{s===null&&!err?'확인하고 있어요…':good?'정상 운영 중이에요':'일부 기능에 문제가 있어요'}</h1>
