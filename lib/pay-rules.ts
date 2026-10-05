@@ -12,10 +12,10 @@ export type Rates = {pension: number; health: number; care: number; employment: 
 export const RATE_NAMES = {pension: '국민연금', health: '건강보험', care: '장기요양보험', employment: '고용보험', minimumWage: '최저임금'} as const;
 export const RATES: Record<number, Rates> = {
   // 국민연금 9.5%의 절반, 건강보험 7.19%의 절반, 장기요양 = 건강보험료 × 13.14%(0.9448% ÷ 7.19%), 고용보험(실업급여) 0.9%
-  2026: {pension: 0.0475, health: 0.03595, care: 0.1314, employment: 0.009, minimumWage: 10320},
+  2026: {pension: 0.0475, health: 0.03595, care: 0.9448 / 7.19, employment: 0.009, minimumWage: 10320},
   // 2027 (2026-10-05 확인): 최저임금 10,700원(2026-07-14 최저임금위원회 의결), 국민연금 10%의 절반(2025년 개정 국민연금법, 매년 0.5%p 인상),
   // 건강보험 7.19% 동결(2026-09-08 건강보험정책심의위원회). 장기요양보험료율은 10월 이후 결정 예정이라 2026년 비율로 두고 pending에 적는다.
-  2027: {pension: 0.05, health: 0.03595, care: 0.1314, employment: 0.009, minimumWage: 10700, pending: ['care']},
+  2027: {pension: 0.05, health: 0.03595, care: 0.9448 / 7.19, employment: 0.009, minimumWage: 10700, pending: ['care']},
 };
 /** 그해 아직 발표되지 않아 이전 해 값으로 둔 항목 */
 export const pendingRates = (year: number) => (RATES[year]?.pending || []).map(k => RATE_NAMES[k]);
@@ -54,7 +54,10 @@ export type Line = {name: string; amount: number; formula: string};
  * - 야간 가산(5인 이상): 22~06시 근무 × 시급 × 50%
  * records에는 앞뒤 달 기록이 섞여 있어도 된다(주 경계 계산용).
  */
-export function allowances(records: Record_[], month: string, wage: number, fivePlus: boolean, weekStart: 'mon' | 'sun' = 'mon', holidays: Map<string, string> = new Map(), skipJuhu: Set<string> = new Set()) {
+// 단시간 근로자(partTimeWeekly: 주 소정근로시간 40시간 미만)는 5명 이상 사업장에서 소정근로시간을 넘긴 근로에도 50% 가산(기간제법 제6조).
+// 여기서는 주 단위로 '주 소정근로시간 초과분'을 센다(하루 8시간 초과분과 겹쳐 세지 않음).
+export function allowances(records: Record_[], month: string, wage: number, fivePlus: boolean, weekStart: 'mon' | 'sun' = 'mon', holidays: Map<string, string> = new Map(), skipJuhu: Set<string> = new Set(), partTimeWeekly?: number) {
+  const weeklyLimit = partTimeWeekly && partTimeWeekly > 0 && partTimeWeekly < 40 ? partTimeWeekly : 40;
   // 주 시작요일: 월요일(기본) 또는 일요일. 주휴는 그 주의 마지막 날이 속한 달에 지급.
   const weekOf = (d: string) => weekStart === 'sun' ? plusDays(monday(plusDays(d, 1)), -1) : monday(d);
   const byDay = new Map<string, {worked: number; night: number}>();
@@ -76,14 +79,15 @@ export function allowances(records: Record_[], month: string, wage: number, five
     const last = plusDays(first, 6);
     if (!last.startsWith(month)) continue;
     if (w.hours >= 15 && skipJuhu.has(first)) notes.push(`${first} 주는 근무표의 근무일에 결근이 있어 주휴수당을 넣지 않았어요(개근 아님). 사장님이 인정하면 수당·공제에서 '개근 인정'을 눌러 주세요.`);
-    else if (w.hours >= 15) { juhu += Math.min(w.hours, 40) / 40 * 8 * wage; juhuWeeks++; }
-    weeklyOt += Math.max(0, w.hours - ((w as any).holiday || 0) - w.dailyOt - 40);
+    // 주휴는 소정근로시간 기준(근로기준법 시행령 제30조): 계약 시간을 넘겨 일한 시간은 주휴 계산에 넣지 않는다.
+    else if (w.hours >= 15) { juhu += Math.min(w.hours, weeklyLimit) / 40 * 8 * wage; juhuWeeks++; }
+    weeklyOt += Math.max(0, w.hours - ((w as any).holiday || 0) - w.dailyOt - weeklyLimit);
   }
   const lines: Line[] = [];
-  if (juhu > 0) lines.push({name: '주휴수당', amount: Math.round(juhu), formula: `주 15시간 이상 ${juhuWeeks}주 · min(주 시간, 40) ÷ 40 × 8시간 × ${won(wage)}원 (개근 여부 확인)`});
+  if (juhu > 0) lines.push({name: '주휴수당', amount: Math.round(juhu), formula: `주 15시간 이상 ${juhuWeeks}주 · min(주 시간, ${weeklyLimit < 40 ? '주 소정 ' + weeklyLimit : 40}) ÷ 40 × 8시간 × ${won(wage)}원 (개근 여부 확인)`});
   if (fivePlus) {
     const ot = dailyOt + weeklyOt;
-    if (ot > 0) lines.push({name: '연장근로 가산', amount: Math.round(ot * wage * 0.5), formula: `${ot.toFixed(2)}시간(하루 8시간·주 40시간 초과) × ${won(wage)}원 × 50%`});
+    if (ot > 0) lines.push({name: '연장근로 가산', amount: Math.round(ot * wage * 0.5), formula: `${ot.toFixed(2)}시간(하루 8시간·주 ${weeklyLimit}시간${weeklyLimit < 40 ? '(단시간 근로자 주 소정근로시간)' : ''} 초과) × ${won(wage)}원 × 50%`});
     const holPay = hol8 * wage * 0.5 + holOver * wage;
     if (holPay > 0) lines.push({name: '휴일근로 가산', amount: Math.round(holPay), formula: `${hol8.toFixed(2)}시간 × ${won(wage)}원 × 50%${holOver ? ` + 8시간 초과 ${holOver.toFixed(2)}시간 × ${won(wage)}원 × 100%` : ''} (${[...holNames].join('·')})`});
     if (night > 0) lines.push({name: '야간근로 가산', amount: Math.round(night * wage * 0.5), formula: `${night.toFixed(2)}시간(22~06시) × ${won(wage)}원 × 50%`});

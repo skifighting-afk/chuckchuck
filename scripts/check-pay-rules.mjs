@@ -54,7 +54,7 @@ ok('only enrolled insurances are deducted',insuranceLines(2000000,2026,{...all,�
 // 5) 급여 계산에 연결: 자동 계산을 켠 시급 직원
 const team=normalizeTeam(null);
 team.settings.fivePlus=true;
-const e=team.employees[0];Object.assign(e,{payType:'시급',wage:14000,autoPay:true,income:'근로소득',taxMode:'4대보험 자동',insurances:all});
+const e=team.employees[0];Object.assign(e,{payType:'시급',wage:14000,autoPay:true,income:'근로소득',taxMode:'4대보험 자동',insurances:all,weeklyHours:40,employment:'기간의 정함 없음'});
 team.attendance=sep.map((a,i)=>({id:'a'+i,employeeId:e.id,...a,breakStart:null}));team.adjustments={};
 const row=calculate(team,'2026-09').find(x=>x.employeeId===e.id);
 ok('base + weekly holiday + 추석(9/24) holiday + night premium in earnings',row.earnings.map(x=>x.name).join(',')==='기본급,주휴수당,휴일근로 가산,야간근로 가산');
@@ -807,4 +807,20 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('공제 항목별 합계',y['국민연금']===18000&&y['근로소득세']===42000);
  ok('CSV 머리말',yearSummaryCsv(runs,'2026').includes('2026년 연간 급여 합계'));
  console.log('PASS: 연간 급여 합계.');
+}
+// 급여 계산 점검: 단시간 근로자 소정근로시간 초과 가산, 장기요양 정확한 비율
+{
+ const {allowances,RATES}=await import('../lib/pay-rules.ts');
+ const kst=(d,hm)=>new Date(`${d}T${hm}:00+09:00`).toISOString();
+ const rec=(d,s,e)=>({start:kst(d,s),end:kst(d,e),breakMinutes:0});
+ // 주 20시간 계약, 5일 × 5시간 = 25시간 → 5시간 초과(가산 50%)
+ const recs=['2026-09-07','2026-09-08','2026-09-09','2026-09-10','2026-09-11'].map(d=>rec(d,'10:00','15:00'));
+ const pt=allowances(recs,'2026-09',10320,true,'mon',new Map(),new Set(),20).lines.find(l=>l.name==='연장근로 가산');
+ ok('단시간(주 20시간 계약) 25시간 근무: 5시간 × 50% 가산',pt&&pt.amount===Math.round(5*10320*0.5)&&pt.formula.includes('단시간'));
+ ok('5명 미만이면 단시간 초과 가산 없음',!allowances(recs,'2026-09',10320,false,'mon',new Map(),new Set(),20).lines.some(l=>l.name==='연장근로 가산'));
+ ok('계약 40시간이면 25시간은 가산 없음',!allowances(recs,'2026-09',10320,true).lines.some(l=>l.name==='연장근로 가산'));
+ ok('장기요양 = 건강보험료 × 0.9448/7.19',Math.abs(RATES[2026].care-0.131404)<0.000001);
+ const jh=allowances(recs,'2026-09',10320,true,'mon',new Map(),new Set(),20).lines.find(l=>l.name==='주휴수당');
+ ok('주휴는 계약 20시간 기준(25시간 일해도 20/40×8)',jh&&jh.amount===Math.round(20/40*8*10320));
+ console.log('PASS: 급여 계산 점검(단시간 초과·장기요양).');
 }

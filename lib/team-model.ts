@@ -48,7 +48,7 @@ export function calculate(s:Team,month:string){
   // 작업 027: 일급·월급 직원도 통상시급으로 연장·야간·휴일 가산. 월급은 주휴 포함(기본), 일급은 주휴 별도(기본).
   const ordinary=ordinaryHourly(e as any);
   const hourly=e.payType==='시급'?(allProb?e.wage*rate:e.wage):ordinary.hourly;
-  let auto:{lines:any[],notes:string[]}=e.autoPay&&hourly>0?allowances(mine,month,hourly,fivePlus,weekStart,hol,skip):{lines:[],notes:[] as string[]};
+  let auto:{lines:any[],notes:string[]}=e.autoPay&&hourly>0?allowances(mine,month,hourly,fivePlus,weekStart,hol,skip,e.weeklyHours>0&&e.weeklyHours<40?e.weeklyHours:undefined):{lines:[],notes:[] as string[]};
   if(e.payType!=='시급'&&auto.lines.length){const incl=(e as any).includesJuhu??(e.payType==='월급');auto={...auto,lines:auto.lines.filter(l=>!(incl&&l.name==='주휴수당')).map(l=>({...l,formula:l.formula+` · 통상시급 ${won(hourly)}원(${ordinary.basis})`}))};}
   const manual=new Set(adj.earnings.map(x=>x.name));
   const earnings:any[]=[{name:'기본급',amount:base,formula},...auto.lines.filter(x=>!manual.has(x.name)),...adj.earnings];
