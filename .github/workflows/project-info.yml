@@ -1,0 +1,16 @@
+# 운영 Supabase 프로젝트의 지역(region)을 확인한다(개인정보 처리방침의 보관 위치 확인용). 비밀값은 찍지 않는다.
+name: 프로젝트 정보 확인
+on: {workflow_dispatch: {}}
+permissions: {contents: read}
+jobs:
+  info:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+    steps:
+      - uses: supabase/setup-cli@v1
+        with: {version: latest}
+      - run: |
+          region=$(supabase projects list --output json | jq -r --arg r "$REF" '.[]|select(.id==$r or .ref==$r)|.region')
+          echo "::notice::운영 프로젝트 지역: ${region:-확인 안 됨}"
