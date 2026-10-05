@@ -1,0 +1,53 @@
+PASS public-home
+PASS public-start
+PASS public-login
+PASS public-signup
+PASS public-calculator
+PASS public-help
+PASS public-refund
+PASS public-terms
+PASS public-pricing
+PASS public-status
+PASS public-privacy
+PASS demo-home
+PASS demo-employees
+PASS demo-attendance
+PASS demo-schedule
+PASS demo-payroll
+PASS demo-contracts
+PASS demo-retirement
+PASS demo-outbox
+PASS demo-operations
+PASS demo-manual
+PASS demo-reports
+PASS demo-stores
+PASS demo-settings
+PASS demo-guide
+PASS demo-staff
+PASS public-home (큰 글씨)
+PASS public-start (큰 글씨)
+PASS public-login (큰 글씨)
+PASS public-signup (큰 글씨)
+PASS public-calculator (큰 글씨)
+PASS public-help (큰 글씨)
+PASS public-refund (큰 글씨)
+PASS public-terms (큰 글씨)
+PASS public-pricing (큰 글씨)
+PASS public-status (큰 글씨)
+PASS public-privacy (큰 글씨)
+PASS demo-home (큰 글씨)
+PASS demo-employees (큰 글씨)
+PASS demo-attendance (큰 글씨)
+PASS demo-schedule (큰 글씨)
+PASS demo-payroll (큰 글씨)
+PASS demo-contracts (큰 글씨)
+PASS demo-retirement (큰 글씨)
+PASS demo-outbox (큰 글씨)
+PASS demo-operations (큰 글씨)
+PASS demo-manual (큰 글씨)
+PASS demo-reports (큰 글씨)
+PASS demo-stores (큰 글씨)
+PASS demo-settings (큰 글씨)
+PASS demo-guide (큰 글씨)
+PASS demo-staff (큰 글씨)
+390px 화면 26개(보통·큰 글씨): 가로 넘침 없음
