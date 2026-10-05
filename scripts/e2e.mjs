@@ -131,7 +131,7 @@ await step('작업 052: 안드로이드 휴대폰에서 매장 QR 사진으로 �
  await a.goto(B+'/login?role=employee',{waitUntil:'networkidle'});
  await a.fill('input[type=email]',STAFF.email);await a.fill('input[aria-label="비밀번호"]',STAFF.password);await a.locator('form button[type=submit]').click();
  await a.click('text=내 직원 화면 열기 →');await a.getByText(`안녕하세요, ${STAFF.name}님`).waitFor();
- await a.getByRole('button',{name:/^(다시 )?출근$/}).click(); // 자정이 지나면 '출근', 같은 날이면 '다시 출근'await a.getByText('출근 전에 매장 QR을 찍어 주세요').waitFor();
+ await a.getByRole('button',{name:/^(다시 )?출근( |$)/}).click(); // 자정이 지나면 '출근', 같은 날이면 '다시 출근'await a.getByText('출근 전에 매장 QR을 찍어 주세요').waitFor();
  await a.setInputFiles('input[type=file]',{name:'qr.png',mimeType:'image/png',buffer:qrPng});
  await a.getByText('QR을 읽었어요.').waitFor();await a.click('text=출근 기록하기');await a.getByText('근무 중입니다.').waitFor();
  await a.click('button:has-text("퇴근")');await a.setInputFiles('input[type=file]',{name:'qr.png',mimeType:'image/png',buffer:qrPng});await a.click('text=퇴근 기록하기');await a.getByText('오늘 근무를 마쳤어요.').waitFor();
