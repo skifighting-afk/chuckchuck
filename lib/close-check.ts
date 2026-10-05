@@ -17,6 +17,8 @@ export function todayTasks(s:Team,branch:string,today:string,x:Extras={}):Task[]
   {key:'contracts',label:'근로계약서 미체결',count:active.filter(e=>e.employment!=='독립 용역'&&e.contract.status!=='체결 완료').length,target:'contracts'},
   {key:'payslips',label:'보낼 급여명세서',count:x.unsentPayslips||0,target:'payroll'},
   {key:'ending',label:'30일 안에 끝나는 기간제 계약',count:active.filter(e=>e.endDate&&e.endDate>=today&&e.endDate<=addDays(today,30)).length,target:'employees'},
+  // 가이드 83: 음식점 직원 건강진단결과서(보건증) 만료일. 사장님이 넣은 날짜만 본다(검진 결과는 저장하지 않음).
+  {key:'healthCert',label:'30일 안에 끝나거나 지난 보건증',count:active.filter(e=>(e as any).healthCertUntil&&(e as any).healthCertUntil<=addDays(today,30)).length,target:'employees'},
   {key:'profile',label:'직원 정보 확인',count:es.filter(e=>missing(e).length).length,target:'employees'},
  ];
  return list.filter(t=>t.count>0);

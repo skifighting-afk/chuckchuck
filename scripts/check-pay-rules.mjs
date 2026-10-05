@@ -404,6 +404,7 @@ console.log('PASS: 요율 연간 갱신 경고.');
  e1.contract.status='서명 대기';e1.endDate='2026-10-20';
  const t=todayTasks(s,b,'2026-10-05',{pendingLeaves:2,pendingSwaps:1,unsentPayslips:3});const c=k=>t.find(x=>x.key===k)?.count||0;
  ok('오늘 할 일: 정정·휴가·대타·퇴근 누락·계약·명세서·만료',c('corrections')===1&&c('leaves')===2&&c('swaps')===1&&c('clockout')===1&&c('contracts')===1&&c('payslips')===3&&c('ending')===1);
+ e0.healthCertUntil='2026-10-30';ok('보건증 30일 안 만료는 오늘 할 일',todayTasks(s,b,'2026-10-05').find(x=>x.key==='healthCert')?.count===1);e0.healthCertUntil='2026-12-30';ok('보건증 만료가 멀면 표시 안 함',!todayTasks(s,b,'2026-10-05').some(x=>x.key==='healthCert'));e0.healthCertUntil='';
  ok('오늘 출근 중인 사람은 퇴근 누락이 아님',todayTasks(s,b,'2026-10-03').every(x=>x.key!=='clockout'));
  ok('0건 항목은 숨김',todayTasks(s,b,'2026-10-05').every(x=>x.count>0));
  e0.wage=10000;const m=monthChecklist(s,b,'2026-10','2026-10-08',{pendingLeavesInMonth:1});const g=k=>m.find(x=>x.key===k);
@@ -684,4 +685,26 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('계속 실패하면 포기 표시',r.gaveUp&&n===RETRY_DELAYS_MS.length+1);
  ok('다시 보내기는 움직이는 QR 유효시간(60초) 안에 끝남',RETRY_DELAYS_MS.reduce((a,b)=>a+b,0)<50000);
  console.log('PASS: 출퇴근 다시 보내기.');
+}
+// 가이드 89: 2027년 공휴일
+{
+ const {holidaysFor,hasHolidaysFor,PUBLIC_HOLIDAYS}=await import('../lib/holidays.ts');
+ ok('2027 공휴일 등록',hasHolidaysFor(2027)&&PUBLIC_HOLIDAYS[2027].length===23);
+ const h=holidaysFor(2027,true);
+ ok('2027 설날 대체공휴일 2/9, 추석 9/15',h.get('2027-02-09')?.includes('대체')&&h.get('2027-09-15')==='추석');
+ ok('노동절은 5명 미만도 유급휴일, 대체공휴일(5/3)은 5명 이상만',holidaysFor(2027,false).has('2027-05-01')&&!holidaysFor(2027,false).has('2027-05-03')&&h.has('2027-05-03'));
+ const now=new Date(),y=now.getUTCFullYear();
+ ok(`${y}년 공휴일이 등록돼 있음 (lib/holidays.ts)`,hasHolidaysFor(y));
+ if(now.getUTCMonth()>=10&&!hasHolidaysFor(y+1))console.log(`WARN: ${y+1}년 공휴일을 lib/holidays.ts에 추가해야 해요.`);
+ console.log('PASS: 2027년 공휴일.');
+}
+// 가이드 70: 근무표 달력 파일
+{
+ const {shiftsToIcs}=await import('../lib/ics.ts');
+ const t=shiftsToIcs('척척식당',[{id:'s1',date:'2026-10-06',start:'09:00',end:'15:00'},{id:'s2',date:'2026-10-07',start:'22:00',end:'06:00',place:'본점, 1층'}],new Date('2026-10-05T00:00:00Z'));
+ ok('달력 파일 형식',t.startsWith('BEGIN:VCALENDAR\r\n')&&t.trim().endsWith('END:VCALENDAR')&&(t.match(/BEGIN:VEVENT/g)||[]).length===2);
+ ok('한국 시간으로 시작·끝',t.includes('DTSTART;TZID=Asia/Seoul:20261006T090000')&&t.includes('DTEND;TZID=Asia/Seoul:20261006T150000'));
+ ok('밤샘 근무는 다음 날 끝',t.includes('DTEND;TZID=Asia/Seoul:20261008T060000'));
+ ok('쉼표는 이스케이프',t.includes('LOCATION:본점\\, 1층'));
+ console.log('PASS: 근무표 달력 파일.');
 }

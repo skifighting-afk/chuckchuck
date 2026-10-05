@@ -10,7 +10,7 @@ export function PricingPicker({plan,setPlan,branches,setBranches,months,setMonth
   <div className="pricing-plans" role="radiogroup" aria-label="요금제">
    {Object.values(plans).map(p=>{const m=monthlyPrice(p.id,branches),total=periodPrice(p.id,branches,months);return <label key={p.id} className={'pricing-plan'+(plan===p.id?' selected':'')}><input type="radio" name={idPrefix+'-plan'} checked={plan===p.id} onChange={()=>setPlan(p.id)}/>
     <b>{p.name}</b><strong>월 {money(m)}원</strong><small>VAT 포함 · 지점 {branches}곳 · 직원 수 제한 없음</small>
-    {months>1&&<small className="pricing-total">{months}개월 {money(total)}원 (월 {money(Math.round(total/months/10)*10)}원꼴)</small>}
+    {months>1&&<small className="pricing-total">{months}개월 {money(total)}원 (월 {money(Math.round(total/months/10)*10)}원꼴) · <b>{money(m*months-total)}원 할인</b></small>}
     <span>{p.description}</span></label>})}
   </div>
   <ul className="pricing-notes">
