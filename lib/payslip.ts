@@ -19,7 +19,7 @@ export function payslipText(store: string, month: string, payDate: string, row: 
     `임금지급일: ${payDate}`,
   ];
   if (row.days !== undefined || row.hours !== undefined) lines.push(`근무일수: ${row.days ?? 0}일 · 총 근로시간: ${(row.hours ?? 0).toFixed(2)}시간`);
-  lines.push('', '[지급 항목]', ...row.earnings.map(i => `${i.name}: ${money(i.amount)} (계산방법: ${i.formula})`), `임금 총액: ${money(row.gross)}`);
+  lines.push('', '[지급 항목]', ...row.earnings.map(i => `${i.name}: ${money(i.amount)}${i.formula?.trim() ? ` (계산방법: ${i.formula})` : ''}`), `임금 총액: ${money(row.gross)}`);
   lines.push('', '[공제 항목]', ...(row.deductions.length ? row.deductions.map(i => `${i.name}: ${money(i.amount)} (${i.formula})`) : ['공제 없음']), `공제 총액: ${money(row.deduction)}`);
   lines.push('', `실지급액: ${money(row.net)}`);
   if (row.note) lines.push('', `비고: ${row.note}`);
@@ -33,10 +33,20 @@ export function payslipMissing(text: string) {
     ['임금 총액', /^임금 총액: /m], ['구성항목별 금액·계산방법', /\(계산방법: .+\)/], ['공제 내역', /^공제 총액: /m],
   ];
   const missing = need.filter(([, re]) => !re.test(text)).map(([n]) => n);
+  // 근무시간·일수에 따라 달라지는 항목(기본급·주휴·가산)은 계산방법이 있어야 한다.
+  for (const kind of ['기본급', '주휴수당', '연장', '야간', '휴일']) {
+    const line = text.split('\n').find(l => l.startsWith(kind));
+    if (line && !line.includes('(계산방법: ')) missing.push(`${kind} 계산방법`);
+  }
   // 연장·야간·휴일 가산이 있으면 그 시간 수가 계산방법에 있어야 한다.
   for (const kind of ['연장', '야간', '휴일']) {
     const line = text.split('\n').find(l => l.startsWith(kind));
     if (line && !/\d+(\.\d+)?시간/.test(line)) missing.push(`${kind}근로 시간 수`);
   }
   return missing;
+}
+
+/** 급여 확정 전 점검: 명세서에 법정 기재사항이 빠지는 직원 목록 */
+export function payslipProblems(store: string, month: string, payDate: string, rows: PayslipRow[]) {
+  return rows.map(r => ({name: r.name, missing: payslipMissing(payslipText(store, month, payDate, r))})).filter(x => x.missing.length);
 }

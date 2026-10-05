@@ -653,3 +653,18 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('11월에는 미리 경고 안 함',!calculate(t,'2026-11').find(x=>x.employeeId==='e1').warnings.some(w=>w.includes('1월부터 최저시급')));
  console.log('PASS: 2027년 요율.');
 }
+// 가이드 28: 명세서 필수 기재사항을 확정·발송 때 막기
+{
+ const {payslipProblems,payslipText,payslipMissing}=await import('../lib/payslip.ts');
+ const base={employeeId:'e1',name:'가',hours:10,days:2,gross:107000,deduction:0,net:107000,deductions:[]};
+ const good={...base,earnings:[{name:'기본급',amount:107000,formula:'10시간 × 10,700원'}]};
+ ok('정상 명세서는 문제 없음',payslipProblems('가게','2027-01','2027-02-10',[good]).length===0);
+ const manualNight={...base,earnings:[...good.earnings,{name:'야간수당',amount:5000,formula:''}]};
+ const p=payslipProblems('가게','2027-01','2027-02-10',[manualNight]);
+ ok('계산 근거 없는 야간수당은 확정 전에 걸림',p.length===1&&p[0].missing.some(m=>m.includes('야간')));
+ const bonus={...base,earnings:[...good.earnings,{name:'명절 상여',amount:50000,formula:''}]};
+ ok('고정 상여는 계산방법 없어도 됨',payslipProblems('가게','2027-01','2027-02-10',[bonus]).length===0);
+ ok('빈 계산방법은 "(계산방법: )"로 찍지 않음',!payslipText('가게','2027-01','2027-02-10',bonus).includes('(계산방법: )'));
+ ok('지급일 없으면 걸림',payslipMissing(payslipText('가게','2027-01','',good)).includes('임금지급일'));
+ console.log('PASS: 명세서 필수 기재사항 확정·발송 점검.');
+}

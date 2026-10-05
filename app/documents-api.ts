@@ -3,7 +3,7 @@ import type {PushEnv} from '../lib/webpush';
 import {resolveStore} from './saas-api';
 import {serverError,reportError} from '../lib/errors';
 import {hasFeature,canWrite} from '../lib/plans';
-import {payslipText} from '../lib/payslip';
+import {payslipText,payslipMissing} from '../lib/payslip';
 const json=(v:any,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store'}});
 const ACTIVITY="COALESCE(json_build_object('viewed_at',a.viewed_at,'download_requested_at',a.download_requested_at,'saved_at',a.saved_at),'{}'::json) AS activity";
 export async function documentActivity(db:D1Database,kind:string,id:string){return await db.prepare('SELECT viewed_at,download_requested_at,saved_at FROM document_activity WHERE kind=? AND document_id=?').bind(kind,id).first()||{};}
@@ -38,6 +38,7 @@ export async function documentsApi(request:Request,env:{DB:D1Database}&PushEnv){
   if(member.userId===uid)return json({error:'사장님 본인 계정과 연결된 직원 기록에는 보낼 수 없어요. 직원 본인 계정을 연결해 주세요.'},409);
   const revision=run.revision||1;
   const text=payslipText(state.store.name,run.month,run.payDate,row);
+  {const miss=payslipMissing(text);if(miss.length)return json({error:`명세서에 필수 기재사항이 빠져 있어요(${miss.join(', ')}). 급여 확정을 풀고 다시 확정해 주세요.`},409)}
   // 매장 데이터의 다른 부분(출퇴근 등)이 바뀌어도 이 급여 확정본이 그대로면 보낸다.
   await env.DB.prepare(`INSERT OR IGNORE INTO payslip_documents(id,owner_id,employee_id,employee_user_id,run_key,revision,document_json,created_at)
    SELECT ?,?,?,?,?,CAST(? AS integer),?,? WHERE EXISTS(SELECT 1 FROM stores WHERE owner=? AND (data::jsonb #> ARRAY['payrollRuns',CAST(? AS text),'locked'])='true'::jsonb AND COALESCE((data::jsonb #>> ARRAY['payrollRuns',CAST(? AS text),'revision'])::integer,1)=CAST(? AS integer))`)
