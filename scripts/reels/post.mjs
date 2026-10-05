@@ -25,7 +25,7 @@ const api=async(path,params,method='POST')=>{
  return d;
 };
 // 1) 릴스 상자 만들기(영상은 직접 올리기 방식)
-const box=await api(`${user}/media`,{media_type:'REELS',upload_type:'resumable',caption,share_to_feed:'true',thumb_offset:'1000'});
+const box=await api(`${user}/media`,{media_type:'REELS',upload_type:'resumable',caption,share_to_feed:'true',thumb_offset:'400'});
 // 2) 영상 올리기
 const up=await fetch(`https://rupload.facebook.com/ig-api-upload/${ver}/${box.id}`,{method:'POST',headers:{Authorization:`OAuth ${token}`,offset:'0',file_size:String(size)},body:readFileSync(video)});
 const upd=await up.json().catch(()=>({}));
