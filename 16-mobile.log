@@ -1,28 +1,28 @@
-PASS public-home · 이전과 4.2% 다름
-PASS public-start · 이전과 3.49% 다름
-PASS public-login · 이전과 4.32% 다름
-PASS public-signup · 이전과 3.8% 다름
-PASS public-calculator · 이전과 3.9% 다름
-PASS public-help · 이전과 4.38% 다름
-PASS public-refund · 이전과 5.13% 다름
-PASS public-terms · 이전과 6.16% 다름
-PASS public-pricing · 이전과 4.29% 다름
-PASS public-status · 이전과 14.76% 다름
-PASS public-privacy · 이전과 3.85% 다름
-PASS demo-home · 이전과 3.5% 다름
-PASS demo-employees · 이전과 2.72% 다름
-PASS demo-attendance · 이전과 2.45% 다름
-PASS demo-schedule · 이전과 2.01% 다름
-PASS demo-payroll · 이전과 3.13% 다름
-PASS demo-contracts · 이전과 3.62% 다름
-PASS demo-retirement · 이전과 2.52% 다름
-PASS demo-outbox · 이전과 2.95% 다름
-PASS demo-operations · 이전과 4.37% 다름
-PASS demo-manual · 이전과 3.65% 다름
-PASS demo-reports · 이전과 2.6% 다름
-PASS demo-stores · 이전과 2.18% 다름
-PASS demo-settings · 이전과 3.38% 다름
-PASS demo-guide · 이전과 3.69% 다름
+PASS public-home · 이전과 0% 다름
+PASS public-start · 이전과 0% 다름
+PASS public-login · 이전과 0% 다름
+PASS public-signup · 이전과 0% 다름
+PASS public-calculator · 이전과 0% 다름
+PASS public-help · 이전과 0% 다름
+PASS public-refund · 이전과 0% 다름
+PASS public-terms · 이전과 0% 다름
+PASS public-pricing · 이전과 0% 다름
+PASS public-status · 이전과 0.06% 다름
+PASS public-privacy · 이전과 0% 다름
+PASS demo-home · 이전과 0% 다름
+PASS demo-employees · 이전과 0% 다름
+PASS demo-attendance · 이전과 0% 다름
+PASS demo-schedule · 이전과 0% 다름
+PASS demo-payroll · 이전과 0% 다름
+PASS demo-contracts · 이전과 0% 다름
+PASS demo-retirement · 이전과 0% 다름
+PASS demo-outbox · 이전과 0% 다름
+PASS demo-operations · 이전과 0% 다름
+PASS demo-manual · 이전과 0% 다름
+PASS demo-reports · 이전과 0% 다름
+PASS demo-stores · 이전과 0% 다름
+PASS demo-settings · 이전과 0% 다름
+PASS demo-guide · 이전과 0% 다름
 PASS demo-staff · 이전과 0% 다름
 PASS public-home (큰 글씨)
 PASS public-start (큰 글씨)
@@ -50,5 +50,4 @@ PASS demo-stores (큰 글씨)
 PASS demo-settings (큰 글씨)
 PASS demo-guide (큰 글씨)
 PASS demo-staff (큰 글씨)
-이전 실행과 2% 넘게 달라진 화면: public-home 4.2%, public-start 3.49%, public-login 4.32%, public-signup 3.8%, public-calculator 3.9%, public-help 4.38%, public-refund 5.13%, public-terms 6.16%, public-pricing 4.29%, public-status 14.76%, public-privacy 3.85%, demo-home 3.5%, demo-employees 2.72%, demo-attendance 2.45%, demo-schedule 2.01%, demo-payroll 3.13%, demo-contracts 3.62%, demo-retirement 2.52%, demo-outbox 2.95%, demo-operations 4.37%, demo-manual 3.65%, demo-reports 2.6%, demo-stores 2.18%, demo-settings 3.38%, demo-guide 3.69%
 390px 화면 26개(보통·큰 글씨): 가로 넘침 없음

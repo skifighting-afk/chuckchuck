@@ -1,6 +1,6 @@
 PASS  93.9%  app/contracts-api.ts
 PASS  96.7%  lib/annual-leave.ts
-LOW   88.7%  lib/close-check.ts
+PASS  95.1%  lib/close-check.ts
 PASS  93.7%  lib/contract-template.ts
 PASS 100.0%  lib/employer-insurance.ts
 PASS 100.0%  lib/holidays.ts
@@ -12,4 +12,3 @@ PASS  94.3%  lib/pdf.ts
 PASS 100.0%  lib/signature-image.ts
 PASS  95.7%  lib/team-model.ts
 PASS  93.3%  lib/wage-ledger.ts
-90% 미만: lib/close-check.ts
