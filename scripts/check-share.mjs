@@ -1,0 +1,27 @@
+// 가이드 68: 세무사 공유 링크 — 확정 급여만, 7일, 끄기, 열람 기록, 토큰 원문 미저장
+import assert from 'node:assert/strict';
+import {api} from '../dist/server/index.js';
+import {authedTest} from './test-auth.mjs';import {closeAll} from './test-db.mjs';
+const t=await authedTest(),{headersFor,q,id}=t,env=t.env;
+const call=async(user,body,path='/api/share')=>{const h=user?await headersFor(user):{};const r=await api(new Request('https://test.local'+path,{method:body?'POST':'GET',headers:{origin:'https://test.local','content-type':'application/json',...h},...(body?{body:JSON.stringify(body)}:{})}),env);const text=await r.text();let data;try{data=JSON.parse(text)}catch{data=text}return {status:r.status,data,headers:r.headers}};
+await headersFor('sharer');const ownerId=id('sharer');
+await env.DB.prepare('DELETE FROM stores WHERE owner=?').bind(ownerId).run();await env.DB.prepare('DELETE FROM accountant_shares').run();
+const run={locked:true,month:'2026-09',branch:'b',payDate:'2026-10-10',rows:[{employeeId:'3fa9c1d2-77ab',name:'김예시',hours:40,gross:500000,deduction:16500,net:483500,deductions:[{name:'사업소득 원천징수',amount:16500}]}]};
+await env.DB.prepare('INSERT INTO stores(owner,data,version,updated_at) VALUES(?,?,1,?)').bind(ownerId,JSON.stringify({store:{name:'공유가게'},payrollRuns:{'2026-09:b':run,'2026-10:b':{locked:false,month:'2026-10',rows:[]}}}),new Date().toISOString()).run();
+assert.equal((await call('sharer',{action:'create',runKey:'2026-10:b'})).status,409,'확정 안 한 달은 링크 못 만듦');
+assert.equal((await call('stranger',{action:'create',runKey:'2026-09:b'})).status,403,'가게 없는 사람은 못 만듦');
+const c=await call('sharer',{action:'create',runKey:'2026-09:b'});assert.equal(c.status,201,'링크 만들기');
+const token=new URL(c.data.url).searchParams.get('t');
+assert.equal((await q('SELECT count(*) AS n FROM accountant_shares WHERE hash=?',token).first()).n*1,0,'토큰 원문은 저장 안 함');
+const v=await call(null,null,'/api/share?t='+token);assert.ok(v.status===200&&v.data.store==='공유가게'&&v.data.people===1,'로그인 없이 링크로 열기');
+const csv=await call(null,null,'/api/share?format=csv&t='+token);assert.ok(String(csv.data).includes('김예시')&&String(csv.data).includes('사업소득 원천징수'),'CSV 내려받기');
+const list=await call('sharer');assert.ok(list.data.shares[0].views>=2&&list.data.shares[0].active,'열람 횟수 기록');
+assert.equal((await call(null,null,'/api/share?t=wrong')).status,410,'틀린 토큰');
+assert.equal((await call('sharer',{action:'revoke',id:list.data.shares[0].id})).status,200,'끄기');
+assert.equal((await call(null,null,'/api/share?t='+token)).status,410,'끈 링크는 못 엶');
+const c2=await call('sharer',{action:'create',runKey:'2026-09:b'}),t2=new URL(c2.data.url).searchParams.get('t');
+await env.DB.prepare("UPDATE accountant_shares SET expires_at='2000-01-01T00:00:00Z' WHERE revoked_at IS NULL").run();
+assert.equal((await call(null,null,'/api/share?t='+t2)).status,410,'7일 지난 링크는 못 엶');
+await env.DB.prepare('DELETE FROM accountant_shares').run();await env.DB.prepare('DELETE FROM stores WHERE owner=?').bind(ownerId).run();
+console.log('PASS: 세무사 공유 링크 (확정 급여만·끄기·만료·열람 기록·토큰 해시만 저장).');
+await closeAll();

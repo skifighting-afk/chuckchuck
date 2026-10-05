@@ -29,6 +29,7 @@ const LegalPage=lazy(()=>import('./legal-page').then(x=>({default:x.LegalPage}))
 const PricingPage=lazy(()=>import('./public-pages').then(x=>({default:x.PricingPage})));
 const StatusPage=lazy(()=>import('./status-page').then(x=>({default:x.StatusPage})));
 const Support=lazy(()=>import('./support').then(x=>({default:x.Support})));
+const SharePage=lazy(()=>import('./accountant-share').then(x=>({default:x.SharePage})));
 const SupportDesk=lazy(()=>import('./support').then(x=>({default:x.SupportDesk})));
 
 import {ArrowRight,Check,Store,ShieldCheck,ArrowLeft,LogOut,CreditCard,Clock3,Users} from 'lucide-react';
@@ -56,6 +57,7 @@ export default function Platform(){
  if(path==='/refund')return <Shell><RefundPolicy/></Shell>;
  if(path==='/pricing')return <Shell><PricingPage/></Shell>;
  if(path==='/status')return <Shell><StatusPage/></Shell>;
+ if(path==='/share')return <Shell><SharePage/></Shell>;
  if(path==='/logout')return <Logout/>;
  if(path==='/start')return <Start/>;
  if(path==='/demo'||path==='/try')return <TeamApp demo/>;
