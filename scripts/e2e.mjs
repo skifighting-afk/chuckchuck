@@ -68,7 +68,7 @@ await step('작업 048: 근무표 반복 등록 → 템플릿 저장 → 다음 
  await owner.evaluate(()=>{window.print=()=>{}});await owner.click('button:has-text("인쇄 (A4 가로)")');await owner.emulateMedia({media:'print'});const cells=await owner.locator('.print-sheet tbody td div').count();if(!cells)throw Error('인쇄용 근무표가 비어 있어요');await owner.emulateMedia({media:'screen'});
 });
 await step('작업 050: 직원이 근무 가능 시간 제출 → 사장님 초안 화면에서 확인',async()=>{
- await staff.goto(B+'/app',{waitUntil:'networkidle'});await staff.click('button:has-text("휴가·공지")');await staff.click('button:has-text("근무 요청")');
+ await staff.goto(B+'/app',{waitUntil:'networkidle'});await staff.click("button:has-text(\"더보기\")");await staff.click('button:has-text("휴가·공지")');await staff.click('button:has-text("근무 요청")');
  await staff.locator('.avail-row',{hasText:'토요일'}).locator('input[type=checkbox]').check();await staff.click('button:has-text("가능 시간 내기")');await staff.getByText('제출').first().waitFor();
  const av=JSON.parse((await srv.db.q('SELECT data FROM stores LIMIT 1').first()).data)._operations.availability;if(!Object.values(av).some(a=>a.slots.some(x=>x.weekday===6)))throw Error('가능 시간 저장 안 됨');
  await owner.goto(B+'/app?screen=schedule',{waitUntil:'networkidle'});await owner.click('button:has-text("가능 시간으로 초안")');await owner.getByText('근무 가능 시간 낸 직원 1/1명').waitFor();await owner.getByText('토 09:00~18:00').waitFor();await owner.click('[role=dialog] button:has-text("닫기")');
@@ -100,7 +100,7 @@ await step('매장 매뉴얼: 사장님이 사진과 함께 작성 → 직원이
  const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==','base64');
  await owner.locator('.manual-upload input[type=file]').first().setInputFiles({name:'floor.png',mimeType:'image/png',buffer:png});await owner.locator('.manual-steps img.manual-img').waitFor();
  await owner.click('button:has-text("저장하고 직원에게 보이기")');await owner.getByText('매뉴얼을 저장했어요').waitFor();
- await staff.goto(B+'/app',{waitUntil:'networkidle'});await staff.click('button:has-text("매뉴얼")');await staff.click('button:has-text("마감 청소 순서")');
+ await staff.goto(B+'/app',{waitUntil:'networkidle'});await staff.click("button:has-text(\"더보기\")");await staff.click('button:has-text("매뉴얼")');await staff.click('button:has-text("마감 청소 순서")');
  await staff.getByText('바닥을 쓸고 대걸레로 닦아요').waitFor();await staff.locator('.manual-view img.manual-img').waitFor();await staff.getByText('확인함').waitFor();
  await staff.goto(B+'/app',{waitUntil:'networkidle'});
 });
@@ -144,7 +144,7 @@ await step('급여 확정 (지급일·확인 체크)',async()=>{
 });
 await step('명세서 보내기 → 직원이 열어 봄 (확인 기록)',async()=>{
  await owner.click('button:has-text("직원 앱으로 보내기")');await owner.getByText(/보냄 · 수정본 1/).first().waitFor();
- await staff.goto(B+'/app',{waitUntil:'networkidle'});await staff.click('button:has-text("내 급여")');await staff.locator('button:has-text("수정본 1 열기")').click();
+ await staff.goto(B+'/app',{waitUntil:'networkidle'});await staff.getByRole("button",{name:"급여",exact:true}).click();await staff.locator('button:has-text("수정본 1 열기")').click();
  await staff.getByText('임금지급일:').waitFor();await staff.getByText(/확인함/).first().waitFor();
  const act=await srv.db.q("SELECT viewed_at FROM document_activity WHERE kind='payslip'").first();if(!act?.viewed_at)throw Error('명세서 열람 기록이 없어요'); const [dl]=await Promise.all([staff.waitForEvent('download'),staff.click('button:has-text("PDF로 저장")')]);const pdfPath=await dl.path();const head=(await import('node:fs')).readFileSync(pdfPath).subarray(0,8).toString('latin1');if(!head.startsWith('%PDF-1.4'))throw Error('PDF 저장 실패: '+head+' '+dl.suggestedFilename());
 });

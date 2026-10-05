@@ -824,3 +824,20 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('주휴는 계약 20시간 기준(25시간 일해도 20/40×8)',jh&&jh.amount===Math.round(20/40*8*10320));
  console.log('PASS: 급여 계산 점검(단시간 초과·장기요양).');
 }
+// 새 홈: 오늘 근무 막대
+{
+ const {todayBoard}=await import('../dist/server/close-check.js');
+ const {checkDay}=await import('../lib/attendance-check.ts');
+ const t=normalizeTeam(null);delete t.legacy;const [a]=t.employees;const mk=(id,name)=>({...a,id,name});
+ t.employees=[mk('e1','가'),mk('e2','나'),mk('e3','다'),mk('e4','라')];const d='2026-10-05',iso=(h)=>new Date(Date.parse(d+'T'+h+':00+09:00')).toISOString();
+ t.shifts=[{id:'s1',employeeId:'e1',date:d,start:'09:00',end:'15:00',breakMinutes:0},{id:'s2',employeeId:'e2',date:d,start:'11:00',end:'18:00',breakMinutes:0},{id:'s3',employeeId:'e3',date:d,start:'17:00',end:'02:00',breakMinutes:0},{id:'s4',employeeId:'e4',date:d,start:'10:00',end:'13:00',breakMinutes:0}];
+ t.attendance=[{id:'a1',employeeId:'e1',start:iso('08:56'),end:null,breakMinutes:0},{id:'a2',employeeId:'e2',start:iso('11:20'),end:null,breakMinutes:0}];
+ const now=Date.parse(d+'T14:10:00+09:00'),f=checkDay(d,t.shifts,t.attendance,'normal',now),b=todayBoard(t,a.branchId,d,f,now),st=id=>b.rows.find(r=>r.employeeId===id);
+ ok('근무 중',st('e1').status==='working'&&b.working===2);
+ ok('늦게 온 사람은 늦음과 분',st('e2').status==='late'&&st('e2').label==='20분 늦음');
+ ok('아직 안 온 사람은 예정',st('e3').status==='planned'&&b.left===1);
+ ok('끝난 근무에 기록 없으면 미출근',st('e4').status==='missed'&&b.attention===2);
+ ok('자정 넘는 근무는 26시까지 그림',st('e3').to===26&&b.hi>=26&&b.lo<=9);
+ ok('지금 위치 표시',Math.abs(b.now-(14+10/60))<0.01);
+ console.log('PASS: 홈 오늘 근무 막대.');
+}

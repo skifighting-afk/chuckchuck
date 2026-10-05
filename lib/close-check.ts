@@ -64,3 +64,27 @@ export function budgetStatus(s:Team,branch:string,month:string){
  const budget=(s.settings as any).laborBudget;if(!budget)return null;
  const planned=Math.round(plannedLabor(s,branch,month));return {budget,planned,ratio:planned/budget,over:planned>budget,near:planned>=budget*0.9};
 }
+
+// 새 홈 화면(시안 A+B): 오늘 근무 막대. 근무표 한 줄마다 지금 상태를 붙이고, 막대를 그릴 시간 범위를 정한다.
+export type BoardStatus='working'|'late'|'done'|'missed'|'planned'|'extra';
+export type BoardRow={id:string,employeeId:string,name:string,start:string,end:string,from:number,to:number,status:BoardStatus,label:string};
+const hourOf=(t:string)=>Number(t.slice(0,2))+Number(t.slice(3,5))/60;
+const kTime=(iso:string)=>new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Seoul',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(iso));
+export function todayBoard(s:Team,branch:string,date:string,findings:{kind:string,employeeId:string,shiftId?:string,minutes?:number,attendanceId?:string}[],now=Date.now()){
+ const people=s.employees.filter(e=>e.branchId===branch),ids=new Set(people.map(e=>e.id)),name=(id:string)=>people.find(e=>e.id===id)?.name||'직원';
+ const recs=s.attendance.filter(a=>ids.has(a.employeeId)&&kdate(a.start)===date);
+ const rows:BoardRow[]=s.shifts.filter(x=>ids.has(x.employeeId)&&x.date===date).sort((a,b)=>a.start.localeCompare(b.start)).map(x=>{
+  const from=hourOf(x.start),to=hourOf(x.end)+(x.end<=x.start?24:0),f=findings.filter(f=>f.shiftId===x.id);
+  const late=f.find(f=>f.kind==='지각'),att=late?.attendanceId?recs.find(a=>a.id===late.attendanceId):recs.find(a=>a.employeeId===x.employeeId);
+  const open=att&&(!att.end||Date.parse(att.end)>now),status:BoardStatus=f.some(f=>f.kind==='미출근')?'missed':open?(late?'late':'working'):att?'done':late?'late':'planned';
+  const label=status==='missed'?'미출근':status==='late'?(late?.minutes||0)+'분 늦음':status==='working'?kTime(att!.start)+' 출근 · 근무 중':status==='done'?'퇴근 '+kTime(att!.end!):x.start+' 출근 예정';
+  return {id:x.id,employeeId:x.employeeId,name:name(x.employeeId),start:x.start,end:x.end,from,to,status,label};
+ });
+ // 근무표에 없던 출근도 막대로 보여 준다
+ for(const f of findings)if(f.kind==='예정 외 출근'){const a=recs.find(a=>a.id===f.attendanceId);if(!a)continue;const st=kTime(a.start),en=a.end?kTime(a.end):kTime(new Date(Math.max(now,Date.parse(a.start)+3600000)).toISOString());const from=hourOf(st);let to=hourOf(en);if(to<=from)to=from+1;rows.push({id:a.id,employeeId:a.employeeId,name:name(a.employeeId),start:st,end:a.end?en:'',from,to,status:a.end?'done':'extra',label:a.end?'예정 외 · 퇴근 '+en:'예정 외 출근 · 근무 중'})}
+ const nowH=hourOf(kTime(new Date(now).toISOString()));
+ let lo=Math.floor(Math.min(9,...rows.map(r=>r.from))),hi=Math.ceil(Math.max(lo+8,...rows.map(r=>r.to)));if(hi-lo>24)hi=lo+24;
+ const working=new Set(rows.filter(r=>r.status==='working'||r.status==='late'||r.status==='extra').map(r=>r.employeeId)).size;
+ const left=rows.filter(r=>r.status==='planned').length;
+ return {rows,lo,hi,now:nowH>=lo&&nowH<=hi?nowH:null,working,left,attention:rows.filter(r=>r.status==='late'||r.status==='missed').length};
+}
