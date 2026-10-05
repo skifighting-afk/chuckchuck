@@ -1,6 +1,6 @@
 import {z} from 'zod';
 import {seed as oldSeed,today,datePlus,duration} from './model';
-import {allowances,insuranceLines,ratesFor,hasRatesFor,weekKeyOf} from './pay-rules';
+import {allowances,insuranceLines,ratesFor,hasRatesFor,pendingRates,weekKeyOf} from './pay-rules';
 import {incomeTax,hasTaxTable} from './income-tax';
 import {holidaysFor} from './holidays';
 import {attendanceBreakShortfalls,minorIssues} from './labor-checks';
@@ -64,6 +64,9 @@ export function calculate(s:Team,month:string){
   if(!hasRatesFor(year)&&(e.taxMode==='4대보험 자동'||e.payType==='시급'))warnings.push(year+'년 최저임금·4대보험 요율이 아직 앱에 등록되지 않아 이전 해 기준으로 계산했어요. 금액을 꼭 확인해 주세요.');
   const min=ratesFor(year).minimumWage;
   if(e.payType==='시급'&&e.wage<min)warnings.push(year+'년 최저시급('+won(min)+'원)보다 낮은 시급이에요.');
+  const nextMin=ratesFor(year+1).minimumWage;
+  if(month.endsWith('-12')&&hasRatesFor(year+1)&&e.payType==='시급'&&e.wage>=min&&e.wage<nextMin)warnings.push((year+1)+'년 1월부터 최저시급이 '+won(nextMin)+'원이에요. 다음 달 전에 시급을 올려 주세요.');
+  {const p=pendingRates(year);if(p.length&&e.taxMode==='4대보험 자동')warnings.push(year+'년 '+p.join('·')+' 요율이 아직 발표되지 않아 이전 해 비율로 계산했어요. 발표 후 다시 계산돼요.')}
   if(prob.until&&!prob.ok&&(probHours||probDays))warnings.push('수습 감액을 적용하지 않았어요: '+prob.reason);
   if(rate<1&&e.payType==='시급'&&e.wage*rate<min*0.9)warnings.push('수습 중 시급이 최저시급의 90%('+won(min*0.9)+'원)보다 낮아요.');
   if(taxFree>200000)warnings.push('비과세 수당이 월 '+won(taxFree)+'원이에요. 식대 비과세 한도(월 20만 원) 등 항목별 한도를 확인해 주세요.');

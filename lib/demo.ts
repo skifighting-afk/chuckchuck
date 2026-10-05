@@ -1,4 +1,7 @@
 import {normalizeTeam,today,datePlus,calculate,blankInsurance,type Team} from './team-model';
+import {ratesFor} from './pay-rules';
+// 체험 시급은 그해 최저임금 기준으로 잡아 해가 바뀌어도 '최저시급보다 낮음' 경고가 뜨지 않게 한다.
+const MIN = ratesFor(new Date().getFullYear()).minimumWage;
 // 작업 090: 체험 화면용 가상 매장. 실제 매장을 읽지도, 저장하지도 않는다.
 // 지난달 전체와 이번 달 오늘까지 근무 기록을 만들고, 지난달 급여는 새 자동 계산(주휴·4대보험)으로 확정해 둔다.
 // 숫자는 화면에서 다시 계산한 값과 같아야 한다(scripts/check-demo.mjs).
@@ -6,10 +9,10 @@ import {normalizeTeam,today,datePlus,calculate,blankInsurance,type Team} from '.
 type Plan = {name: string; role: '홀' | '주방' | '매니저'; payType: '시급' | '월급'; wage: number; weekly: number; days: number[]; start: string; end: string; brk: number; part: boolean; duties: string};
 const PEOPLE: Plan[] = [
   // days: 0=일 … 6=토
-  {name: '김예시', role: '홀', payType: '시급', wage: 10320, weekly: 25, days: [1, 2, 3, 4, 5], start: '09:00', end: '15:00', brk: 60, part: false, duties: '홀 서빙·계산'},
-  {name: '박샘플', role: '주방', payType: '시급', wage: 11000, weekly: 35, days: [1, 2, 3, 4, 5], start: '13:00', end: '21:00', brk: 60, part: false, duties: '주방 조리 보조'},
+  {name: '김예시', role: '홀', payType: '시급', wage: MIN, weekly: 25, days: [1, 2, 3, 4, 5], start: '09:00', end: '15:00', brk: 60, part: false, duties: '홀 서빙·계산'},
+  {name: '박샘플', role: '주방', payType: '시급', wage: Math.max(11000, MIN + 500), weekly: 35, days: [1, 2, 3, 4, 5], start: '13:00', end: '21:00', brk: 60, part: false, duties: '주방 조리 보조'},
   {name: '이체험', role: '매니저', payType: '월급', wage: 2300000, weekly: 40, days: [1, 2, 3, 4, 5], start: '10:00', end: '19:00', brk: 60, part: false, duties: '매장 관리'},
-  {name: '정가상', role: '홀', payType: '시급', wage: 10500, weekly: 12, days: [0, 6], start: '11:00', end: '18:00', brk: 60, part: true, duties: '주말 홀 서빙'},
+  {name: '정가상', role: '홀', payType: '시급', wage: Math.max(10500, MIN + 200), weekly: 12, days: [0, 6], start: '11:00', end: '18:00', brk: 60, part: true, duties: '주말 홀 서빙'},
 ];
 const dow = (d: string) => new Date(d + 'T12:00:00+09:00').getUTCDay();
 const iso = (d: string, hm: string) => new Date(`${d}T${hm}:00+09:00`).toISOString();

@@ -8,10 +8,17 @@ export const KST = 9 * 3600000;
 const floor10 = (n: number) => Math.floor(n / 10) * 10;
 export const won = (n: number) => Math.round(n).toLocaleString('ko-KR');
 
-export const RATES: Record<number, {pension: number; health: number; care: number; employment: number; minimumWage: number}> = {
+export type Rates = {pension: number; health: number; care: number; employment: number; minimumWage: number; pending?: ('pension' | 'health' | 'care' | 'employment' | 'minimumWage')[]};
+export const RATE_NAMES = {pension: '국민연금', health: '건강보험', care: '장기요양보험', employment: '고용보험', minimumWage: '최저임금'} as const;
+export const RATES: Record<number, Rates> = {
   // 국민연금 9.5%의 절반, 건강보험 7.19%의 절반, 장기요양 = 건강보험료 × 13.14%(0.9448% ÷ 7.19%), 고용보험(실업급여) 0.9%
   2026: {pension: 0.0475, health: 0.03595, care: 0.1314, employment: 0.009, minimumWage: 10320},
+  // 2027 (2026-10-05 확인): 최저임금 10,700원(2026-07-14 최저임금위원회 의결), 국민연금 10%의 절반(2025년 개정 국민연금법, 매년 0.5%p 인상),
+  // 건강보험 7.19% 동결(2026-09-08 건강보험정책심의위원회). 장기요양보험료율은 10월 이후 결정 예정이라 2026년 비율로 두고 pending에 적는다.
+  2027: {pension: 0.05, health: 0.03595, care: 0.1314, employment: 0.009, minimumWage: 10700, pending: ['care']},
 };
+/** 그해 아직 발표되지 않아 이전 해 값으로 둔 항목 */
+export const pendingRates = (year: number) => (RATES[year]?.pending || []).map(k => RATE_NAMES[k]);
 /** 그해 요율이 등록돼 있는지(없으면 가장 가까운 이전 해 요율로 계산하고 경고한다) */
 export const hasRatesFor = (year: number) => !!RATES[year];
 export const ratesFor = (year: number) => RATES[year] || RATES[Math.max(...Object.keys(RATES).map(Number).filter(y => y <= year))] || RATES[2026];

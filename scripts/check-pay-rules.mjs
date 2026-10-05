@@ -627,3 +627,29 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('홈페이지가 예전 임시 주소를 가리키지 않음',!site.includes('chatgpt.site'));
  console.log('PASS: 홈페이지 요금 = 앱 요금.');
 }
+// 가이드 27: 2027년 요율
+{
+ const {RATES,pendingRates,insuranceLines}=await import('../lib/pay-rules.ts');
+ const {calculate,normalizeTeam}=await import('../dist/server/team-model.js');
+ const r=RATES[2027];
+ ok('2027 최저임금 10,700원',r.minimumWage===10700);
+ ok('2027 국민연금 근로자 5%',r.pension===0.05);
+ ok('2027 건강보험 동결 3.595%',r.health===0.03595);
+ const all={국민연금:{status:'가입'},건강보험:{status:'가입'},고용보험:{status:'가입'}};
+ const L=insuranceLines(2000000,2027,all,'2027-01'),amt=n=>L.find(l=>l.name===n)?.amount;
+ ok('2027 국민연금 200만원 → 100,000',amt('국민연금')===100000);
+ ok('2027 건강보험 200만원 → 71,900',amt('건강보험')===71900);
+ ok('2027 고용보험 200만원 → 18,000',amt('고용보험')===18000);
+ ok('2027 장기요양은 아직 미발표로 표시',pendingRates(2027).includes('장기요양보험')&&pendingRates(2026).length===0);
+ const now=new Date(),y=now.getUTCFullYear(),p=pendingRates(y);
+ ok(`${y}년 미발표 요율이 1월 31일 넘게 남아 있지 않음 (docs/RATES-UPDATE.md)`,!(p.length&&(now.getUTCMonth()>0)));
+ if(p.length||pendingRates(y+1).length)console.log(`WARN: 미발표 요율 — ${y}: ${p.join(',')||'없음'} / ${y+1}: ${pendingRates(y+1).join(',')||'없음'}. 발표되면 lib/pay-rules.ts RATES를 고치고 pending에서 빼세요.`);
+ const {newMember}=await import('../dist/server/team-model.js');
+ const t=normalizeTeam(null);delete t.legacy;t.shifts=[];t.adjustments={};t.payrollRuns={};
+ t.employees=[{...newMember(),id:'e1',name:'가',joined:'2026-01-01',payType:'시급',wage:10500,autoPay:false,taxMode:'직접 입력',status:'재직'}];
+ t.attendance=[{id:'a1',employeeId:'e1',start:'2026-12-01T00:00:00Z',end:'2026-12-01T04:00:00Z',breakMinutes:0,breakStart:null},{id:'a2',employeeId:'e1',start:'2026-11-03T00:00:00Z',end:'2026-11-03T04:00:00Z',breakMinutes:0,breakStart:null}];
+ const dec=calculate(t,'2026-12').find(x=>x.employeeId==='e1');
+ ok('12월에 다음 해 최저임금 미리 경고',dec.warnings.some(w=>w.includes('2027년 1월부터 최저시급이 10,700원')));
+ ok('11월에는 미리 경고 안 함',!calculate(t,'2026-11').find(x=>x.employeeId==='e1').warnings.some(w=>w.includes('1월부터 최저시급')));
+ console.log('PASS: 2027년 요율.');
+}
