@@ -1,0 +1,40 @@
+name: 인스타 성과 모으기
+
+# 매일 아침 9시 50분쯤(한국 시간) 릴스 조회·좋아요·저장·공유와 어제 프로필 방문을 모아
+# insights 브랜치의 insights.json에 남긴다(앱 배포와 상관없는 별도 브랜치).
+on:
+  schedule:
+    - cron: '52 0 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: insights
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: 지난 기록 가져오기
+        run: git fetch --depth 1 origin insights:insights 2>/dev/null && git show insights:insights.json > prev.json || echo '{"reels":[],"daily":[]}' > prev.json
+      - name: 성과 모으기
+        env:
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          IG_HOST: ${{ secrets.IG_HOST }}
+        run: node scripts/reels/insights.mjs prev.json new.json
+      - name: insights 브랜치에 저장
+        run: |
+          [ -f new.json ] || { echo "새 기록 없음"; exit 0; }
+          mkdir -p /tmp/out && cp new.json /tmp/out/insights.json && cd /tmp/out
+          git init -q -b insights && git add insights.json
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "인스타 성과 $(date -u +%F)"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" insights
