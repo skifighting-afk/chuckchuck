@@ -53,3 +53,4 @@ e2e-failure-*.png
 tsconfig.tsbuildinfo
 coverage-summary.json
 ci-logs/
+reel-out/
