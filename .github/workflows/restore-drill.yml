@@ -57,16 +57,18 @@ jobs:
           echo "T_START=$(( $(date +%s) - start ))" >> "$GITHUB_ENV"
       - name: 되살리기
         env:
-          DB: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          DB: postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres
         run: |
           set -euo pipefail
           start=$(date +%s)
-          psql "$DB" -v ON_ERROR_STOP=1 -q -f restore/schema.sql > /dev/null
-          psql "$DB" -v ON_ERROR_STOP=1 -q -c "set session_replication_role = replica" -f restore/data.sql > /dev/null
+          # 오류가 나면 첫 오류 줄만 알린다. 따옴표 안 값(행 내용)은 지워서 공개 로그에 데이터가 남지 않게 한다.
+          report(){ grep -m3 'ERROR' "$1" | sed -E "s/\"[^\"]*\"/…/g; s/'[^']*'/…/g; s/(line [0-9]+).*/\1/" | cut -c1-200 | while read -r l; do echo "::error::$2: $l"; done; }
+          psql "$DB" -v ON_ERROR_STOP=1 -q -f restore/schema.sql > /dev/null 2> schema.err || { report schema.err '구조(schema.sql)'; exit 1; }
+          psql "$DB" -v ON_ERROR_STOP=1 -q -c "set session_replication_role = replica" -f restore/data.sql > /dev/null 2> data.err || { report data.err '데이터(data.sql)'; exit 1; }
           echo "T_RESTORE=$(( $(date +%s) - start ))" >> "$GITHUB_ENV"
       - name: 확인 (테이블마다 백업 행 수 = 되살린 행 수)
         env:
-          DB: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          DB: postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres
         run: |
           set -euo pipefail
           # data.sql(COPY 형식)에서 테이블별 행 수를 센다
@@ -91,4 +93,4 @@ jobs:
         if: always()
         run: |
           supabase stop --no-backup || true
-          rm -rf restore dl backup.zip expected.txt
+          rm -rf restore dl backup.zip expected.txt schema.err data.err
