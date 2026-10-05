@@ -2,4 +2,3 @@
 > chuckchuck@0.1.0 check
 > tsc --noEmit
 
-app/status-page.tsx(5,103): error TS2698: Spread types may only be created from object types.
