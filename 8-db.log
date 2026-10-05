@@ -1,0 +1,6 @@
+Connecting to remote database...
+Do you want to push these migrations to the remote database?
+ • 20261005090000_ops_alerts.sql
+ [Y/n] 
+Applying migration 20261005090000_ops_alerts.sql...
+Finished supabase db push.

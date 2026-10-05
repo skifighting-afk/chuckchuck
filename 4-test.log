@@ -1139,6 +1139,9 @@ PASS: 요청 제한(계정당 저장 분당 300, IP당 분당 600).
 12. PASS 만료된 구독은 지움
 PASS: 웹 푸시.
 
+── check-ops-alert
+PASS: 서버 오류 알림 (10분 3건 · 1시간 1번 · 개인정보 없음).
+
 > chuckchuck@0.1.0 check:function
 > node scripts/check-supabase-function.mjs
 
