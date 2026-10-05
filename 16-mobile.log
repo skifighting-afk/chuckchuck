@@ -1,12 +1,12 @@
-PASS public-home · 이전과 1.14% 다름
-PASS public-start · 이전과 1.14% 다름
-PASS public-login · 이전과 2.05% 다름
-PASS public-signup · 이전과 1.2% 다름
-PASS public-calculator · 이전과 0.8% 다름
-PASS public-help · 이전과 0.6% 다름
-PASS public-refund · 이전과 0.87% 다름
-PASS public-terms · 이전과 0.27% 다름
-PASS public-privacy · 이전과 0.23% 다름
+PASS public-home · 이전과 0% 다름
+PASS public-start · 이전과 0% 다름
+PASS public-login · 이전과 0% 다름
+PASS public-signup · 이전과 0% 다름
+PASS public-calculator · 이전과 0% 다름
+PASS public-help · 이전과 0% 다름
+PASS public-refund · 이전과 0% 다름
+PASS public-terms · 이전과 0% 다름
+PASS public-privacy · 이전과 0% 다름
 PASS demo-home · 이전과 0% 다름
 PASS demo-employees · 이전과 0% 다름
 PASS demo-attendance · 이전과 0% 다름
@@ -21,5 +21,4 @@ PASS demo-reports · 이전과 0% 다름
 PASS demo-stores · 이전과 0% 다름
 PASS demo-settings · 이전과 0% 다름
 PASS demo-guide · 이전과 0% 다름
-이전 실행과 2% 넘게 달라진 화면: public-login 2.05%
 390px 화면 23개: 가로 넘침 없음
