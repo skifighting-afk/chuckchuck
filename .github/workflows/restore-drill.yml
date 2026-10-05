@@ -46,7 +46,7 @@ jobs:
           openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:BACKUP_PASSPHRASE -in dl/chukchuk-db-*.tar.gz.enc | tar -xzf - -C restore/
           echo "T_DECRYPT=$(( $(date +%s) - start ))" >> "$GITHUB_ENV"
           ls restore
-          ver=$(grep -m1 -oE 'Dumped from database version [0-9]+' restore/schema.sql | grep -oE '[0-9]+$' || echo 15)
+          ver=$(cat restore/schema.sql restore/data.sql | grep -m1 -oE 'Dumped from database version [0-9]+' | grep -oE '[0-9]+$' || echo 15)
           echo "PG_MAJOR=$ver" >> "$GITHUB_ENV"
       - uses: supabase/setup-cli@v1
         with:
@@ -68,6 +68,8 @@ jobs:
           start=$(date +%s)
           # 오류가 나면 첫 오류 줄만 알린다. 따옴표 안 값(행 내용)은 지워서 공개 로그에 데이터가 남지 않게 한다.
           report(){ grep -m3 'ERROR' "$1" | sed -E "s/\"[^\"]*\"/…/g; s/'[^']*'/…/g; s/(line [0-9]+).*/\1/" | cut -c1-200 | while read -r l; do echo "::error::$2: $l"; done; }
+          # 새 pg_dump가 넣는 설정(예: transaction_timeout)이 로컬 DB 버전에 없으면 빼고 넣는다
+          sed -i '/^SET transaction_timeout/d' restore/schema.sql restore/data.sql
           psql "$DB" -v ON_ERROR_STOP=1 -q -f restore/schema.sql > /dev/null 2> schema.err || { report schema.err '구조(schema.sql)'; exit 1; }
           psql "$DB" -v ON_ERROR_STOP=1 -q -c "set session_replication_role = replica" -f restore/data.sql > /dev/null 2> data.err || { report data.err '데이터(data.sql)'; exit 1; }
           echo "T_RESTORE=$(( $(date +%s) - start ))" >> "$GITHUB_ENV"
