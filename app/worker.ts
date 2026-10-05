@@ -1,4 +1,5 @@
 import {authLimit} from './auth-api';
+import {cronApi} from './cron-api';
 import {recordServerError} from '../lib/ops-alert';
 import {documentsApi} from './documents-api';
 import {serverError,reportError} from '../lib/errors';
@@ -23,7 +24,7 @@ import {exportApi} from './export-api';
 import {withdrawApi,processDeletions} from './withdraw-api';
 import {operationsApi} from './operations-api';
 import {extendAttendance} from './attendance-store';
-type Env=AuthEnv&{HQ_ADMIN_EMAIL?:string,HQ_NATIVE_USER_ID?:string,DB:D1Database,ASSETS?:{fetch:(r:Request)=>Promise<Response>},RESEND_API_KEY?:string,EMAIL_FROM?:string,VAPID_PUBLIC_KEY?:string,VAPID_PRIVATE_KEY?:string,VAPID_SUBJECT?:string};
+type Env=AuthEnv&{HQ_ADMIN_EMAIL?:string,HQ_NATIVE_USER_ID?:string,DB:D1Database,ASSETS?:{fetch:(r:Request)=>Promise<Response>},RESEND_API_KEY?:string,EMAIL_FROM?:string,VAPID_PUBLIC_KEY?:string,VAPID_PRIVATE_KEY?:string,VAPID_SUBJECT?:string,CRON_SECRET?:string};
 const json=(v:unknown,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store'}});
 import {same} from '../lib/same';
 import {findShiftConflict} from '../lib/schedule-tools';
@@ -40,6 +41,7 @@ async function route(request:Request,env:Env){
  const path=new URL(request.url).pathname;
  // 작업 056: 기한이 지난 탈퇴 예약을 로그인·계정 요청 때 조금씩 마무리한다.
  if(path==='/api/auth'||path==='/api/account')await processDeletions(env).catch(e=>{reportError('withdraw-purge',e);return 0});
+ if(path==='/api/cron')return cronApi(request,env);
  if(path==='/api/auth')return nativeAuth(request,env);
  request=await withNativeIdentity(request,env);
  // 작업 078: 모든 서버 경로 요청 제한 — IP당 분당 600회, 계정당 저장 요청 분당 300회(로그인 경로는 따로 더 엄격)

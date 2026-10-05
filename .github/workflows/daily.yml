@@ -1,0 +1,27 @@
+# 가이드 57: 매일 작업 — 한국 시간 오전 10시 5분. 체험 종료 7일·1일 전 알림, 기한 지난 탈퇴 계정 정리.
+# 비밀값은 배포 때와 같은 방법으로 DB 비밀번호에서 만든다(scripts/cron-secret.mjs). 결과는 건수만 남긴다.
+name: 매일 작업
+on:
+  schedule:
+    - cron: '5 1 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  daily:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 비밀값 준비
+        env:
+          CRON_SEED: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: node scripts/cron-secret.mjs
+      - name: 매일 작업 부르기
+        run: |
+          set -euo pipefail
+          if [ -z "${CRON_SECRET:-}" ]; then echo "::warning::SUPABASE_DB_PASSWORD가 없어 매일 작업을 건너뛰어요"; exit 0; fi
+          url=$(node -p "require('./deploy.config.json').SUPABASE_URL"); anon=$(node -p "require('./deploy.config.json').SUPABASE_ANON_KEY")
+          code=$(curl -s -o out.json -w '%{http_code}' -X POST -H "apikey: $anon" -H "Authorization: Bearer $anon" -H "x-cron-secret: $CRON_SECRET" "$url/functions/v1/api/cron")
+          echo "POST /api/cron → $code"; cat out.json; echo
+          echo "## 매일 작업: $(cat out.json)" >> "$GITHUB_STEP_SUMMARY"
+          [ "$code" = "200" ]
