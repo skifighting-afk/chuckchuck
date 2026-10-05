@@ -760,3 +760,15 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('문서로 만들기',offboardingText({name:'가',joined:'2025-03-01',weeklyHours:20,insurances:ins},'2026-12-31').includes('가 퇴사 정리'));
  console.log('PASS: 퇴사 정리.');
 }
+// 가이드 88: 한 달 근태 요약
+{
+ const {monthPatterns}=await import('../lib/attendance-check.ts');
+ const sh=(d)=>({id:'s'+d,employeeId:'e',date:d,start:'09:00',end:'15:00'});
+ const at=(d,s,e)=>({id:'a'+d,employeeId:'e',start:`${d}T${s}:00+09:00`,end:`${d}T${e}:00+09:00`});
+ const shifts=['2026-09-07','2026-09-14','2026-09-21','2026-09-22'].map(sh);
+ const att=[at('2026-09-07','09:20','15:00'),at('2026-09-14','09:15','15:00'),at('2026-09-21','09:00','15:00')];
+ const p=monthPatterns('2026-09',shifts,att,'normal',Date.parse('2026-10-05T00:00:00Z'))[0];
+ ok('지각 2번 35분, 미출근 1번',p.지각===2&&p.lateMinutes===35&&p.미출근===1);
+ ok('같은 요일(월) 반복 표시',p.repeatDay==='월');
+ console.log('PASS: 한 달 근태 요약.');
+}

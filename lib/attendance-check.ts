@@ -34,3 +34,23 @@ export function summarize(findings: Finding[]) {
   for (const f of findings) c[f.kind]++;
   return c;
 }
+
+// 가이드 88: 한 달 근태 요약 — 직원별 지각·조퇴·미출근 횟수와 지각 합계 분, 반복되는 요일.
+export function monthPatterns(month: string, shifts: Shift[], attendance: Att[], tolerance: Tolerance = 'normal', now = Date.now()) {
+  const days = new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0)).getUTCDate();
+  const all: Finding[] = [];
+  for (let d = 1; d <= days; d++) all.push(...checkDay(`${month}-${String(d).padStart(2, '0')}`, shifts, attendance, tolerance, now));
+  const WD = ['일', '월', '화', '수', '목', '금', '토'];
+  const by = new Map<string, {지각: number; 조퇴: number; 미출근: number; lateMinutes: number; weekdays: Record<string, number>}>();
+  for (const f of all) {
+    if (f.kind === '예정 외 출근') continue;
+    const r = by.get(f.employeeId) || {지각: 0, 조퇴: 0, 미출근: 0, lateMinutes: 0, weekdays: {}};
+    r[f.kind]++; if (f.kind === '지각') r.lateMinutes += f.minutes || 0;
+    const w = WD[new Date(f.date + 'T00:00:00Z').getUTCDay()]; r.weekdays[w] = (r.weekdays[w] || 0) + 1;
+    by.set(f.employeeId, r);
+  }
+  return [...by.entries()].map(([employeeId, r]) => {
+    const top = Object.entries(r.weekdays).sort((a, b) => b[1] - a[1])[0];
+    return {employeeId, 지각: r.지각, 조퇴: r.조퇴, 미출근: r.미출근, lateMinutes: r.lateMinutes, repeatDay: top && top[1] >= 2 ? top[0] : '', total: r.지각 + r.조퇴 + r.미출근};
+  }).sort((a, b) => b.total - a.total);
+}
