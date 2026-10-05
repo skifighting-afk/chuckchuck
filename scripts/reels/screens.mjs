@@ -20,10 +20,12 @@ export async function captureScreens(browser,site,id,outDir){
  const screen=screenFor(id),ctx=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:2,isMobile:true,hasTouch:true,locale:'ko-KR',timezoneId:'Asia/Seoul'});
  const page=await ctx.newPage(),shots=[];
  try{
-  await page.goto(site.replace(/\/$/,'')+'/demo?screen='+screen,{waitUntil:'networkidle',timeout:45000});
-  await page.waitForTimeout(800);
+  await page.goto(site.replace(/\/$/,'')+'/demo?screen='+screen,{waitUntil:'domcontentloaded',timeout:45000});
+  await page.locator('.page-heading h1').first().waitFor({timeout:30000});
+  await page.waitForTimeout(1500);
   // 위쪽 체험 안내 띠는 빼고 앱 부분부터 보이게
-  await page.evaluate(()=>{const bar=document.querySelector('.demo-toolbar,[class*="demo-bar"]');if(bar)bar.style.display='none';scrollTo(0,0)}).catch(()=>{});
+  await page.addStyleTag({content:'.demo-toolbar,.ast-fab,.ast-dock,[data-sonner-toaster]{display:none!important}.demo-shell{--demo-toolbar-height:0px!important;padding-top:0!important}*{animation:none!important;transition:none!important}'}).catch(()=>{});
+  await page.evaluate(()=>scrollTo(0,0)).catch(()=>{});await page.waitForTimeout(300);
   const a=outDir+'/screen-1.png';await page.screenshot({path:a});shots.push(a);
   // 한 단계 더: 급여는 계산 근거 열기, 근무표는 주간 보기, 나머지는 아래로 조금 내리기
   if(screen==='payroll'&&await page.locator('button:has-text("계산 근거")').count()){await page.locator('button:has-text("계산 근거")').first().click();await page.waitForTimeout(700)}

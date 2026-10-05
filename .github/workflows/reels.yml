@@ -1,6 +1,7 @@
 name: 인스타 릴스 자동 올리기
 
 # 매일 저녁 6시(한국 시간)에 노무 상식·사용법 주제 하나로 릴스를 만들어 올린다.
+# 카드마다 무료 AI 목소리(MeloTTS 한국어) 나레이션과 실제 앱 화면(체험 화면)을 넣는다. 목소리 준비에 실패하면 배경음만.
 # 인스타 연결 정보(IG_USER_ID, IG_ACCESS_TOKEN)가 없으면 영상만 만들어 실행 결과 파일로 남긴다.
 on:
   schedule:
@@ -26,7 +27,7 @@ permissions:
 jobs:
   reel:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -40,6 +41,25 @@ jobs:
           fc-list :lang=ko | head -1
           npm install --no-save --no-audit --no-fund playwright@1.56.0 >/dev/null
           timeout 600 npx playwright install --with-deps chromium >/dev/null
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: 목소리 모델 캐시
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.cache/huggingface
+          key: melotts-v1
+      - name: 목소리 모델 준비 (MeloTTS · 무료)
+        continue-on-error: true
+        timeout-minutes: 20
+        run: |
+          pip install -q torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+          pip install -q git+https://github.com/myshell-ai/MeloTTS.git
+          python -m unidic download >/dev/null
+          python -c "import nltk;[nltk.download(x,quiet=True) for x in ['averaged_perceptron_tagger','averaged_perceptron_tagger_eng','cmudict']]"
+          python -c "from melo.api import TTS" && echo "REEL_PYTHON=$(which python)" >> "$GITHUB_ENV"
       - name: 릴스 만들기
         run: |
           if [ -n "${{ github.event.inputs.index }}" ]; then node scripts/reels/make.mjs --index "${{ github.event.inputs.index }}" --out reel-out; else node scripts/reels/make.mjs --out reel-out; fi

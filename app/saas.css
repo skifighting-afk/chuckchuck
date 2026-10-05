@@ -90,3 +90,5 @@ html.large-text .saas-shell main,html.large-text .t-work,html.large-text [role=d
 .saas-account .try-first{margin:24px 0}
 .try-links a{display:inline-flex;align-items:center;min-height:44px}
 .footer-insta{display:inline-flex;align-items:center;min-height:44px;font-weight:700;color:#12634b}
+/* 대화창 안 넓은 표가 창 자체를 넓히지 않게(휴대폰에서 금액·제목이 잘리던 문제) */
+.t-dialog{overflow-x:hidden}.t-dialog>*,.t-modalbody,.pay-basis{min-width:0;max-width:100%}
