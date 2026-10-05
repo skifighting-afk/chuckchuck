@@ -22,6 +22,9 @@ assert.equal((await call(null,null,'/api/share?t='+token)).status,410,'끈 링�
 const c2=await call('sharer',{action:'create',runKey:'2026-09:b'}),t2=new URL(c2.data.url).searchParams.get('t');
 await env.DB.prepare("UPDATE accountant_shares SET expires_at='2000-01-01T00:00:00Z' WHERE revoked_at IS NULL").run();
 assert.equal((await call(null,null,'/api/share?t='+t2)).status,410,'7일 지난 링크는 못 엶');
+await env.DB.prepare("INSERT INTO support_tickets(id,user_id,role,category,body,created_at) VALUES('old-t','u','회원','기타','오래된 문의','2020-01-01T00:00:00.000Z')").run();
+const pr=(await q('SELECT purge_expired() AS r').first()).r;const purged=typeof pr==='string'?JSON.parse(pr):pr;
+assert.ok(purged.accountant_shares>=1&&purged.support_tickets>=1,'매일 정리: 끝난 지 30일 지난 링크, 3년 지난 문의 삭제');
 await env.DB.prepare('DELETE FROM accountant_shares').run();await env.DB.prepare('DELETE FROM stores WHERE owner=?').bind(ownerId).run();
 console.log('PASS: 세무사 공유 링크 (확정 급여만·끄기·만료·열람 기록·토큰 해시만 저장).');
 await closeAll();

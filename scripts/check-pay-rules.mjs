@@ -606,7 +606,7 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('이전 판 목록에 지금 판이 있음',TERMS.history.some(h=>h.version===TERMS.version)&&PRIVACY.history.some(h=>h.version===PRIVACY.version));
  ok('처리위탁 조항은 #processing',PRIVACY.sections.some(s=>s.id==='processing'));
  const text=JSON.stringify(PRIVACY.sections);
- for(const w of ['Supabase','Resend','국외 이전','보호책임자','휴가 증빙','결제 기록','118'])ok('개인정보 처리방침에 '+w,text.includes(w));
+ for(const w of ['Supabase','Resend','국외 이전','보호책임자','휴가 증빙','결제 기록','118','제3자 제공','파기 절차','파기 방법','자동화된 결정','쿠키','안전성 확보','privacy@supabase.com','거부 방법'])ok('개인정보 처리방침에 '+w,text.includes(w));
  ok('검토 전이면 표시',!TERMS.reviewed?legalMarkdown(TERMS).includes('법률 검토 전'):true);
  ok('운영자 정보 9줄, 빈 값은 확인 필요',operatorLines().length===9&&operatorLines({...OPERATOR,company:''}).some(([k,v])=>k==='상호'&&v==='확인 필요'));
  ok('빠진 항목 목록',operatorMissing({...OPERATOR,company:'척척',representative:''}).includes('대표자')&&!operatorMissing({...OPERATOR,company:'척척'}).includes('상호'));

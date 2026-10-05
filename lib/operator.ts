@@ -11,7 +11,7 @@ export const OPERATOR = {
   phone: '',              // 고객 문의 전화
   email: '',              // 고객 문의 이메일
   privacyOfficer: {name: '', position: '', contact: ''}, // 개인정보 보호책임자
-  hosting: 'Supabase Inc.(서버·데이터베이스, 서울 리전) · GitHub Inc.(화면 파일)',
+  hosting: 'Supabase Pte. Ltd.(서버·데이터베이스, 서울 리전) · GitHub Inc.(화면 파일)',
 } as const;
 export const PENDING = '확인 필요';
 export const show = (v: string) => v.trim() || PENDING;
