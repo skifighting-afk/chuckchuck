@@ -101,17 +101,28 @@ export type Action=
  {type:'go',target:Target,label:string}|
  {type:'qr',label:string}|
  {type:'link',href:string,label:string};
-export type Reply={lines:string[],actions:Action[],tone?:'red'|'amber'|'ok'};
+export type Memo={employeeId?:string,pending?:string,lastVerb?:string};
+export type Reply={lines:string[],actions:Action[],tone?:'red'|'amber'|'ok',memo?:Memo};
 const dlabel=(d:string)=>`${Number(d.slice(5,7))}월 ${Number(d.slice(8))}일(${'일월화수목금토'[new Date(d+'T00:00:00Z').getUTCDay()]})`;
 
 /** 사장님 말 → 답과 실행할 일. faq는 화면이 넘겨 준 자주 묻는 질문(없으면 생략). */
-export function reply(text:string,s:Team,branch:string,date:string,now=Date.now(),faq:{q:string,a:string}[]=[]):Reply{
+export function reply(text:string,s:Team,branch:string,date:string,now=Date.now(),faq:{q:string,a:string}[]=[],memo:Memo={}):Reply{
  const es=s.employees.filter(e=>e.branchId===branch&&e.status!=='퇴사'),ids=new Set(es.map(e=>e.id));
- const p:Parsed=parse(text,es.map(e=>({id:e.id,name:e.name})),date),who=es.find(e=>e.id===p.employeeId);
+ const p:Parsed=parse(text,es.map(e=>({id:e.id,name:e.name})),date);
+ // 이름을 한 글자 틀리게 쓴 경우(김예지 → 김예시): 이름만 쓴 짧은 말이면 가장 비슷한 직원으로
+ let guessed='';
+ if(!p.employeeId){const word=text.trim().replace(/(님|씨)$/,'');if(/^[가-힣]{2,4}$/.test(word)){const near=es.filter(e=>e.name.length===word.length&&[...e.name].filter((c,i)=>c!==word[i]).length===1);if(near.length===1){p.employeeId=near[0].id;p.name=near[0].name;guessed=`'${word}'를 ${near[0].name}님으로 알아들었어요.`}}}
+ // 앞 대화 기억: 이름 없이 말하면 방금 이야기한 직원, 이름만 말하면 아까 이름이 빠졌던 부탁에 붙인다.
+ const nameOnly=!!p.employeeId&&!p.wage&&!p.shift&&!p.verb&&!p.topic;
+ if(nameOnly&&memo.pending){const again=reply(memo.pending+' '+p.name,s,branch,date,now,faq,{...memo,pending:undefined});if(guessed)again.lines.unshift(guessed);return again}
+ if(!p.employeeId&&memo.employeeId&&es.some(e=>e.id===memo.employeeId)&&(p.wage||p.shift||p.verb==='payslip-send'||p.verb==='payslip-view'||p.verb==='contract'||p.topic==='pay'||p.topic==='juhu'||/그\s*(사람|친구|직원)|걔|이\s*직원/.test(text))){p.employeeId=memo.employeeId;p.name=es.find(e=>e.id===memo.employeeId)!.name;if(!p.topic&&/급여|얼마/.test(text)&&!p.wage)p.topic='pay'}
+ const who=es.find(e=>e.id===p.employeeId);
  const r:Reply={lines:[],actions:[]};
+ const done=(x:Reply)=>{x.memo={employeeId:who?.id||memo.employeeId,lastVerb:p.verb||(p.wage?'wage':p.shift?'shift':memo.lastVerb),pending:x.lines.some(l=>l.includes('이름을 같이 말해')||l.includes('이름을 말해'))?text:undefined};return x};
+ if(nameOnly&&who){if(guessed)r.lines.push(guessed);const row=calculate(s,date.slice(0,7)).find(x=>x.employeeId===who.id);r.lines.push(`${who.name}님 · ${who.payType} ${won(who.wage)}원 · 주 ${who.weeklyHours}시간 · ${who.employment} · 계약 ${who.contract.status}`);if(row)r.lines.push(`이번 달 ${row.hours.toFixed(1)}시간 일했고 실수령 ${won(row.net)}원(확정 전 포함)이에요.`);if(missing(who).length)r.lines.push('덜 채워진 정보: '+missing(who).join(', '));r.lines.push('이어서 "시급 11000", "내일 9시부터 6시", "명세서 보내줘", "계약서 써줘"처럼 말하면 이 직원으로 처리해요.');r.actions.push({type:'openPayslip',employeeId:who.id,month:date.slice(0,7),label:'명세서 보기'},{type:'link',href:'/contracts',label:'계약서 만들기·보내기'});return done(r)}
  const month=date.slice(0,7),run=(s.payrollRuns as any)[month+':'+branch],prevMonth=new Date(Date.parse(month+'-01T00:00:00Z')-86400000).toISOString().slice(0,7),prevRun=(s.payrollRuns as any)[prevMonth+':'+branch];
  if(p.wage){
-  if(who){r.lines.push(`${who.name}님 ${p.wage.payType}을 ${won(who.wage)}원 → ${won(p.wage.wage)}원으로 바꿀까요?`);{const min=ratesFor(Number(date.slice(0,4))).minimumWage;if(p.wage.payType==='시급'&&p.wage.wage<min)r.lines.push(`${date.slice(0,4)}년 최저시급(${won(min)}원)보다 낮아요. 다시 확인해 주세요.`)}r.actions.push({type:'setWage',employeeId:who.id,...p.wage,label:'임금 바꾸기'})}
+  if(who){r.lines.push(`${who.name}님 ${p.wage.payType}을 ${won(who.wage)}원 → ${won(p.wage.wage)}원으로 바꿀까요?`);{const min=ratesFor(Number(date.slice(0,4))).minimumWage;if(p.wage.payType==='시급'&&p.wage.wage<min)r.lines.push(`${date.slice(0,4)}년 최저시급(${won(min)}원)보다 낮아요. 다시 확인해 주세요.`)}r.actions.push({type:'setWage',employeeId:who.id,...p.wage,label:'임금 바꾸기'});if(memo.lastVerb==='contract'||/계약/.test(text)){r.lines.push('임금을 바꾼 뒤 계약서를 만들면 이 금액이 계약서에 들어가요.');r.actions.push({type:'link',href:'/contracts',label:'계약서 만들기·보내기'})}}
   else{const nm=/([가-힣]{2,4})\s*(?:님|씨)?\s*(?:시급|일급|월급|일당)/.exec(text)?.[1];if(nm){r.lines.push(`'${nm}'님은 아직 직원 목록에 없어요. 이 조건으로 새 직원 등록 화면을 열까요?`);r.actions.push({type:'register',name:nm,...p.wage,label:'새 직원 등록하기'})}else r.lines.push('누구의 임금인지 이름을 같이 말해 주세요. 예: 김민지 시급 10500')}
  }
  if(p.shift){
@@ -127,7 +138,7 @@ export function reply(text:string,s:Team,branch:string,date:string,now=Date.now(
  if(p.verb==='contract'){r.lines.push(who?`${who.name}님 전자근로계약서를 만들고 서명 요청을 보낼 수 있어요. 입력된 근로조건이 그대로 들어가요.`:'전자근로계약서 화면에서 직원을 고르면 입력된 근로조건으로 계약서가 만들어져요.');r.actions.push({type:'link',href:'/contracts',label:'계약서 만들기·보내기'})}
  if(p.verb==='qr'){r.lines.push('매장 출퇴근 QR을 띄울게요. 직원은 이 QR을 찍어야 출근·퇴근·휴게가 기록돼요.');r.actions.push({type:'qr',label:'QR 띄우기'})}
  if(p.verb==='register'){r.lines.push('새 직원은 가입 링크를 보내면 직원이 직접 정보를 넣고, 사장님은 승인함에서 수락만 하면 돼요. 직접 입력할 수도 있어요.');r.actions.push({type:'go',target:'employees',label:'직원 관리 열기'})}
- if(r.lines.length)return r;
+ if(r.lines.length)return done(r);
  const tol=((s.settings as any).attendanceTolerance||'normal'),f=checkDay(date,s.shifts.filter(x=>ids.has(x.employeeId)),s.attendance.filter(a=>ids.has(a.employeeId)),tol,now),board=todayBoard(s,branch,date,f,now,tol==='lenient'?10:tol==='strict'?0:5);
  switch(p.topic){
   case 'working':{const w=board.rows.filter(x=>['working','late','extra'].includes(x.status)),left=board.rows.filter(x=>['planned','noshow'].includes(x.status));
@@ -139,8 +150,8 @@ export function reply(text:string,s:Team,branch:string,date:string,now=Date.now(
   case 'schedule':{const nextMon=addDays(mondayOf(date),7),n=s.shifts.filter(x=>ids.has(x.employeeId)&&x.date>=nextMon&&x.date<=addDays(nextMon,6)).length;r.lines.push(n?`다음 주 근무 ${n}개가 잡혀 있어요.`:'다음 주 근무표가 비어 있어요. 지난주 복사로 채울 수 있어요.');r.actions.push({type:'go',target:'schedule',label:'근무표 열기'});break}
   case 'leave':{r.lines.push('휴가와 대타·교대 요청은 직원이 올리면 휴가·공지 화면에서 승인해요. 승인하면 근무표가 바뀌어요.');r.actions.push({type:'go',target:'operations',label:'휴가·공지 열기'});break}
   case 'analyze':{const a=analyze(s,branch,date,now);r.lines.push(...a.map(x=>x.text));const t=a.find(x=>x.target);if(t)r.actions.push({type:'go',target:t.target!,label:'관련 화면 열기'});break}
-  case 'help':r.lines.push('이렇게 말해 보세요.','· 김민지 시급 10500','· 김민지 내일 9시부터 6시 근무','· 김민지 명세서 보내줘 / 명세서 다 보내줘','· 오늘 누가 일해? · 누가 지각했어?','· 이번 달 인건비 · 김민지 이번 달 급여','· 분석해줘 · QR 띄워줘');break;
+  case 'help':r.lines.push('이렇게 말해 보세요.','· 김민지 시급 10500','· 김민지 내일 9시부터 6시 근무','· 김민지 명세서 보내줘 / 명세서 다 보내줘','· 오늘 누가 일해? · 누가 지각했어?','· 이번 달 인건비 · 김민지 이번 달 급여','· 분석해줘 · QR 띄워줘','한 번 말한 직원은 기억해서, 다음엔 이름 없이 "시급 11000"처럼 말해도 돼요.');break;
  }
  if(!r.lines.length){const hits=searchAnswers(faq,text,2);if(hits.length)for(const h of hits)r.lines.push(h.q+' — '+h.a);else r.lines.push('그 말은 아직 잘 모르겠어요. "도움말"이라고 쓰면 제가 할 수 있는 일을 알려 드려요.')}
- return r;
+ return done(r);
 }

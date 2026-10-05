@@ -3,7 +3,7 @@
 // 대화형 AI를 부르지 않고 lib/assistant.ts 규칙으로 읽고 답한다.
 import {useEffect,useMemo,useRef,useState} from 'react';
 import {type Team,today} from '../lib/team-model';
-import {assistantBrief,reply,type Action,type Reply} from '../lib/assistant';
+import {assistantBrief,reply,type Action,type Reply,type Memo} from '../lib/assistant';
 import {type Target} from '../lib/close-check';
 
 type Msg={id:number,from:'me'|'bot',lines:string[],actions?:Action[],done?:Record<number,string>,tone?:string};
@@ -11,14 +11,14 @@ const CHIPS=['오늘 누가 일해?','누가 지각했어?','이번 달 인건�
 const PAGE_OF:Record<Target,string>={attendance:'출퇴근 기록',employees:'직원 관리',operations:'휴가·공지',contracts:'근로계약서',payroll:'급여·명세서',schedule:'근무 스케줄',reports:'인건비 리포트'};
 
 export function AssistantDock({state,branch,page,run}:{state:Team,branch:string,page:string,run:(a:Action)=>Promise<string>}){
- const [open,setOpen]=useState(false),[q,setQ]=useState(''),[msgs,setMsgs]=useState<Msg[]>([]),[busy,setBusy]=useState(-1),faq=useRef<{q:string,a:string}[]>([]),log=useRef<HTMLDivElement>(null),seq=useRef(1);
+ const [open,setOpen]=useState(false),[q,setQ]=useState(''),[msgs,setMsgs]=useState<Msg[]>([]),[busy,setBusy]=useState(-1),faq=useRef<{q:string,a:string}[]>([]),log=useRef<HTMLDivElement>(null),seq=useRef(1),memo=useRef<Memo>({});
  const brief=useMemo(()=>assistantBrief(state,branch,page,today()).slice(0,4),[state,branch,page]);
  const urgent=brief.filter(b=>b.tone==='red'||b.tone==='amber').length;
  useEffect(()=>{log.current?.scrollTo({top:log.current.scrollHeight,behavior:'smooth'})},[msgs]);
  useEffect(()=>{if(!open)return;const k=(e:KeyboardEvent)=>{if(e.key==='Escape')setOpen(false)};addEventListener('keydown',k);return()=>removeEventListener('keydown',k)},[open]);
  const ask=async(text:string)=>{const t=text.trim();if(!t)return;setQ('');
   if(!faq.current.length){try{const {FAQ}=await import('../lib/faq');faq.current=FAQ.flatMap(g=>g.items)}catch{}}
-  const r:Reply=reply(t,state,branch,today(),Date.now(),faq.current);
+  const r:Reply=reply(t,state,branch,today(),Date.now(),faq.current,memo.current);memo.current=r.memo||{};
   setMsgs(m=>[...m,{id:seq.current++,from:'me',lines:[t]},{id:seq.current++,from:'bot',lines:r.lines,actions:r.actions,done:{},tone:r.tone}]);
  };
  const act=async(m:Msg,i:number)=>{const a=m.actions![i];setBusy(m.id*100+i);try{const res=await run(a);setMsgs(list=>list.map(x=>x.id===m.id?{...x,done:{...x.done,[i]:res||'했어요.'}}:x))}finally{setBusy(-1)}};

@@ -967,3 +967,17 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('분석해줘',reply('분석해줘',t,a.branchId,d,now).lines.length>=2);
  console.log('PASS: 척척 비서 말 알아듣기·분석.');
 }
+// 척척 비서: 앞 대화 기억
+{
+ const {reply}=await import('../dist/server/assistant.js');
+ const t=normalizeTeam(null);delete t.legacy;const [a]=t.employees;t.employees=[{...a,id:'e1',name:'김예시',status:'재직',payType:'시급',wage:10320}];t.shifts=[];t.attendance=[];t.payrollRuns={};
+ const d='2026-10-05',now=Date.parse(d+'T14:00:00+09:00');
+ let r=reply('김예시 근로계약서 작성',t,a.branchId,d,now);ok('계약서 말한 직원 기억',r.memo.employeeId==='e1'&&r.memo.lastVerb==='contract');
+ r=reply('시급 12000원으로 만들어줘',t,a.branchId,d,now,[],r.memo);ok('이름 없이 말해도 방금 그 직원',r.actions[0].type==='setWage'&&r.actions[0].employeeId==='e1'&&r.actions[0].wage===12000);
+ ok('계약서 이어서 만들기 버튼',r.actions.some(x=>x.type==='link'&&x.href==='/contracts'));
+ r=reply('시급 12000',t,a.branchId,d,now);ok('기억 없으면 이름 물어봄',r.memo.pending==='시급 12000');
+ const r2=reply('김예지',t,a.branchId,d,now,[],r.memo);ok('이름만 답하면 아까 부탁 처리(한 글자 틀려도)',r2.actions[0]?.type==='setWage'&&r2.lines[0].includes('김예시님으로 알아들었어요'));
+ const r3=reply('김예시',t,a.branchId,d,now);ok('이름만 쓰면 직원 요약',r3.lines[0].includes('시급 10,320원'));
+ ok('그 직원 명세서',reply('그 직원 명세서 보여줘',t,a.branchId,d,now,[],{employeeId:'e1'}).actions[0].type==='openPayslip');
+ console.log('PASS: 척척 비서 앞 대화 기억.');
+}
