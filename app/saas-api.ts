@@ -81,7 +81,7 @@ export async function accountApi(request:Request,env:Env){
    state.employees=[];state.shifts=[];state.attendance=[];state.adjustments={};state.payrollRuns={};state.requests=[];delete state.legacy;
    state.settings={accountantName:'',accountantEmail:'',autoPayslip:false,autoContract:false,autoAccountant:false,employerName:b.ownerName.trim(),fivePlus:false};
    const now=new Date().toISOString();
-   const next={...state,_account:{industry:b.industry||null,plan:chosen,storeSlots:branches,months,status:'trialing',createdAt:now,trialEndsAt:new Date(Date.now()+TRIAL_DAYS*86400000).toISOString(),trialUsed:true,acknowledgedAt:now,noticeVersion:'pricing-2026-10',dpa:{version:LEGAL.dpa.version,agreedAt:now,by:id},autoRenew:false,...(bizCheck?{bizCheck}:{})},_audit:[],_outbox:[],_members:[],_invitations:[],_manuals:state?._manuals?.length?state._manuals:starterManuals(b.industry,now)};
+   const next={...state,_account:{industry:b.industry||null,plan:chosen,storeSlots:branches,months,status:'trialing',createdAt:now,trialEndsAt:new Date(Date.now()+TRIAL_DAYS*86400000).toISOString(),trialUsed:true,acknowledgedAt:now,noticeVersion:'pricing-2026-10',dpa:{version:LEGAL.dpa.version,agreedAt:now,by:id},autoRenew:false,...(bizCheck?{bizCheck}:{})},_audit:[],_outbox:[],_members:[],_invitations:[],_manuals:(state as any)?._manuals?.length?(state as any)._manuals:starterManuals(b.industry,now)};
    const result=await env.DB.prepare('INSERT OR IGNORE INTO stores(owner,data,version,updated_at) VALUES(?,?,?,?)').bind(id,JSON.stringify(next),1,now).run();
    if(!result.meta.changes)return json({error:'이미 매장이 생성되었습니다. 새로고침해 주세요.'},409);
    return json(view(next),201);
