@@ -406,3 +406,54 @@ summary{cursor:pointer;padding-block:4px}
 .att-day-schedule .panel-heading{flex-wrap:wrap;gap:10px}.att-day-schedule .panel-heading h2{white-space:nowrap}.att-qr-tip{padding:0 20px}
 .today-scale{color:#56665d}.att-day-schedule .t-inline button{opacity:1}.att-day-schedule .t-inline .secondary{color:#13261d;background:#fff;border-color:#9fb3a7}.att-day-schedule .t-inline .primary{color:#fff;background:#15643f}.ledger-why summary{min-height:48px}
 .att-day-schedule .t-inline button{font-size:15px}
+.clock-break{margin:0;color:#e4ede7;font-size:15px;line-height:1.6}
+.break-pick{background:var(--ck-ink2);border-radius:16px;padding:14px;display:grid;gap:10px}.break-pick p{margin:0;color:#e4ede7;font-size:15px}
+.break-pick div{display:flex;flex-wrap:wrap;gap:8px}.break-pick button{background:#fff;color:var(--ck-ink);border-radius:12px;min-height:48px;padding:0 18px;font-weight:800;font-size:16px}
+.break-pick button:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.staff-swap{display:flex;flex-wrap:wrap;align-items:center;gap:10px;background:var(--ck-soft);border-radius:16px;padding:14px 16px;margin:16px 0}.staff-swap p{flex:1 1 220px;margin:0;font-size:15px;color:var(--ck-ink)}
+.staff-swap button,.staff-next-swap{background:var(--ck-green);color:#fff;border-radius:12px;min-height:48px;padding:0 18px;font-weight:800}
+.staff-next-swap{width:100%;margin-top:6px;background:var(--ck-soft);color:var(--ck-green)}
+.staff-account{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.staff-account a{display:inline-flex;align-items:center;min-height:48px;padding:0 18px;border-radius:12px;background:#fff;border:1px solid #cfdcd4;color:var(--ck-ink);text-decoration:none;font-weight:700}.staff-account a.logout{color:#a12a2a;border-color:#efc4c4}
+.sidebar-logout{display:flex;align-items:center;justify-content:center;min-height:44px;margin:8px 8px 4px;border-radius:10px;border:1px solid #d8e2dc;color:#a12a2a;text-decoration:none;font-weight:700;font-size:14px;background:#fff}
+/* 척척 비서 패널: PC는 오른쪽 고정, 휴대폰은 버튼으로 열기 */
+.ast-dock{position:fixed;top:0;right:0;bottom:0;width:380px;z-index:40;background:#f4f8f5;border-left:1px solid var(--ck-line);display:flex;flex-direction:column;color:var(--ck-ink)}
+.demo-shell .ast-dock{top:var(--demo-toolbar-height,0px)}
+.ast-head{display:flex;align-items:center;gap:12px;padding:14px 16px;background:#fff;border-bottom:1px solid var(--ck-line)}
+.ast-head img{border-radius:14px;background:var(--ck-soft);object-fit:contain}.ast-head div{display:grid;flex:1}.ast-head b{font-size:18px}.ast-head small{font-size:13px;color:var(--ck-muted)}
+.ast-close{display:none;min-height:44px;padding:0 14px;border-radius:10px;background:var(--ck-soft);color:var(--ck-green);font-weight:700}
+.ast-log{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;overscroll-behavior:contain}
+.ast-msg{max-width:92%;border-radius:16px;padding:10px 14px;font-size:15px;line-height:1.6}
+.ast-msg p{margin:0}.ast-msg p+p{margin-top:4px}
+.ast-msg.bot{align-self:flex-start;background:#fff;border:1px solid var(--ck-line);border-top-left-radius:4px}
+.ast-msg.me{align-self:flex-end;background:var(--ck-green);color:#fff;border-top-right-radius:4px}
+.ast-msg.amber{border-color:#f2d4b3}
+.ast-title{font-weight:800;font-size:14px;color:var(--ck-green);margin-bottom:6px!important}
+.ast-brief{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.ast-brief li{position:relative;padding-left:16px;font-size:14px;line-height:1.6}
+.ast-brief li::before{content:'';position:absolute;left:0;top:8px;width:8px;height:8px;border-radius:4px;background:#9fb0a6}
+.ast-brief li.ok::before{background:#2f8f5b}.ast-brief li.amber::before{background:#e38a2b}.ast-brief li.red::before{background:#c23b3b}
+.ast-brief li button{display:block;margin-top:4px;background:var(--ck-soft);color:var(--ck-green);border-radius:8px;padding:6px 10px;min-height:36px;font-size:13px;font-weight:700}
+.ast-acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.ast-acts button{min-height:44px;padding:0 14px;border-radius:10px;background:var(--ck-soft);color:var(--ck-green);font-weight:800;font-size:14px}
+.ast-acts button.primary{background:var(--ck-green);color:#fff}.ast-acts button:disabled{opacity:.6}
+.ast-done{font-size:14px;font-weight:700;color:var(--ck-green)}
+.ast-chips{display:flex;gap:6px;overflow-x:auto;padding:8px 14px;border-top:1px solid var(--ck-line);background:#fff;scrollbar-width:none}
+.ast-chips button{flex:none;min-height:40px;padding:0 12px;border-radius:999px;border:1px solid #cfdcd4;background:#fff;color:var(--ck-ink);font-size:14px}
+.ast-input{display:flex;gap:8px;padding:10px 14px calc(12px + env(safe-area-inset-bottom));background:#fff}
+.ast-input input{flex:1;min-width:0;min-height:48px;border:1px solid #cfdcd4;border-radius:12px;padding:0 12px;font-size:16px}
+.ast-input button{min-height:48px;padding:0 16px;border-radius:12px;background:var(--ck-green);color:#fff;font-weight:800}
+.ast-dock button:focus-visible,.ast-dock input:focus-visible,.ast-fab:focus-visible{outline:3px solid var(--ck-green);outline-offset:2px}
+.ast-fab{display:none}
+.ast-scrim{display:none}
+@media(min-width:1200px){body:has(.ast-dock){padding-right:380px}}
+@media(max-width:1199px){
+ .ast-dock{width:min(420px,100%);box-shadow:-8px 0 24px rgba(16,37,27,.18);display:none}
+ .ast-dock.open{display:flex;animation:ast-in .18s ease-out}
+ .ast-close{display:inline-flex;align-items:center}
+ .ast-fab{display:flex;align-items:center;gap:8px;position:fixed;right:16px;bottom:24px;z-index:35;background:#fff;border:2px solid var(--ck-green);border-radius:999px;padding:4px 16px 4px 4px;min-height:48px;box-shadow:0 4px 14px rgba(16,37,27,.18);font-weight:800;color:var(--ck-green)}
+ .ast-fab img{border-radius:50%;background:var(--ck-soft)}.ast-fab b{background:#c23b3b;color:#fff;border-radius:999px;font-size:12px;padding:1px 7px}
+ .ast-scrim{display:block;position:fixed;inset:0;z-index:39;background:rgba(16,37,27,.3)}
+}
+@media(max-width:767px){.ast-fab{bottom:calc(76px + env(safe-area-inset-bottom))}}
+@keyframes ast-in{from{transform:translateX(24px);opacity:.6}to{transform:none;opacity:1}}@media(prefers-reduced-motion:reduce){.ast-dock.open{animation:none}}
+.ast-chips button{min-height:44px}.ast-brief li button{min-height:44px;padding:8px 12px}.assistant-brief li button{min-height:44px}.month-cell{min-height:58px}

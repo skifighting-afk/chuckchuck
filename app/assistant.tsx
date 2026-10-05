@@ -1,23 +1,38 @@
 'use client';
-// 척척 비서: 화면마다 '지금 볼 것'(가게 기록으로 계산) + 쓰는 법 + 질문 검색(자주 묻는 질문).
-import {useMemo,useState} from 'react';
+// 척척 비서(오른쪽 패널): 지금 화면에서 볼 것 + 가게 기록 분석 + 말로 시키기(확인 카드 → 실행).
+// 대화형 AI를 부르지 않고 lib/assistant.ts 규칙으로 읽고 답한다.
+import {useEffect,useMemo,useRef,useState} from 'react';
 import {type Team,today} from '../lib/team-model';
-import {assistantBrief,searchAnswers} from '../lib/assistant';
+import {assistantBrief,reply,type Action,type Reply} from '../lib/assistant';
 import {type Target} from '../lib/close-check';
 
-export function Assistant({state,branch,page,help,go,home=false}:{state:Team,branch:string,page:string,help?:string,go:(t:Target)=>void,home?:boolean}){
- const brief=useMemo(()=>assistantBrief(state,branch,page,today()),[state,branch,page]);
- const [q,setQ]=useState(''),[answers,setAnswers]=useState<{q:string,a:string,link?:[string,string]}[]|null>(null),[asked,setAsked]=useState('');
+type Msg={id:number,from:'me'|'bot',lines:string[],actions?:Action[],done?:Record<number,string>,tone?:string};
+const CHIPS=['오늘 누가 일해?','누가 지각했어?','이번 달 인건비','분석해줘','명세서 다 보내줘','도움말'];
+const PAGE_OF:Record<Target,string>={attendance:'출퇴근 기록',employees:'직원 관리',operations:'휴가·공지',contracts:'근로계약서',payroll:'급여·명세서',schedule:'근무 스케줄',reports:'인건비 리포트'};
+
+export function AssistantDock({state,branch,page,run}:{state:Team,branch:string,page:string,run:(a:Action)=>Promise<string>}){
+ const [open,setOpen]=useState(false),[q,setQ]=useState(''),[msgs,setMsgs]=useState<Msg[]>([]),[busy,setBusy]=useState(-1),faq=useRef<{q:string,a:string}[]>([]),log=useRef<HTMLDivElement>(null),seq=useRef(1);
+ const brief=useMemo(()=>assistantBrief(state,branch,page,today()).slice(0,4),[state,branch,page]);
  const urgent=brief.filter(b=>b.tone==='red'||b.tone==='amber').length;
- const ask=async(e:React.FormEvent)=>{e.preventDefault();const k=q.trim();if(!k)return;const {FAQ}=await import('../lib/faq');setAsked(k);setAnswers(searchAnswers(FAQ.flatMap(g=>g.items),k))};
- const target:Record<Target,string>={attendance:'출퇴근 기록',employees:'직원 관리',operations:'휴가·공지',contracts:'근로계약서',payroll:'급여·명세서',schedule:'근무 스케줄',reports:'인건비 리포트'};
- return <details className={'assistant'+(home?' home':'')} open={home||urgent>0||undefined}>
-  <summary><img src="/cheokcheoki-guide.png" alt="" width="40" height="40"/><span><b>척척 비서</b><small>{urgent?`지금 확인할 것 ${urgent}건`:'가게 기록을 읽고 알려 드려요'}</small></span></summary>
-  <div className="assistant-body">
-   <ul className="assistant-brief">{brief.map((b,i)=><li key={i} className={b.tone||''}><span>{b.text}</span>{b.target&&target[b.target]!==page&&<button type="button" onClick={()=>go(b.target!)}>{target[b.target]} 열기</button>}</li>)}</ul>
-   {help&&<details className="assistant-help"><summary>이 화면 쓰는 법</summary><p>{help}</p></details>}
-   <form className="assistant-ask" onSubmit={ask}><label htmlFor={'ask-'+page} className="sr-only">비서에게 물어보기</label><input id={'ask-'+page} type="search" value={q} onChange={e=>{setQ(e.target.value);if(!e.target.value)setAnswers(null)}} placeholder="물어보세요 · 예: 주휴수당, 대타, QR 잘못 찍음"/><button type="submit">묻기</button></form>
-   {answers&&<div className="assistant-answers" role="status">{answers.length?answers.map(a=><article key={a.q}><b>{a.q}</b><p>{a.a}</p>{a.link&&<a href={a.link[0]}>{a.link[1]}</a>}</article>):<p>‘{asked}’에 맞는 답을 찾지 못했어요. 다른 말로 물어보거나 <a href="/support">문의하기</a>로 남겨 주세요.</p>}</div>}
-  </div>
- </details>;
+ useEffect(()=>{log.current?.scrollTo({top:log.current.scrollHeight,behavior:'smooth'})},[msgs]);
+ useEffect(()=>{if(!open)return;const k=(e:KeyboardEvent)=>{if(e.key==='Escape')setOpen(false)};addEventListener('keydown',k);return()=>removeEventListener('keydown',k)},[open]);
+ const ask=async(text:string)=>{const t=text.trim();if(!t)return;setQ('');
+  if(!faq.current.length){try{const {FAQ}=await import('../lib/faq');faq.current=FAQ.flatMap(g=>g.items)}catch{}}
+  const r:Reply=reply(t,state,branch,today(),Date.now(),faq.current);
+  setMsgs(m=>[...m,{id:seq.current++,from:'me',lines:[t]},{id:seq.current++,from:'bot',lines:r.lines,actions:r.actions,done:{},tone:r.tone}]);
+ };
+ const act=async(m:Msg,i:number)=>{const a=m.actions![i];setBusy(m.id*100+i);try{const res=await run(a);setMsgs(list=>list.map(x=>x.id===m.id?{...x,done:{...x.done,[i]:res||'했어요.'}}:x))}finally{setBusy(-1)}};
+ return <>
+  <button type="button" className="ast-fab" aria-expanded={open} aria-controls="ast-dock" onClick={()=>setOpen(true)}><img src="/cheokcheoki-guide.png" alt="" width="36" height="36"/><span>척척 비서</span>{urgent>0&&<b aria-label={`확인할 것 ${urgent}건`}>{urgent}</b>}</button>
+  <aside id="ast-dock" className={'ast-dock'+(open?' open':'')} aria-label="척척 비서">
+   <header className="ast-head"><img src="/cheokcheoki-guide.png" alt="" width="44" height="44"/><div><b>척척 비서</b><small>가게 기록을 읽고 판단해 드려요</small></div><button type="button" className="ast-close" aria-label="비서 숨기기" onClick={()=>setOpen(false)}>숨기기</button></header>
+   <div className="ast-log" ref={log} aria-live="polite">
+    <div className="ast-msg bot"><p className="ast-title">{page==='홈'?'오늘 가게':page} · 지금 볼 것</p><ul className="ast-brief">{brief.map((b,i)=><li key={i} className={b.tone||''}>{b.text}{b.target&&PAGE_OF[b.target]!==page&&<button type="button" onClick={()=>{run({type:'go',target:b.target!,label:''});setOpen(false)}}>{PAGE_OF[b.target]} 열기</button>}</li>)}</ul></div>
+    {msgs.map(m=><div key={m.id} className={'ast-msg '+m.from+(m.tone?' '+m.tone:'')}>{m.lines.map((l,i)=><p key={i}>{l}</p>)}{m.actions&&m.actions.length>0&&<div className="ast-acts">{m.actions.map((a,i)=>m.done?.[i]?<span key={i} className="ast-done" role="status">✓ {m.done[i]}</span>:<button type="button" key={i} disabled={busy>=0} className={i===0?'primary':''} onClick={()=>act(m,i)}>{busy===m.id*100+i?'하는 중…':a.label}</button>)}</div>}</div>)}
+   </div>
+   <div className="ast-chips">{CHIPS.map(c=><button type="button" key={c} onClick={()=>ask(c)}>{c}</button>)}</div>
+   <form className="ast-input" onSubmit={e=>{e.preventDefault();ask(q)}}><label htmlFor="ast-q" className="sr-only">척척 비서에게 말하기</label><input id="ast-q" value={q} onChange={e=>setQ(e.target.value)} placeholder="예: 김민지 내일 9시부터 6시 근무" autoComplete="off"/><button type="submit">보내기</button></form>
+  </aside>
+  {open&&<div className="ast-scrim" onClick={()=>setOpen(false)} aria-hidden="true"/>}
+ </>;
 }

@@ -1,7 +1,10 @@
 // 척척 비서: 화면마다 가게 데이터를 읽고 '지금 볼 것'을 짧게 알려 준다.
 // 실제 대화형 AI가 아니라 정해진 규칙으로 계산한다(같은 데이터면 늘 같은 답). 숫자는 화면과 같은 함수를 쓴다.
-import {type Team,kdate,missing,calculate} from './team-model';
-import {todayTasks,todayBoard,homeAlerts,budgetStatus,type Target} from './close-check';
+import {type Team,kdate,missing,calculate,duration} from './team-model';
+import {monthPatterns} from './attendance-check';
+import {ratesFor} from './pay-rules';
+import {parse,type Parsed} from './assistant-intents';
+import {todayTasks,todayBoard,homeAlerts,budgetStatus,plannedLabor,type Target} from './close-check';
 import {checkDay} from './attendance-check';
 
 export type Brief={text:string,tone?:'red'|'amber'|'ok',target?:Target};
@@ -58,4 +61,86 @@ export function searchAnswers<T extends {q:string,a:string}>(items:T[],query:str
  const words=query.replace(/[?？.!,]/g,' ').split(/\s+/).map(w=>w.replace(/(은|는|이|가|을|를|에|에서|으로|로|도|요|나요|까요|해요|하나요)$/,'')).filter(w=>w.length>=2);
  if(!words.length)return [];
  return items.map(i=>({i,score:words.reduce((n,w)=>n+(i.q.includes(w)?3:0)+(i.a.includes(w)?1:0),0)})).filter(x=>x.score>0).sort((a,b)=>b.score-a.score).slice(0,limit).map(x=>x.i);
+}
+
+/** 가게 기록 분석: 사장님이 판단할 거리(인건비 흐름, 주 15시간 경계, 1년 근속, 지각 반복, 52시간). */
+export function analyze(s:Team,branch:string,date:string,now=Date.now()):Brief[]{
+ const es=s.employees.filter(e=>e.branchId===branch&&e.status!=='퇴사'),ids=new Set(es.map(e=>e.id)),out:Brief[]=[];
+ if(!es.length)return out;
+ const month=date.slice(0,7),prev=new Date(Date.parse(month+'-01T00:00:00Z')-86400000).toISOString().slice(0,7);
+ const cur=calculate(s,month).filter(r=>ids.has(r.employeeId)).reduce((n,r)=>n+r.gross,0),last=calculate(s,prev).filter(r=>ids.has(r.employeeId)).reduce((n,r)=>n+r.gross,0);
+ const plan=plannedLabor(s,branch,month);
+ if(last>0){const day=Number(date.slice(8)),days=new Date(Date.UTC(Number(month.slice(0,4)),Number(month.slice(5)),0)).getUTCDate();
+  if(day>=7&&cur>0){const pace=Math.round(cur/day*days),diff=(pace-last)/last;out.push({text:`이번 달 지금까지 인건비 ${won(cur)}원(${day}일치)이에요. 이 속도면 한 달 약 ${won(pace)}원으로 지난달(${won(last)}원)보다 ${Math.abs(Math.round(diff*100))}% ${diff>=0?'많아요':'적어요'}.${diff>0.15?' 근무 시간이 늘었는지 근무표를 확인해 보세요.':''}`,tone:diff>0.15?'amber':'ok',target:'reports'})}
+  else out.push({text:`지난달 인건비는 ${won(last)}원이었어요. 이번 달은 ${day}일째라 일주일이 지나면 비교해 드릴게요. 지금 근무표대로면 약 ${won(plan)}원이 잡혀 있어요.`,tone:'ok',target:'reports'})}
+ // 이번 주 근무표 시간
+ const mon=mondayOf(date),sun=addDays(mon,6),fivePlus=!!(s.settings as any).fivePlus;
+ for(const e of es){
+  const h=s.shifts.filter(x=>x.employeeId===e.id&&x.date>=mon&&x.date<=sun).reduce((n,x)=>n+duration(x.start,x.end,x.breakMinutes),0);
+  if(h>=13&&h<15)out.push({text:`${e.name}님 이번 주 근무표가 ${h.toFixed(1)}시간이에요. 15시간을 넘기면 주휴수당이 생기고, 계속되면 퇴직금·4대보험 대상이 될 수 있어요.`,tone:'amber',target:'schedule'});
+  else if(h>52)out.push({text:`${e.name}님 이번 주 근무표가 ${h.toFixed(1)}시간이에요. 주 52시간(연장 포함)을 넘어요.${fivePlus?' 5명 이상 사업장은 법 위반이 될 수 있어요.':''}`,tone:'red',target:'schedule'});
+  else if(fivePlus&&h>40)out.push({text:`${e.name}님 이번 주 ${h.toFixed(1)}시간 → 40시간을 넘는 ${(h-40).toFixed(1)}시간은 연장근로 가산(1.5배) 대상이에요.`,tone:'amber',target:'payroll'});
+  // 1년 근속(퇴직금) 다가옴
+  if(e.joined&&e.weeklyHours>=15){const one=(Number(e.joined.slice(0,4))+1)+e.joined.slice(4,10);if(one>=date&&one<=addDays(date,30))out.push({text:`${e.name}님이 ${Number(one.slice(5,7))}월 ${Number(one.slice(8))}일이면 1년을 채워요. 주 15시간 이상이라 퇴직금 대상이 되고, 연차도 새로 생겨요.`,tone:'amber',target:'employees'})}
+ }
+ // 지각 반복
+ const pats=monthPatterns(month,s.shifts.filter(x=>ids.has(x.employeeId)),s.attendance.filter(a=>ids.has(a.employeeId)),((s.settings as any).attendanceTolerance||'normal'),now);
+ for(const p of pats.filter(p=>p.지각>=3).slice(0,2)){const n=es.find(e=>e.id===p.employeeId)?.name;out.push({text:`${n}님이 이번 달 ${p.지각}번 늦었어요(합계 ${p.lateMinutes}분)${p.repeatDay?`. 주로 ${p.repeatDay}요일이에요`:''}. 출근 시간을 다시 맞춰 보면 좋겠어요.`,tone:'amber',target:'attendance'})}
+ // 다음 주 근무표
+ const nextMon=addDays(mon,7);if(!s.shifts.some(x=>ids.has(x.employeeId)&&x.date>=nextMon&&x.date<=addDays(nextMon,6)))out.push({text:'다음 주 근무표가 아직 비어 있어요. 지난주 복사로 한 번에 채울 수 있어요.',tone:'amber',target:'schedule'});
+ if(!out.length)out.push({text:'특별히 걱정할 점은 안 보여요. 근무표·출퇴근·급여가 고르게 들어와 있어요.',tone:'ok'});
+ return out;
+}
+
+export type Action=
+ {type:'setWage',employeeId:string,payType:'시급'|'일급'|'월급',wage:number,label:string}|
+ {type:'addShift',employeeId:string,date:string,start:string,end:string,breakMinutes:number,label:string}|
+ {type:'register',name:string,payType:'시급'|'일급'|'월급',wage:number,label:string}|
+ {type:'sendPayslip',runKey:string,employeeIds:string[],label:string}|
+ {type:'openPayslip',employeeId:string,month:string,label:string}|
+ {type:'go',target:Target,label:string}|
+ {type:'qr',label:string}|
+ {type:'link',href:string,label:string};
+export type Reply={lines:string[],actions:Action[],tone?:'red'|'amber'|'ok'};
+const dlabel=(d:string)=>`${Number(d.slice(5,7))}월 ${Number(d.slice(8))}일(${'일월화수목금토'[new Date(d+'T00:00:00Z').getUTCDay()]})`;
+
+/** 사장님 말 → 답과 실행할 일. faq는 화면이 넘겨 준 자주 묻는 질문(없으면 생략). */
+export function reply(text:string,s:Team,branch:string,date:string,now=Date.now(),faq:{q:string,a:string}[]=[]):Reply{
+ const es=s.employees.filter(e=>e.branchId===branch&&e.status!=='퇴사'),ids=new Set(es.map(e=>e.id));
+ const p:Parsed=parse(text,es.map(e=>({id:e.id,name:e.name})),date),who=es.find(e=>e.id===p.employeeId);
+ const r:Reply={lines:[],actions:[]};
+ const month=date.slice(0,7),run=(s.payrollRuns as any)[month+':'+branch],prevMonth=new Date(Date.parse(month+'-01T00:00:00Z')-86400000).toISOString().slice(0,7),prevRun=(s.payrollRuns as any)[prevMonth+':'+branch];
+ if(p.wage){
+  if(who){r.lines.push(`${who.name}님 ${p.wage.payType}을 ${won(who.wage)}원 → ${won(p.wage.wage)}원으로 바꿀까요?`);{const min=ratesFor(Number(date.slice(0,4))).minimumWage;if(p.wage.payType==='시급'&&p.wage.wage<min)r.lines.push(`${date.slice(0,4)}년 최저시급(${won(min)}원)보다 낮아요. 다시 확인해 주세요.`)}r.actions.push({type:'setWage',employeeId:who.id,...p.wage,label:'임금 바꾸기'})}
+  else{const nm=/([가-힣]{2,4})\s*(?:님|씨)?\s*(?:시급|일급|월급|일당)/.exec(text)?.[1];if(nm){r.lines.push(`'${nm}'님은 아직 직원 목록에 없어요. 이 조건으로 새 직원 등록 화면을 열까요?`);r.actions.push({type:'register',name:nm,...p.wage,label:'새 직원 등록하기'})}else r.lines.push('누구의 임금인지 이름을 같이 말해 주세요. 예: 김민지 시급 10500')}
+ }
+ if(p.shift){
+  if(who){const x=p.shift,clash=s.shifts.find(y=>y.employeeId===who.id&&y.date===x.date);r.lines.push(`${who.name}님 ${dlabel(x.date)} ${x.start}–${x.end} 근무(휴게 ${x.breakMinutes}분)를 근무표에 넣을까요?${x.guessedDate?' 날짜를 말하지 않아서 오늘로 넣었어요.':''}`);if(clash)r.lines.push(`그날 이미 ${clash.start}–${clash.end} 근무가 있어요. 하나 더 넣어져요.`);r.actions.push({type:'addShift',employeeId:who.id,date:x.date,start:x.start,end:x.end,breakMinutes:x.breakMinutes,label:'근무표에 넣기'})}
+  else if(!p.wage)r.lines.push('누구의 근무인지 이름을 같이 말해 주세요. 예: 김민지 내일 9시부터 6시 근무');
+ }
+ if(p.verb==='payslip-send'){
+  const target=run?.locked?run:prevRun?.locked?prevRun:null,key=target?(target===run?month:prevMonth)+':'+branch:'';
+  if(!target){r.lines.push('확정된 급여가 없어서 보낼 명세서가 없어요. 급여를 먼저 검토·확정해 주세요.');r.actions.push({type:'go',target:'payroll',label:'급여 화면 열기'})}
+  else{const rows=(target.rows as any[]).filter(x=>!who||x.employeeId===who.id);if(!rows.length)r.lines.push(`${who?.name}님은 ${target.month} 확정 급여에 없어요.`);else{r.lines.push(`${target.month} 확정 명세서를 ${who?who.name+'님에게':`${rows.length}명 모두에게`} 직원 앱으로 보낼까요? 이미 보낸 사람에게는 다시 가지 않아요.`);r.actions.push({type:'sendPayslip',runKey:key,employeeIds:rows.map(x=>x.employeeId),label:'명세서 보내기'})}}
+ }
+ if(p.verb==='payslip-view'){if(who){r.lines.push(`${who.name}님 ${Number(month.slice(5))}월 명세서를 열게요.`);r.actions.push({type:'openPayslip',employeeId:who.id,month,label:'명세서 보기'})}else{r.lines.push('누구 명세서인지 이름을 말해 주세요. 급여 화면에서 전체를 볼 수도 있어요.');r.actions.push({type:'go',target:'payroll',label:'급여 화면 열기'})}}
+ if(p.verb==='contract'){r.lines.push(who?`${who.name}님 전자근로계약서를 만들고 서명 요청을 보낼 수 있어요. 입력된 근로조건이 그대로 들어가요.`:'전자근로계약서 화면에서 직원을 고르면 입력된 근로조건으로 계약서가 만들어져요.');r.actions.push({type:'link',href:'/contracts',label:'계약서 만들기·보내기'})}
+ if(p.verb==='qr'){r.lines.push('매장 출퇴근 QR을 띄울게요. 직원은 이 QR을 찍어야 출근·퇴근·휴게가 기록돼요.');r.actions.push({type:'qr',label:'QR 띄우기'})}
+ if(p.verb==='register'){r.lines.push('새 직원은 가입 링크를 보내면 직원이 직접 정보를 넣고, 사장님은 승인함에서 수락만 하면 돼요. 직접 입력할 수도 있어요.');r.actions.push({type:'go',target:'employees',label:'직원 관리 열기'})}
+ if(r.lines.length)return r;
+ const tol=((s.settings as any).attendanceTolerance||'normal'),f=checkDay(date,s.shifts.filter(x=>ids.has(x.employeeId)),s.attendance.filter(a=>ids.has(a.employeeId)),tol,now),board=todayBoard(s,branch,date,f,now,tol==='lenient'?10:tol==='strict'?0:5);
+ switch(p.topic){
+  case 'working':{const w=board.rows.filter(x=>['working','late','extra'].includes(x.status)),left=board.rows.filter(x=>['planned','noshow'].includes(x.status));
+   r.lines.push(w.length?`지금 ${w.length}명 일하고 있어요: ${w.map(x=>x.name).join(', ')}.`:'지금 일하는 사람은 없어요.');if(left.length)r.lines.push(`아직 출근 전: ${left.map(x=>x.name+'('+x.start+')').join(', ')}.`);r.actions.push({type:'go',target:'attendance',label:'출퇴근 기록 보기'});break}
+  case 'alerts':{const al=homeAlerts(s,branch,date,board);if(al.length){r.lines.push(...al.slice(0,5).map(a=>a.title+' — '+a.detail));r.tone='amber'}else r.lines.push('오늘은 지각·QR 누락이 없어요.');r.actions.push({type:'go',target:'attendance',label:'출퇴근 기록 보기'});break}
+  case 'labor':{const rows=calculate(s,month).filter(x=>ids.has(x.employeeId));r.lines.push(`${Number(month.slice(5))}월 지금까지 지급 합계 ${won(rows.reduce((n,x)=>n+x.gross,0))}원, 실수령 합계 ${won(rows.reduce((n,x)=>n+x.net,0))}원이에요${run?.locked?' (확정)':' (확정 전)'}.`);r.lines.push(`근무표대로 다 일하면 이번 달 인건비는 약 ${won(plannedLabor(s,branch,month))}원이에요.`);r.actions.push({type:'go',target:'payroll',label:'급여 화면 열기'});break}
+  case 'pay':{const row=calculate(s,month).find(x=>x.employeeId===who!.id);r.lines.push(row?`${who!.name}님 ${Number(month.slice(5))}월: ${row.hours.toFixed(1)}시간 · 지급 ${won(row.gross)}원 · 공제 ${won(row.deduction)}원 · 실수령 ${won(row.net)}원${run?.locked?'':' (확정 전)'}.`:`${who!.name}님 이번 달 급여 기록이 없어요.`);r.actions.push({type:'openPayslip',employeeId:who!.id,month,label:'명세서 보기'});break}
+  case 'juhu':{const mon=mondayOf(date),h=s.shifts.filter(x=>x.employeeId===who!.id&&x.date>=mon&&x.date<=addDays(mon,6)).reduce((n,x)=>n+duration(x.start,x.end,x.breakMinutes),0);r.lines.push(`${who!.name}님 이번 주 근무표는 ${h.toFixed(1)}시간이에요. ${h>=15?'15시간 이상이라 주휴수당 대상이에요(그 주 소정근로일을 다 나오면).':'15시간 미만이라 주휴수당은 없어요.'}`);break}
+  case 'schedule':{const nextMon=addDays(mondayOf(date),7),n=s.shifts.filter(x=>ids.has(x.employeeId)&&x.date>=nextMon&&x.date<=addDays(nextMon,6)).length;r.lines.push(n?`다음 주 근무 ${n}개가 잡혀 있어요.`:'다음 주 근무표가 비어 있어요. 지난주 복사로 채울 수 있어요.');r.actions.push({type:'go',target:'schedule',label:'근무표 열기'});break}
+  case 'leave':{r.lines.push('휴가와 대타·교대 요청은 직원이 올리면 휴가·공지 화면에서 승인해요. 승인하면 근무표가 바뀌어요.');r.actions.push({type:'go',target:'operations',label:'휴가·공지 열기'});break}
+  case 'analyze':{const a=analyze(s,branch,date,now);r.lines.push(...a.map(x=>x.text));const t=a.find(x=>x.target);if(t)r.actions.push({type:'go',target:t.target!,label:'관련 화면 열기'});break}
+  case 'help':r.lines.push('이렇게 말해 보세요.','· 김민지 시급 10500','· 김민지 내일 9시부터 6시 근무','· 김민지 명세서 보내줘 / 명세서 다 보내줘','· 오늘 누가 일해? · 누가 지각했어?','· 이번 달 인건비 · 김민지 이번 달 급여','· 분석해줘 · QR 띄워줘');break;
+ }
+ if(!r.lines.length){const hits=searchAnswers(faq,text,2);if(hits.length)for(const h of hits)r.lines.push(h.q+' — '+h.a);else r.lines.push('그 말은 아직 잘 모르겠어요. "도움말"이라고 쓰면 제가 할 수 있는 일을 알려 드려요.')}
+ return r;
 }

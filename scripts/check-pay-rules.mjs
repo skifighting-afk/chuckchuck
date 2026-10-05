@@ -905,3 +905,65 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('명세서가 아닌 글은 null',parsePayslip('안녕하세요')===null);
  console.log('PASS: 명세서 칸 보기.');
 }
+// 휴게: 길이를 정하면 저절로 끝남
+{
+ const {applyClock,onBreak,settleBreak,breakEndsAt}=await import('../dist/server/team-model.js');
+ const t0=Date.parse('2026-10-05T03:00:00Z'),m=n=>t0+n*60000;
+ const a={start:new Date(t0).toISOString(),end:null,breakMinutes:0,breakStart:null,breakPlan:null};
+ ok('휴게 시작 30분',applyClock(a,'break',m(120),30)===null&&a.breakPlan===30&&onBreak(a,m(130)));
+ ok('30분 지나면 휴게 아님',!onBreak(a,m(151))&&breakEndsAt(a)===new Date(m(150)).toISOString());
+ ok('휴게 끝을 안 눌러도 퇴근 때 30분만 빠짐',applyClock(a,'out',m(480))===null&&a.breakMinutes===30&&a.end);
+ const b={start:new Date(t0).toISOString(),end:null,breakMinutes:0,breakStart:null};
+ applyClock(b,'break',m(60),60);applyClock(b,'resume',m(80));ok('일찍 끝내면 실제 쉰 20분',Math.round(b.breakMinutes)===20&&!b.breakStart);
+ applyClock(b,'break',m(200),30);ok('지난 휴게가 정리된 뒤 새 휴게 가능',applyClock(b,'break',m(300),30)===null&&Math.round(b.breakMinutes)===50);
+ const c={start:new Date(t0).toISOString(),end:null,breakMinutes:0,breakStart:null};applyClock(c,'break',m(10));ok('길이 없는 휴게는 끝낼 때까지',onBreak(c,m(500))&&applyClock(c,'break',m(20))!==null);
+ settleBreak(c,m(70));ok('정리하면 60분',Math.round(c.breakMinutes)===60);
+ ok('모르는 기록',applyClock(c,'jump',m(80))!==null);
+ console.log('PASS: 휴게 자동 끝.');
+}
+// 척척 비서: 말 알아듣기 · 분석 · 답
+{
+ const {reply,analyze}=await import('../dist/server/assistant.js');
+ const {parseTimes,parseDate,parseWage,legalBreak}=await import('../lib/assistant-intents.ts');
+ const d='2026-10-05';// 월요일
+ ok('9시부터 6시 → 09:00–18:00',JSON.stringify(parseTimes('9시부터 6시 근무'))==='{"start":"09:00","end":"18:00"}');
+ ok('오후 2시~10시',JSON.stringify(parseTimes('오후 2시~10시'))==='{"start":"14:00","end":"22:00"}');
+ ok('09:00-15:30',JSON.stringify(parseTimes('09:00-15:30'))==='{"start":"09:00","end":"15:30"}');
+ ok('9시 반부터 3시',JSON.stringify(parseTimes('9시 반부터 3시'))==='{"start":"09:30","end":"15:00"}');
+ ok('밤 10시부터 2시(다음 날)',JSON.stringify(parseTimes('밤 10시부터 2시'))==='{"start":"22:00","end":"02:00"}');
+ ok('시간 없으면 null',parseTimes('시급 10500')===null);
+ ok('내일·모레',parseDate('내일',d)==='2026-10-06'&&parseDate('모레 근무',d)==='2026-10-07');
+ ok('10월 8일 · 10/8',parseDate('10월 8일',d)==='2026-10-08'&&parseDate('10/8 9시',d)==='2026-10-08');
+ ok('수요일 · 다음주 월요일',parseDate('수요일',d)==='2026-10-07'&&parseDate('다음주 월요일',d)==='2026-10-12');
+ ok('8일(지난 날이면 다음 달)',parseDate('20일 9시부터',d)==='2026-10-20'&&parseDate('3일 근무',d)==='2026-11-03');
+ ok('날짜 없으면 null',parseDate('9시부터 6시',d)===null);
+ ok('시급·월급 만원',parseWage('시급 10,500원').wage===10500&&parseWage('월급 230만원').wage===2300000&&parseWage('일당 12만').payType==='일급');
+ ok('법정 휴게',legalBreak('09:00','18:00')===60&&legalBreak('09:00','14:00')===30&&legalBreak('09:00','12:00')===0);
+ const t=normalizeTeam(null);delete t.legacy;const [a]=t.employees;t.employees=[{...a,id:'e1',name:'김민지',status:'재직',payType:'시급',wage:10320,weeklyHours:20,joined:'2025-10-20'},{...a,id:'e2',name:'민지',status:'재직',email:'b@x.kr'}];t.shifts=[];t.attendance=[];t.payrollRuns={};
+ const now=Date.parse(d+'T14:00:00+09:00');
+ let r=reply('김민지 시급 10500',t,a.branchId,d,now);ok('임금 바꾸기 카드(긴 이름 우선)',r.actions[0].type==='setWage'&&r.actions[0].employeeId==='e1'&&r.actions[0].wage===10500);
+ r=reply('김민지 시급 9000',t,a.branchId,d,now);ok('최저시급 경고',r.lines.some(l=>l.includes('최저시급')));
+ r=reply('김민지 내일 9시부터 6시 근무',t,a.branchId,d,now);ok('근무 넣기 카드',r.actions[0].type==='addShift'&&r.actions[0].date==='2026-10-06'&&r.actions[0].end==='18:00'&&r.actions[0].breakMinutes===60);
+ r=reply('김민지 시급 11000 수요일 10시부터 3시',t,a.branchId,d,now);ok('임금+근무 한 번에',r.actions.length===2);
+ r=reply('박새로 시급 11000',t,a.branchId,d,now);ok('없는 이름은 새 직원 등록',r.actions[0].type==='register'&&r.actions[0].name==='박새로');
+ r=reply('명세서 다 보내줘',t,a.branchId,d,now);ok('확정 전이면 급여 화면으로',r.actions[0].type==='go'&&r.actions[0].target==='payroll');
+ t.payrollRuns={['2026-09:'+a.branchId]:{locked:true,month:'2026-09',rows:[{employeeId:'e1'},{employeeId:'e2'}]}};
+ r=reply('명세서 다 보내줘',t,a.branchId,d,now);ok('지난달 확정분 모두 보내기',r.actions[0].type==='sendPayslip'&&r.actions[0].employeeIds.length===2&&r.actions[0].runKey==='2026-09:'+a.branchId);
+ r=reply('김민지 명세서 보내',t,a.branchId,d,now);ok('한 명만 보내기',r.actions[0].employeeIds.length===1);
+ r=reply('김민지 명세서 보여줘',t,a.branchId,d,now);ok('명세서 보기',r.actions[0].type==='openPayslip');
+ ok('QR · 계약서',reply('QR 띄워줘',t,a.branchId,d,now).actions[0].type==='qr'&&reply('김민지 계약서 보내줘',t,a.branchId,d,now).actions[0].href==='/contracts');
+ ok('누가 일해',reply('오늘 누가 일해?',t,a.branchId,d,now).lines[0].includes('일하는 사람은 없어요'));
+ ok('인건비',reply('이번 달 인건비',t,a.branchId,d,now).lines[0].includes('10월'));
+ ok('개인 급여',reply('김민지 이번 달 급여 얼마',t,a.branchId,d,now).actions[0].type==='openPayslip');
+ ok('도움말',reply('도움말',t,a.branchId,d,now).lines.length>3);
+ ok('모르는 말',reply('ㅁㄴㅇㄹ',t,a.branchId,d,now).lines[0].includes('도움말'));
+ ok('FAQ로 답',reply('주휴수당 조건',t,a.branchId,d,now,[{q:'주휴수당 조건은?',a:'주 15시간 이상'}]).lines[0].includes('15시간'));
+ t.shifts=[{id:'s1',employeeId:'e1',date:'2026-10-06',start:'09:00',end:'23:00',breakMinutes:60},{id:'s2',employeeId:'e2',date:'2026-10-07',start:'09:00',end:'23:30',breakMinutes:30}];
+ const an=analyze(t,a.branchId,d,now);
+ ok('분석: 주 15시간 경계',an.some(x=>x.text.includes('15시간을 넘기면')));
+ ok('분석: 1년 근속 임박',an.some(x=>x.text.includes('1년을 채워요')));
+ ok('분석: 다음 주 비었음',an.some(x=>x.text.includes('다음 주 근무표')));
+ ok('주휴 질문',reply('김민지 주휴 돼?',t,a.branchId,d,now).lines[0].includes('13.0시간'));
+ ok('분석해줘',reply('분석해줘',t,a.branchId,d,now).lines.length>=2);
+ console.log('PASS: 척척 비서 말 알아듣기·분석.');
+}

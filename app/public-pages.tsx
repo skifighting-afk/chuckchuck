@@ -30,7 +30,7 @@ export function PlanCards(){
 }
 export function TryFirst(){
  return <section className="try-first" aria-labelledby="try-first-title">
-  <div><h2 id="try-first-title">가입 전에 먼저 써 보세요</h2><p>회원가입도 카드 등록도 없이, 예시 가게로 모든 화면을 눌러 볼 수 있어요. 눌러 본 내용은 저장되지 않아요.</p></div>
+  <div><h2 id="try-first-title">가입 없이 먼저 체험하기</h2><p>회원가입도 카드 등록도 없이, 예시 가게로 모든 화면을 눌러 볼 수 있어요. 눌러 본 내용은 저장되지 않아요.</p></div>
   <div className="try-tiles"><a href="/demo"><Store aria-hidden="true"/><b>사장님 화면 체험</b><span>근무표 · 출퇴근 · 급여 확정까지</span></a><a href="/demo?role=employee"><Smartphone aria-hidden="true"/><b>직원 화면 체험</b><span>출근 버튼 · 내 근무표 · 명세서</span></a></div>
   <p className="try-links"><a href="/calculator">주휴수당·인건비 계산기</a><a href="/help">자주 묻는 질문</a></p>
  </section>;
@@ -71,7 +71,7 @@ export function Landing(){
    <span className="saas-kicker">작은 가게 사장님을 위한 매장 관리</span>
    <h1>직원 출근부터 월급 정리까지, 척척.</h1>
    <p>앱 설치 없이 휴대폰으로 열어요. 오늘 누가 일하는지, 이번 달 급여가 얼마인지 한곳에서 확인해요.</p>
-   <div className="landing-cta"><a className="saas-primary" href="/signup?role=owner">{TRIAL_DAYS}일 무료로 시작하기</a><a className="saas-secondary" href="/demo">가입 없이 화면 먼저 보기</a></div>
+   <div className="landing-cta"><a className="saas-primary" href="/signup?role=owner">{TRIAL_DAYS}일 무료로 시작하기</a><a className="demo-cta" href="/demo"><b>가입 없이 먼저 체험하기</b><span>예시 가게로 바로 눌러 보기 · 30초</span></a></div>
    <small>카드 등록 없음 · 자동 결제 없음 · 직원은 <a href="/employee">여기서 가입</a></small>
   </section>
   <TryFirst/>

@@ -71,3 +71,20 @@ html.large-text .saas-shell main,html.large-text .t-work,html.large-text [role=d
 .plan-card li{padding-left:24px;position:relative}.plan-card li::before{content:'';position:absolute;left:4px;top:7px;width:10px;height:6px;border-left:2px solid #15643f;border-bottom:2px solid #15643f;transform:rotate(-45deg)}
 .plan-card>a{text-align:center;text-decoration:none}
 @media(max-width:640px){.plan-cards,.try-tiles{grid-template-columns:1fr}.try-first{padding:20px 16px}.plan-price b{font-size:38px}}
+/* 결제하기 */
+.checkout{background:#fff;border:2px solid #15643f;border-radius:20px;padding:22px;margin:24px 0;display:grid;gap:16px;max-width:640px}
+.saas-shell .checkout h2{margin:0;font-size:22px}
+.checkout-sum{margin:0;display:grid;gap:6px}.checkout-sum div{display:flex;justify-content:space-between;gap:12px;font-size:16px}.checkout-sum dt{color:#4b5d53}.checkout-sum dd{margin:0;font-weight:700}.checkout-sum .off{color:#15643f}
+.checkout-sum .total{border-top:1px solid #dfe8e2;padding-top:10px;margin-top:4px}.checkout-sum .total dd{font-size:26px;font-weight:800}
+.checkout-methods{border:0;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:8px}.checkout-methods legend{font-weight:700;margin-bottom:8px;padding:0}
+.checkout-methods label{display:inline-flex;align-items:center;gap:6px;min-height:48px;padding:0 14px;border:1px solid #cfdcd4;border-radius:12px;cursor:pointer;font-size:15px}
+.checkout-methods label.on{border:2px solid #15643f;background:#e3efe8;font-weight:700}
+.checkout-methods input{accent-color:#15643f}
+.checkout-agree{display:flex;gap:8px;align-items:flex-start;font-size:15px;line-height:1.6}.checkout-agree input{width:22px;height:22px;margin-top:2px;accent-color:#15643f}.checkout-agree a{color:#12634b}
+.checkout-wait{margin:0;background:#fdf1e4;color:#7a3a07;border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.6}
+.landing-cta .demo-cta{display:flex;flex-direction:column;justify-content:center;gap:2px;min-height:56px;padding:10px 20px;border-radius:14px;background:#e3efe8;border:2px solid #15643f;color:#13261d;text-decoration:none}
+.landing-cta .demo-cta b{font-size:17px;color:#15643f}.landing-cta .demo-cta span{font-size:13px;color:#3f5248}
+.landing-cta .demo-cta:hover{background:#d4e8dc}.landing-cta .demo-cta:focus-visible{outline:3px solid #15643f;outline-offset:2px}
+.try-tiles a{background:linear-gradient(#fff,#fff) padding-box;box-shadow:0 1px 0 #cfdcd4}
+.try-tiles a::after{content:'체험하기';grid-column:2;justify-self:start;margin-top:8px;background:#15643f;color:#fff;font-size:14px;font-weight:700;border-radius:999px;padding:6px 14px}
+.saas-account .try-first{margin:24px 0}

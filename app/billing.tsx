@@ -1,13 +1,13 @@
 'use client';
 // 작업 065·067·068·069: 체험 종료 안내, 환불·차액 안내, 세금계산서 정보와 발행 요청
 import {useState} from 'react';
-import {changeQuote,refundQuote,validBizNo,type PlanId} from '../lib/plans';
+import {changeQuote,refundQuote,validBizNo,monthlyPrice,periodPrice,plans,planId,type PlanId} from '../lib/plans';
 const won=(n:number)=>n.toLocaleString('ko-KR');
 const post=async(body:any)=>{const r=await fetch('/api/account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}),d:any=await r.json();if(!r.ok)throw Error(d.error||'저장하지 못했어요.');return d};
 export function TrialBanner({account}:{account:any}){
  const n=account?.notice;if(!n?.level)return null;
  const text=n.level==='ended'?'무료 체험이 끝났어요. 기록 조회와 내려받기는 계속 돼요.':n.level==='1d'?'무료 체험이 내일 끝나요.':`무료 체험이 ${n.daysLeft}일 남았어요.`;
- return <div className={'trial-banner '+n.level} role="status">{text} 자동으로 결제되지 않아요. <a href="/account">요금제 확인 →</a></div>
+ return <div className={'trial-banner '+n.level} role="status">{text} 자동으로 결제되지 않아요. <a href="/account#checkout-title">결제하기 →</a></div>
 }
 export function PlanChangeQuote({a,plan,branches,months}:{a:any,plan:PlanId,branches:number,months:1|6|12}){
  if(a.status!=='active'||!a.periodStart)return <p className="saas-fine">{a.status==='trialing'?'체험 중에는 차액 없이 바로 바뀌어요.':'결제를 연결하기 전이라 차액이 청구되지 않아요.'}</p>;
@@ -71,4 +71,20 @@ export function BizStatus({a,reload}:{a:any,reload:()=>Promise<void>}){
  const c=a.bizCheck,[no,setNo]=useState(c?.bizNo||''),[busy,setBusy]=useState(false),[err,setErr]=useState('');
  return <section className="auth-card t-gap"><h2>사업자 확인</h2><p>{c?<><b>{c.status}</b>{c.status==='미확인'&&c.reason?` · ${c.reason}`:''} · {c.bizNo.replace(/^(\d{3})(\d{2})(\d{5})$/,'$1-$2-$3')} · {new Date(c.checkedAt).toLocaleDateString('ko-KR')} 조회</>:'아직 사업자등록번호를 넣지 않았어요.'}</p>
   <div className="t-wrapactions"><label className="saas-field">사업자등록번호<input inputMode="numeric" maxLength={12} value={no} onChange={e=>setNo(e.target.value)}/></label><button className="saas-secondary" disabled={busy||!validBizNo(no)} onClick={async()=>{setBusy(true);setErr('');try{await post({action:'bizCheck',bizNo:no});await reload()}catch(e){setErr((e as Error).message)}finally{setBusy(false)}}}>{c?'다시 조회':'국세청에 확인'}</button></div>{err&&<p className="saas-error" role="alert">{err}</p>}</section>
+}
+
+/** 결제하기: 지금 고른 요금제로 결제할 금액과 수단. 결제대행사를 연결하기 전이라 버튼은 잠겨 있다. */
+const METHODS=[['card','신용·체크카드'],['kakaopay','카카오페이'],['naverpay','네이버페이'],['tosspay','토스페이'],['transfer','계좌이체']] as const;
+export function Checkout({a}:{a:any}){
+ const plan=(planId(a?.plan)||'pro') as PlanId,slots=Math.max(1,Number(a?.storeSlots)||1),months=([1,6,12].includes(Number(a?.months))?Number(a?.months):1) as 1|6|12;
+ const [method,setMethod]=useState('card'),[agree,setAgree]=useState(false);
+ const list=monthlyPrice(plan,slots)*months,pay=periodPrice(plan,slots,months),off=list-pay;
+ const ready=false;
+ return <section className="checkout" aria-labelledby="checkout-title"><h2 id="checkout-title">결제하기</h2>
+  <dl className="checkout-sum"><div><dt>요금제</dt><dd>{plans[plan].name}</dd></div><div><dt>지점</dt><dd>{slots}곳</dd></div><div><dt>이용 기간</dt><dd>{months}개월</dd></div><div><dt>정가</dt><dd>{won(list)}원</dd></div>{off>0&&<div><dt>{months}개월 할인</dt><dd className="off">−{won(off)}원</dd></div>}<div className="total"><dt>결제 금액 (VAT 포함)</dt><dd>{won(pay)}원</dd></div></dl>
+  <fieldset className="checkout-methods"><legend>결제 수단</legend>{METHODS.map(([v,l])=><label key={v} className={method===v?'on':''}><input type="radio" name="pay-method" value={v} checked={method===v} onChange={()=>setMethod(v)}/>{l}</label>)}</fieldset>
+  <label className="checkout-agree"><input type="checkbox" checked={agree} onChange={e=>setAgree(e.target.checked)}/><span><a href="/terms">이용약관</a>과 <a href="/refund">해지·환불 규정</a>을 확인했어요. 자동 갱신 없이 {months}개월만 결제돼요.</span></label>
+  <button type="button" className="saas-primary" disabled={!ready||!agree}>{won(pay)}원 결제하기</button>
+  {!ready&&<p className="checkout-wait" role="note">결제 연결을 준비하고 있어요. 사업자 등록과 결제대행사 계약이 끝나면 이 버튼이 열려요. 그 전까지는 결제 없이 체험을 그대로 쓸 수 있어요. 요금제·지점 수·기간은 아래에서 미리 바꿔 둘 수 있어요.</p>}
+ </section>;
 }
