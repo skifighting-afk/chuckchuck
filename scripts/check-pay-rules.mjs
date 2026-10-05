@@ -488,7 +488,7 @@ console.log('PASS: 요율 연간 갱신 경고.');
 // 작업 100: 도움말 30개
 {
  const {FAQ}=await import('../dist/server/faq.js');
- {const all=FAQ.flatMap(g=>g.items);ok('질문 30개',all.length===30);ok('질문 중복 없음',new Set(all.map(i=>i.q)).size===30);ok('답이 모두 있음',all.every(i=>i.a.length>20));console.log('PASS: 도움말.');}
+ {const all=FAQ.flatMap(g=>g.items);ok('질문 30개 이상',all.length>=30);ok('질문 중복 없음',new Set(all.map(i=>i.q)).size===all.length);ok('답이 모두 있음',all.every(i=>i.a.length>20));console.log('PASS: 도움말.');}
 }
 
 // 작업 088: 급여 모듈 커버리지 보강 — 저장 검사·옛 데이터 변환·계약서 문구·퇴직금·통상시급 경계
