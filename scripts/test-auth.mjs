@@ -25,6 +25,11 @@ export function fakeGoTrue(DB,{domain='example.invalid'}={}){
    if([...users.values()].some(u=>u.email===body.email))return reply(422,{msg:'email_exists'});
    const u={id:crypto.randomUUID(),email:body.email,password:body.password,user_metadata:body.user_metadata||{}};users.set(u.id,u);return reply(200,view(u));
   }
+  if(p.startsWith('/admin/users/')&&method==='PUT'){
+   if(apikey!==SERVICE||token!==SERVICE)return reply(403,{msg:'service role required'});
+   const u=users.get(p.slice('/admin/users/'.length));if(!u)return reply(404,{msg:'user not found'});
+   if(body.password)u.password=body.password;return reply(200,view(u));
+  }
   if(p.startsWith('/admin/users/')&&method==='DELETE'){
    if(apikey!==SERVICE||token!==SERVICE)return reply(403,{msg:'service role required'});
    const id=p.slice('/admin/users/'.length);if(!users.delete(id))return reply(404,{msg:'user not found'});

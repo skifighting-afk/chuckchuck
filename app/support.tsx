@@ -26,3 +26,13 @@ export function SupportDesk(){
   <ul className="support-list">{rows.slice(0,50).map(t=><li key={t.id}><p><b>[{t.category}]</b> {t.store||'가게 없음'} · {t.role} · <small>{when(t.created_at)}</small></p><p>{t.body}</p>
    {t.reply?<div className="support-reply"><b>보낸 답변</b><p>{t.reply}</p></div>:<div><textarea rows={3} maxLength={3000} aria-label="답변" value={reply[t.id]||''} onChange={e=>setReply({...reply,[t.id]:e.target.value})}/><button type="button" className="saas-secondary" disabled={!reply[t.id]?.trim()} onClick={async()=>{try{await post({action:'reply',id:t.id,reply:reply[t.id]});await load()}catch(e){setErr((e as Error).message)}}}>답변 보내기</button></div>}</li>)}</ul></section>;
 }
+
+/** 본사: 이메일로 임시 비밀번호 발급(사장님 비밀번호 찾기 요청 처리) */
+export function PasswordDesk(){
+ const [email,setEmail]=useState(''),[reason,setReason]=useState(''),[out,setOut]=useState(''),[err,setErr]=useState('');
+ const run=async()=>{setErr('');setOut('');if(!confirm(email+' 계정의 비밀번호를 임시 비밀번호로 바꿀까요? 연락처로 본인 확인을 마쳤나요?'))return;try{const d=await post2({action:'resetByEmail',email,reason});setOut(`${d.name}님 임시 비밀번호: ${d.tempPassword}`)}catch(e){setErr((e as Error).message)}};
+ return <section className="hq-panel" id="password"><h2>임시 비밀번호 발급</h2><p className="saas-fine">'비밀번호 찾기' 문의가 오면 적힌 번호로 전화해 가입 이메일·가게 이름이 맞는지 확인한 뒤 발급하세요. 발급 기록이 본사 접근 기록에 남아요.</p>
+  <label className="saas-field">가입 이메일<input type="email" value={email} onChange={e=>setEmail(e.target.value)}/></label><label className="saas-field">확인한 내용(기록용)<input value={reason} maxLength={200} onChange={e=>setReason(e.target.value)} placeholder="예: 010-… 통화로 가게 이름 확인"/></label>
+  <button type="button" className="saas-secondary" disabled={!email.includes('@')||!reason.trim()} onClick={run}>임시 비밀번호 만들기</button>{out&&<p className="saas-success" role="status">{out} — 전화로 알려 주고, 이 화면을 닫으면 다시 볼 수 없어요.</p>}{err&&<p className="saas-error" role="alert">{err}</p>}</section>;
+}
+const post2=async(body:any)=>{const r=await fetch('/api/password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const d:any=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||'처리하지 못했어요.');return d};

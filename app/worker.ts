@@ -1,4 +1,5 @@
 import {authLimit} from './auth-api';
+import {passwordApi} from './password-api';
 import {shareApi} from './share-api';
 import {supportApi} from './support-api';
 import {cronApi} from './cron-api';
@@ -65,6 +66,7 @@ async function route(request:Request,env:Env){
  if(path==='/api/manual')return manualApi(request,env);
  if(path==='/api/push')return pushApi(request,env);
  if(path==='/api/support')return supportApi(request,env);
+ if(path==='/api/password')return passwordApi(request,env);
  if(path==='/api/share')return shareApi(request,env);
  if(path==='/api/qr-live')return qrLiveApi(request,env);
  if(path==='/api/export')return exportApi(request,env);

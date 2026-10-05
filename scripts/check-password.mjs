@@ -1,0 +1,34 @@
+// 메일 없이 비밀번호 찾기 — 사장님이 직원 초기화, 본사가 사장님 초기화, 임시 비밀번호로 로그인하면 새 비밀번호를 정해야 함
+import assert from 'node:assert/strict';
+import {api} from '../dist/server/index.js';
+import {authedTest,TEST_PASSWORD} from './test-auth.mjs';import {closeAll} from './test-db.mjs';
+const T=await authedTest({domain:'example.invalid',env:{HQ_ADMIN_EMAIL:'hq@example.invalid'}}),{q,headersFor,id}=T,env=T.env;
+let n=0;const ok=(l,v,e=true)=>{assert.deepEqual(v,e,l);console.log(`${++n}. PASS ${l}`)};
+async function call(user,path,body,extra={}){const r=await api(new Request('https://qa.local'+path,{method:body?'POST':'GET',headers:{origin:'https://qa.local',...(user?await headersFor(user):{}),...extra},...(body?{body:JSON.stringify(body)}:{})}),env);return{status:r.status,body:await r.json()}}
+const login=async(email,password)=>(await call(null,'/api/auth',{action:'login',email,password})).status;
+await call('pwboss','/api/account',{action:'onboard',storeName:'비번 가게',branchName:'본점',ownerName:'대표',plan:'pro',acknowledged:true,dpaAgreed:true});
+let v=(await call('pwboss','/api/store')).body.version;await call('pwboss','/api/staff-join',{action:'code',branchId:'branch-main',version:v});
+const code=(await call('pwboss','/api/staff-join')).body.codes[0].code;await call('pwstaff','/api/staff-join',{action:'apply',code,name:'직원',phone:'01000000000'});
+let j=(await call('pwboss','/api/staff-join')).body;await call('pwboss','/api/staff-join',{action:'review',id:j.requests[0].id,approve:true,payType:'시급',wage:10320,version:j.version});
+const eid=JSON.parse((await q('SELECT data FROM stores WHERE owner=?',id('pwboss')).first()).data).employees[0].id;
+ok('직원은 남의 비밀번호 초기화 못 함',(await call('pwstaff','/api/password',{action:'resetMember',employeeId:eid})).status,403);
+const r=await call('pwboss','/api/password',{action:'resetMember',employeeId:eid});ok('사장님이 직원 임시 비밀번호 발급',r.status===200&&/^[A-Za-z0-9]{5}-[A-Za-z0-9]{5}$/.test(r.body.tempPassword),true);
+ok('예전 비밀번호로는 로그인 안 됨',await login('pwstaff@example.invalid',TEST_PASSWORD),401);
+ok('임시 비밀번호로 로그인',await login('pwstaff@example.invalid',r.body.tempPassword),200);
+ok('로그인하면 새 비밀번호를 정하라고 함',(await call('pwstaff','/api/account')).body.mustChangePassword,true);
+ok('쉬운 비밀번호는 안 됨',(await call('pwstaff','/api/password',{action:'change',password:'12345678'})).status,400);
+ok('새 비밀번호 저장',(await call('pwstaff','/api/password',{action:'change',password:'New-staff-pass-26'})).status,200);
+ok('바꾼 뒤에는 다시 묻지 않음',(await call('pwstaff','/api/account')).body.mustChangePassword,false);
+ok('사장님 기록에 초기화가 남음',JSON.parse((await q('SELECT data FROM stores WHERE owner=?',id('pwboss')).first()).data)._audit.some(a=>a.action==='직원 비밀번호 초기화'),true);
+ok('본사가 아니면 이메일로 초기화 못 함',(await call('pwboss','/api/password',{action:'resetByEmail',email:'pwboss@example.invalid'})).status,403);
+const h=await call('hq','/api/password',{action:'resetByEmail',email:'pwboss@example.invalid',reason:'전화로 가게 이름 확인'});ok('본사가 사장님 임시 비밀번호 발급',h.status,200);
+ok('본사 발급은 접근 기록에 남음',Number((await q("SELECT count(*) AS n FROM hq_access_log WHERE action='임시 비밀번호 발급'").first()).n)>=1,true);
+const req=await call(null,'/api/password',{action:'request',email:'pwboss@example.invalid',name:'대표',phone:'010-1234-5678',store:'비번 가게'},{'x-forwarded-for':'198.51.100.7'});ok('로그인 없이 비밀번호 찾기 요청',req.status,200);
+ok('요청은 본사 문의함으로',Number((await q("SELECT count(*) AS n FROM support_tickets WHERE category='비밀번호 찾기'").first()).n)>=1,true);
+ok('전화번호 없으면 거절',(await call(null,'/api/password',{action:'request',email:'a@b.kr',name:'x',phone:''},{'x-forwarded-for':'198.51.100.8'})).status,400);
+for(let i=0;i<2;i++)await call(null,'/api/password',{action:'request',email:'a@b.kr',name:'x',phone:'01011112222'},{'x-forwarded-for':'198.51.100.9'});
+await call(null,'/api/password',{action:'request',email:'a@b.kr',name:'x',phone:'01011112222'},{'x-forwarded-for':'198.51.100.9'});
+ok('같은 곳에서 한 시간 3번까지',(await call(null,'/api/password',{action:'request',email:'a@b.kr',name:'x',phone:'01011112222'},{'x-forwarded-for':'198.51.100.9'})).status,429);
+await q("DELETE FROM support_tickets").run();
+console.log('PASS: 메일 없이 비밀번호 찾기.');
+await closeAll();

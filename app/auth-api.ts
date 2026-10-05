@@ -168,3 +168,23 @@ export async function deleteAuthUser(env:Env,authId:string){
  const r=await gotrue(env,'/admin/users/'+encodeURIComponent(authId),{method:'DELETE',admin:true});
  return r.ok||r.status===404;
 }
+
+/** 메일 없이 비밀번호 찾기: 임시 비밀번호로 바꾸고 다음 로그인 때 새 비밀번호를 정하게 한다. 임시 비밀번호는 저장하지 않는다. */
+const TEMP_ALPHABET='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+export function tempPassword(){const b=crypto.getRandomValues(new Uint8Array(10));return [...b].map(x=>TEMP_ALPHABET[x%TEMP_ALPHABET.length]).join('').replace(/^(.{5})/,'$1-')}
+export async function setTempPassword(env:Env,appUserId:string){
+ const u=await env.DB.prepare('SELECT auth_id FROM app_users WHERE id=?').bind(appUserId).first<any>();if(!u)return null;
+ const pw=tempPassword(),r=await gotrue(env,'/admin/users/'+encodeURIComponent(u.auth_id),{method:'PUT',admin:true,body:{password:pw}});
+ if(!r.ok)throw Error('임시 비밀번호를 만들지 못했어요. 잠시 뒤 다시 시도해 주세요.');
+ await env.DB.prepare('UPDATE app_users SET must_change_password=1 WHERE id=?').bind(appUserId).run();
+ return pw;
+}
+/** 로그인한 사람이 임시 비밀번호를 새 비밀번호로 바꾼다(지금 로그인 토큰으로). */
+export async function changeOwnPassword(env:Env,request:Request,password:unknown){
+ const id=request.headers.get('oai-authenticated-user-id'),token=(request.headers.get('authorization')||'').replace(/^Bearer\s+/i,'');
+ if(!id||!token)throw Error('로그인한 뒤 다시 시도해 주세요.');
+ if(!validPassword(password))throw Error('비밀번호는 8~128자로 입력해 주세요. 단순 반복이나 연속 숫자는 피해 주세요.');
+ const r=await gotrue(env,'/user',{method:'PUT',token,body:{password}});
+ if(!r.ok)throw Error('비밀번호를 바꾸지 못했어요. 다시 로그인한 뒤 시도해 주세요.');
+ await env.DB.prepare('UPDATE app_users SET must_change_password=0 WHERE id=?').bind(id).run();
+}

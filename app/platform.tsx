@@ -9,7 +9,7 @@ import {Landing} from './public-pages';
 import {BizStatus,CancelSubscription,RefundPolicy,PaymentHistory,ServiceNotices,TrialBanner,PlanChangeQuote,RefundEstimate,TaxInvoice} from './billing';
 registerSW();
 import {VerifyEmail} from './verify-email';
-import {AuthForm} from './auth-form';
+import {AuthForm,ChangePasswordGate} from './auth-form';
 import {attendanceQrEntry} from '../lib/qr-entry';
 import {industries,isIndustry} from '../lib/industries';
 'use client';
@@ -31,6 +31,7 @@ const StatusPage=lazy(()=>import('./status-page').then(x=>({default:x.StatusPage
 const Support=lazy(()=>import('./support').then(x=>({default:x.Support})));
 const SharePage=lazy(()=>import('./accountant-share').then(x=>({default:x.SharePage})));
 const SupportDesk=lazy(()=>import('./support').then(x=>({default:x.SupportDesk})));
+const PasswordDesk=lazy(()=>import('./support').then(x=>({default:x.PasswordDesk})));
 
 import {ArrowRight,Check,Store,ShieldCheck,ArrowLeft,LogOut,CreditCard,Clock3,Users} from 'lucide-react';
 import {plans,planId,money,monthlyPrice,periodPrice,TRIAL_DAYS,type PlanId} from '../lib/plans';
@@ -49,7 +50,7 @@ export default function Platform(){
  const reload=async()=>{setError('');setStatus('loading');try{const r=await fetch('/api/account');const d:any=await r.json();if(r.status===401){setStatus('anonymous');return}if(!r.ok)throw Error(d.error);setAccount(d);setStatus('ready')}catch(e){setError(e instanceof Error?e.message:'연결할 수 없습니다.');setStatus('error')}};
  useEffect(()=>{if(!['/demo','/try','/start','/calculator','/help','/refund','/admin','/admin/login'].includes(path))reload()},[]);
  if(path==='/admin/login')return <Shell><main className="native-auth-wrap"><AuthForm role="owner" next="/admin" account={null} admin/></main></Shell>;
- if(path==='/admin')return <Shell><AdminDesk/><SupportDesk/><section className="saas-account" aria-label="본사 알림"><p className="saas-fine">서버 오류가 10분 안에 3번 넘게 나면 이 기기로 알림을 보내요.</p><PushToggle/></section></Shell>;
+ if(path==='/admin')return <Shell><AdminDesk/><SupportDesk/><PasswordDesk/><section className="saas-account" aria-label="본사 알림"><p className="saas-fine">서버 오류가 10분 안에 3번 넘게 나면 이 기기로 알림을 보내요.</p><PushToggle/></section></Shell>;
  if(path==='/verify-email')return <Shell><VerifyEmail/></Shell>;
  if(path==='/withdraw')return <Shell><DeviceSessions/><PushToggle/><Withdraw/></Shell>;
  if(path==='/calculator')return <Shell><Calculator/></Shell>;
@@ -66,6 +67,7 @@ export default function Platform(){
  if(status==='error')return <Shell><div className="auth-card"><h1>잠시 연결이 어렵습니다.</h1><p role="alert">{error}</p><Button onClick={reload}>다시 연결</Button><a href="/login">로그인 화면</a><a href="/contracts">내 서류 보기</a><a href="/withdraw">회원 탈퇴</a></div></Shell>;
  if(status==='anonymous'&&path==='/')return <Shell><Landing/></Shell>;
  if(status==='anonymous'||path==='/login')return <Login account={account} role={(query.has('reset')||query.get('mode')==='reset')?'owner':qrEntry?'employee':path==='/employee'?'employee':query.get('role')==='employee'?'employee':path==='/signup'?'owner':query.get('role')==='owner'?'owner':undefined} next={qrEntry|| (query.get('role')==='employee'?'/employee':path==='/employee'?'/employee'+location.search:invite?'/?invite='+encodeURIComponent(invite):query.get('next')==='/account'?'/account':path==='/signup'?'/signup?plan='+(planId(query.get('plan'))?query.get('plan'):'free'):'/app')}/>;
+ if(account?.mustChangePassword)return <Shell><ChangePasswordGate onDone={reload}/></Shell>;
  if(account?.consentRequired)return <ConsentGate onDone={reload}/>;
  if(path==='/support')return <Shell><Support/></Shell>;
  if(path==='/contracts')return <Shell><ContractsDesk/></Shell>;
