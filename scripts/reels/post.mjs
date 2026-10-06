@@ -27,12 +27,18 @@ const api=async(path,params,method='POST')=>{
  if(!r.ok||d.error)throw Error(`인스타 API 오류 (${path.split('/').pop()}): ${d.error?.message||r.status}`);
  return d;
 };
-// 1) 릴스 상자 만들기(영상은 직접 올리기 방식)
-const box=await api(`${user}/media`,{media_type:'REELS',upload_type:'resumable',caption,share_to_feed:'true',thumb_offset:'400'});
-// 2) 영상 올리기
-const up=await fetch(`https://rupload.facebook.com/ig-api-upload/${ver}/${box.id}`,{method:'POST',headers:{Authorization:`OAuth ${token}`,offset:'0',file_size:String(size)},body:readFileSync(video)});
-const upd=await up.json().catch(()=>({}));
-if(!up.ok||upd.success===false)throw Error('영상 올리기 실패: '+(upd.debug_info?.message||upd.error?.message||up.status));
+// 1) 릴스 상자 만들기
+//   인스타 로그인 방식 계정은 영상 직접 올리기를 받지 않아(video_url 필요), 워크플로가 공개 주소(REEL_VIDEO_URL)를 만들어 준다.
+//   표지는 REEL_COVER_URL(첫 화면 썸네일)로 지정한다. 주소가 없으면 직접 올리기를 시도한다.
+const vurl=process.env.REEL_VIDEO_URL,curl=process.env.REEL_COVER_URL;
+const base={media_type:'REELS',caption,share_to_feed:'true',...(curl?{cover_url:curl}:{thumb_offset:'400'})};
+const box=await api(`${user}/media`,vurl?{...base,video_url:vurl}:{...base,upload_type:'resumable'});
+if(!vurl){
+ // 2) 영상 올리기
+ const up=await fetch(`https://rupload.facebook.com/ig-api-upload/${ver}/${box.id}`,{method:'POST',headers:{Authorization:`OAuth ${token}`,offset:'0',file_size:String(size)},body:readFileSync(video)});
+ const upd=await up.json().catch(()=>({}));
+ if(!up.ok||upd.success===false)throw Error('영상 올리기 실패: '+(upd.debug_info?.message||upd.error?.message||up.status));
+}
 // 3) 인스타가 영상 처리를 끝낼 때까지 기다리기(최대 10분)
 let status='';
 for(let i=0;i<60;i++){await new Promise(r=>setTimeout(r,10000));const st=await api(box.id,{fields:'status_code,status'},'GET');status=st.status_code;if(status==='ERROR')status+=' · '+(st.status||'');if(/^(FINISHED|ERROR|EXPIRED)/.test(status))break}

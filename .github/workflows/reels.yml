@@ -83,6 +83,18 @@ jobs:
           git -c user.name=reel-bot -c user.email=reel-bot@users.noreply.github.com add -A
           git -c user.name=reel-bot -c user.email=reel-bot@users.noreply.github.com commit -qm "릴스 미리보기"
           git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" reel-preview
+      - name: 영상 공개 주소 만들기 (인스타가 가져가도록 reel-media 브랜치에)
+        if: github.event_name == 'schedule' || (github.event.inputs.post == 'true' && github.event.inputs.indexes == '')
+        run: |
+          mkdir -p /tmp/media && cp reel-out/reel.mp4 reel-out/cover.jpg /tmp/media/ && cd /tmp/media
+          git init -q && git checkout -q -b reel-media
+          git -c user.name=reel-bot -c user.email=reel-bot@users.noreply.github.com add -A
+          git -c user.name=reel-bot -c user.email=reel-bot@users.noreply.github.com commit -qm "오늘 릴스 영상"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" reel-media
+          sha=$(git rev-parse HEAD)
+          echo "REEL_VIDEO_URL=https://raw.githubusercontent.com/${{ github.repository }}/$sha/reel.mp4" >> "$GITHUB_ENV"
+          echo "REEL_COVER_URL=https://raw.githubusercontent.com/${{ github.repository }}/$sha/cover.jpg" >> "$GITHUB_ENV"
+          sleep 5
       - name: 인스타에 올리기
         if: github.event_name == 'schedule' || (github.event.inputs.post == 'true' && github.event.inputs.indexes == '')
         env:
