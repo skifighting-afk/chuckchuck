@@ -16,6 +16,9 @@ if(process.env.DRY_RUN==='1'||!user||!token){
  console.log(`${!user||!token?'인스타 연결 정보(IG_USER_ID·IG_ACCESS_TOKEN)가 없어 올리지 않았어요.':'시험 실행이라 올리지 않았어요.'} 영상 ${meta.seconds}초 · ${(size/1048576).toFixed(1)}MB · "${meta.q}"`);
  process.exit(0);
 }
+// 실패하면 이유를 실행 화면 위 알림(annotation)으로도 남긴다(로그를 못 열 때도 보이게). 토큰은 넣지 않는다.
+const fail=e=>{const m=String(e?.message||e).replace(token,'***');console.log(`::error title=인스타 올리기 실패::${m}`);process.exit(1)};
+process.on('unhandledRejection',fail);process.on('uncaughtException',fail);
 const api=async(path,params,method='POST')=>{
  const url=new URL(`https://${host}/${ver}/${path}`);
  const body=new URLSearchParams({...params,access_token:token});
@@ -32,8 +35,8 @@ const upd=await up.json().catch(()=>({}));
 if(!up.ok||upd.success===false)throw Error('영상 올리기 실패: '+(upd.debug_info?.message||upd.error?.message||up.status));
 // 3) 인스타가 영상 처리를 끝낼 때까지 기다리기(최대 10분)
 let status='';
-for(let i=0;i<60;i++){await new Promise(r=>setTimeout(r,10000));status=(await api(box.id,{fields:'status_code'},'GET')).status_code;if(status==='FINISHED'||status==='ERROR'||status==='EXPIRED')break}
-if(status!=='FINISHED')throw Error('인스타 영상 처리가 끝나지 않았어요: '+status);
+for(let i=0;i<60;i++){await new Promise(r=>setTimeout(r,10000));const st=await api(box.id,{fields:'status_code,status'},'GET');status=st.status_code;if(status==='ERROR')status+=' · '+(st.status||'');if(/^(FINISHED|ERROR|EXPIRED)/.test(status))break}
+if(!status.startsWith('FINISHED'))throw Error('인스타 영상 처리가 끝나지 않았어요: '+status);
 // 4) 게시
 const pub=await api(`${user}/media_publish`,{creation_id:box.id});
 console.log(`릴스 올림: "${meta.q}" (게시물 번호 ${pub.id})`);
