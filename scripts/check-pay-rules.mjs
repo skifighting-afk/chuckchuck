@@ -1250,3 +1250,11 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('기간제 종료일 빈칸',t({employment:'기간제'}).includes('종료일이 비어'));
  console.log('PASS: 지시서 9주차 (근로계약 점검).');
 }
+// 지시서 10주차: 문의 — 자주 묻는 질문 추천, 대화 기록
+{
+ const {suggestFaq,parseThread}=await import('../lib/faq-suggest.ts');const {FAQ}=await import('../dist/server/faq.js');
+ ok('체험 결제 문의엔 체험 FAQ',suggestFaq('무료 체험 끝나면 자동으로 결제되나요',FAQ).some(q=>q.q.includes('체험')));
+ ok('짧거나 엉뚱하면 추천 없음',!suggestFaq('a',FAQ).length&&!suggestFaq('ㅋㅋㅋㅋ',FAQ).length);
+ ok('대화 기록 읽기(깨진 값은 빈 목록)',parseThread('[{"from":"회원","body":"x","at":"t"}]').length===1&&!parseThread('{bad').length&&!parseThread(null).length);
+ console.log('PASS: 지시서 10주차 (문의 추천·대화).');
+}

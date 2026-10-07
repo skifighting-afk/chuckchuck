@@ -15,9 +15,17 @@ assert.equal((await call('bob',{action:'reply',id:c.data.id,reply:'x'})).status,
 const all=await call('hq',null,'/api/support?all=1');assert.equal(all.data.tickets.length,1,'본사는 전체 문의');
 assert.equal((await call('hq',{action:'reply',id:c.data.id,reply:'설정에서 지급일을 넣어 주세요.'})).status,200,'본사 답변');
 const mine=(await call('alice')).data.tickets[0];assert.ok(mine.status==='답변 완료'&&mine.reply.includes('지급일'),'회원이 답변 확인');
+// 지시서 10주차: 추가로 묻기·해결 표시
+assert.equal((await call('bob',{action:'followup',id:c.data.id,body:'남의 문의'})).status,404,'남의 문의엔 추가 질문 못 함');
+assert.equal((await call('alice',{action:'followup',id:c.data.id,body:'그래도 안 돼요'})).status,200,'추가 질문');
+assert.equal((await call('alice',{action:'followup',id:c.data.id,body:'또'})).status,409,'답변 전엔 또 못 물음');
+let tk=(await call('alice')).data.tickets[0];assert.ok(tk.status==='접수'&&JSON.parse(tk.thread).length===2,'대화에 답변+추가 질문');
+assert.equal((await call('hq',{action:'reply',id:c.data.id,reply:'새로고침 후 다시 눌러 주세요.'})).status,200,'추가 답변');
+assert.equal((await call('alice',{action:'resolve',id:c.data.id})).status,200,'해결 표시');
+tk=(await call('alice')).data.tickets[0];assert.ok(tk.status==='해결됨'&&JSON.parse(tk.thread).length===3,'해결됨·대화 3개');
 for(let i=0;i<9;i++)await call('carol',{action:'create',category:'기타',body:'반복 문의 '+i});
 await call('carol',{action:'create',category:'기타',body:'반복 문의 9'});
 assert.equal((await call('carol',{action:'create',category:'기타',body:'반복 문의 10'})).status,429,'하루 10건 제한');
 await env.DB.prepare('DELETE FROM support_tickets').run();
-console.log('PASS: 문의하기 (내 문의만 보기·본사만 답변·하루 10건).');
+console.log('PASS: 문의하기 (내 문의만 보기·본사만 답변·하루 10건·추가 질문·해결).');
 await closeAll();

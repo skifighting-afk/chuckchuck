@@ -565,3 +565,8 @@ body.ms-dragging,body.ms-dragging *{user-select:none!important;-webkit-user-sele
 .my-cal-d.today{outline:2px solid #17583f;outline-offset:-2px}.my-cal-d.on{box-shadow:0 0 0 3px #17583f inset}
 .my-cal-sel{margin:10px 16px 0;font-size:14px}
 .cert-req .t-panelbody{display:grid;gap:10px}.cert-purpose{display:flex;flex-direction:column;gap:4px;font-size:14px}.cert-purpose input{min-height:44px;border:1px solid #b5c8ba;border-radius:8px;padding:0 10px}.cert-req [role=group] label{display:inline-flex;align-items:center;gap:6px;min-height:44px}
+/* 지시서 10주차: 문의 대화·자주 묻는 질문 추천 */
+.faq-suggest{margin:10px 0;padding:12px;border:1px solid #9cc7a9;border-radius:10px;background:#effaf2}.faq-suggest>b{display:block;margin-bottom:6px}
+.faq-suggest details{border-top:1px solid #cfe3d5;padding:4px 0}.faq-suggest summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:700}
+.support-more{margin-top:8px;padding:10px;border-left:3px solid #7da2d6;background:#f3f7fd;border-radius:6px}
+.support-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.support-actions button{min-height:44px}.support-follow{margin-top:8px}
