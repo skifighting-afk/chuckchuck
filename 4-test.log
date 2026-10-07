@@ -1225,7 +1225,7 @@ PASS 525. 서류 알림 종류
 PASS 526. 정기 휴무일 경고
 PASS 527. 영업시간 2시간 넘게 벗어나면 경고, 준비 1시간은 괜찮음
 PASS 528. 자정 넘는 영업시간
-PASS 529. 명부 거르기·세기
+PASS 529. 명부 거르기·세기(퇴사자는 보관함)
 PASS 530. 명부 CSV는 수식 막음
 PASS: 지시서 5주차 (서류 기한·휴무일·명부).
 PASS 531. 6개월 목록(해 넘김)
@@ -1260,6 +1260,41 @@ PASS 554. 3년 지난 퇴사자만
 PASS 555. 연락처 지우고 이름 가림
 PASS 556. 내 자료: 내 것만
 PASS: 지시서 11주차 (개인정보 보존·내 자료).
+PASS 557. 입사 체크 4단계(서류만 끝)
+PASS 558. 다 끝나면 숨김
+PASS 559. 퇴사일 전까지는 접속, 지나면 차단
+PASS: 지시서 5주차 보완 (입사 체크·퇴사일 차단).
+PASS 560. 아침 브리핑: 인원·첫 근무·할 일
+PASS 561. 주간 리포트: 지난주 시간·인건비·빠진 출근
+PASS 562. 오늘 인건비(시급 2시간 + 월급 하루치)
+PASS: 지시서 6주차 보완 (브리핑·주간·오늘 인건비).
+PASS 563. POS 매출 파일 월별 합계(합계 줄 무시)
+PASS 564. 제목 없는 파일도
+PASS: POS 매출 파일 읽기.
+PASS 565. 5명 이상: 평소 근무 요일 공휴일 하루치
+PASS 566. 5명 미만은 없음
+PASS: 공휴일 유급휴일수당.
+PASS 567. 퇴직금: 7~9월 확정 급여, 92일
+PASS 568. 퇴직금: 달 중간 퇴직은 일할, 10월 미확정 표시
+PASS: 퇴직금 자동 채움.
+PASS 569. 10월 기한: 원천세 10/12(10일 토요일→월), 4대보험, 사업소득 간이, 취득·상실
+PASS 570. 영업일 계산(공휴일 건너뜀)
+PASS 571. 3월엔 연말정산·보수총액
+PASS 572. 2주 안 기한만
+PASS 573. 두루누리: 10명 미만·270만 미만·가입
+PASS 574. 10명 이상이면 대상 아님
+PASS: 신고 기한·취득상실·두루누리.
+PASS 575. 6자리 코드
+PASS 576. 지금·직전 1분 코드 통과, 고정·움직이는 QR 매장 모두
+PASS 577. 2분 지난 코드·틀린 코드·다른 매장 거절
+PASS: 매장 코드 출퇴근.
+PASS 578. 서식 5종
+PASS 579. 해고예고: 30일 뒤·제26조·예고수당 안내
+PASS 580. 사직서는 직원이 쓰는 서류 안내
+PASS: 서식함.
+PASS 581. 의무교육: 올해 기록·안 들은 직원
+PASS 582. 5명 이상이면 산업안전
+PASS: 법정 의무교육.
 
 ── check-claims
 PASS: 과장·허위 문구 검사 (화면·홈페이지).
@@ -1335,7 +1370,7 @@ PASS 36. 2026-03-31: no clock-in or clock-out in the future (A1·A3)
 PASS: 체험 화면 숫자(급여·명세서·임금대장 합계).
 
 ── check-error-messages
-PASS: 오류 문구 404개 모두 다음 행동 안내 포함.
+PASS: 오류 문구 429개 모두 다음 행동 안내 포함.
 PASS: 오류 번호·로그 개인정보 제거.
 
 ── check-attendance-table
@@ -1436,6 +1471,14 @@ PASS: 매장 매뉴얼(작성 권한·지점 범위·사진 검사·확인 표�
 23. PASS 읽음
 24. PASS 고치면 다시 안 읽음 + 수정 내용 + 고친 날이 만든 날보다 뒤(바뀜)
 25. PASS 없는 분류는 기타
+26. PASS 체크 0단계는 거절
+27. PASS 직원 체크 저장
+28. PASS 내 체크 기록이 보임
+29. PASS 사장님은 체크 기록을 봄
+30. PASS 다른 직원은 남의 인증 사진 못 봄
+31. PASS 본인은 인증 사진 봄
+32. PASS 가짜 사진 거절
+PASS: 오픈·마감 체크 실행.
 
 ── check-transfer
 1. PASS employee cannot start transfer
@@ -1497,6 +1540,42 @@ PASS: 매일 작업 (비밀값·체험 종료 알림 7일·1일 각 한 번).
 
 ── check-support
 PASS: 문의하기 (내 문의만 보기·본사만 답변·하루 10건·추가 질문·해결).
+
+── check-staff-docs
+1. PASS anonymous blocked
+2. PASS ID card kind refused
+3. PASS fake PNG refused
+4. PASS staff uploads own
+5. PASS staff cannot upload for coworker
+6. PASS owner sees staff doc
+7. PASS other staff cannot list
+8. PASS other staff cannot open file
+9. PASS owner opens image
+10. PASS owner uploads for staff
+11. PASS staff lists own
+12. PASS staff cannot delete owner upload
+13. PASS staff deletes own upload
+PASS: 직원 서류 보관함 (본인·사장님만, 사진 검사).
+
+── check-staff-asks
+1. PASS pay question needs month/message
+2. PASS staff sends pay question
+3. PASS staff sends profile change
+4. PASS staff sees only own asks
+5. PASS profile change ignores non-allowed fields
+6. PASS staff cannot answer
+7. PASS owner applies profile change
+8. PASS member updated
+9. PASS owner must write answer for pay question
+10. PASS owner answers pay question
+11. PASS staff sees answer
+12. PASS certificate request
+13. PASS one certificate request a day
+14. PASS offline clock needs valid time
+15. PASS offline clock queued as ask
+16. PASS owner approves offline clock
+17. PASS attendance created at saved time
+PASS: 직원 요청(명세서 문의·정보 변경·증명서).
 
 ── check-share
 PASS: 세무사 공유 링크 (확정 급여만·끄기·만료·열람 기록·토큰 해시만 저장).
