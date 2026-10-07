@@ -1211,7 +1211,7 @@ PASS 36. 2026-03-31: no clock-in or clock-out in the future (A1·A3)
 PASS: 체험 화면 숫자(급여·명세서·임금대장 합계).
 
 ── check-error-messages
-PASS: 오류 문구 390개 모두 다음 행동 안내 포함.
+PASS: 오류 문구 396개 모두 다음 행동 안내 포함.
 PASS: 오류 번호·로그 개인정보 제거.
 
 ── check-attendance-table
@@ -1269,6 +1269,21 @@ PASS: 대타·교대 요청·수락·승인·충돌 차단.
 35. PASS unread list names branch staff
 36. PASS reader moves to read list
 37. PASS staff do not see who read
+38. PASS 업무별 공지: 받는 사람만 집계
+39. PASS 대상 아닌 직원은 공지가 안 보임
+40. PASS 대상 직원은 보임
+41. PASS 예약 공지는 사장님에게 예약으로
+42. PASS 예약 시각 전에는 직원에게 안 보임
+43. PASS 지난 시각으로 예약 불가
+44. PASS 다시 알리기
+45. PASS 10분 안에 또 알리기는 막음
+46. PASS 직원은 다시 알리기 불가
+47. PASS 휴가 신청
+48. PASS 사장님은 근무 목록을 받아 영향 계산
+49. PASS 반려는 사유가 있어야
+50. PASS 승인
+51. PASS 승인하면 그날 근무가 근무표에서 빠짐
+52. PASS 뺀 근무를 기록
 
 ── check-manual
 1. PASS anonymous blocked
