@@ -871,6 +871,25 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('A2 비서도 같은 건수와 이름',brief2.some(x=>x.text.includes('확인 권장 1건')&&x.text.includes('정가상')));
  console.log('PASS: 지시서 1라운드 A (A1~A3).');
 }
+// 지시서 1라운드 B: 월간 근무표에서 근무 옮기기 규칙
+{
+ const {moveShift,moveBlockReason,moveMessage}=await import('../lib/schedule-move.ts');
+ const t=normalizeTeam(null);delete t.legacy;const [a]=t.employees;
+ t.employees=[{...a,id:'m1',name:'김예시'},{...a,id:'m2',name:'박샘플'}];
+ t.shifts=[{id:'x1',employeeId:'m1',date:'2026-10-08',start:'09:00',end:'15:00',breakMinutes:60},{id:'x2',employeeId:'m1',date:'2026-10-10',start:'12:00',end:'18:00',breakMinutes:0},{id:'x3',employeeId:'m2',date:'2026-10-09',start:'09:00',end:'15:00',breakMinutes:0},{id:'x4',employeeId:'m1',date:'2026-10-11',start:'22:00',end:'02:00',breakMinutes:0}];
+ const r=moveShift(t,'x1','2026-10-09');
+ ok('옮기면 날짜만 바뀌고 직원·시간·휴게 그대로',!r.reason&&JSON.stringify({...r.shifts.find(x=>x.id==='x1'),date:'2026-10-08'})===JSON.stringify(t.shifts[0])&&r.shifts.find(x=>x.id==='x1').date==='2026-10-09');
+ ok('다른 직원이 같은 시간에 일해도 옮길 수 있음',!moveBlockReason(t,t.shifts[0],'2026-10-09'));
+ ok('같은 직원 시간이 겹치는 날은 막고 이유',moveShift(t,'x1','2026-10-10').reason?.includes('겹쳐')&&moveShift(t,'x1','2026-10-10').shifts===t.shifts);
+ ok('자정 넘는 근무와 다음 날 아침 겹침도 막음',!!moveBlockReason(t,{...t.shifts[0],start:'01:00',end:'05:00'},'2026-10-12'));
+ t.approvedLeaves=[{employeeId:'m1',start:'2026-10-13',end:'2026-10-14'}];
+ ok('승인된 휴가일은 막음',moveBlockReason(t,t.shifts[0],'2026-10-14')?.includes('휴가'));
+ t.payrollRuns={'2026-09:branch-main':{locked:true,month:'2026-09',rows:[{employeeId:'m1'}]}};
+ ok('확정된 급여월로는 옮길 수 없음',moveBlockReason(t,t.shifts[0],'2026-09-30')?.includes('확정'));
+ ok('다른 직원은 그 달 확정과 무관',!moveBlockReason(t,{...t.shifts[2]},'2026-09-30'));
+ ok('되돌리기 문구',moveMessage('김예시','2026-10-08','2026-10-09')==='김예시 10월 8일 → 9일로 옮겼어요'&&moveMessage('김예시','2026-10-31','2026-11-02')==='김예시 10월 31일 → 11월 2일로 옮겼어요');
+ console.log('PASS: 지시서 1라운드 B (근무 옮기기 규칙).');
+}
 // 직원 엑셀 파일 등록: .xlsx·CSV 읽기
 {
  const {readFileSync}=await import('node:fs');
