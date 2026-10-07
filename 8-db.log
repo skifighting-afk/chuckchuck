@@ -1,6 +1,2 @@
 Connecting to remote database...
-Do you want to push these migrations to the remote database?
- • 20261009140000_api_keys.sql
- [Y/n] 
-Applying migration 20261009140000_api_keys.sql...
-Finished supabase db push.
+Remote database is up to date.
