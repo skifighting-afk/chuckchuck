@@ -1192,3 +1192,17 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('명부 CSV는 수식 막음',rosterCsv(L,'본점').includes(`"'=HACK"`)&&rosterCsv(L,'본점').startsWith('﻿"지점"'));
  console.log('PASS: 지시서 5주차 (서류 기한·휴무일·명부).');
 }
+// 지시서 6주차: 리포트 — 6개월, 요일·시간대, 근무표 대비 실제, 인건비율, 요약
+{
+ const {monthsBack,weekdayHourGrid,planVsActual,laborRatio,summaryLines}=await import('../lib/report-view.ts');
+ ok('6개월 목록(해 넘김)',monthsBack('2026-02',6).join()==='2025-09,2025-10,2025-11,2025-12,2026-01,2026-02');
+ const g=weekdayHourGrid([{employeeId:'a',date:'2026-10-05',start:'10:00',end:'12:30'},{employeeId:'b',date:'2026-10-12',start:'11:00',end:'12:00'}],'2026-10');
+ ok('요일·시간대 평균(10월 월요일 4번)',g[0][10]===0.3&&g[0][11]===0.5&&g[0][12]===0.1&&g[1][10]===0);
+ const p=planVsActual([{employeeId:'a',date:'2026-10-05',start:'10:00',end:'16:00',breakMinutes:60}],{a:10,b:2},'2026-10',{a:'가',b:'나'});
+ ok('근무표 대비 실제(차이 큰 순)',p[0].name==='가'&&p[0].plan===5&&p[0].diff===5&&p[1].plan===0);
+ ok('인건비율',laborRatio(3000000,10000000)===30&&laborRatio(1,0)===null);
+ const L=summaryLines({month:'2026-09',cost:1100000,hours:10,sales:2000000},{cost:1000000,hours:9},p,false);
+ ok('요약: 증감·인건비율 높음·차이 큰 직원',L[0].includes('10% 늘었어요')&&L[1].includes('55%')&&L[1].includes('높은 편')&&L[2].includes('가(+5시간)'));
+ ok('진행 중인 달은 증감 대신 안내',summaryLines({month:'2026-10',cost:1,hours:1},{cost:9,hours:9},[],true)[0].includes('진행 중'));
+ console.log('PASS: 지시서 6주차 (리포트 추이·요일 시간대·근무표 대비·인건비율).');
+}

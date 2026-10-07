@@ -537,3 +537,14 @@ body.ms-dragging,body.ms-dragging *{user-select:none!important;-webkit-user-sele
 .branch-days{display:flex;flex-wrap:wrap;gap:4px 12px}.branch-phone{display:flex;flex-direction:column;gap:4px;font-size:14px}
 .staff-hours{margin:0 0 8px;font-size:14px;color:#344a3d}
 .staff-filter{display:flex;flex-wrap:wrap;gap:6px}.staff-filter button{min-height:44px;padding:0 14px;border:1px solid #b5c8ba;border-radius:999px;background:#fff;color:#173e30;font-weight:700;font-size:14px}.staff-filter button[aria-pressed=true]{background:#17583f;border-color:#17583f;color:#fff}
+/* 지시서 6주차: 리포트 추가 */
+.report-summary ul{margin:0;padding:0 16px 14px 34px;display:grid;gap:6px;font-size:15px}
+.report-ratio{font-size:22px;font-weight:800;color:#17583f}
+.report-sales{align-items:flex-end;gap:10px}.report-sales label{display:flex;flex-direction:column;gap:4px;font-size:14px}.report-sales input{min-height:44px;border:1px solid #b5c8ba;border-radius:8px;padding:0 10px}.report-sales button{min-height:44px}
+.report-bars{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;height:180px;align-items:end}
+.report-bar{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px}
+.report-bar .b{width:70%;min-height:2px;background:#9cc7a9;border-radius:6px 6px 0 0}.report-bar.cur .b{background:#17583f}
+.report-bar .v{font-size:12px;color:#173e30;font-weight:700}.report-bar .l{font-size:13px;color:#173e30}.report-bar.cur .l{font-weight:800}
+.report-gap{color:#8a3b00;font-weight:700}
+.report-heat{border-collapse:collapse;font-size:12px;min-width:100%}.report-heat th,.report-heat td{border:1px solid #dce7df;padding:6px 4px;text-align:center;min-width:34px;color:#0f2a20}.report-heat thead th{background:#f5f8f4;white-space:nowrap}.report-heat tbody th{white-space:nowrap}
+@media print{.t-sidebar,.t-topbar,.assistant-fab,.demo-shell>header,.report-summary button,nav,.t-toolbar{display:none!important}.panel{break-inside:avoid}}
