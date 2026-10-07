@@ -3,7 +3,8 @@
 type Shift = {id: string; employeeId: string; date: string; start: string; end: string; breakMinutes?: number};
 type Emp = {id: string; name: string; role?: string; birthMonth?: string};
 export type Check = {level: 'block' | 'warn'; text: string};
-export type Need = {id: string; days: number[]; from: string; to: string; need: number; role?: string};
+/** 시간대별 필요 인원(근무표 초안 화면에서 정하는 staffingNeeds 그대로) */
+export type Need = {weekday: number; start: string; end: string; count: number; branchId?: string};
 
 const mins = (hm: string) => Number(hm.slice(0, 2)) * 60 + Number(hm.slice(3, 5));
 export const plus = (d: string, n: number) => new Date(Date.parse(d + 'T00:00:00Z') + n * 86400000).toISOString().slice(0, 10);
@@ -45,19 +46,19 @@ export function checkShift(shift: Shift, all: Shift[], emp: Emp | undefined, ws:
   return out;
 }
 
-/** 022 시간대별 필요 인원: 그날 시간대마다 부족·과잉 */
-export function staffingGaps(date: string, shifts: Shift[], needs: Need[], emps: Emp[]) {
-  const dow = new Date(date + 'T00:00:00Z').getUTCDay(), out: {id: string; from: string; to: string; role?: string; need: number; have: number; kind: '부족' | '과잉'}[] = [];
-  for (const n of needs.filter(n => n.days.includes(dow))) {
-    const a = mins(n.from), b = mins(n.to) <= a ? mins(n.to) + 1440 : mins(n.to);
-    // 30분마다 세서 가장 적은(부족)·가장 많은(과잉) 순간
+/** 022 시간대별 필요 인원: 그날 시간대마다 부족·과잉(30분마다 세서 가장 적은·많은 순간) */
+export function staffingGaps(date: string, shifts: Shift[], needs: Need[]) {
+  const dow = new Date(date + 'T00:00:00Z').getUTCDay(), out: {from: string; to: string; need: number; have: number; kind: '부족' | '과잉'}[] = [];
+  const day = shifts.filter(s => s.date === date);
+  for (const n of needs.filter(n => n.weekday === dow)) {
+    const a = mins(n.start), b = mins(n.end) <= a ? mins(n.end) + 1440 : mins(n.end);
     let lo = Infinity, hi = 0;
     for (let t = a; t < b; t += 30) {
-      const have = shifts.filter(s => s.date === date && (!n.role || emps.find(e => e.id === s.employeeId)?.role === n.role) && (() => { const x = mins(s.start), y = mins(s.end) <= x ? mins(s.end) + 1440 : mins(s.end); return x <= t && t < y; })()).length;
+      const have = day.filter(s => { const x = mins(s.start), y = mins(s.end) <= x ? mins(s.end) + 1440 : mins(s.end); return x <= t && t < y; }).length;
       lo = Math.min(lo, have); hi = Math.max(hi, have);
     }
-    if (lo < n.need) out.push({id: n.id, from: n.from, to: n.to, role: n.role, need: n.need, have: lo, kind: '부족'});
-    else if (hi > n.need + 1) out.push({id: n.id, from: n.from, to: n.to, role: n.role, need: n.need, have: hi, kind: '과잉'});
+    if (lo < n.count) out.push({from: n.start, to: n.end, need: n.count, have: lo, kind: '부족'});
+    else if (hi > n.count + 1) out.push({from: n.start, to: n.end, need: n.count, have: hi, kind: '과잉'});
   }
-  return out;
+  return out.sort((x, y) => x.from.localeCompare(y.from));
 }

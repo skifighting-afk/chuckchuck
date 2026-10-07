@@ -3,13 +3,13 @@
 type Shift = {id: string; employeeId: string; date: string; start: string; end: string};
 type Att = {id: string; employeeId: string; start: string; end: string | null};
 type Emp = {id: string; name: string; status?: string; branchId?: string};
-export type Alert = {key: string; to: 'owner' | string; kind: 'noshow' | 'clockout' | 'before' | 'payroll'; title: string; body: string};
+export type Alert = {key: string; to: 'owner' | string; kind: 'noshow' | 'clockout' | 'before' | 'payroll' | 'schedule'; title: string; body: string};
 const DAY = 86400000;
 const kdate = (ms: number) => new Date(ms + 9 * 3600000).toISOString().slice(0, 10);
 const at = (d: string, hm: string) => Date.parse(`${d}T${hm}:00+09:00`);
 const span = (s: Shift) => { const a = at(s.date, s.start); let b = at(s.date, s.end); if (s.end <= s.start) b += DAY; return [a, b]; };
 
-export function alertsFor(data: {employees: Emp[]; shifts: Shift[]; attendance: Att[]; approvedLeaves?: {employeeId: string; start: string; end: string}[]; payrollRuns?: Record<string, any>; branches?: {id: string; name: string}[]}, now = Date.now()): Alert[] {
+export function alertsFor(data: {employees: Emp[]; shifts: Shift[]; attendance: Att[]; approvedLeaves?: {employeeId: string; start: string; end: string}[]; payrollRuns?: Record<string, any>; branches?: {id: string; name: string}[]; availability?: Record<string, {updatedAt?: string}>; settings?: any}, now = Date.now()): Alert[] {
   const out: Alert[] = [], today = kdate(now), y = kdate(now - DAY);
   const emp = new Map(data.employees.filter(e => e.status !== '퇴사').map(e => [e.id, e]));
   const leave = (id: string, d: string) => (data.approvedLeaves || []).some(l => l.employeeId === id && l.start <= d && d <= l.end);
@@ -36,6 +36,15 @@ export function alertsFor(data: {employees: Emp[]; shifts: Shift[]; attendance: 
     const payDay = Math.min(...days), pd = `${today.slice(0, 8)}${String(Math.min(payDay, 28)).padStart(2, '0')}`, left = Math.round((Date.parse(pd) - Date.parse(today)) / DAY);
     const locked = Object.values(data.payrollRuns || {}).some((r: any) => r?.locked && r.month === prev);
     if (!locked && left >= 0 && left <= 3) out.push({key: 'payday:' + prev, to: 'owner', kind: 'payroll', title: `${Number(prev.slice(5))}월 급여가 아직 확정 전이에요`, body: `급여일(${Number(pd.slice(5, 7))}월 ${Number(pd.slice(8))}일)까지 ${left}일 남았어요. 급여 검토·확정을 눌러 명세서를 준비해 주세요.`});
+  }
+  // 107 근무 가능 시간 마감일(설정한 요일) 오전 10시 이후: 이번 주에 아직 안 낸 직원에게
+  const due = data.settings?.availabilityDue;
+  if (typeof due === 'number' && m.getUTCDay() === due && m.getUTCHours() >= 10) {
+    const wk = Date.parse(today + 'T00:00:00+09:00') - ((m.getUTCDay() + 6) % 7) * DAY;
+    for (const e of emp.values()) {
+      const up = data.availability?.[e.id]?.updatedAt;
+      if (!up || Date.parse(up) < wk) out.push({key: `avail:${today}:${e.id}`, to: e.id, kind: 'schedule', title: '오늘까지 근무 가능 시간을 내 주세요', body: '다음 주 근무표를 짜기 전에 일할 수 있는 요일과 시간을 앱에서 알려 주세요.'});
+    }
   }
   return out;
 }

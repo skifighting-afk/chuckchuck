@@ -492,3 +492,22 @@ body.ms-dragging,body.ms-dragging *{user-select:none!important;-webkit-user-sele
 .month-undo.dim{opacity:.35;pointer-events:none}
 .month-daylist{scroll-margin-bottom:96px;scroll-margin-top:16px}
 @media(min-width:1200px){body:has(.ast-dock) .month-undo{left:calc(50% - 190px)}}
+/* 지시서 3주차 025: 근무표 휴가 표시(글자로 표시, 색만으로 구분하지 않음) */
+.month-leave{display:block;font-size:12px;font-weight:700;color:#6b3d00;background:#fff3dc;border:1px dashed #c98a2b;border-radius:6px;padding:1px 5px;margin:2px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.t-leave{display:block;font-size:13px;font-weight:700;color:#6b3d00;background:#fff3dc;border:1px dashed #c98a2b;border-radius:6px;padding:4px 8px;margin-bottom:4px}
+.daily-empty.leave{color:#6b3d00;font-weight:700}
+@media(max-width:700px){.month-leave{font-size:12px;padding:0 3px}}
+/* 지시서 3주차 022·023: 필요 인원·근무표 공개 */
+.staff-gaps,.staff-gaps-none{margin:0 0 12px;padding:12px 14px;border-radius:10px;border:1px solid #e3c48f;background:#fff8ea;color:#4a3300;font-size:14px}
+.staff-gaps.ok{border-color:#9cc7a9;background:#effaf2;color:#153e2d}
+.staff-gaps-none{border-style:dashed;background:#f7f9f6;border-color:#b5c8ba;color:#344a3d}
+.staff-gaps ul{margin:6px 0 4px;padding:0;list-style:none}.staff-gaps li{padding:2px 0}
+.staff-gaps .gap-kind{font-weight:800}.staff-gaps li.short .gap-kind{color:#9a2b00}.staff-gaps li.over .gap-kind{color:#1f4e8a}
+.link-btn{background:none;border:0;padding:10px 4px;min-height:44px;color:#17583f;font-weight:700;text-decoration:underline;cursor:pointer;font-size:14px}
+.publish-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:0 0 12px;padding:12px 14px;border-radius:12px;border:1px solid #b5c8ba;background:#f5f8f4;color:#173e30}
+.publish-bar p{margin:0;flex:1 1 280px;font-size:14px}.publish-bar small{flex-basis:100%;color:#44564b;font-size:12px}
+.publish-bar.done{border-color:#4d805d;background:#effaf2}.publish-bar button{min-height:44px}
+.publish-actions{display:flex;gap:8px;flex-wrap:wrap}.publish-pending{flex-basis:100%;margin:0;font-size:14px;font-weight:700}
+.publish-ack{margin:0 0 14px}.publish-ack>div{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:14px;border-radius:12px;border:2px solid #17583f;background:#effaf2;margin-bottom:8px}
+.publish-ack p{margin:0;flex:1 1 220px;font-size:15px}.publish-ack b{display:block}.publish-ack .btn{min-height:48px}
+.draft-due{align-items:flex-end;margin:8px 0 12px}

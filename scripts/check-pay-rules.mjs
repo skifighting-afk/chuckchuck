@@ -1110,3 +1110,43 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('개인 주휴는 개인 답',reply('김예시 주휴 받을 수 있어?',t,a.branchId,d,now).lines[0].includes('김예시님 이번 주'));
  console.log('PASS: 척척 비서 질문 100가지.');
 }
+// 지시서 3주차: 근무표 — 021 끌어 바꾸기 막힘, 022 필요 인원, 023 공개·확인, 107 마감 알림, 114·127 근무 넣을 때 확인
+{
+ const {checkShift,staffingGaps,weekHours}=await import('../lib/schedule-rules.ts');const {editBlockReason}=await import('../lib/schedule-move.ts');
+ const {mergePublished,ackWeek,publishStatus,pendingAcks}=await import('../lib/schedule-publish.ts');const {alertsFor}=await import('../lib/alert-sweep.ts');
+ const sh=(id,emp,date,start,end,b=0)=>({id,employeeId:emp,date,start,end,breakMinutes:b});
+ const minor={id:'m',name:'미성',birthMonth:'2010-03'},adult={id:'a',name:'성인'};
+ ok('127 연소자 밤 근무 막음',checkShift(sh('x','m','2026-10-07','20:00','23:00'),[],minor).some(c=>c.level==='block'&&c.text.includes('밤 10시')));
+ ok('127 연소자 하루 7시간 초과 막음',checkShift(sh('x','m','2026-10-07','09:00','17:30',0),[],minor).some(c=>c.level==='block'&&c.text.includes('7시간')));
+ const wk=['2026-10-05','2026-10-06','2026-10-07','2026-10-08','2026-10-09'].map((d,i)=>sh('w'+i,'m',d,'10:00','17:00'));
+ ok('127 연소자 주 35시간 초과 막음',checkShift(sh('x','m','2026-10-10','10:00','12:00'),wk,minor).some(c=>c.level==='block'&&c.text.includes('35시간')));
+ ok('성인 낮 근무는 막지 않음',!checkShift(sh('x','a','2026-10-07','20:00','23:00'),[],adult).some(c=>c.level==='block'));
+ const four=['2026-10-05','2026-10-06','2026-10-07'].map((d,i)=>sh('f'+i,'a',d,'10:00','14:00'));
+ ok('114 주 15시간 처음 넘길 때만 경고',checkShift(sh('x','a','2026-10-08','10:00','14:00'),four,adult).some(c=>c.level==='warn'&&c.text.includes('주휴수당'))&&!checkShift(sh('x','a','2026-10-08','10:00','11:00'),four,adult).length);
+ ok('주 시간 합계(일요일 시작)',weekHours(four,'a','2026-10-07','sun')===12);
+ const needs=[{weekday:3,start:'11:00',end:'14:00',count:2},{weekday:3,start:'17:00',end:'20:00',count:1}];
+ const g=staffingGaps('2026-10-07',[sh('1','a','2026-10-07','10:00','15:00'),sh('2','b','2026-10-07','12:00','15:00'),sh('3','b','2026-10-07','17:00','20:00'),sh('4','c','2026-10-07','17:00','20:00'),sh('5','d','2026-10-07','17:00','20:00')],needs);
+ ok('022 점심 11~12시 1명이라 부족',g.some(x=>x.kind==='부족'&&x.from==='11:00'&&x.have===1));
+ ok('022 저녁 3명은 필요+1 넘어 과잉',g.some(x=>x.kind==='과잉'&&x.from==='17:00'&&x.have===3));
+ ok('022 다른 요일 필요 인원은 무시',!staffingGaps('2026-10-08',[],needs).length);
+ const team={shifts:[sh('s1','a','2026-10-07','10:00','15:00')],payrollRuns:{},approvedLeaves:[{employeeId:'b',start:'2026-10-07',end:'2026-10-07'}]};
+ ok('021 같은 직원 겹치면 막음',!!editBlockReason(team,sh('c','a','2026-10-07','14:00','16:00'))&&!editBlockReason(team,sh('s1','a','2026-10-07','11:00','16:00'),'s1'));
+ ok('021 휴가인 직원에게 끌어 넣기 막음',editBlockReason(team,sh('c','b','2026-10-07','10:00','12:00')).includes('휴가'));
+ ok('021 확정된 달은 막음',editBlockReason({...team,payrollRuns:{k:{locked:true,month:'2026-10',rows:[{employeeId:'a'}]}}},sh('s1','a','2026-10-07','11:00','16:00'),'s1').includes('확정'));
+ const key='br:2026-10-05',s1=[sh('1','a','2026-10-06','10:00','15:00'),sh('2','b','2026-10-06','10:00','15:00')];
+ let m=mergePublished({},{[key]:{at:'t1',acks:{a:'fake'}}},s1,s1);
+ ok('023 처음 공개는 알림 대상, 사장님이 보낸 확인은 무시',m.fresh.join()===key&&!Object.keys(m.published[key].acks).length);
+ let a=ackWeek(m.published,key,'a','br','t2');ok('023 직원 확인',a.published[key].acks.a==='t2');
+ ok('023 다른 매장 근무표는 확인 못 함',!!ackWeek(m.published,key,'a','other','t2').error&&!!ackWeek({},key,'a','br','t').error);
+ a=ackWeek(a.published,key,'b','br','t3');
+ const s2=s1.map(x=>x.employeeId==='a'?{...x,end:'16:00'}:x);m=mergePublished(a.published,a.published,s1,s2);
+ ok('023 근무 바뀐 직원만 확인 풀림',!m.fresh.length&&!m.published[key].acks.a&&m.published[key].acks.b==='t3');
+ ok('023 다시 공개하면 모두 다시 확인',!Object.keys(mergePublished(a.published,{[key]:{at:'t9',acks:{}}},s1,s1).published[key].acks).length);
+ const st=publishStatus(a.published,'br','2026-10-08',[{id:'a',name:'가',branchId:'br'},{id:'b',name:'나',branchId:'br'},{id:'c',name:'다',branchId:'x'}]);
+ ok('023 확인 현황(내 매장 직원만)',st.published&&st.acked.length===2&&!st.pending.length);
+ ok('023 직원 할 일: 안 한 이번 주 이후 공개분',pendingAcks({[key]:{at:'t',acks:{}},'br:2026-09-28':{at:'t',acks:{}}},'a','br','2026-10-07').join()===key);
+ const ad={employees:[{id:'a',name:'가'},{id:'b',name:'나'}],shifts:[],attendance:[],settings:{availabilityDue:3},availability:{a:{updatedAt:'2026-10-05T01:00:00Z'},b:{updatedAt:'2026-10-01T01:00:00Z'}}};
+ const T=(d,hm)=>Date.parse(`${d}T${hm}:00+09:00`),ks=(x,n)=>alertsFor(x,n).filter(z=>z.key.startsWith('avail:')).map(z=>z.to).join();
+ ok('107 마감 요일 10시 이후 안 낸 직원에게만',ks(ad,T('2026-10-07','10:05'))==='b'&&ks(ad,T('2026-10-07','09:50'))===''&&ks(ad,T('2026-10-08','10:05'))===''&&ks({...ad,settings:{}},T('2026-10-07','10:05'))==='');
+ console.log('PASS: 지시서 3주차 (근무표 규칙·필요 인원·공개 확인·마감 알림).');
+}

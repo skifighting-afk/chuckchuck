@@ -21,6 +21,8 @@ export function personalTeam(state:Team,selfId:string):Team{
    }])),
   requests:state.requests.filter(r=>r.before?.employeeId===selfId&&r.after?.employeeId===selfId)
    .map(r=>({...r,reviewer:r.reviewer?{name:r.reviewer.name}:undefined})),
-  settings:{accountantName:'',accountantEmail:'',autoPayslip:false,autoContract:false,autoAccountant:false,employerName:'',fivePlus:false}
+  // 지시서 3주차 023: 내 매장 공개 근무표와 내 확인 기록만
+  ...((state as any).publishedWeeks?{publishedWeeks:Object.fromEntries(Object.entries((state as any).publishedWeeks).filter(([k])=>k.startsWith(self.branchId+':')).map(([k,v]:any)=>[k,{at:v.at,acks:v.acks?.[selfId]?{[selfId]:v.acks[selfId]}:{}}]))}:{}),
+  settings:{accountantName:'',accountantEmail:'',autoPayslip:false,autoContract:false,autoAccountant:false,employerName:'',fivePlus:false,...((state.settings as any).weekStart?{weekStart:(state.settings as any).weekStart}:{})} as any
  };
 }

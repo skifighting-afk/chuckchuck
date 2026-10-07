@@ -51,6 +51,12 @@ export function demoTeam(now = today(), clock = Date.now()): Team {
   const span: string[] = [];for (let d = from; d <= datePlus(now, 6); d = datePlus(d, 1)) span.push(d);
   s.shifts = s.employees.flatMap((e, i) => span.filter(d => PEOPLE[i].days.includes(dow(d))).map(d => ({id: `demo-shift-${i}-${d}`, employeeId: e.id, date: d, start: PEOPLE[i].start, end: PEOPLE[i].end, breakMinutes: PEOPLE[i].brk})));
   s.requests = []; s.adjustments = {};
+  // 지시서 3주차 022·023: 점심·저녁 필요 인원, 이번 주 근무표는 공개해 두고 한 명만 확인한 상태
+  (s as any).staffingNeeds = [0, 1, 2, 3, 4, 5, 6].flatMap(w => [{weekday: w, start: '11:00', end: '14:00', count: 3, breakMinutes: 0, branchId: 'branch-main'}, {weekday: w, start: '17:00', end: '21:00', count: 2, breakMinutes: 0, branchId: 'branch-main'}]);
+  const mon = datePlus(now, -((dow(now) + 6) % 7));
+  // 025: 승인된 휴가 하나(며칠 뒤 근무일 하나를 휴가로 — 그날 근무는 빠지고 근무표에 '휴가'로 보인다)
+  {const i = 1, d = [2, 3, 4, 5, 6, 7, 8].map(n => datePlus(now, n)).find(d => PEOPLE[i].days.includes(dow(d)))!; (s as any).approvedLeaves = [{employeeId: s.employees[i].id, start: d, end: d}]; s.shifts = s.shifts.filter(x => !(x.employeeId === s.employees[i].id && x.date === d));}
+  (s as any).publishedWeeks = {[`branch-main:${mon}`]: {at: new Date(Date.parse(mon + 'T00:00:00Z') - 2 * 86400000 + 9 * 3600000).toISOString(), acks: {[s.employees[1].id]: new Date(Date.parse(mon + 'T00:00:00Z') - 86400000).toISOString()}}};
   s.settings = {...s.settings, employerName: '예시 사장님', autoPayslip: false, autoContract: false, fivePlus: false};
   // 지난달 급여는 확정해 둔다(화면이 다시 계산한 값과 같아야 한다).
   s.payrollRuns = {};

@@ -43,7 +43,7 @@ export async function alertSweep(env:any,now=Date.now(),notify=(uid:string,m:any
   // 출퇴근 기록은 attendance_records 테이블에 있다: 어제~지금만 읽는다
   d.attendance=await loadAttendance(env.DB,r.owner,new Date(now-2*86400000).toISOString(),new Date(now+60000).toISOString()).catch(()=>[]);
   const leaves=(d._operations?.leaves||[]).filter((l:any)=>l.status==='승인');
-  const list=alertsFor({...d,approvedLeaves:leaves},now);if(!list.length)continue;
+  const list=alertsFor({...d,approvedLeaves:leaves,availability:d._operations?.availability||{}},now);if(!list.length)continue;
   const prev=typeof d._alertsSent==='string'?(()=>{try{return JSON.parse(d._alertsSent)}catch{return {}}})():d._alertsSent||{},done:Record<string,number>={...prev};let changed=false;
   for(const a of list){if(done[a.key])continue;
    const uid=a.to==='owner'?r.owner:(d._members||[]).find((m:any)=>m.employeeId===a.to)?.userId;

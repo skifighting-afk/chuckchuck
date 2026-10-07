@@ -42,3 +42,14 @@ export const dayLabel = (d: string) => `${Number(d.slice(5, 7))}월 ${Number(d.s
 export function moveMessage(name: string, from: string, to: string) {
   return `${name} ${dayLabel(from)} → ${from.slice(0, 7) === to.slice(0, 7) ? Number(to.slice(8)) + '일' : dayLabel(to)}로 옮겼어요`;
 }
+
+/** 지시서 3주차 021: 일간 표에서 끌어 시간·직원을 바꾸거나 복사할 때. 막히면 이유 한 줄 */
+export function editBlockReason(s: Team, cand: Shift, ignoreId?: string): string | null {
+  if (isLocked(s, cand.employeeId, cand.date)) return `${Number(cand.date.slice(5, 7))}월 급여가 확정돼 바꿀 수 없어요.`;
+  if (ignoreId) { const old = s.shifts.find(x => x.id === ignoreId); if (old && isLocked(s, old.employeeId, old.date)) return '급여가 확정된 달의 근무라 옮길 수 없어요.'; }
+  if (onLeave(s, cand.employeeId, cand.date)) return '그날은 승인된 휴가라 넣을 수 없어요.';
+  const [ns, ne] = span(cand);
+  const clash = s.shifts.find(x => x.id !== ignoreId && x.employeeId === cand.employeeId && Math.abs(Date.parse(x.date) - Date.parse(cand.date)) <= 86400000 && (() => {const [a, b] = span(x); return a < ne && ns < b})());
+  if (clash) return `그 직원은 ${clash.start}–${clash.end} 근무와 시간이 겹쳐요.`;
+  return null;
+}

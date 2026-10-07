@@ -277,3 +277,13 @@ html.large-text .saas-shell main,html.large-text .t-work,html.large-text [role=d
 .nb-pref input::after{content:'';position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left .15s}
 .nb-pref input:checked{background:#15643f}.nb-pref input:checked::after{left:23px}
 .nb-pref input:focus-visible{outline:3px solid #15643f;outline-offset:2px}
+/* 지시서 3주차: 근무 규칙 경고 */
+.shift-checks{list-style:none;margin:8px 0;padding:0;display:grid;gap:6px}
+.shift-checks li{padding:8px 10px;border-radius:8px;font-size:14px;line-height:1.5}
+.shift-checks li.warn{background:#fff7ec;color:#6b3d00}
+.shift-checks li.block{background:#fbe9e9;color:#7d1f1f;font-weight:700}
+.daily-tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:6px 0}
+.daily-copy{display:inline-flex;gap:6px;align-items:center;min-height:44px;font-weight:700}
+.daily-bar{touch-action:manipulation;-webkit-touch-callout:none;user-select:none}
+.daily-bar.lifting{opacity:.5;outline:2px dashed #15643f}
+.month-ghost.no{background:#a12a2a}
