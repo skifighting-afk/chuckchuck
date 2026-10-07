@@ -1,6 +1,2 @@
 Connecting to remote database...
-Do you want to push these migrations to the remote database?
- • 20261009130000_kiosk_tokens.sql
- [Y/n] 
-Applying migration 20261009130000_kiosk_tokens.sql...
-Finished supabase db push.
+Remote database is up to date.

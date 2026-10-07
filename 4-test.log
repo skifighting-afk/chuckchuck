@@ -1275,62 +1275,65 @@ PASS 562. 오늘 인건비(시급 2시간 + 월급 하루치)
 PASS: 지시서 6주차 보완 (브리핑·주간·오늘 인건비).
 PASS 563. POS 매출 파일 월별 합계(합계 줄 무시)
 PASS 564. 제목 없는 파일도
-PASS 565. 시각 있는 매출: 시간대별
-PASS 566. 적정 인원: 화 12시 평균 12만 → 2명
-PASS 567. 시각 없는 파일은 시간대 없음
+PASS 565. 급여 설명: 첫 줄 실수령
+PASS 566. 급여 설명: 지난달 비교
+PASS 567. 급여 설명: 보험
+PASS 568. 시각 있는 매출: 시간대별
+PASS 569. 적정 인원: 화 12시 평균 12만 → 2명
+PASS 570. 시각 없는 파일은 시간대 없음
 PASS: POS 매출 파일 읽기.
-PASS 568. 5명 이상: 평소 근무 요일 공휴일 하루치
-PASS 569. 5명 미만은 없음
+PASS 571. 5명 이상: 평소 근무 요일 공휴일 하루치
+PASS 572. 5명 미만은 없음
 PASS: 공휴일 유급휴일수당.
-PASS 570. 퇴직금: 7~9월 확정 급여, 92일
-PASS 571. 퇴직금: 달 중간 퇴직은 일할, 10월 미확정 표시
+PASS 573. 퇴직금: 7~9월 확정 급여, 92일
+PASS 574. 퇴직금: 달 중간 퇴직은 일할, 10월 미확정 표시
 PASS: 퇴직금 자동 채움.
-PASS 572. 10월 기한: 원천세 10/12(10일 토요일→월), 4대보험, 사업소득 간이, 취득·상실
-PASS 573. 영업일 계산(공휴일 건너뜀)
-PASS 574. 3월엔 연말정산·보수총액
-PASS 575. 2주 안 기한만
-PASS 576. 두루누리: 10명 미만·270만 미만·가입
-PASS 577. 10명 이상이면 대상 아님
+PASS 575. 10월 기한: 원천세 10/12(10일 토요일→월), 4대보험, 사업소득 간이, 취득·상실
+PASS 576. 영업일 계산(공휴일 건너뜀)
+PASS 577. 3월엔 연말정산·보수총액
+PASS 578. 2주 안 기한만
+PASS 579. 두루누리: 10명 미만·270만 미만·가입
+PASS 580. 10명 이상이면 대상 아님
 PASS: 신고 기한·취득상실·두루누리.
-PASS 578. 6자리 코드
-PASS 579. 지금·직전 1분 코드 통과, 고정·움직이는 QR 매장 모두
-PASS 580. 2분 지난 코드·틀린 코드·다른 매장 거절
+PASS 581. 6자리 코드
+PASS 582. 지금·직전 1분 코드 통과, 고정·움직이는 QR 매장 모두
+PASS 583. 2분 지난 코드·틀린 코드·다른 매장 거절
 PASS: 매장 코드 출퇴근.
-PASS 581. 서식 5종
-PASS 582. 해고예고: 30일 뒤·제26조·예고수당 안내
-PASS 583. 사직서는 직원이 쓰는 서류 안내
+PASS 584. 서식 5종
+PASS 585. 해고예고: 30일 뒤·제26조·예고수당 안내
+PASS 586. 사직서는 직원이 쓰는 서류 안내
 PASS: 서식함.
-PASS 584. 의무교육: 올해 기록·안 들은 직원
-PASS 585. 5명 이상이면 산업안전
+PASS 587. 의무교육: 올해 기록·안 들은 직원
+PASS 588. 5명 이상이면 산업안전
 PASS: 법정 의무교육.
-PASS 586. 결제 실패 7일 유예 동안은 그대로 씀
-PASS 587. 유예 지나면 조회만
+PASS 589. 결제 실패 7일 유예 동안은 그대로 씀
+PASS 590. 유예 지나면 조회만
 PASS: 결제 실패 유예.
-PASS 588. 엑셀: 시트 7개·글자 이스케이프·숫자 칸
+PASS 591. 엑셀: 시트 7개·글자 이스케이프·숫자 칸
 PASS: 엑셀 내보내기.
-PASS 589. 인상 방식
-PASS 590. 예약 인상: 지금 시급은 그대로, 이력에 남김, 이미 높은 직원은 제외
-PASS 591. 그날이 되면 반영
-PASS 592. 달 중간 인상: 날짜별로 나눠 계산
+PASS 592. 인상 방식
+PASS 593. 예약 인상: 지금 시급은 그대로, 이력에 남김, 이미 높은 직원은 제외
+PASS 594. 그날이 되면 반영
+PASS 595. 달 중간 인상: 날짜별로 나눠 계산
 PASS: 시급 인상·예약·달 중간 변경.
-PASS 593. 반복 고치기: 이 날 이후만
-PASS 594. 반복 지우기: 이 날 이후만
-PASS 595. 한 주 하루 뒤로: 막힌 건 건너뜀
-PASS 596. 겹치면 안 옮김
-PASS 597. 하루 지우기
+PASS 596. 반복 고치기: 이 날 이후만
+PASS 597. 반복 지우기: 이 날 이후만
+PASS 598. 한 주 하루 뒤로: 막힌 건 건너뜀
+PASS 599. 겹치면 안 옮김
+PASS 600. 하루 지우기
 PASS: 반복 고치기·통째로 옮기기.
-PASS 598. 겸직: 주방으로 잡은 날은 주방 시급
+PASS 601. 겸직: 주방으로 잡은 날은 주방 시급
 PASS: 겸직 포지션 시급.
-PASS 599. 근무표 변경 이력 요약
+PASS 602. 근무표 변경 이력 요약
 PASS: 근무표 변경 이력.
-PASS 600. 월급 결근 1일·지각 30분 공제(통상시급 기준)
-PASS 601. 인센티브: 매출 500만 × 2% = 10만
+PASS 603. 월급 결근 1일·지각 30분 공제(통상시급 기준)
+PASS 604. 인센티브: 매출 500만 × 2% = 10만
 PASS: 결근 공제·인센티브.
-PASS 602. 소급: 다음 해 1월에 넣음
-PASS 603. 연간 지급 내역
-PASS 604. 세무사 양식: 주휴 칸·차인지급액
+PASS 605. 소급: 다음 해 1월에 넣음
+PASS 606. 연간 지급 내역
+PASS 607. 세무사 양식: 주휴 칸·차인지급액
 PASS: 소급·연간 내역·세무사 양식.
-PASS 605. 3일 넘은 요청만
+PASS 608. 3일 넘은 요청만
 PASS: 오래된 요청.
 
 ── check-claims
@@ -1407,7 +1410,7 @@ PASS 36. 2026-03-31: no clock-in or clock-out in the future (A1·A3)
 PASS: 체험 화면 숫자(급여·명세서·임금대장 합계).
 
 ── check-error-messages
-PASS: 오류 문구 522개 모두 다음 행동 안내 포함.
+PASS: 오류 문구 527개 모두 다음 행동 안내 포함.
 PASS: 오류 번호·로그 개인정보 제거.
 
 ── check-attendance-table
@@ -1577,6 +1580,7 @@ PASS: 매주 자동 백업.
 PASS: 예약 인상 자동 반영.
 PASS: 근무표 자동 게시.
 PASS: 마감 체크 누락·공지 재알림.
+PASS: 생일·입사 기념일.
 PASS: 매일 작업 (비밀값·체험 종료 알림 7일·1일 각 한 번).
 
 ── check-support
@@ -1744,6 +1748,23 @@ PASS: 가불·선지급.
 37. PASS all correct passes
 38. PASS staff marked passed
 39. PASS owner sees pass
+40. PASS order needs item
+41. PASS staff requests order
+42. PASS complaint
+43. PASS owner cannot write anonymous
+44. PASS anonymous suggestion
+45. PASS suggestion has no author
+46. PASS audit has no author for suggestion
+47. PASS owner answers suggestion
+48. PASS other staff sees answered suggestion
+49. PASS same-branch staff sees answered suggestion
+50. PASS order status by owner
+51. PASS staff messages owner
+52. PASS owner sees message
+53. PASS owner replies
+54. PASS owner marks read
+55. PASS staff sees thread with read mark
+56. PASS other staff sees no messages
 PASS: 매장 일지·할 일·서명 서류.
 
 ── check-history
