@@ -2,6 +2,7 @@
 // 짧게 누르면 그날 일간 근무표로. 휴대폰은 날짜를 누르면 그날 근무 목록을 달력 아래에 펼치고, 그 목록에서 끈다.
 // 키보드: 막대에서 Space로 잡고, 방향키로 옮기고, Space로 놓기. Esc는 취소.
 'use client';
+import {empColor} from '../lib/schedule-bulk';
 import {useEffect,useMemo,useRef,useState} from 'react';
 import {type Team} from '../lib/team-model';
 import {PUBLIC_HOLIDAYS} from '../lib/holidays';
@@ -73,7 +74,7 @@ export function MonthSchedule({state,employees,anchor,today,onPick,onSave,onMont
   if(kb&&step){e.preventDefault();const next=plus(kb.date,step);setKb({...kb,date:next});if(next.slice(0,7)!==month)onMonth?.(next);const r=blocked.get(next);setMsg(`${dayLabel(next)}${r?' · '+r:''}`)}
  }
  const bar=(x:Team['shifts'][number],where:'cell'|'list')=>{const label=`${name(x.employeeId)} ${x.start.slice(0,5)}–${x.end.slice(0,5)}`;
-  return <button type="button" key={x.id+where} className={'month-bar'+(drag?.id===x.id||kb?.id===x.id?' lifting':'')} data-shift={x.id}
+  return <button type="button" key={x.id+where} className={'month-bar'+(drag?.id===x.id||kb?.id===x.id?' lifting':'')} data-shift={x.id} style={{borderLeftColor:empColor(x.employeeId,employees.map(e=>e.id))}}
    aria-label={`${label}, ${dayLabel(x.date)}. 누르면 그날 시간표.${canMove?' 꾹 눌러 끌거나 Space로 잡아 옮기기.':''}`}
    onPointerDown={e=>onDown(e,x.id,label)} onContextMenu={e=>{if(canMove)e.preventDefault()}} onKeyDown={e=>onKey(e,x.id,x.date)}
    onClick={()=>{if(suppress.current){suppress.current=false;return}if(kb)return;onPick(x.date)}}>
@@ -89,7 +90,7 @@ export function MonthSchedule({state,employees,anchor,today,onPick,onSave,onMont
     return <div role="gridcell" key={d} data-date={d} className={'month-cell'+(out?' out':'')+(d===today?' today':'')+(hol||dow===0?' sun':'')+(dragging?(no?' drop-no':' drop-ok'):'')+(isTarget?' drop-target':'')+(picked===d?' picked':'')} title={no||undefined}>
      <button type="button" className="month-daybtn" onClick={()=>{if(mobile){setPicked(picked===d?'':d)}else onPick(d)}} aria-label={`${Number(d.slice(5,7))}월 ${Number(d.slice(8))}일${hol?' '+hol:''} 근무 ${list.length}개${leaves.some(l=>l.start<=d&&d<=l.end)?' · 휴가 있음':''}${mobile?' · 누르면 근무 목록':' · 누르면 그날 시간표'}`} aria-expanded={mobile?picked===d:undefined}>
       <span className="month-day">{Number(d.slice(8))}{hol&&<small>{hol}</small>}</span>
-      {list.length>0&&<span className="month-count">{list.length}명</span>}
+      {list.length>0&&<span className="month-count">{list.slice(0,2).map(x=>name(x.employeeId).slice(-2)).join('·')}{list.length>2?` +${list.length-2}`:''}</span>}
      </button>
      {(()=>{const off=leaves.filter(l=>l.start<=d&&d<=l.end).map(l=>name(l.employeeId)).filter(Boolean);return off.length?<span className="month-leave">휴가 {off.join('·')}</span>:null})()}
      <span className="month-list">{list.slice(0,4).map(x=>bar(x,'cell'))}{list.length>4&&<button type="button" className="month-more" onClick={()=>onPick(d)}>+{list.length-4}</button>}</span>

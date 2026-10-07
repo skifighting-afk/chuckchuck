@@ -16,7 +16,7 @@ export function parseBulk(text:string,branchId:string,existingEmails:string[]=[]
   const pt=(payType||'시급') as Member['payType'];if(!['시급','월급','일급'].includes(pt))errors.push('급여형태는 시급·월급·일급 중 하나예요');
   const w=num(wage);if(!wage||!Number.isInteger(w)||w<1||w>100000000)errors.push('급여는 숫자로 써 주세요');
   const h=hours?num(hours):(pt==='월급'?40:20);if(!(h>=0&&h<=80))errors.push('주 소정시간은 0~80 사이예요');
-  const r=(role||'홀') as Member['role'];if(!['홀','주방','매니저'].includes(r))errors.push('직무는 홀·주방·매니저 중 하나예요');
+  const r=(role||'홀') as Member['role'];if(!r.trim()||r.length>20)errors.push('업무 이름은 1~20자로 적어 주세요.');
   if(!phone)errors.push('연락처가 비어 있어요');else if(phone.length>30)errors.push('연락처가 너무 길어요');
   if(errors.length){out.push({line:i,errors,raw:cells});continue}
   if(em)seen.add(em);

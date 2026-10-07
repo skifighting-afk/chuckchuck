@@ -612,3 +612,14 @@ body.ms-dragging,body.ms-dragging *{user-select:none!important;-webkit-user-sele
  .t-table.cardable td{display:block;border:0;padding:2px 0}.t-table.cardable td:first-child,.t-table.cardable td:last-child{grid-column:1/-1}
  .t-table.cardable td[data-label]::before{content:attr(data-label);display:block;font-size:12px;color:#44564b}
 }
+.dow-pick{display:flex;gap:6px;flex-wrap:wrap}.dow-pick button{min-width:44px;min-height:44px;border:1px solid #b5c8ba;border-radius:10px;background:#fff;color:#173e30;font-weight:700}.dow-pick button[aria-pressed=true]{background:#17583f;color:#fff;border-color:#17583f}
+.bulk-edit{display:grid;gap:12px}.bulk-edit fieldset{border:1px solid #dce7df;border-radius:10px;padding:10px 12px;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:flex-end}.bulk-edit legend{font-weight:700}
+.bulk-edit label{display:flex;flex-direction:column;gap:4px;font-size:14px}.bulk-edit label.t-check{flex-direction:row;align-items:center;min-height:44px}.bulk-edit input,.bulk-edit select{min-height:44px}.bulk-edit small{flex-basis:100%;font-size:13px;color:#44564b}
+.wage-hist{grid-column:1/-1;font-size:13px}.wage-hist summary{min-height:44px;display:flex;align-items:center;cursor:pointer}
+.avatar-photo{border-radius:50%;object-fit:cover;width:40px;height:40px}.order-btns{display:inline-flex;gap:2px}.order-btns button{min-width:44px;min-height:44px;border:1px solid #dce7df;border-radius:8px;background:#fff;color:#173e30}.order-btns button:disabled{opacity:.4}
+.series-all{margin:8px 0;min-height:44px;display:flex;align-items:center;gap:8px}
+.positions{grid-column:1/-1;display:grid;gap:6px;padding:10px;border:1px dashed #b5c8ba;border-radius:10px}.positions small{font-size:13px;color:#44564b}.positions input{min-height:44px;max-width:9em}.positions button{min-height:44px}
+.sched-undo{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:8px 0;padding:10px 12px;border-radius:10px;background:#173e30;color:#fff}.sched-undo button.secondary{min-height:44px}.sched-undo .link-btn{color:#fff}
+.t-add{display:block;width:100%;min-height:44px;border:1px dashed #b5c8ba;border-radius:8px;background:transparent;color:#17583f;font-size:20px}
+.t-shift{border-left-width:5px!important;border-left-style:solid!important}.month-bar{border-left:4px solid}.t-note{display:block;font-size:12px}
+.sched-hist{padding:0 14px}.sched-hist summary{min-height:48px;display:flex;align-items:center;font-weight:700;cursor:pointer}.sched-hist ul{padding-left:18px;font-size:14px}.sched-hist li{padding:4px 0}

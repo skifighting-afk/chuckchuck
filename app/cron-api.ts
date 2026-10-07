@@ -9,6 +9,7 @@ import {alertsFor} from '../lib/alert-sweep';
 import {dailyBrief,weeklyBrief} from '../lib/briefing';
 import {upcomingDeadlines} from '../lib/tax-calendar';
 import {retentionDue} from '../lib/retention';
+import {applyDueRaises} from '../lib/wage-raise';
 import {holidaysFor} from '../lib/holidays';
 import {loadAttendance} from './attendance-store';
 import {sendAlimtalk} from '../lib/alimtalk-send';
@@ -36,10 +37,20 @@ export async function cronApi(request:Request,env:any){
  const deletions=await processDeletions(env,20).catch(()=>0);
  const contracts=await contractReminders(env).catch(()=>0);
  const backups=await weeklyBackups(env).catch(()=>0);
+ const raises=await applyRaises(env).catch(()=>0);
  await env.DB.prepare('DELETE FROM notifications WHERE created_at<?').bind(new Date(Date.now()-90*86400000).toISOString()).run().catch(()=>{});
- return json({ok:true,reminders,deletions,contracts,backups});
+ return json({ok:true,reminders,deletions,contracts,backups,raises});
 }
 
+/** 지시서 045: 예약한 시급 인상을 그날 반영 */
+export async function applyRaises(env:any,now=Date.now()){
+ const today=new Date(now+9*3600000).toISOString().slice(0,10);let n=0;
+ const rows=(await env.DB.prepare("SELECT owner,data,version FROM stores WHERE data LIKE '%wageHistory%' LIMIT 500").all()).results as any[];
+ for(const r of rows){let d:any;try{d=JSON.parse(r.data)}catch{continue}const x=applyDueRaises(d.employees||[],today);if(!x.changed)continue;d.employees=x.employees;
+  d._audit=[...(d._audit||[]),{id:crypto.randomUUID(),at:new Date(now).toISOString(),actor:{id:'system',name:'자동'},action:'예약한 급여 인상 반영',target:'',before:null,after:null,reason:today}].slice(-1000);
+  const u=await env.DB.prepare('UPDATE stores SET data=?,version=version+1,updated_at=? WHERE owner=? AND version=?').bind(JSON.stringify(d),new Date(now).toISOString(),r.owner,r.version).run();if(u.meta.changes)n++}
+ return n;
+}
 /** 지시서 147: 매주 월요일 가게마다 백업 한 벌(가게 데이터 + 최근 5주 출퇴근), 4주치만 남긴다 */
 export async function weeklyBackups(env:any,now=Date.now()){
  const k=new Date(now+9*3600000);if(k.getUTCDay()!==1)return 0;const week=k.toISOString().slice(0,10);let n=0;

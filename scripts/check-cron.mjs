@@ -57,5 +57,12 @@ console.log('PASS: 서비스 상태(/api/status).');
  await env.DB.prepare("DELETE FROM store_backups").run();await env.DB.prepare("DELETE FROM stores WHERE owner='bk-owner'").run();
  console.log('PASS: 매주 자동 백업.');
 }
+{
+ const mod=await import('../dist/server/cron.js');const now=Date.parse('2026-10-15T01:00:00Z');
+ await env.DB.prepare('INSERT INTO stores(owner,data,version,updated_at) VALUES(?,?,1,?)').bind('raise-owner',JSON.stringify({store:{name:'r'},employees:[{id:'e',name:'가',payType:'시급',wage:10030,status:'재직',wageHistory:[{from:'2026-10-15',wage:10320,prev:10030,payType:'시급'}]}],shifts:[]}),new Date().toISOString()).run();
+ assert.equal(await mod.applyRaises(env,now-86400000),0,'전날엔 그대로');assert.ok(await mod.applyRaises(env,now)>=1);
+ assert.equal(JSON.parse((await env.DB.prepare("SELECT data FROM stores WHERE owner='raise-owner'").first()).data).employees[0].wage,10320);
+ await env.DB.prepare("DELETE FROM stores WHERE owner='raise-owner'").run();console.log('PASS: 예약 인상 자동 반영.');
+}
 console.log('PASS: 매일 작업 (비밀값·체험 종료 알림 7일·1일 각 한 번).');
 await closeAll();

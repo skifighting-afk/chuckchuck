@@ -1370,3 +1370,48 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('엑셀: 시트 7개·글자 이스케이프·숫자 칸',(x.match(/<Worksheet /g)||[]).length===7&&x.includes('&lt;김&amp;예시&gt;')&&x.includes('<Data ss:Type="Number">10320</Data>')&&x.includes('2026-10-01 09:00')&&x.includes('<Data ss:Type="Number">5.5</Data>'));
  console.log('PASS: 엑셀 내보내기.');
 }
+// 지시서 154·045·046·182: 시급 일괄 인상·예약·달 중간 변경
+{
+ const {planRaise,applyDueRaises,newWage}=await import('../lib/wage-raise.ts');const tm=await import('../dist/server/team-model.js');
+ ok('인상 방식',newWage(10030,{kind:'min',to:10320})===10320&&newWage(11000,{kind:'min',to:10320})===11000&&newWage(10000,{kind:'pct',pct:3})===10300&&newWage(10000,{kind:'add',add:500})===10500);
+ const E=[{id:'a',name:'가',payType:'시급',wage:10030,status:'재직'},{id:'b',name:'나',payType:'시급',wage:12000,status:'재직'}];
+ let r=planRaise(E,['a','b'],{kind:'min',to:10320},'2026-10-15','2026-10-07');
+ ok('예약 인상: 지금 시급은 그대로, 이력에 남김, 이미 높은 직원은 제외',r.changes.length===1&&r.employees[0].wage===10030&&r.employees[0].wageHistory[0].from==='2026-10-15');
+ ok('그날이 되면 반영',applyDueRaises(r.employees,'2026-10-15').employees[0].wage===10320&&!applyDueRaises(r.employees,'2026-10-14').changed);
+ const t=tm.normalizeTeam(null);const e=t.employees[0];Object.assign(e,{payType:'시급',wage:10030,status:'재직',joined:'2026-01-01',wageHistory:r.employees[0].wageHistory});
+ const iso=(d,hm)=>new Date(Date.parse(`${d}T${hm}:00+09:00`)).toISOString();
+ const att=[{id:'1',employeeId:e.id,start:iso('2026-10-10','10:00'),end:iso('2026-10-10','20:00'),breakMinutes:0,breakStart:null},{id:'2',employeeId:e.id,start:iso('2026-10-20','10:00'),end:iso('2026-10-20','20:00'),breakMinutes:0,breakStart:null}];
+ const row=tm.calculate({...t,attendance:att,shifts:[]},'2026-10').find(x=>x.employeeId===e.id);
+ ok('달 중간 인상: 날짜별로 나눠 계산',row.earnings[0].amount===100300+103200&&row.earnings[0].formula.includes('시급 변경 반영'));
+ console.log('PASS: 시급 인상·예약·달 중간 변경.');
+}
+// 3차 필수 ②: 반복 고치기·통째로 옮기기
+{
+ const {seriesEdit,seriesDelete,rangeShift}=await import('../lib/schedule-bulk.ts');
+ const S=(id,emp,date,series)=>({id,employeeId:emp,date,start:'10:00',end:'15:00',breakMinutes:30,series});
+ const L=[S('1','a','2026-10-05','r'),S('2','a','2026-10-12','r'),S('3','a','2026-10-19','r'),S('4','b','2026-10-12')];
+ const e=seriesEdit(L,'2',{start:'11:00'});ok('반복 고치기: 이 날 이후만',e.count===2&&e.shifts.find(x=>x.id==='1').start==='10:00'&&e.shifts.find(x=>x.id==='3').start==='11:00');
+ ok('반복 지우기: 이 날 이후만',seriesDelete(L,'2').count===2&&seriesDelete(L,'2').shifts.length===2);
+ const m=rangeShift(L,'2026-10-12','2026-10-18',null,1,(d,emp)=>emp==='b'&&d==='2026-10-13');
+ ok('한 주 하루 뒤로: 막힌 건 건너뜀',m.moved.length===1&&m.moved[0].date==='2026-10-13'&&m.skipped.length===1);
+ const c=rangeShift(L,'2026-10-12','2026-10-12',null,7);ok('겹치면 안 옮김',c.skipped.some(x=>x.why.includes('겹치는'))&&c.moved.some(x=>x.employeeId==='b'));
+ ok('하루 지우기',rangeShift(L,'2026-10-12','2026-10-12',['a'],0).removed===1);
+ console.log('PASS: 반복 고치기·통째로 옮기기.');
+}
+{
+ const tm=await import('../dist/server/team-model.js');const t=tm.normalizeTeam(null);const e=t.employees[0];
+ Object.assign(e,{payType:'시급',wage:10320,role:'홀',status:'재직',joined:'2026-01-01',positions:[{role:'주방',wage:11000}]});
+ const iso=(d,hm)=>new Date(Date.parse(`${d}T${hm}:00+09:00`)).toISOString();
+ const att=['2026-10-01','2026-10-02'].map((d,i)=>({id:'x'+i,employeeId:e.id,start:iso(d,'10:00'),end:iso(d,'15:00'),breakMinutes:0,breakStart:null}));
+ const sh=[{id:'s1',employeeId:e.id,date:'2026-10-02',start:'10:00',end:'15:00',breakMinutes:0,position:'주방'}];
+ const r=tm.calculate({...t,attendance:att,shifts:sh},'2026-10').find(x=>x.employeeId===e.id);
+ ok('겸직: 주방으로 잡은 날은 주방 시급',r.earnings[0].amount===5*10320+5*11000&&r.earnings[0].formula.includes('포지션'));
+ console.log('PASS: 겸직 포지션 시급.');
+}
+{
+ const {shiftDiffSummary}=await import('../lib/schedule-bulk.ts');
+ const S=(id,date,start)=>({id,employeeId:'a',date,start,end:'15:00',breakMinutes:0});
+ const t=shiftDiffSummary([S('1','2026-10-05','10:00'),S('2','2026-10-06','10:00')],[S('1','2026-10-07','11:00'),S('3','2026-10-08','10:00')],()=>'가');
+ ok('근무표 변경 이력 요약',t.includes('추가 1건(가 10/8')&&t.includes('변경 1건(가 10/5 10:00–15:00 → 10/7 11:00')&&t.includes('삭제 1건(가 10/6)'));
+ console.log('PASS: 근무표 변경 이력.');
+}
