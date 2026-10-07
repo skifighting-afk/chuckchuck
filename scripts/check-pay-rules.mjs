@@ -1332,3 +1332,11 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('10명 이상이면 대상 아님',!durunuriCandidates(Array.from({length:10},(_,i)=>({...E[0],id:'x'+i})),{}).eligibleStore);
  console.log('PASS: 신고 기한·취득상실·두루누리.');
 }
+// 지시서 102: 매장 코드 6자리
+{
+ const {storeCode,qrTokenOk}=await import('../lib/qr-live.ts');const now=Date.parse('2026-10-07T09:00:30Z');
+ const c=await storeCode('secret-x',now);ok('6자리 코드',/^\d{6}$/.test(c.code));
+ ok('지금·직전 1분 코드 통과, 고정·움직이는 QR 매장 모두',await qrTokenOk('secret-x','static','C.'+c.code,now)&&await qrTokenOk('secret-x','dynamic','C.'+c.code,now+60000));
+ ok('2분 지난 코드·틀린 코드·다른 매장 거절',!(await qrTokenOk('secret-x','dynamic','C.'+c.code,now+125000))&&!(await qrTokenOk('secret-x','static','C.000000',now)&&c.code!=='000000')&&!(await qrTokenOk('secret-y','static','C.'+c.code,now)));
+ console.log('PASS: 매장 코드 출퇴근.');
+}

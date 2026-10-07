@@ -78,3 +78,16 @@ export function FilingCalendar({s,month,branch,payRows}:{s:Team,month:string,bra
   {du.eligibleStore&&du.list.length>0&&<div className="notice"><b>두루누리 사회보험료 지원 대상일 수 있어요</b> · {du.list.map(e=>e.name).join(', ')} (월 보수 {won(DURUNURI_LIMIT)}원 미만, 근로자 10명 미만 사업장). 새로 가입한 직원은 고용보험·국민연금 보험료의 80%를 지원받을 수 있어요. 재산·소득 요건이 있으니 <a href="https://insurancesupport.or.kr" target="_blank" rel="noopener">두루누리 누리집</a>이나 공단(1355)에 확인해 주세요.</div>}
  </div></section>;
 }
+/** 지시서 105·106: 사장님 — 직원 명세서 문의·정보 변경 요청 처리 */
+export function StaffAsksDesk({s,busy,mutate}:{s:Team,busy:boolean,mutate:(b:any)=>Promise<boolean>}){
+ const open:any[]=((s as any).staffAsks||[]).filter((x:any)=>x.status==='확인 중'),[ans,setAns]=useState<Record<string,string>>({});
+ if(!open.length)return null;
+ const name=(id:string)=>s.employees.find(e=>e.id===id)?.name||'직원';
+ const L:Record<string,string>={phone:'휴대폰',address:'주소',bankName:'은행',bankAccount:'계좌번호',bankHolder:'예금주',emergencyName:'비상연락처',emergencyPhone:'비상연락처 전화'};
+ return <section className="panel t-gap asks-desk" aria-label="직원 문의·요청"><div className="panel-heading"><h2>직원 문의·요청 {open.length}건</h2></div><ul className="t-panelbody">{open.map(x=><li key={x.id}>
+  <b>{name(x.employeeId)} · {x.type==='pay'?`${Number(x.month.slice(5))}월 명세서 '${x.item}' 문의`:x.type==='clock'?`인터넷 끊김 ${x.kind==='in'?'출근':'퇴근'} ${new Date(x.clockAt).toLocaleString('ko-KR',{timeZone:'Asia/Seoul',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}`:'내 정보 변경 요청'}</b>
+  {x.message&&<p>{x.message}</p>}{x.changes&&<ul className="ask-changes">{Object.entries(x.changes).map(([k,v]:any)=><li key={k}>{L[k]||k}: <b>{v||'(비움)'}</b></li>)}</ul>}
+  <label>답<input value={ans[x.id]||''} maxLength={1000} onChange={e=>setAns({...ans,[x.id]:e.target.value})} placeholder={x.type==='pay'?'예: 10/3 근무를 추가해 다시 확정할게요':'예: 바꿨어요'}/></label>
+  <div className="actions">{x.type==='profile'||x.type==='clock'?<><button type="button" className="primary" disabled={busy} onClick={()=>mutate({action:'answerAsk',id:x.id,apply:true,answer:ans[x.id]||'바꿨어요'})}>그대로 반영</button><button type="button" className="secondary" disabled={busy||!ans[x.id]?.trim()} onClick={()=>mutate({action:'answerAsk',id:x.id,reject:true,answer:ans[x.id]})}>반려</button></>:<button type="button" className="primary" disabled={busy||!ans[x.id]?.trim()} onClick={()=>mutate({action:'answerAsk',id:x.id,answer:ans[x.id]})}>답 보내기</button>}</div>
+ </li>)}</ul></section>;
+}

@@ -50,6 +50,7 @@ export function DemoOperations({team,onTeam,branchId}:{team:Team,onTeam:(s:Team)
    setOps(o=>({...o,swaps:o.swaps.map(x=>x.id===b.id?{...x,status:b.approve?'승인':'반려',comment:b.comment,reviewedAt:now,reviewer:'예시 사장님'}:x)}));
    toast.success(b.approve?`승인했어요. ${md(w.shift.date)} 근무자를 ${w.taker!.name}님으로 바꿨어요.`:'반려했어요. 직원에게 사유를 알렸어요(체험).');return}
   if(b.action==='postNotice'){setOps(o=>({...o,notices:[...o.notices,{id:crypto.randomUUID(),title:b.title,body:b.body,branchId:b.branchId,author:'예시 사장님',createdAt:now,target:b.target,publishAt:b.publishAt,photo:b.photo,readers:[],remindedAt:null}]}));toast.success(b.publishAt?'공지를 예약했어요(체험).':'공지를 보냈어요(체험). 실제 매장에서는 직원 휴대폰에 알림이 가요.');return}
+  if(b.action==='pinNotice'){setOps(o=>({...o,notices:o.notices.map(x=>x.id===b.id?{...x,pinned:!!b.pinned}:x)}));toast.success(b.pinned?'맨 위에 고정했어요(체험). 직원 첫 화면에도 맨 위에 보여요.':'고정을 풀었어요(체험).');return}
   if(b.action==='remindNotice'){const n=data.notices.find((x:any)=>x.id===b.id);setOps(o=>({...o,notices:o.notices.map(x=>x.id===b.id?{...x,remindedAt:now}:x)}));toast.success(`${n?.unread.join(', ')}님에게 다시 알렸어요(체험).`);return}
   if(b.action==='requestLeave'){const e=es.find(x=>x.id===b.employeeId)!;setOps(o=>({...o,leaves:[...o.leaves,{id:crypto.randomUUID(),employeeId:e.id,name:e.name,start:b.start,end:b.end,kind:b.kind,days:b.days,reason:b.reason,status:'승인 대기',at:now}]}));toast.success('휴가 신청을 넣었어요(체험).');return}
   if(b.action==='cancelLeave'){setOps(o=>({...o,leaves:o.leaves.map(x=>x.id===b.id?{...x,status:'취소'}:x)}));return}

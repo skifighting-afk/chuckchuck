@@ -85,13 +85,13 @@ function Notices({data,owner,emps,busy,action,branchId}:{data:any,owner:boolean,
   let publishAt:string|null=null;if(f.when==='later'){const t=Date.parse(f.at);if(!f.at||isNaN(t)||t<Date.now()){setErr('예약 시각을 지금 이후로 골라 주세요.');return}publishAt=new Date(t).toISOString()}
   void Promise.resolve(action({action:'postNotice',title:f.title,body:f.body,branchId:f.branchId,target:target(),publishAt,photo:f.photo||null})).then(()=>setF(blank));
  }
- const list=(data.notices||[]).slice().reverse();
+ const list=(data.notices||[]).slice().reverse().sort((a:any,b:any)=>Number(!!b.pinned)-Number(!!a.pinned));
  return <div className={owner?'ops-notice-layout':''}>
   <div className="ops-notice-list">{list.map((n:any)=>{const aud=n.audience??((n.readCount||0)+(n.unread?.length||0)),pct=aud?Math.round((n.readCount||0)/aud*100):0;
    return <article className="panel t-panelbody ops-notice" key={n.id}><div className="t-inline ops-notice-meta"><Badge>{n.branchId==='all'?'전체 지점':data.branches?.find((b:any)=>b.id===n.branchId)?.name||'지점'}</Badge>{owner&&<Badge>{targetLabel(n.target,emps)}</Badge>}{n.scheduled?<Badge tone="amber"><span aria-hidden="true">⏰ </span>예약 {new Date(n.publishAt).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</Badge>:<small>{new Date(n.createdAt).toLocaleDateString('ko-KR')}</small>}</div>
-    <h2>{n.title}</h2>{n.photo&&<img className="ops-notice-photo" src={n.photo} alt={n.title+' 사진'}/>}<p className="ops-notice-body">{n.body}</p>
+    <h2>{n.pinned&&<span className="pin-tag">📌 고정</span>}{n.title}</h2>{n.photo&&<img className="ops-notice-photo" src={n.photo} alt={n.title+' 사진'}/>}<p className="ops-notice-body">{n.body}</p>
     {owner?<div className="ops-reads"><div className="ops-readbar" role="img" aria-label={`${aud}명 중 ${n.readCount||0}명 읽음`}><i style={{width:pct+'%'}}/></div><p><b>{n.readCount||0}/{aud}명 읽음</b>{n.unread?.length>0&&<> · 안 읽은 사람: {n.unread.join(', ')}</>}</p>
-     {!n.scheduled&&n.unread?.length>0&&<Btn disabled={busy} onClick={()=>action({action:'remindNotice',id:n.id})}><Bell size={16}/> 다시 알리기{n.remindedAt?` (마지막 ${new Date(n.remindedAt).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})})`:''}</Btn>}</div>
+     <Btn disabled={busy} onClick={()=>action({action:'pinNotice',id:n.id,pinned:!n.pinned})}>{n.pinned?'고정 풀기':'📌 맨 위에 고정'}</Btn>{!n.scheduled&&n.unread?.length>0&&<Btn disabled={busy} onClick={()=>action({action:'remindNotice',id:n.id})}><Bell size={16}/> 다시 알리기{n.remindedAt?` (마지막 ${new Date(n.remindedAt).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})})`:''}</Btn>}</div>
     :<Btn disabled={busy||n.read} onClick={()=>action({action:'readNotice',id:n.id})}><Check size={16}/>{n.read?'확인 완료':'공지 확인'}</Btn>}
    </article>})}{!list.length&&<section className="panel empty">등록된 공지가 없어요.</section>}</div>
   {owner&&<form className="panel t-panelbody ops-notice-form" onSubmit={send} aria-labelledby="new-notice"><h2 id="new-notice"><Plus size={18} aria-hidden="true"/> 새 공지</h2>
