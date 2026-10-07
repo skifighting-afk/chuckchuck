@@ -201,11 +201,11 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('late 12m and early 20m flagged',k('a')==='지각12,조퇴20');
  ok('within 5m tolerance is normal',k('b')==='');
  ok('overnight shift matched',k('c')==='');
- ok('no record after shift end = 미출근',k('d')==='미출근');
+ ok('no record after shift end = 결근',k('d')==='결근');
  ok('record without shift = 예정 외 출근',k('e')==='예정 외 출근');
  f=checkDay('2026-10-05',shifts,att,'lenient',now);ok('lenient 10m still flags 12m late',f.some(x=>x.employeeId==='a'&&x.kind==='지각'));
  f=checkDay('2026-10-05',shifts,att,'strict',now);ok('strict flags 3m late',f.some(x=>x.employeeId==='b'&&x.kind==='지각'&&x.minutes===3));
- ok('future shift not yet 미출근',!checkDay('2026-10-05',shifts,[],'normal',Date.parse('2026-10-05T08:00:00+09:00')).some(x=>x.kind==='미출근'));
+ ok('future shift not yet 미출근',!checkDay('2026-10-05',shifts,[],'normal',Date.parse('2026-10-05T08:00:00+09:00')).some(x=>x.kind==='미출근'||x.kind==='결근'));
  ok('summary counts',summarize(checkDay('2026-10-05',shifts,att,'normal',now)).지각===1);
  console.log('PASS: 지각·조퇴·미출근 표시.');
 }
@@ -768,7 +768,7 @@ console.log('PASS: 요율 연간 갱신 경고.');
  const shifts=['2026-09-07','2026-09-14','2026-09-21','2026-09-22'].map(sh);
  const att=[at('2026-09-07','09:20','15:00'),at('2026-09-14','09:15','15:00'),at('2026-09-21','09:00','15:00')];
  const p=monthPatterns('2026-09',shifts,att,'normal',Date.parse('2026-10-05T00:00:00Z'))[0];
- ok('지각 2번 35분, 미출근 1번',p.지각===2&&p.lateMinutes===35&&p.미출근===1);
+ ok('지각 2번 35분, 결근 1번',p.지각===2&&p.lateMinutes===35&&p.결근===1);
  ok('같은 요일(월) 반복 표시',p.repeatDay==='월');
  console.log('PASS: 한 달 근태 요약.');
 }
@@ -897,6 +897,38 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('분류 칩',filterManuals(ms,'마감','').map(m=>m.id).join()==='1');ok('검색은 단계 글에서도',filterManuals(ms,'전체','예열').map(m=>m.id).join()==='2');
  ok('바뀜·새·확인함',staffState({...ms[0],read:false})==='바뀜'&&staffState({...ms[1],read:false})==='새 매뉴얼'&&staffState({...ms[1],read:true})==='확인함');
  console.log('PASS: 지시서 1라운드 D (매뉴얼 규칙).');
+}
+// 지시서 2라운드 003·004: 상태 배지와 인정 시간
+{
+ const {dayRows,checkDay}=await import('../lib/attendance-check.ts');
+ const tm=await import('../dist/server/team-model.js');
+ const d='2026-10-06',iso=(hm)=>new Date(`${d}T${hm}:00+09:00`).toISOString(),T=(hm)=>Date.parse(`${d}T${hm}:00+09:00`);
+ const sh=[{id:'s1',employeeId:'a',date:d,start:'10:00',end:'18:00'},{id:'s2',employeeId:'b',date:d,start:'13:00',end:'18:00'}];
+ const st=(att,now,leaves=[])=>dayRows(d,sh,att,'normal',now,leaves).map(r=>r.employeeId+':'+r.statuses.map(x=>x.kind+(x.minutes??'')).join('+')).join(' ');
+ ok('허용 5분: 10:05 출근은 정상',st([{id:'1',employeeId:'a',start:iso('10:05'),end:null}],T('13:00')).startsWith('a:정상'));
+ ok('10:06 출근은 지각 6분',st([{id:'1',employeeId:'a',start:iso('10:06'),end:null}],T('13:00')).startsWith('a:지각6'));
+ ok('예정 13:00, 지금 13:25, 기록 없음 → 미출근 25분',st([],T('13:25')).includes('b:미출근25'));
+ ok('예정 끝이 지나도 기록 없으면 결근',st([],T('18:30')).includes('b:결근'));
+ ok('승인된 휴가일은 결근 아님',st([],T('18:30'),[{employeeId:'b',start:d,end:d}]).includes('b:휴가'));
+ ok('퇴근 안 찍고 끝+허용 지나면 미퇴근',st([{id:'1',employeeId:'a',start:iso('10:00'),end:null}],T('18:20')).startsWith('a:미퇴근20'));
+ ok('조퇴 + 지각 한 줄에 두 개',st([{id:'1',employeeId:'a',start:iso('10:20'),end:iso('17:00')}],T('19:00')).startsWith('a:지각20+조퇴60'));
+ ok('휴게 중',st([{id:'1',employeeId:'a',start:iso('10:00'),end:null,breakStart:iso('12:00')}],T('12:10')).startsWith('a:휴게 중'));
+ ok('근무표에 없는 출근은 예정 외',st([{id:'9',employeeId:'z',start:iso('11:00'),end:null}],T('12:00')).includes('z:예정 외'));
+ ok('확인 권장도 같은 판정',checkDay(d,sh,[],'normal',T('13:25')).map(f=>f.employeeId+f.kind+f.minutes).join()==='a미출근205,b미출근25');
+ // 004 인정 시간
+ const r1=tm.creditFor({employeeId:'a',start:iso('09:50'),end:iso('18:00')},sh,{earlyIn:'scheduled',lateOut:'actual',unit:1});
+ ok('예정 10:00, 09:50 출근 → 인정 출근 10:00',r1.start===iso('10:00')&&r1.end===iso('18:00'));
+ ok('찍은 시각부터 규칙이면 09:50',tm.creditFor({employeeId:'a',start:iso('09:50'),end:iso('18:00')},sh,{earlyIn:'actual',lateOut:'actual',unit:1}).start===iso('09:50'));
+ const r5=tm.creditFor({employeeId:'a',start:iso('10:03'),end:iso('18:02')},sh,{earlyIn:'scheduled',lateOut:'actual',unit:5});
+ ok('5분 단위는 직원에게 유리하게(출근 내림·퇴근 올림)',r5.start===iso('10:00')&&r5.end===iso('18:05'));
+ ok('늦게 퇴근 예정 시각까지 규칙',tm.creditFor({employeeId:'a',start:iso('10:00'),end:iso('18:40')},sh,{earlyIn:'scheduled',lateOut:'scheduled',unit:1}).end===iso('18:00'));
+ const t=tm.normalizeTeam(null);delete t.legacy;const [e]=t.employees;t.employees=[{...e,id:'a',name:'가',payType:'시급',wage:10320,autoPay:false}];t.shifts=sh.slice(0,1);
+ t.attendance=[{id:'r1',employeeId:'a',start:iso('09:50'),end:iso('18:00'),breakMinutes:0,breakStart:null}];tm.applyCredit(t.attendance[0],t);
+ ok('원본 시각은 그대로, 인정 시각 따로',t.attendance[0].start===iso('09:50')&&t.attendance[0].credit.start===iso('10:00'));
+ ok('급여 시간은 인정 시간(8시간)',Math.abs(tm.worked(t.attendance[0])-8)<1e-9&&Math.abs(tm.workedRaw(t.attendance[0])-8+10/60)<1e-9);
+ const before=JSON.stringify(tm.calculate(t,'2026-10'));t.settings={...t.settings,attendanceRule:{earlyIn:'actual',lateOut:'actual',unit:10}};tm.applyCredit(t.attendance[0],t);
+ ok('규칙을 바꿔도 지난 기록은 다시 계산하지 않음',JSON.stringify(tm.calculate(t,'2026-10'))===before);
+ console.log('PASS: 지시서 2라운드 (상태 배지·인정 시간).');
 }
 // 직원 엑셀 파일 등록: .xlsx·CSV 읽기
 {
