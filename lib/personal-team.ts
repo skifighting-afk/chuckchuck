@@ -25,6 +25,7 @@ export function personalTeam(state:Team,selfId:string):Team{
   ...((state as any).certificates?{certificates:(state as any).certificates.filter((c:any)=>c.employeeId===selfId)}:{}),
   // 지시서 3주차 023: 내 매장 공개 근무표와 내 확인 기록만
   ...((state as any).publishedWeeks?{publishedWeeks:Object.fromEntries(Object.entries((state as any).publishedWeeks).filter(([k])=>k.startsWith(self.branchId+':')).map(([k,v]:any)=>[k,{at:v.at,acks:v.acks?.[selfId]?{[selfId]:v.acks[selfId]}:{}}]))}:{}),
+  ...((state as any).advances?{advances:(state as any).advances.filter((x:any)=>x.employeeId===selfId).map(({by,at,...x}:any)=>x)}:{}),
   // 지시서 028: 내 매장에서 모집 중인 빈 근무(누가 맡았는지는 빼고)
   ...((state as any).openShifts?{openShifts:(state as any).openShifts.filter((o:any)=>o.branchId===self.branchId&&(o.status==='모집 중'||o.assignedTo===selfId)).map(({assignedTo,...o}:any)=>assignedTo===selfId?{...o,assignedTo}:o)}:{}),
   settings:{accountantName:'',accountantEmail:'',autoPayslip:false,autoContract:false,autoAccountant:false,employerName:'',fivePlus:!!state.settings.fivePlus,...((state.settings as any).weekStart?{weekStart:(state.settings as any).weekStart}:{}),...((state.settings as any).attendanceRule?{attendanceRule:(state.settings as any).attendanceRule}:{}),...((state.settings as any).staffPayEstimate===false?{staffPayEstimate:false}:{})} as any

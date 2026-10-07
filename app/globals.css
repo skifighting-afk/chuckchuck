@@ -647,3 +647,11 @@ body.ms-dragging,body.ms-dragging *{user-select:none!important;-webkit-user-sele
 .os-list{list-style:none;padding:0;margin:0;display:grid;gap:8px}.os-list li{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 0;border-bottom:1px solid #e6ece8}.os-list button{min-height:44px}
 .os-done{color:#17583f;font-weight:600}.os-wait{color:#8a4b00;font-weight:600}
 .os-form .t-formgrid input{min-height:48px}
+/* 지시서 '다음' 급여 묶음 */
+.adv-list{list-style:none;padding:0;margin:0;display:grid;gap:6px}.adv-list li{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-height:44px;border-bottom:1px solid #e6ece8}
+.adv-panel .t-formgrid input,.adv-panel .t-formgrid select{min-height:48px}
+.weekly-settle td small{display:block;color:#5b6470}.weekly-settle button{min-height:44px}
+.ob-card{border:1px solid #d7e4dc;border-radius:12px;padding:12px;margin-bottom:12px}.ob-card h3{margin:0 0 6px;font-size:16px}.ob-card h3 small{font-weight:400;color:#5b6470}
+.ob-dday{padding:8px 10px;border-radius:8px;background:#f4faf6}.ob-dday.near{background:#fff4d6}.ob-dday.late{background:#fde2e2}
+.ob-steps{padding-left:20px;display:grid;gap:8px}.ob-steps label{min-height:44px;align-items:center}.ob-steps small{display:block;color:#5b6470}.ob-late{color:#b42318;font-weight:600}
+.ob-leave button{min-height:44px;margin-left:6px}

@@ -142,6 +142,9 @@ async function route(request:Request,env:Env){
   {const before=new Set(((state as any).certificates||[]).map((c:any)=>c.id));for(const c of ((next as any).certificates||[]))if(!before.has(c.id))log('증명서 발급',state.employees.find(e=>e.id===c.employeeId)?.name||'',null,{kind:c.kind,issuedAt:c.issuedAt});}
   // 지시서 3주차 023: 근무표 공개. 확인 기록은 서버 것만 쓰고, 근무가 바뀐 직원의 확인은 푼다
   {const m=mergePublished((state as any).publishedWeeks,(next as any).publishedWeeks,state.shifts,next.shifts);(next as any).publishedWeeks=Object.keys(m.published).length?m.published:undefined;freshPub=m.fresh;for(const k of m.fresh)log('근무표 공개','근무 스케줄',null,{week:keyWeek(k)});}
+  // 지시서 037: 가불·선지급 — 확정된 달 것은 넣거나 지울 수 없다
+  {const key=(x:any)=>JSON.stringify([x.id,x.employeeId,x.date,x.amount,x.kind]),old=new Set(((state as any).advances||[]).map(key)),neu=new Set(((next as any).advances||[]).map(key));
+   for(const x of [...((state as any).advances||[]).filter((x:any)=>!neu.has(key(x))),...((next as any).advances||[]).filter((x:any)=>!old.has(key(x)))]){if(locked({start:x.date+'T03:00:00Z',employeeId:x.employeeId}))fail('급여가 확정된 달의 가불·선지급은 바꿀 수 없어요. 확정을 먼저 해제해 주세요.');log(old.has(key(x))?'가불·선지급 삭제':'가불·선지급 기록',state.employees.find(e=>e.id===x.employeeId)?.name||'',null,{date:x.date,amount:x.amount,kind:x.kind})}}
   // 지시서 028: 새로 올린 빈 근무는 그 매장 직원에게 알림
   {const before=new Set(((state as any).openShifts||[]).map((o:any)=>o.id));freshOpen=((next as any).openShifts||[]).filter((o:any)=>!before.has(o.id)&&o.status==='모집 중');for(const o of freshOpen)log('빈 근무 모집','근무 스케줄',null,{date:o.date,start:o.start,end:o.end});}
   state=next;
