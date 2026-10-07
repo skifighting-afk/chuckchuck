@@ -1150,3 +1150,25 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('107 마감 요일 10시 이후 안 낸 직원에게만',ks(ad,T('2026-10-07','10:05'))==='b'&&ks(ad,T('2026-10-07','09:50'))===''&&ks(ad,T('2026-10-08','10:05'))===''&&ks({...ad,settings:{}},T('2026-10-07','10:05'))==='');
  console.log('PASS: 지시서 3주차 (근무표 규칙·필요 인원·공개 확인·마감 알림).');
 }
+// 지시서 4주차: 급여 마감 — 지난달 대비, 재확정 비교, 지급 완료, 일괄 수당, 확정 이력
+{
+ const {compareMonths,revisionDiff,reopenRun,finalizeHistory,markPaid,paidSummary,bulkAdjust,prevMonthOf}=await import('../lib/payroll-close.ts');
+ const R=(id,net,h=10)=>({employeeId:id,name:id.toUpperCase(),net,gross:net,hours:h});
+ ok('지난달 계산',prevMonthOf('2026-01')==='2025-12'&&prevMonthOf('2026-10')==='2026-09');
+ const c=compareMonths([R('a',1000000),R('b',1500000),R('c',300000)],[R('a',1000000),R('b',1000000),R('d',500000)]);
+ ok('지난달 대비: 30% 넘으면 표시, 신규·빠짐',c.find(x=>x.employeeId==='b').flag==='크게 바뀜'&&!c.find(x=>x.employeeId==='a').flag&&c.find(x=>x.employeeId==='c').flag==='신규'&&c.find(x=>x.employeeId==='d').flag==='이번 달 없음');
+ ok('지난달 자료 없으면 표시 없음',compareMonths([R('a',1)],null).every(x=>!x.flag));
+ const run={locked:true,revision:1,at:'2026-10-01T00:00:00Z',actor:{name:'사장'},rows:[R('a',1000000),R('b',900000)],history:finalizeHistory(undefined,1,'2026-10-01T00:00:00Z','사장',[R('a',1000000),R('b',900000)])};
+ let r=markPaid(run,['a'],'2026-10-10');ok('지급 완료 기록',r.run.paid.a==='2026-10-10'&&paidSummary(r.run).done===1&&paidSummary(r.run).amountLeft===900000);
+ ok('지급 완료 취소',!markPaid(r.run,['a'],'',true).run.paid.a);
+ ok('확정 전·모르는 직원은 지급 완료 못 함',!!markPaid({...run,locked:false},['a'],'2026-10-10').error&&!!markPaid(run,['zz'],'2026-10-10').error&&!!markPaid(run,['a'],'').error);
+ const op=reopenRun(r.run,'수당 누락','2026-10-11T00:00:00Z','사장');
+ ok('확정 해제: 잠금 풀고 지난 내용·이력 남기고 지급 기록은 지움',!op.locked&&op.prevRows.length===2&&!Object.keys(op.paid).length&&op.history.map(h=>h.kind).join()==='확정,해제'&&op.history[1].reason==='수당 누락');
+ const d=revisionDiff(op.prevRows,[R('a',1050000,11),R('b',900000)]);
+ ok('재확정 비교: 바뀐 직원만',d.length===1&&d[0].diff===50000&&d[0].hours===1);
+ ok('재확정 이력',finalizeHistory(op,2,'t','사장',[R('a',1)]).map(h=>h.kind+h.revision).join()==='확정1,해제1,확정2');
+ const b=bulkAdjust({'2026-10:a':{earnings:[{name:'상여',amount:1,formula:'x'}],deductions:[],note:''}},'2026-10',['a','b'],'earnings',{name:' 상여 ',amount:50000,formula:'추석'});
+ ok('일괄 수당: 같은 이름은 바꾸고 없으면 새로',b.adjustments['2026-10:a'].earnings.length===1&&b.adjustments['2026-10:a'].earnings[0].amount===50000&&b.adjustments['2026-10:b'].earnings[0].name==='상여');
+ ok('일괄 수당 막힘',!!bulkAdjust({},'2026-10',[],'earnings',{name:'x',amount:1,formula:''}).error&&!!bulkAdjust({},'2026-10',['a'],'earnings',{name:'x',amount:0,formula:''}).error&&!!bulkAdjust({},'2026-10',['a'],'deductions',{name:'',amount:5,formula:''}).error);
+ console.log('PASS: 지시서 4주차 (급여 마감 도우미).');
+}

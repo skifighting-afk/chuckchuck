@@ -17,7 +17,7 @@ export function personalTeam(state:Team,selfId:string):Team{
    .filter(([,run])=>run.locked&&run.rows.some((row:any)=>row.employeeId===selfId))
    .map(([key,run])=>[key,{
     locked:run.locked,month:run.month,branch:run.branch,payDate:run.payDate,
-    at:run.at,revision:run.revision,rows:run.rows.filter((row:any)=>row.employeeId===selfId)
+    at:run.at,revision:run.revision,...(run.paid?.[selfId]?{paid:{[selfId]:run.paid[selfId]}}:{}),rows:run.rows.filter((row:any)=>row.employeeId===selfId)
    }])),
   requests:state.requests.filter(r=>r.before?.employeeId===selfId&&r.after?.employeeId===selfId)
    .map(r=>({...r,reviewer:r.reviewer?{name:r.reviewer.name}:undefined})),
