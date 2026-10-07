@@ -1303,6 +1303,8 @@ PASS: 법정 의무교육.
 PASS 583. 결제 실패 7일 유예 동안은 그대로 씀
 PASS 584. 유예 지나면 조회만
 PASS: 결제 실패 유예.
+PASS 585. 엑셀: 시트 7개·글자 이스케이프·숫자 칸
+PASS: 엑셀 내보내기.
 
 ── check-claims
 PASS: 과장·허위 문구 검사 (화면·홈페이지).
@@ -1378,7 +1380,7 @@ PASS 36. 2026-03-31: no clock-in or clock-out in the future (A1·A3)
 PASS: 체험 화면 숫자(급여·명세서·임금대장 합계).
 
 ── check-error-messages
-PASS: 오류 문구 430개 모두 다음 행동 안내 포함.
+PASS: 오류 문구 442개 모두 다음 행동 안내 포함.
 PASS: 오류 번호·로그 개인정보 제거.
 
 ── check-attendance-table
@@ -1544,6 +1546,7 @@ PASS: 서버 오류 알림 (10분 3건 · 1시간 1번 · 개인정보 없음).
 PASS: 서비스 상태(/api/status).
 PASS: 10분 알림 검사(한 번만 보내기).
 PASS: 서명 대기 계약서 다시 알림.
+PASS: 매주 자동 백업.
 PASS: 매일 작업 (비밀값·체험 종료 알림 7일·1일 각 한 번).
 
 ── check-support
@@ -1584,6 +1587,24 @@ PASS: 직원 서류 보관함 (본인·사장님만, 사진 검사).
 16. PASS owner approves offline clock
 17. PASS attendance created at saved time
 PASS: 직원 요청(명세서 문의·정보 변경·증명서).
+
+── check-coowner
+1. PASS staff cannot invite coowner
+2. PASS owner makes invite
+3. PASS owner cannot accept own invite
+4. PASS staff of same store cannot become coowner
+5. PASS other owner accepts
+6. PASS token single use
+7. PASS cara sees two stores, now on boss store
+8. PASS coowner has owner access
+9. PASS coowner cannot change plan
+10. PASS switch back to own store
+11. PASS own store now
+12. PASS cannot switch to foreign store
+13. PASS owner lists coowners
+14. PASS owner removes coowner
+15. PASS removed coowner sees only own store
+PASS: 공동 관리자·가게 전환.
 
 ── check-share
 PASS: 세무사 공유 링크 (확정 급여만·끄기·만료·열람 기록·토큰 해시만 저장).

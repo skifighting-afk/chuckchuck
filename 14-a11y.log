@@ -1,1 +1,25 @@
-접근성 점검 통과: 12개 화면 × 2개 크기 (axe 포함)
+접근성 문제 12건:
+390px /demo?screen=home 누르는 곳 40px: 직원 이름으로 찾기
+390px /demo?screen=employees 누르는 곳 40px: 직원 이름으로 찾기
+390px /demo?screen=attendance 누르는 곳 40px: 직원 이름으로 찾기
+390px /demo?screen=schedule 누르는 곳 40px: 직원 이름으로 찾기
+390px /demo?screen=payroll 누르는 곳 40px: 직원 이름으로 찾기
+390px /demo?screen=contracts 누르는 곳 40px: 직원 이름으로 찾기
+1280px /demo?screen=home 누르는 곳 40px: 직원 이름으로 찾기
+1280px /demo?screen=employees 누르는 곳 40px: 직원 이름으로 찾기
+1280px /demo?screen=attendance 누르는 곳 40px: 직원 이름으로 찾기
+1280px /demo?screen=schedule 누르는 곳 40px: 직원 이름으로 찾기
+1280px /demo?screen=payroll 누르는 곳 40px: 직원 이름으로 찾기
+1280px /demo?screen=contracts 누르는 곳 40px: 직원 이름으로 찾기
+::error title=접근성::390px /demo?screen=home 누르는 곳 40px: 직원 이름으로 찾기
+::error title=접근성::390px /demo?screen=employees 누르는 곳 40px: 직원 이름으로 찾기
+::error title=접근성::390px /demo?screen=attendance 누르는 곳 40px: 직원 이름으로 찾기
+::error title=접근성::390px /demo?screen=schedule 누르는 곳 40px: 직원 이름으로 찾기
+::error title=접근성::390px /demo?screen=payroll 누르는 곳 40px: 직원 이름으로 찾기
+::error title=접근성::390px /demo?screen=contracts 누르는 곳 40px: 직원 이름으로 찾기
+::error title=접근성::1280px /demo?screen=home 누르는 곳 40px: 직원 이름으로 찾기
+::error title=접근성::1280px /demo?screen=employees 누르는 곳 40px: 직원 이름으로 찾기
+::error title=접근성::1280px /demo?screen=attendance 누르는 곳 40px: 직원 이름으로 찾기
+::error title=접근성::1280px /demo?screen=schedule 누르는 곳 40px: 직원 이름으로 찾기
+::error title=접근성::1280px /demo?screen=payroll 누르는 곳 40px: 직원 이름으로 찾기
+::error title=접근성::1280px /demo?screen=contracts 누르는 곳 40px: 직원 이름으로 찾기
