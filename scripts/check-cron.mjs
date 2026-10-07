@@ -36,5 +36,16 @@ console.log('PASS: 서비스 상태(/api/status).');
  await env.DB.prepare('DELETE FROM stores WHERE owner=?').bind('alert-owner').run();
  console.log('PASS: 10분 알림 검사(한 번만 보내기).');
 }
+// 지시서 9주차: 서명 대기 계약서 다시 알림(2일 지난 뒤, 3일에 한 번)
+{
+ const mod=await import('../dist/server/cron.js');const iso=(ms)=>new Date(ms).toISOString();
+ for(const [id,ago] of [['env-old',3],['env-new',1]])await env.DB.prepare("INSERT INTO contract_envelopes(id,owner_id,employee_id,employee_user_id,document_json,document_hash,owner_signature,status,created_at) VALUES(?,?,?,?,?,?,?,'waiting',?)").bind(id,'own-x',id+'-emp','emp-x',JSON.stringify({storeName:'가게',employeeName:'가'}),'h','{}',iso(now-ago*day)).run();
+ const sent=[];const n1=await mod.contractReminders(env,now,(u,m)=>sent.push(u+':'+m.title));
+ const n2=await mod.contractReminders(env,now+day,(u,m)=>sent.push(u));
+ assert.equal(n1,1);assert.equal(n2,0);assert.ok(sent.some(x=>x.startsWith('emp-x:근로계약서 서명이'))&&sent.some(x=>x.startsWith('own-x:')));
+ assert.equal(await mod.contractReminders(env,now+3*day+60000,()=>{}),2,'3일 뒤엔 둘 다(새 건도 2일 지남)');
+ await env.DB.prepare("DELETE FROM contract_envelopes WHERE id IN ('env-old','env-new')").run();
+ console.log('PASS: 서명 대기 계약서 다시 알림.');
+}
 console.log('PASS: 매일 작업 (비밀값·체험 종료 알림 7일·1일 각 한 번).');
 await closeAll();

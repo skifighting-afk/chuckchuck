@@ -1237,3 +1237,16 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('내 근무 달력: 상태 글자',c.days[4].state==='근무함'&&c.days[4].hours===5.5&&c.days[6].state==='근무 중'&&c.days[1].state==='기록 없음'&&c.days[19].state==='예정'&&c.lead===4&&c.workedDays===3);
  console.log('PASS: 지시서 8주차 (직원 화면 주휴 진행·근무 달력).');
 }
+// 지시서 9주차: 근로계약 점검
+{
+ const {contractAlerts}=await import('../lib/contract-checks.ts');
+ const E=(o)=>({id:'a',name:'가',status:'재직',employment:'기간의 정함 없음',joined:'2026-01-01',endDate:'',contract:{status:'체결 완료'},...o});
+ const t=(e,last,today='2026-10-07')=>contractAlerts([E(e)],last||{},today).map(x=>x.level+':'+x.text).join('|');
+ ok('계약서 없이 일하면 위험',t({contract:{status:'작성 전'}},{a:'2026-10-01'}).startsWith('위험:근로계약서 체결 기록 없이'));
+ ok('일하기 전·독립 용역은 표시 안 함',t({contract:{status:'작성 전'}})===''&&t({contract:{status:'작성 전'},employment:'독립 용역'},{a:'2026-10-01'})==='');
+ ok('기간제 2년 넘김',t({employment:'기간제',joined:'2024-10-01',endDate:'2026-12-31'}).includes('2년(2026년 10월 1일)을 넘겼어요'));
+ ok('기간제 2년 60일 전 안내',t({employment:'기간제',joined:'2024-11-20',endDate:'2026-12-31'}).startsWith('확인:기간제 2년이'));
+ ok('계약 끝난 뒤 계속 일함',t({employment:'기간제',joined:'2026-01-01',endDate:'2026-09-30'},{a:'2026-10-05'}).includes('계약 기간'));
+ ok('기간제 종료일 빈칸',t({employment:'기간제'}).includes('종료일이 비어'));
+ console.log('PASS: 지시서 9주차 (근로계약 점검).');
+}

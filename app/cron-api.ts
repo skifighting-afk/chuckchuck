@@ -30,8 +30,21 @@ export async function cronApi(request:Request,env:any){
  if(request.headers.get('x-cron-task')==='alerts')return json({ok:true,alerts:await alertSweep(env)});
  const reminders=await trialReminders(env);
  const deletions=await processDeletions(env,20).catch(()=>0);
+ const contracts=await contractReminders(env).catch(()=>0);
  await env.DB.prepare('DELETE FROM notifications WHERE created_at<?').bind(new Date(Date.now()-90*86400000).toISOString()).run().catch(()=>{});
- return json({ok:true,reminders,deletions});
+ return json({ok:true,reminders,deletions,contracts});
+}
+
+/** 지시서 9주차: 서명 요청 뒤 2일 넘게 서명하지 않은 계약서 — 직원·사장님에게 다시 알림(3일에 한 번, 최대 3번) */
+export async function contractReminders(env:any,now=Date.now(),notify=(uid:string,m:any)=>notifyUser(env,uid,m)){
+ const cut=new Date(now-2*86400000).toISOString(),again=new Date(now-3*86400000).toISOString();
+ const rows=(await env.DB.prepare("SELECT id,owner_id,employee_user_id,document_json,created_at,reminded_at,version FROM contract_envelopes WHERE status='waiting' AND created_at<? AND (reminded_at IS NULL OR reminded_at<?) AND created_at>? LIMIT 200").bind(cut,again,new Date(now-11*86400000).toISOString()).all()).results||[];
+ let n=0;for(const r of rows as any[]){let d:any={};try{d=JSON.parse(r.document_json)}catch{}
+  const days=Math.floor((now-Date.parse(r.created_at))/86400000);
+  await notify(r.employee_user_id,{title:'근로계약서 서명이 아직이에요',body:`${d.storeName||'매장'}에서 ${days}일 전에 서명을 요청했어요. 내용을 확인하고 서명해 주세요.`,url:'/contracts',kind:'staff'});
+  await notify(r.owner_id,{title:`${d.employeeName||'직원'}님이 아직 계약서에 서명하지 않았어요`,body:`서명 요청 ${days}일째예요. 직원에게 다시 알렸어요. 근로계약서는 일을 시작할 때 써서 주어야 해요.`,url:'/app?screen=contracts',kind:'staff'});
+  await env.DB.prepare('UPDATE contract_envelopes SET reminded_at=? WHERE id=?').bind(new Date(now).toISOString(),r.id).run();n++}
+ return n;
 }
 
 /** 매장마다 지금 보낼 출퇴근 알림을 보내고, 보낸 key를 _alertsSent에 남겨 한 번만 보낸다(3일 지나면 정리). */
