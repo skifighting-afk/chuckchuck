@@ -1258,3 +1258,13 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('대화 기록 읽기(깨진 값은 빈 목록)',parseThread('[{"from":"회원","body":"x","at":"t"}]').length===1&&!parseThread('{bad').length&&!parseThread(null).length);
  console.log('PASS: 지시서 10주차 (문의 추천·대화).');
 }
+// 지시서 11주차: 개인정보 보존·파기, 내 자료 내려받기
+{
+ const {retentionDue,anonymize,myDataExport,maskName}=await import('../lib/retention.ts');
+ const E=(o)=>({id:'a',name:'김예시',status:'퇴사',endDate:'2023-10-01',joined:'2022-01-01',email:'a@x.kr',phone:'010',address:'서울',notes:'메모',emergencyPhone:'011',...o});
+ ok('3년 지난 퇴사자만',retentionDue([E(),E({id:'b',endDate:'2023-10-08'}),E({id:'c',status:'재직'}),E({id:'d',anonymizedAt:'x'})],'2026-10-07').map(e=>e.id).join()==='a');
+ const x=anonymize(E(),'t');ok('연락처 지우고 이름 가림',x.name==='김○○'&&!x.email&&!x.phone&&!x.address&&!x.notes&&!x.emergencyPhone&&x.anonymizedAt==='t'&&maskName('이')==='이○');
+ const st={store:{name:'가게'},employees:[{id:'a',name:'가',contract:{status:'체결 완료',workDays:'월',start:'09:00',end:'18:00',signedAt:null},insurances:{},managerPermissions:[]}],shifts:[{employeeId:'a',date:'2026-10-01',start:'09:00',end:'18:00',breakMinutes:60},{employeeId:'b',date:'2026-10-01',start:'1',end:'2'}],attendance:[],payrollRuns:{k:{locked:true,month:'2026-09',payDate:'2026-10-10',rows:[{employeeId:'a',gross:1,deduction:0,net:1,hours:1},{employeeId:'b',gross:9}]}}};
+ const d=myDataExport(st,'a','t');ok('내 자료: 내 것만',d.근무표.length===1&&d.급여.length===1&&d.급여[0].실수령===1&&!('managerPermissions' in d.내정보));
+ console.log('PASS: 지시서 11주차 (개인정보 보존·내 자료).');
+}

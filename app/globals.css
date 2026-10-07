@@ -570,3 +570,4 @@ body.ms-dragging,body.ms-dragging *{user-select:none!important;-webkit-user-sele
 .faq-suggest details{border-top:1px solid #cfe3d5;padding:4px 0}.faq-suggest summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:700}
 .support-more{margin-top:8px;padding:10px;border-left:3px solid #7da2d6;background:#f3f7fd;border-radius:6px}
 .support-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.support-actions button{min-height:44px}.support-follow{margin-top:8px}
+.retention ul{list-style:none;padding:0;margin:8px 0}.retention li label{min-height:44px;display:flex;align-items:center;gap:6px}.retention .primary,.my-data button{min-height:44px}
