@@ -86,7 +86,7 @@ function AttendanceTimeline({rows,date,es,att,shifts,now,onEditShift}:{rows:DayR
  const name=(id:string)=>es.find(e=>e.id===id)?.name||'직원',role=(id:string)=>es.find(e=>e.id===id)?.role||'';
  return <section className="panel att-timeline" aria-labelledby="att-tl-title"><div className="panel-heading"><h2 id="att-tl-title">{date===today()?'오늘':md(date)} 시간표</h2><div className="t-inline"><label className="att-full"><input type="checkbox" checked={full} onChange={e=>setFull(e.target.checked)}/> 24시간 보기</label><Btn onClick={onEditShift}>근무표 고치기</Btn></div></div>
   <div className="att-legend" aria-hidden="true"><span><i className="lg-plan"/>예정</span><span><i className="lg-real"/>실제</span><span><i className="lg-late"/>늦은 구간</span>{nowH!=null&&<span><i className="lg-now"/>지금</span>}</div>
-  {items.length?<div className="att-tl" role="img" aria-label={`${md(date)} 예정과 실제 근무 시간표`}>
+  {items.length?<div className="att-tl" aria-label={`${md(date)} 예정과 실제 근무 시간표`} role="group">
    <div className="att-tl-scale"><span/>{<div className="att-tl-ticks">{ticks.map(t=><span key={t} style={{left:pct(t)}}>{String(t%24).padStart(2,'0')}{t>=24&&t%24===0?'(+1)':''}</span>)}</div>}</div>
    {items.map(({r,sp,recs})=><div className="att-tl-row" key={r.key}><div className="att-tl-name"><b>{name(r.employeeId)}</b><small>{role(r.employeeId)}</small></div>
     <div className="att-tl-track">{nowH!=null&&nowH>=lo&&nowH<=hi&&<i className="att-now" style={{left:pct(nowH)}}/>}

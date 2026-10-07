@@ -476,7 +476,7 @@ body.ms-dragging,body.ms-dragging *{user-select:none!important;-webkit-user-sele
 .month-cell.drop-no{background:repeating-linear-gradient(135deg,#fff,#fff 6px,#f6eeee 6px,#f6eeee 12px)}
 .month-cell.drop-target.drop-ok{outline:3px solid var(--ck-green);outline-offset:-1px;background:#e3f3e9}
 .month-cell.drop-target.drop-no{outline:3px solid #a12a2a;outline-offset:-1px}
-.month-why{position:absolute;left:4px;right:4px;bottom:4px;background:#a12a2a;color:#fff;font-size:11px;line-height:1.3;border-radius:5px;padding:2px 4px;white-space:normal}
+.month-why{position:absolute;left:4px;right:4px;bottom:4px;background:#a12a2a;color:#fff;font-size:12px;line-height:1.3;border-radius:5px;padding:2px 4px;white-space:normal}
 .month-ghost{position:fixed;z-index:80;transform:translate(-50%,-130%);pointer-events:none;background:var(--ck-green,#15643f);color:#fff;font-weight:700;font-size:14px;padding:8px 12px;border-radius:10px;box-shadow:0 10px 24px rgba(0,0,0,.25);white-space:nowrap;display:grid;gap:2px}
 .month-ghost small{font-weight:500;font-size:12px;opacity:.95}
 .month-undo{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:70;display:flex;gap:14px;align-items:center;background:#10251b;color:#fff;padding:10px 12px 10px 18px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:calc(100vw - 32px)}
