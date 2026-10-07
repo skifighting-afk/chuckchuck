@@ -1,4 +1,5 @@
 'use client';
+import {L} from '../lib/staff-i18n';
 // 지시서 8주차: 직원 화면 — 이번 주 주휴 조건 진행, 이번 달 예상 급여, 내 근무 달력, 증명서 요청
 import {useState,useEffect} from 'react';
 import {type Team,today,calculate,won} from '../lib/team-model';
@@ -98,5 +99,5 @@ export function PayExplain({state,selfId,month,row}:{state:Team,selfId:string,mo
  const [open,setOpen]=useState(false);if(!row)return null;
  const y=Number(month.slice(0,4)),m=Number(month.slice(5,7)),pm=new Date(Date.UTC(y,m-2,1)).toISOString().slice(0,7);
  const prevRun:any=Object.values(state.payrollRuns).find((r:any)=>r.locked&&r.month===pm&&r.rows.some((x:any)=>x.employeeId===selfId)),prev=prevRun?.rows.find((x:any)=>x.employeeId===selfId)||null;
- return <section className="panel t-gap pay-explain"><button type="button" className="secondary" aria-expanded={open} onClick={()=>setOpen(!open)}>💬 내 급여 왜 이래요?</button>{open&&<ul>{explainPay(row,prev,month).map((t,i)=><li key={i}>{t}</li>)}</ul>}{open&&<p className="footnote">그래도 이상하면 아래 '명세서 문의'로 사장님께 물어보세요.</p>}</section>;
+ return <section className="panel t-gap pay-explain"><button type="button" className="secondary" aria-expanded={open} onClick={()=>setOpen(!open)}><span aria-hidden="true">💬 </span>{L('내 급여 왜 이래요?')}</button>{open&&<ul>{explainPay(row,prev,month).map((t,i)=><li key={i}>{t}</li>)}</ul>}{open&&<p className="footnote">그래도 이상하면 아래 '명세서 문의'로 사장님께 물어보세요.</p>}</section>;
 }

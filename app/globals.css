@@ -691,3 +691,7 @@ body.ms-dragging,body.ms-dragging *{user-select:none!important;-webkit-user-sele
 .msg-form{gap:8px;margin-top:8px}.msg-form input{flex:1;min-width:0;min-height:48px}
 .sim-row{flex-wrap:wrap;gap:8px}.sim-row select,.sim-row input{min-height:48px}.sim-result{font-size:16px;margin:10px 0}.sim-list,.ten-list{padding-left:18px;margin:6px 0}
 .pay-explain{padding:12px 16px}.pay-explain button{min-height:48px}.pay-explain ul{padding-left:18px;margin:8px 0;display:grid;gap:4px}
+.rehire summary{min-height:44px;display:flex;align-items:center;padding:0 16px;cursor:pointer;font-weight:600}
+.ms-video{display:inline-flex;align-items:center;min-height:44px;font-weight:600;color:#17583f}
+.open-api summary{min-height:44px;display:flex;align-items:center;padding:0 16px;cursor:pointer;font-weight:600}.open-api code{word-break:break-all;font-size:12px}.open-api h3{font-size:15px;margin:12px 0 4px}.open-api input[aria-label="웹훅 주소"]{min-height:48px;flex:1;min-width:0}
+.lang-pick select{min-height:44px;border:1px solid #b5c8ba;border-radius:999px;padding:0 10px;background:#fff;font-size:14px}

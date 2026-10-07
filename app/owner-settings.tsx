@@ -69,3 +69,21 @@ export function AbsenceAlertSetting({s,busy,save}:{s:Team,busy:boolean,save:(n:T
   <div className="t-inline"><label>결근 <input type="number" min={0} max={31} value={v.absent} onChange={e=>setV({...v,absent:Math.max(0,Math.min(31,Number(e.target.value)||0))})}/>번</label><label>지각 <input type="number" min={0} max={31} value={v.late} onChange={e=>setV({...v,late:Math.max(0,Math.min(31,Number(e.target.value)||0))})}/>번</label><button type="button" className="secondary" disabled={busy} onClick={async()=>{if(await save({...s,settings:{...s.settings,absenceAlert:v}} as any))setMsg('저장했어요.')}}>저장</button></div>
   {msg&&<p role="status" className="saas-success">{msg}</p>}</div></section>;
 }
+
+/** 지시서 090: 오픈 API·웹훅 */
+export function OpenApiPanel({demo}:{demo:boolean}){
+ const [v,setV]=useState<any>(null),[secret,setSecret]=useState<{label:string,value:string}|null>(null),[url,setUrl]=useState(''),[ev,setEv]=useState<string[]>(['attendance.clock','payroll.finalized']),[err,setErr]=useState('');
+ const call=async(b?:any)=>{setErr('');try{const r=await fetch('/api/open-admin',b?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}:undefined);const d:any=await r.json();if(!r.ok)throw Error(d.error||'처리하지 못했어요.');setV(d);if(d.key)setSecret({label:'API 키',value:d.key});if(d.secret)setSecret({label:'웹훅 서명 비밀값',value:d.secret});return d}catch(e){setErr((e as Error).message)}};
+ if(demo)return null;
+ const base=(typeof __SUPABASE_URL__!=='undefined'?__SUPABASE_URL__:'').replace(/\/$/,'')+'/functions/v1/api/open/v1/';
+ return <details className="panel t-gap open-api" onToggle={e=>{if((e.target as HTMLDetailsElement).open&&!v)void call()}}><summary>오픈 API·웹훅 (사내 프로그램 연결)</summary><div className="t-panelbody">
+  <p className="footnote">ERP·회계 프로그램이 직원·근무표·출퇴근·확정 급여를 읽어 갈 수 있어요(읽기 전용). 주소: <code>{base}employees</code> · <code>shifts?from=&amp;to=</code> · <code>attendance?from=&amp;to=</code> · <code>payroll?month=</code>, 헤더 <code>X-Api-Key</code>.</p>
+  {secret&&<p className="notice">{secret.label}(지금 한 번만 보여요): <input readOnly value={secret.value} onFocus={e=>e.target.select()} aria-label={secret.label} style={{width:'100%'}}/></p>}
+  <h3>API 키</h3><ul className="adv-list">{(v?.keys||[]).map((k:any)=><li key={k.prefix}><b>{k.label}</b> <code>{k.prefix}…</code> <small>{new Date(k.createdAt).toLocaleDateString('ko-KR')} 만듦{k.lastUsedAt?` · 마지막 사용 ${new Date(k.lastUsedAt).toLocaleString('ko-KR')}`:''}</small><button type="button" className="link-btn" onClick={()=>call({action:'revokeKey',prefix:k.prefix})}>끄기</button></li>)}</ul>
+  <button type="button" className="secondary" onClick={()=>call({action:'createKey',label:prompt('어디에 쓸 키인가요? (예: 회계 프로그램)')||''})}>새 API 키</button>
+  <h3>웹훅</h3><ul className="adv-list">{(v?.webhooks||[]).map((w:any)=><li key={w.id}><code>{w.url}</code> <small>{w.events.join(', ')}</small><button type="button" className="link-btn" onClick={()=>call({action:'testHook',id:w.id})}>시험 보내기</button><button type="button" className="link-btn" onClick={()=>call({action:'removeHook',id:w.id})}>지우기</button></li>)}</ul>
+  <div className="t-inline"><input aria-label="웹훅 주소" inputMode="url" placeholder="https://내-서버/hook" value={url} onChange={e=>setUrl(e.target.value)}/>{[['attendance.clock','출퇴근'],['payroll.finalized','급여 확정']].map(([k,l])=><label key={k} className="t-check"><input type="checkbox" checked={ev.includes(k)} onChange={e=>setEv(e.target.checked?[...ev,k]:ev.filter(x=>x!==k))}/> {l}</label>)}<button type="button" className="secondary" disabled={!url} onClick={async()=>{if(await call({action:'addHook',url,events:ev}))setUrl('')}}>추가</button></div>
+  <p className="footnote">웹훅 본문은 비밀값으로 서명해 X-Chukchuk-Signature: sha256=… 헤더에 넣어요. 받는 쪽에서 같은 방식으로 확인해 주세요.</p>
+  {err&&<p role="alert" className="saas-error">{err}</p>}</div></details>;
+}
+declare const __SUPABASE_URL__:string;

@@ -5,6 +5,7 @@ import {hydrateAttendance} from './attendance-store';
 import {serverError} from '../lib/errors';
 import {applyClock,applyCredit,kdate,attendanceSchema} from '../lib/team-model';
 import {staffGone} from '../lib/staff-access';
+import {sendWebhooks} from './open-api';
 const json=(v:unknown,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 const hash=async(t:string)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t)))).map(n=>n.toString(16).padStart(2,'0')).join('');
 export const kioskPinHash=(employeeId:string,salt:string,pin:string)=>hash(`kiosk:${employeeId}:${salt}:${pin}`);
@@ -32,7 +33,7 @@ export async function kioskApi(request:Request,env:{DB:D1Database}){
   else{if(!open)return json({error:'출근 기록이 없어요. 먼저 출근을 눌러 주세요.'},400);if(locked(open))return json({error:'급여가 확정된 달이에요. 사장님께 말씀해 주세요.'},400);const err=applyClock(open,kind,now);if(err)return json({error:err},400);if(kind==='out')applyCredit(open,d);if(!attendanceSchema.safeParse(open).success)return json({error:'기록을 확인할 수 없어요. 사장님께 말씀해 주세요.'},400);msg=kind==='out'?`${e.name}님 퇴근했어요. 수고하셨어요!`:kind==='break'?`${e.name}님 휴게 시작`:`${e.name}님 휴게 끝`}
   d._audit=[...(d._audit||[]),{id:crypto.randomUUID(),at:new Date(now).toISOString(),actor:{id:'kiosk',name:'매장 태블릿'},action:'근태 기록(태블릿)',target:e.name,before:null,after:{kind},reason:branch.name}].slice(-1000);
   const u=await env.DB.prepare('UPDATE stores SET data=?,version=?,updated_at=? WHERE owner=? AND version=?').bind(JSON.stringify(d),row.version+1,new Date(now).toISOString(),t.owner,row.version).run();
-  if(u.meta.changes)return json({...view(),ok:msg});
+  if(u.meta.changes){if((kind==='in'||kind==='out')&&d._webhooks?.length){const a=d.attendance.filter((x:any)=>x.employeeId===e.id).sort((x:any,y:any)=>x.start.localeCompare(y.start)).at(-1);await sendWebhooks(d,'attendance.clock',{kind,employeeId:e.id,name:e.name,start:a?.start,end:a?.end,via:'kiosk'}).catch(()=>null)}return json({...view(),ok:msg})}
  }
  return json({error:'잠시 뒤 다시 눌러 주세요.'},409);
  }catch(e){return serverError('kiosk',e,'태블릿 출퇴근을 처리하지 못했어요. 잠시 뒤 다시 눌러 주세요.')}

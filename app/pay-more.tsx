@@ -81,3 +81,16 @@ export function OffboardDesk({s,es,busy,save,demo}:{s:Team,es:Team['employees'],
     <p className="footnote">{n}/{items.length} 완료 · 법령 기준 안내예요. 실제 신고 기한과 금액은 관할 기관·노무사와 확인하세요.</p></article>})}
  </div></section>;
 }
+
+/** 지시서 049: 시즌 직원 다시 부르기 — 작년에 일한 퇴사자를 한 번에 '입사 준비'로(정보는 그대로, 계약서는 새로) */
+export function Rehire({s,es,busy,save}:{s:Team,es:Team['employees'],busy:boolean,save:(n:Team)=>Promise<any>}){
+ const t=today(),gone=es.filter(e=>e.status==='퇴사'&&(!e.endDate||e.endDate>=datePlus(t,-730))).sort((a,b)=>(b.endDate||'').localeCompare(a.endDate||''));
+ const [pick,setPick]=useState<string[]>([]),[date,setDate]=useState(t),[msg,setMsg]=useState('');
+ if(!gone.length)return null;
+ const go=async()=>{const ids=new Set(pick);const next={...s,employees:s.employees.map(e=>ids.has(e.id)?{...e,status:'입사 준비' as const,joined:date,endDate:'',leaveReason:'',contract:{...e.contract,status:'작성 전' as any,signedAt:null,signedBy:null}}:e)};if(await save(next as any)){setMsg(`${pick.length}명을 ${md(date)} 입사 준비로 바꿨어요. 근로계약서를 새로 써 주세요.`);setPick([])}};
+ return <details className="panel t-gap rehire"><summary>예전 직원 다시 부르기 (시즌 재등록) · {gone.length}명</summary><div className="t-panelbody">
+  <p className="footnote">최근 2년 안에 그만둔 직원이에요. 고르면 연락처·급여 정보는 그대로 두고 '입사 준비'로 바꿔요. 근로계약은 새로 맺어야 해요(근로계약서 화면).</p>
+  <ul className="adv-list">{gone.map(e=><li key={e.id}><label className="t-check"><input type="checkbox" checked={pick.includes(e.id)} onChange={ev=>setPick(ev.target.checked?[...pick,e.id]:pick.filter(x=>x!==e.id))}/> <b>{e.name}</b> <small>{e.role} · {e.joined}~{e.endDate||'?'}</small></label></li>)}</ul>
+  <div className="t-inline"><label>다시 일하는 날 <input type="date" value={date} onChange={e=>setDate(e.target.value)}/></label><button type="button" className="primary" disabled={busy||!pick.length||!date} onClick={go}>{pick.length}명 다시 부르기</button></div>
+  {msg&&<p role="status" className="saas-success">{msg}</p>}</div></details>;
+}

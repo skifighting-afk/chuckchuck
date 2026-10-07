@@ -1,4 +1,5 @@
 'use client';
+import {L} from '../lib/staff-i18n';
 // 지시서 '다음' 근무표 묶음: 027 짜는 동안 예상 인건비 · 028 빈 근무 공개 모집(선착순) · 029 주간·일간 공휴일·휴무일 표시
 import {useState} from 'react';
 import {type Team,datePlus,duration,won} from '../lib/team-model';
@@ -70,7 +71,7 @@ export function OpenShiftsStaff({state,selfId,busy,mutate,today}:{state:Team,sel
  const mine:Open[]=((state as any).openShifts||[]).filter((o:Open)=>o.assignedTo===selfId&&o.date>=today);
  if(!list.length&&!mine.length)return null;
  return <section className="panel t-gap open-shifts" aria-labelledby="oss-title"><div className="panel-heading"><h2 id="oss-title">빈 근무 모집 {list.length}건</h2></div><div className="t-panelbody">
-  <ul className="os-list">{list.map(o=><li key={o.id}><b>{md(o.date)}({W[new Date(o.date+'T00:00:00Z').getUTCDay()]}) {o.start}–{o.end}</b> · {duration(o.start,o.end,o.breakMinutes).toFixed(1)}시간{o.position&&<span> · {o.position}</span>}{o.note&&<small> · {o.note}</small>} <button type="button" className="primary" disabled={busy} onClick={()=>mutate({action:'takeOpenShift',id:o.id})}>맡을게요</button></li>)}
+  <ul className="os-list">{list.map(o=><li key={o.id}><b>{md(o.date)}({W[new Date(o.date+'T00:00:00Z').getUTCDay()]}) {o.start}–{o.end}</b> · {duration(o.start,o.end,o.breakMinutes).toFixed(1)}시간{o.position&&<span> · {o.position}</span>}{o.note&&<small> · {o.note}</small>} <button type="button" className="primary" disabled={busy} onClick={()=>mutate({action:'takeOpenShift',id:o.id})}>{L('맡을게요')}</button></li>)}
    {mine.map(o=><li key={o.id}><span className="os-done">✓ 내가 맡음</span> {md(o.date)} {o.start}–{o.end}</li>)}</ul>
   <p className="footnote">먼저 누른 사람이 맡아요. 누르면 바로 내 근무표에 들어가요.</p></div></section>;
 }

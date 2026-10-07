@@ -1,4 +1,5 @@
 'use client';
+import {L} from '../lib/staff-i18n';
 // 지시서 3주차: 근무표 위에 붙는 작은 안내 — 022 시간대별 인원 부족·과잉, 023 직원에게 공개·확인 현황, 직원 '확인했어요'
 import {useState} from 'react';
 import {type Team,datePlus} from '../lib/team-model';
@@ -39,7 +40,7 @@ export function StaffPublishAck({state,selfId,branchId,today,busy,mutate}:{state
  const ws=((state.settings as any).weekStart||'mon') as 'mon'|'sun';
  const keys=pendingAcks((state as any).publishedWeeks,selfId,branchId,today,ws);
  if(!keys.length)return null;
- return <div className="publish-ack" role="status">{keys.map(k=>{const w=keyWeek(k);return <div key={k}><p><b>{md(w)}~{md(datePlus(w,6))} 근무표가 공개됐어요</b> 내 근무 시간을 보고 확인을 눌러 주세요.</p><button type="button" className="btn primary" disabled={busy} onClick={()=>mutate({action:'ackWeek',key:k})}>확인했어요</button></div>})}</div>;
+ return <div className="publish-ack" role="status">{keys.map(k=>{const w=keyWeek(k);return <div key={k}><p><b>{md(w)}~{md(datePlus(w,6))} 근무표가 공개됐어요</b> 내 근무 시간을 보고 확인을 눌러 주세요.</p><button type="button" className="btn primary" disabled={busy} onClick={()=>mutate({action:'ackWeek',key:k})}>{L('확인했어요')}</button></div>})}</div>;
 }
 export {pubKey,weekStartOf};
 
