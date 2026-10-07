@@ -184,7 +184,7 @@ jobs:
           echo "origins=$origins" >> "$GITHUB_OUTPUT"
           echo "primary=${origins%%,*}" >> "$GITHUB_OUTPUT"
           echo "화면 주소: $origins" | tee ci-logs/6-pages.log
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@v3
         if: steps.cfg.outputs.supabase == 'yes'
         with:
           version: latest

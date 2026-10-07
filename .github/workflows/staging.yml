@@ -45,7 +45,7 @@ jobs:
           if [ "$STAGING_REF" = "$PROD_REF" ] || echo "$SUPABASE_URL" | grep -q "$PROD_REF"; then
             echo "::error::스테이징 설정이 운영 프로젝트를 가리켜요. 배포를 멈춥니다."; exit 1; fi
           echo "deploy=yes" >> "$GITHUB_OUTPUT"
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@v3
         if: steps.cfg.outputs.deploy == 'yes'
         with: {version: latest}
       - name: 스테이징 DB·서버 함수
