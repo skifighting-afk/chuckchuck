@@ -42,5 +42,18 @@ ok('휴가 결과 알림 1건 전송',sent.length,1);ok('암호화 본문과 VAP
 globalThis.fetch=async()=>new Response(null,{status:410});op=(await call('amy','/api/operations')).body;op=(await call('amy','/api/operations',{action:'requestLeave',version:op.version,employeeId:op.selfId,start:'2026-11-03',end:'2026-11-03',days:1,kind:'연차',reason:'휴식'})).body;
 op=(await call('boss','/api/operations')).body;await call('boss','/api/operations',{action:'reviewLeave',version:op.version,id:op.leaves.find(l=>l.status==='승인 대기').id,approve:false,comment:'바빠요'});
 globalThis.fetch=realFetch;ok('만료된 구독은 지움',(await call('amy','/api/push')).body.devices,0);
+// 지시서 2주차 131·132: 알림함과 받을 알림 고르기
+{
+ let nb=(await call('amy','/api/notifications')).body;ok('알림함에 지난 알림이 쌓임',nb.items.length>0&&nb.items.some(x=>x.kind==='leave'));
+ ok('다른 사람 알림은 안 보임',(await call('ben','/api/notifications')).body.items.every(x=>!nb.items.some(y=>y.id===x.id)));
+ nb=(await call('amy','/api/notifications',{action:'read',id:nb.items[0].id})).body;ok('읽음 처리',!!nb.items[0].read_at);
+ nb=(await call('amy','/api/notifications',{action:'readAll'})).body;ok('모두 읽음',nb.unread===0);
+ nb=(await call('amy','/api/notifications',{action:'prefs',prefs:{leave:false,evil:true}})).body;ok('받을 알림 저장(모르는 종류는 버림)',JSON.stringify(nb.prefs),'{"leave":false}');
+ const before=(await call('amy','/api/notifications')).body.items.length;
+ let op=(await call('amy','/api/operations')).body;op=(await call('amy','/api/operations',{action:'requestLeave',version:op.version,employeeId:op.selfId,start:'2026-11-10',end:'2026-11-10',days:1,kind:'연차',reason:'휴식'})).body;
+ op=(await call('boss','/api/operations')).body;await call('boss','/api/operations',{action:'reviewLeave',version:op.version,id:op.leaves.find(l=>l.status==='승인 대기').id,approve:false,comment:'바빠요'});
+ ok('끈 종류(휴가)는 오지 않음',(await call('amy','/api/notifications')).body.items.length,before);
+ ok('로그인 없으면 막힘',(await call('','/api/notifications')).status,401);
+}
 console.log('PASS: 웹 푸시.');
 await closeAll();

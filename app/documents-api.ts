@@ -1,3 +1,4 @@
+import {sendAlimtalk} from '../lib/alimtalk-send';
 import {notifyUser} from './push-api';
 import type {PushEnv} from '../lib/webpush';
 import {resolveStore} from './saas-api';
@@ -45,6 +46,8 @@ export async function documentsApi(request:Request,env:{DB:D1Database}&PushEnv){
    .bind(crypto.randomUUID(),uid,row.employeeId,member.userId,b.runKey,revision,JSON.stringify({text,name:row.name,month:run.month}),new Date().toISOString(),uid,b.runKey,b.runKey,revision).run();
   const sent=await env.DB.prepare('SELECT id,created_at FROM payslip_documents WHERE owner_id=? AND employee_id=? AND run_key=? AND revision=?').bind(uid,row.employeeId,b.runKey,revision).first<any>();
   if(sent)await notifyUser(env,member.userId,{title:'급여명세서가 도착했어요',body:`${state.store.name} ${run.month} 급여명세서 · 실수령 ${Number(row.net).toLocaleString('ko-KR')}원`,url:'/app'});
+  // 지시서 2주차 032: 알림톡(설정돼 있을 때만)
+  if(sent){const e=state.employees.find((x:any)=>x.id===row.employeeId);await sendAlimtalk(env as any,e?.phone,'PAYSLIP_SENT',{이름:row.name,가게:state.store.name,월:run.month,실수령액:Number(row.net).toLocaleString('ko-KR'),지급일:run.payDate}).catch(()=>null)}
   return sent?json({ok:true,id:sent.id,sentAt:sent.created_at}):json({error:'급여 확정이 바뀌었어요. 새로 확인해 주세요.'},409);
  }
  const id=b.id||url.searchParams.get('id'),kind=b.kind||url.searchParams.get('kind')||'payslip';

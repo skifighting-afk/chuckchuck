@@ -557,7 +557,7 @@ console.log('PASS: 요율 연간 갱신 경고.');
 // 작업 093: 알림톡 템플릿·발송 뼈대
 {
  const {TEMPLATES,renderTemplate,sendAlimtalk}=await import('../lib/alimtalk.ts');
- ok('템플릿 6종, 변수 모두 본문에 있음',Object.values(TEMPLATES).length===6&&Object.values(TEMPLATES).every(t=>t.vars.every(v=>t.text.includes('#{'+v+'}'))));
+ ok('템플릿 8종, 변수 모두 본문에 있음',Object.values(TEMPLATES).length===8&&Object.values(TEMPLATES).every(t=>t.vars.every(v=>t.text.includes('#{'+v+'}'))));
  ok('변수 채우기',renderTemplate('CLOCKOUT_MISSING',{이름:'김민지',날짜:'10월 4일'}).startsWith('김민지님, 10월 4일'));
  ok('변수 빠지면 오류',(()=>{try{renderTemplate('PAYSLIP_SENT',{이름:'a'});return false}catch{return true}})());
  ok('키가 없으면 보내지 않음',(await sendAlimtalk({},'01012345678','CONTRACT_SIGN',{이름:'a',가게:'b'})).status==='not_configured');
@@ -929,6 +929,30 @@ console.log('PASS: 요율 연간 갱신 경고.');
  const before=JSON.stringify(tm.calculate(t,'2026-10'));t.settings={...t.settings,attendanceRule:{earlyIn:'actual',lateOut:'actual',unit:10}};tm.applyCredit(t.attendance[0],t);
  ok('규칙을 바꿔도 지난 기록은 다시 계산하지 않음',JSON.stringify(tm.calculate(t,'2026-10'))===before);
  console.log('PASS: 지시서 2라운드 (상태 배지·인정 시간).');
+}
+// 지시서 2주차: 알림 검사·근무표 변경·알림톡
+{
+ const {alertsFor}=await import('../lib/alert-sweep.ts');const {scheduleChanges}=await import('../lib/schedule-diff.ts');const {sendAlimtalk,alimtalkReady}=await import('../lib/alimtalk-send.ts');
+ const d='2026-10-07',T=(hm)=>Date.parse(`${d}T${hm}:00+09:00`),iso=(hm)=>new Date(T(hm)).toISOString();
+ const base={employees:[{id:'a',name:'가',payDay:10},{id:'b',name:'나',payDay:10}],shifts:[{id:'s1',employeeId:'a',date:d,start:'10:00',end:'15:00'},{id:'s2',employeeId:'b',date:d,start:'13:00',end:'18:00'}],attendance:[],payrollRuns:{'2026-09:m':{locked:true,month:'2026-09'}}};
+ const keys=(x,now)=>alertsFor(x,now).map(a=>a.key).sort().join();
+ ok('101 근무 1시간 전 알림(직원)',keys(base,T('12:05')).includes('before:s2'));
+ ok('001 예정 +10분 전에는 미출근 알림 없음',!keys(base,T('10:09')).includes('noshow:s1'));
+ ok('001 예정 +10분 지나면 사장님께 미출근',alertsFor(base,T('10:11')).some(a=>a.key==='noshow:s1'&&a.to==='owner'));
+ ok('출근했으면 미출근 알림 없음',!keys({...base,attendance:[{id:'r',employeeId:'a',start:iso('10:02'),end:null}]},T('10:30')).includes('noshow:s1'));
+ const open={...base,attendance:[{id:'r',employeeId:'a',start:iso('10:00'),end:null}]};
+ ok('002 예정 퇴근 +30분 전에는 없음',!keys(open,T('15:29')).includes('clockout:r'));
+ ok('002 +30분 지나면 직원·사장님 둘 다',keys(open,T('15:31')).includes('clockout:r')&&keys(open,T('15:31')).includes('clockout-owner:r'));
+ ok('휴가인 직원은 알림 없음',!keys({...base,approvedLeaves:[{employeeId:'a',start:d,end:d}]},T('10:30')).includes('noshow:s1'));
+ const nov={...base,payrollRuns:{}};ok('117 급여일 3일 전 미확정 알림',keys(nov,T('10:00')).includes('payday:2026-09')&&!keys(base,T('10:00')).includes('payday:2026-09'));
+ const ch=scheduleChanges([{id:'1',employeeId:'a',date:'2026-10-08',start:'09:00',end:'15:00'},{id:'2',employeeId:'b',date:'2026-10-08',start:'13:00',end:'18:00'},{id:'3',employeeId:'b',date:'2026-10-01',start:'13:00',end:'18:00'}],[{id:'1',employeeId:'a',date:'2026-10-09',start:'09:00',end:'15:00'},{id:'2',employeeId:'b',date:'2026-10-08',start:'13:00',end:'18:00'}],'2026-10-07');
+ ok('024 바뀐 직원에게만(지난 근무 삭제는 무시)',ch.size===1&&ch.get('a')==='10/8 09:00–15:00 → 10/9 09:00–15:00');
+ ok('알림톡 설정 없으면 안 보냄',(await sendAlimtalk({},'01012345678','PAYSLIP_SENT',{})) ===null&&!alimtalkReady({}));
+ let req;const env={SOLAPI_API_KEY:'k',SOLAPI_API_SECRET:'s',SOLAPI_PFID:'pf',SOLAPI_SENDER:'0212345678',ALIMTALK_TEMPLATES:JSON.stringify({CLOCKOUT_MISSING:'KA01'})};
+ const r=await sendAlimtalk(env,'010-1234-5678','CLOCKOUT_MISSING',{이름:'가',날짜:'10/7'},async(u,o)=>{req={u,o};return new Response('{}',{status:200})});
+ ok('알림톡 요청 모양',r==='sent'&&req.u.includes('solapi')&&JSON.parse(req.o.body).message.kakaoOptions.variables['#{이름}']==='가'&&/^HMAC-SHA256 apiKey=k, date=.*signature=[0-9a-f]{64}$/.test(req.o.headers.Authorization));
+ ok('심사 안 된 템플릿은 안 보냄',(await sendAlimtalk(env,'01012345678','PAYSLIP_SENT',{이름:'가',가게:'x',월:'9',실수령액:1,지급일:'x'}))===null);
+ console.log('PASS: 지시서 2주차 (알림 검사·근무표 변경·알림톡).');
 }
 // 직원 엑셀 파일 등록: .xlsx·CSV 읽기
 {

@@ -1,0 +1,35 @@
+# 지시서 2주차: 10분마다 출퇴근 알림 검사(미출근 +10분, 퇴근 누락 +30분, 근무 1시간 전, 급여일 3일 전 미확정).
+# GitHub 예약 실행은 몇 분 늦을 수 있어요. 결과는 보낸 건수만 남긴다.
+name: 출퇴근 알림 검사
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: alerts
+  cancel-in-progress: true
+jobs:
+  alerts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            scripts/cron-secret.mjs
+            deploy.config.json
+          sparse-checkout-cone-mode: false
+      - name: 비밀값 준비
+        env:
+          CRON_SEED: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: node scripts/cron-secret.mjs
+      - name: 알림 검사 부르기
+        run: |
+          set -euo pipefail
+          if [ -z "${CRON_SECRET:-}" ]; then echo "::warning::SUPABASE_DB_PASSWORD가 없어 건너뛰어요"; exit 0; fi
+          url=$(node -p "require('./deploy.config.json').SUPABASE_URL"); anon=$(node -p "require('./deploy.config.json').SUPABASE_ANON_KEY")
+          code=$(curl -s -o out.json -w '%{http_code}' -X POST -H "apikey: $anon" -H "Authorization: Bearer $anon" -H "x-cron-secret: $CRON_SECRET" -H "x-cron-task: alerts" "$url/functions/v1/api/cron")
+          echo "::notice::알림 검사 → $code $(head -c 120 out.json)"
+          [ "$code" = "200" ]

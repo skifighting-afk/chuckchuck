@@ -256,3 +256,24 @@ html.large-text .saas-shell main,html.large-text .t-work,html.large-text [role=d
 .att-rule summary small{color:#5d6b62}
 .att-rule>div,.att-rule>p,.att-rule>button{margin:0 20px 12px}
 @media(max-width:700px){.att-actions{margin-left:0}.att-tl{padding:0 10px}.att-tl-scale,.att-tl-row{grid-template-columns:64px minmax(360px,1fr)}.att-legend{padding:0 10px 8px}}
+/* 지시서 2주차: 알림 모아보기·고르기 */
+.nb{position:relative}
+.nb-btn{position:relative;display:grid;place-items:center;width:44px;height:44px;border-radius:12px;border:1px solid #dfe5e0;background:#fff;color:#15643f;cursor:pointer}
+.nb-count{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:#c0392b;color:#fff;font-size:12px;display:grid;place-items:center}
+.nb-panel{position:absolute;right:0;top:52px;z-index:60;width:min(380px,calc(100vw - 24px));max-height:70vh;overflow:auto;background:#fff;border:1px solid #dfe5e0;border-radius:14px;box-shadow:0 16px 40px rgba(16,37,27,.18)}
+.nb-head{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-bottom:1px solid #edf1ee;position:sticky;top:0;background:#fff}
+.nb-tabs{display:flex;gap:4px}.nb-tabs button{min-height:40px;padding:0 12px;border-radius:8px;border:0;background:none;font-weight:700;cursor:pointer;color:#4b5d53}.nb-tabs button[aria-selected=true]{background:#eef6f0;color:#15643f}
+.nb-link{border:0;background:none;color:#15643f;font-weight:700;cursor:pointer;min-height:40px}
+.nb-list{list-style:none;margin:0;padding:0}
+.nb-list li button{display:grid;gap:3px;width:100%;text-align:left;padding:12px 14px;border:0;border-bottom:1px solid #f1f4f2;background:#fff;cursor:pointer;font:inherit;color:#10251b}
+.nb-list li.unread button{background:#f4faf6;box-shadow:inset 4px 0 0 #15643f}
+.nb-list b{font-size:15px}.nb-list span{font-size:13px;color:#4b5d53}.nb-kind{font-size:12px!important;color:#6b7a70!important}
+.nb-empty{padding:20px;text-align:center;color:#6b7a70}
+.nb-prefs{padding:10px 14px;display:grid;gap:6px}.nb-prefs p{margin:0 0 4px;font-size:13px;color:#4b5d53}
+.nb-pref{display:flex;justify-content:space-between;gap:10px;align-items:center;min-height:52px;border-bottom:1px solid #f1f4f2}
+.nb-pref span{display:grid}.nb-pref small{color:#6b7a70;font-size:12px}
+.nb-pref input{width:44px;height:24px;accent-color:#15643f}
+.nb-pref input{appearance:none;-webkit-appearance:none;flex:0 0 auto;width:48px;height:28px;border-radius:999px;background:#cfd9d2;position:relative;cursor:pointer;transition:background .15s;margin:0}
+.nb-pref input::after{content:'';position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left .15s}
+.nb-pref input:checked{background:#15643f}.nb-pref input:checked::after{left:23px}
+.nb-pref input:focus-visible{outline:3px solid #15643f;outline-offset:2px}

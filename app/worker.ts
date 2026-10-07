@@ -13,6 +13,8 @@ import {personalTeam} from '../lib/personal-team';
 import {nativeAuth,withNativeIdentity,type AuthEnv} from './auth-api';
 import {adminApi,isHQ} from './admin-api';
 import {correctionError} from '../lib/attendance-review';
+import {scheduleChanges} from '../lib/schedule-diff';
+import {sendAlimtalk} from '../lib/alimtalk-send';
 import {teamSchema,normalizeTeam,calculate,contractText,kdate,attendanceSchema,newMember,applyClock,applyCredit} from '../lib/team-model';
 import {managerApi} from './manager-api';
 import {staffJoinApi} from './staff-join-api';
@@ -20,7 +22,7 @@ import {accountApi,resolveStore} from './saas-api';
 import {plans,trialStatus,isPlan,canWrite,capacityError,hasFeature} from '../lib/plans';
 import {evidenceApi} from './evidence-api';
 import {manualApi} from './manual-api';
-import {pushApi,notifyUser} from './push-api';
+import {pushApi,notifyUser,notificationsApi} from './push-api';
 import {qrTokenOk} from '../lib/qr-live';
 import {qrLiveApi} from './qr-live-api';
 import {exportApi} from './export-api';
@@ -65,6 +67,7 @@ async function route(request:Request,env:Env){
  if(path==='/api/evidence')return evidenceApi(request,env);
  if(path==='/api/manual')return manualApi(request,env);
  if(path==='/api/push')return pushApi(request,env);
+ if(path==='/api/notifications')return notificationsApi(request,env);
  if(path==='/api/support')return supportApi(request,env);
  if(path==='/api/password')return passwordApi(request,env);
  if(path==='/api/share')return shareApi(request,env);
@@ -149,18 +152,21 @@ async function route(request:Request,env:Env){
  case 'reopen':{const r=state.payrollRuns[b.key];if(!r?.locked||!b.reason?.trim())fail('확정 건과 해제 사유를 확인해 주세요.');r.locked=false;for(const m of outbox)if(m.key.startsWith(b.key+':')&&['발송 대기','수신 주소 필요'].includes(m.status))m.status='확정 해제로 취소';log('급여 확정 해제',b.key,null,null,b.reason);break;}
  case 'contract':{if(!hasFeature(raw?._account,'contracts'))fail('근로계약서는 베이직부터 이용할 수 있어요.');const e=state.employees.find(e=>e.id===b.id);if(!e)fail('직원을 찾을 수 없습니다.');if(!b.reason?.trim())fail('서면 체결일·보관 위치 등 확인 근거를 입력해 주세요.');const before={...e!.contract};if(b.reset){e!.contract.status='검토 중';e!.contract.signedAt=null;e!.contract.signedBy=null;}else{if(!e!.email||!e!.contract.employer||!e!.contract.workplace)fail('계약 필수 정보를 입력해 주세요.');e!.contract.status='체결 완료';e!.contract.signedAt=new Date().toISOString();e!.contract.signedBy='서면 체결 확인 등록: '+actor.name+' / '+b.reason;if(state.settings.autoContract)enqueue('contract:'+e!.id+':'+e!.contract.signedAt,e!.email,'근로조건 확인서 사본 · '+state.store.name,contractText(state,e!));}log(b.reset?'변경 계약 시작':'서면 계약 확인',e!.name,before,e!.contract,b.reason);break;}
  case 'queueContract':{if(!hasFeature(raw?._account,'contracts'))fail('근로계약서는 베이직부터 이용할 수 있어요.');const e=state.employees.find(e=>e.id===b.id);if(!e?.email)fail('직원 이메일을 먼저 등록해 주세요.');enqueue('contract-manual:'+crypto.randomUUID(),e!.email,'근로조건 확인서 · '+state.store.name,contractText(state,e!));log('계약 이메일 준비',e!.name,null,null);break;}
- case 'send':{const m=outbox.find(m=>m.id===b.id);if(!m||m.status!=='발송 대기')fail('발송 대기 건만 전송할 수 있습니다.');if(!env.RESEND_API_KEY||!env.EMAIL_FROM)fail('발신 이메일 서비스가 연결되지 않았습니다.');if(!m.to)fail('수신 주소가 없습니다.');m.status='발송 처리 중';m.attemptedAt=new Date().toISOString();log('이메일 발송 요청',m.to,null,{id:m.id,subject:m.subject});break;}
+ case 'send':{const m=outbox.find(m=>m.id===b.id);// 지시서 2주차 139: 실패·결과 확인 필요 건은 다시 보내기
+if(!m||!['발송 대기','발송 실패','결과 확인 필요'].includes(m.status))fail('발송 대기·실패 건만 보낼 수 있어요.');m.retries=(m.retries||0)+(m.status==='발송 대기'?0:1);if(m.retries>5)fail('다섯 번 넘게 실패했어요. 수신 주소를 확인해 주세요.');if(!env.RESEND_API_KEY||!env.EMAIL_FROM)fail('발신 이메일 서비스가 연결되지 않았습니다.');if(!m.to)fail('수신 주소가 없습니다.');m.status='발송 처리 중';m.attemptedAt=new Date().toISOString();log('이메일 발송 요청',m.to,null,{id:m.id,subject:m.subject});break;}
  default:fail('지원하지 않는 작업입니다.');
  }
  delete (state as any).approvedLeaves;const checked=teamSchema.safeParse(state);if(!checked.success)return json({error:checked.error.issues[0].message},400);
- const data=JSON.stringify({...checked.data,_attendanceQr:raw?._attendanceQr,_attendanceQrMode:raw?._attendanceQrMode,_hq:raw?._hq,_joinTerms:raw?._joinTerms,_joinCodes:raw?._joinCodes,_joinApplications:raw?._joinApplications,_account:raw?._account,_operations:raw?._operations,_manuals:raw?._manuals,_attendanceFrom:raw?._attendanceFrom,_audit:audit,_outbox:outbox,_invitations:invitations,_members:members}),updatedAt=new Date().toISOString();
+ const data=JSON.stringify({...checked.data,_attendanceQr:raw?._attendanceQr,_attendanceQrMode:raw?._attendanceQrMode,_hq:raw?._hq,_joinTerms:raw?._joinTerms,_joinCodes:raw?._joinCodes,_joinApplications:raw?._joinApplications,_account:raw?._account,_operations:raw?._operations,_manuals:raw?._manuals,_attendanceFrom:raw?._attendanceFrom,_alertsSent:raw?._alertsSent,_audit:audit,_outbox:outbox,_invitations:invitations,_members:members}),updatedAt=new Date().toISOString();
  const q=version===0?env.DB.prepare('INSERT OR IGNORE INTO stores(owner,data,version,updated_at) VALUES(?,?,?,?)').bind(owner,data,1,updatedAt):env.DB.prepare('UPDATE stores SET data=?,version=?,updated_at=? WHERE owner=? AND version=?').bind(data,version+1,updatedAt,owner,version);
  if(!(await q.run()).meta.changes)return json({error:'동시에 변경된 내용이 있습니다. 새로고침해 주세요.'},409);
+ // 지시서 2주차 024: 근무표가 바뀐 직원에게만 알림(오늘 이후 근무)
+ if(Array.isArray(raw?.shifts)){const ch=scheduleChanges(raw.shifts,checked.data.shifts,kdate(new Date().toISOString()));for(const [emp,text] of ch){const uid=(members||[]).find((m:any)=>m.employeeId===emp)?.userId;if(uid&&uid!==request.headers.get('oai-authenticated-user-id')){await notifyUser(env,uid,{title:'근무표가 바뀌었어요',body:text,url:'/app',kind:'schedule'});const e=checked.data.employees.find((x:any)=>x.id===emp);await sendAlimtalk(env as any,e?.phone,'SCHEDULE_CHANGED',{이름:e?.name||'',가게:checked.data.store.name,내용:text}).catch(()=>null)}}}
  // 작업 092: 출퇴근 정정 결과를 요청한 사람에게 알림
  if(b.action==='review'){const r=state.requests.find((x:any)=>x.id===b.id);if(r?.actor?.id&&r.actor.id!==request.headers.get('oai-authenticated-user-id'))await notifyUser(env,r.actor.id,{title:'출퇴근 정정 '+r.status,body:`${kdate(r.before.start)} 기록 정정 요청이 ${r.status}되었어요.`,url:'/app'})}
  if(b.action==='send'){
   const m=outbox.find(m=>m.id===b.id);let status='결과 확인 필요',providerId=null;
-  try{const resp=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:'Bearer '+env.RESEND_API_KEY,'Content-Type':'application/json','Idempotency-Key':'onjang-'+m.id},body:JSON.stringify({from:env.EMAIL_FROM,to:[m.to],subject:m.subject,html:'<pre style="font-family:sans-serif;white-space:pre-wrap">'+esc(m.body)+'</pre>'})});const r:any=await resp.json();status=resp.ok&&r.id?'발송 접수':'발송 실패';providerId=r.id||null;}catch{}
+  try{const resp=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:'Bearer '+env.RESEND_API_KEY,'Content-Type':'application/json','Idempotency-Key':'onjang-'+m.id+(m.retries?'-r'+m.retries:'')},body:JSON.stringify({from:env.EMAIL_FROM,to:[m.to],subject:m.subject,html:'<pre style="font-family:sans-serif;white-space:pre-wrap">'+esc(m.body)+'</pre>'})});const r:any=await resp.json();status=resp.ok&&r.id?'발송 접수':'발송 실패';providerId=r.id||null;}catch{}
   for(let attempt=0;attempt<4;attempt++){const latest=await env.DB.prepare('SELECT data,version FROM stores WHERE owner=?').bind(owner).first<any>();const d=JSON.parse(latest.data);const target=d._outbox.find((x:any)=>x.id===m.id);Object.assign(target,{status,providerId,processedAt:new Date().toISOString()});const saved=await env.DB.prepare('UPDATE stores SET data=?,version=?,updated_at=? WHERE owner=? AND version=?').bind(JSON.stringify(d),latest.version+1,new Date().toISOString(),owner,latest.version).run();if(saved.meta.changes)return json({...result(),state:normalizeTeam(d),audit:d._audit,outbox:d._outbox,version:latest.version+1});}return json({error:'발송 결과를 새로고침하여 확인해 주세요. 중복 전송하지 마세요.'},409);
  }
  return json(result());
