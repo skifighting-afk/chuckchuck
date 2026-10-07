@@ -18,10 +18,10 @@ export async function manualApi(request:Request,env:{DB:D1Database}&PushEnv){
  const manuals:Manual[]=data._manuals||[],visible=(m:Manual)=>owner||manualVisibleTo(m,self);
  // 사장님 화면: 그 매뉴얼을 받는 직원 수(지점·업무 기준)와 그중 읽은 수
  const audience=(m:Manual)=>(data._members||[]).map((x)=>({uid:x.userId,e:data.employees.find((e)=>e.id===x.employeeId)})).filter((x)=>x.e&&x.e.status!=='퇴사'&&manualVisibleTo(m,x.e));
- const view=()=>({version:row.version,owner,branches:owner?data.branches.map((b)=>({id:b.id,name:b.name})):[],roles:owner?[...new Set(data.employees.map((e)=>e.role).filter(Boolean))]:[],manuals:manuals.filter(visible).map(m=>({...m,category:m.category||'기타',roles:m.roles||[],note:m.note||'',read:(m.reads||[]).includes(user),reads:undefined,...(owner?(()=>{const a=audience(m);return {audience:a.length,readCount:a.filter((x)=>(m.reads||[]).includes(x.uid)).length,unread:a.filter((x)=>!(m.reads||[]).includes(x.uid)).map((x)=>x.e!.name)}})():{})}))});
+ const view=()=>({checkRuns:(data._checkRuns||[]).filter((r)=>owner?r.at>=new Date(Date.now()-7*86400000).toISOString():r.byId===user&&r.at>=new Date(Date.now()-86400000).toISOString()).slice(-100).reverse(),version:row.version,owner,branches:owner?data.branches.map((b)=>({id:b.id,name:b.name})):[],roles:owner?[...new Set(data.employees.map((e)=>e.role).filter(Boolean))]:[],manuals:manuals.filter(visible).map(m=>({...m,category:m.category||'기타',roles:m.roles||[],note:m.note||'',read:(m.reads||[]).includes(user),reads:undefined,...(owner?(()=>{const a=audience(m);return {audience:a.length,readCount:a.filter((x)=>(m.reads||[]).includes(x.uid)).length,unread:a.filter((x)=>!(m.reads||[]).includes(x.uid)).map((x)=>x.e!.name)}})():{})}))});
  if(request.method==='GET'){
   const image=url.searchParams.get('image');
-  if(image){if(!owner&&!manuals.some(m=>visible(m)&&m.steps.some((s:Step)=>s.imageId===image)))return json({error:'볼 수 없는 사진이에요. 매뉴얼 목록을 새로고침해 주세요.'},404);const f=await env.DB.prepare('SELECT mime,body FROM store_manual_images WHERE owner=? AND id=?').bind(linked.owner,image).first<any>();if(!f)return json({error:'사진을 찾을 수 없어요. 사장님께 다시 올려 달라고 해 주세요.'},404);const bin=Uint8Array.from(atob(f.body),c=>c.charCodeAt(0));return new Response(bin,{headers:{'Content-Type':f.mime,'Cache-Control':'private, max-age=86400','X-Content-Type-Options':'nosniff'}})}
+  if(image){const run=(data._checkRuns||[]).find((r)=>r.photoId===image);if(!owner&&!(run&&run.byId===user)&&!manuals.some(m=>visible(m)&&m.steps.some((s:Step)=>s.imageId===image)))return json({error:'볼 수 없는 사진이에요. 매뉴얼 목록을 새로고침해 주세요.'},404);const f=await env.DB.prepare('SELECT mime,body FROM store_manual_images WHERE owner=? AND id=?').bind(linked.owner,image).first<any>();if(!f)return json({error:'사진을 찾을 수 없어요. 사장님께 다시 올려 달라고 해 주세요.'},404);const bin=Uint8Array.from(atob(f.body),c=>c.charCodeAt(0));return new Response(bin,{headers:{'Content-Type':f.mime,'Cache-Control':'private, max-age=86400','X-Content-Type-Options':'nosniff'}})}
   return json(view());
  }
  if(request.method!=='POST')return json({error:'이 방법으로는 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},405);
@@ -30,6 +30,20 @@ export async function manualApi(request:Request,env:{DB:D1Database}&PushEnv){
  let b:any;try{b=JSON.parse(raw)}catch{return json({error:'요청을 읽지 못했어요. 새로고침한 뒤 다시 시도해 주세요.'},400)}
  const now=new Date().toISOString();
  if(b.action==='read'){const m=manuals.find(m=>m.id===b.id&&visible(m));if(!m)return json({error:'매뉴얼을 찾을 수 없어요. 목록을 새로고침해 주세요.'},404);if(!(m.reads||[]).includes(user)){m.reads=[...(m.reads||[]),user].slice(-500);await save()}return json(view())}
+ // 지시서 5주차 061: 오픈·마감 체크 실행 — 직원도 할 수 있다. 단계마다 체크하고 사진 한 장으로 인증
+ if(b.action==='checkRun'){
+  const m=manuals.find(m=>m.id===b.id&&visible(m));if(!m)return json({error:'매뉴얼을 찾을 수 없어요. 목록을 새로고침해 주세요.'},404);
+  const done=Array.isArray(b.done)?[...new Set(b.done.filter((i:any)=>Number.isInteger(i)&&i>=0&&i<m.steps.length))].sort((x:any,y:any)=>x-y) as number[]:[];
+  if(!done.length)return json({error:'한 단계 이상 체크해 주세요.'},400);
+  let photoId:string|null=null;
+  if(b.photo){const p=b.photo;if(!['image/jpeg','image/png'].includes(p.mime)||typeof p.body!=='string'||!/^[A-Za-z0-9+/]+={0,2}$/.test(p.body))return json({error:'JPG·PNG 사진만 올릴 수 있어요. 다른 사진을 골라 주세요.'},400);const bin=atob(p.body);if(bin.length>MANUAL_LIMITS.imageBytes)return json({error:'사진이 너무 커요. 400KB 이하로 줄여서 올려 주세요.'},413);if(!(p.mime==='image/png'?bin.startsWith('\x89PNG\r\n\x1a\n'):bin.startsWith('\xff\xd8\xff')))return json({error:'사진 형식이 맞지 않아요. JPG·PNG 사진을 골라 주세요.'},400);
+   photoId='chk-'+crypto.randomUUID();await env.DB.prepare('INSERT INTO store_manual_images(owner,id,mime,body,bytes,created_at) VALUES(?,?,?,?,?,?)').bind(linked.owner,photoId,p.mime,p.body,bin.length,now).run();}
+  const runs=data._checkRuns||[],cut=new Date(Date.now()-60*86400000).toISOString(),keep=runs.filter((r)=>r.at>=cut).slice(-300),drop=runs.filter((r)=>!keep.includes(r));
+  keep.push({id:crypto.randomUUID(),manualId:m.id,title:m.title,category:m.category||'기타',branchId:self?.branchId||m.branchId,byId:user!,by:owner?'사장님':self?.name||'',at:now,done,total:m.steps.length,photoId,note:typeof b.note==='string'?b.note.trim().slice(0,200):''});
+  data._checkRuns=keep;await save();for(const r of drop)if(r.photoId)await env.DB.prepare('DELETE FROM store_manual_images WHERE owner=? AND id=?').bind(linked.owner,r.photoId).run();
+  if(!owner&&done.length<m.steps.length)await notifyUser(env as any,linked.owner,{title:`${m.title} 체크가 덜 끝났어요`,body:`${self?.name||'직원'}님이 ${m.steps.length}단계 중 ${done.length}단계만 체크했어요.`,url:'/app?screen=manual',kind:'manual'}).catch(()=>null);
+  return json(view());
+ }
  if(!owner)return json({error:'매뉴얼은 사장님만 만들고 고칠 수 있어요.'},403);
  if(data._account&&!canWrite(data._account))return json({error:'체험이 끝나 지금은 조회만 할 수 있어요. 요금제를 고르면 다시 저장할 수 있어요.'},403);
  if(b.action==='image'){
@@ -61,7 +75,7 @@ export async function manualApi(request:Request,env:{DB:D1Database}&PushEnv){
  }
  if(b.action==='delete'){const m=manuals.find(m=>m.id===b.id);if(!m)return json({error:'매뉴얼을 찾을 수 없어요. 목록을 새로고침해 주세요.'},404);data._manuals=manuals.filter(x=>x.id!==b.id);manuals.splice(manuals.indexOf(m),1);await save();await dropUnused(m.steps.map((s:Step)=>s.imageId).filter((x):x is string=>!!x));return json(view())}
  return json({error:'이 작업은 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},400);
- async function save(){data._audit=[...(data._audit||[]),{id:crypto.randomUUID(),at:now,actor:{id:user!,name:owner?'사장님':self?.name||''},action:b.action==='read'?'매뉴얼 확인':b.action==='delete'?'매뉴얼 삭제':'매뉴얼 저장',target:b.title||b.id||'',before:null,after:null,reason:''}].slice(-1000);const r=await env.DB.prepare('UPDATE stores SET data=?,version=?,updated_at=? WHERE owner=? AND version=?').bind(JSON.stringify(data),row.version+1,now,linked!.owner,row.version).run();if(!r.meta.changes)throw new Conflict();row.version++}
+ async function save(){data._audit=[...(data._audit||[]),{id:crypto.randomUUID(),at:now,actor:{id:user!,name:owner?'사장님':self?.name||''},action:b.action==='read'?'매뉴얼 확인':b.action==='checkRun'?'오픈·마감 체크':b.action==='delete'?'매뉴얼 삭제':'매뉴얼 저장',target:b.title||b.id||'',before:null,after:null,reason:''}].slice(-1000);const r=await env.DB.prepare('UPDATE stores SET data=?,version=?,updated_at=? WHERE owner=? AND version=?').bind(JSON.stringify(data),row.version+1,now,linked!.owner,row.version).run();if(!r.meta.changes)throw new Conflict();row.version++}
  async function dropUnused(ids:string[]){const used=new Set((data._manuals||[]).flatMap((m)=>m.steps.map((s:Step)=>s.imageId)));for(const id of ids)if(!used.has(id))await env.DB.prepare('DELETE FROM store_manual_images WHERE owner=? AND id=?').bind(linked!.owner,id).run()}
  }catch(e){if(e instanceof Conflict)return json({error:'동시 변경이 있어요. 새로고침해 주세요.'},409);return serverError('manual',e,'매뉴얼을 처리하지 못했어요. 잠시 뒤 다시 시도해 주세요.')}
 }

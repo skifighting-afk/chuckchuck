@@ -18,14 +18,15 @@ function seed(){return [
  {id:'m4',title:'커피 머신 아침 준비',category:'기기',roles:[],branchId:'all',createdAt:ago(9),updatedAt:ago(9),note:'',reads:['e0','e2'],steps:[{text:'전원을 켜고 15분 예열해요.',imageId:COFFEE},{text:'첫 샷 두 잔은 버리고 세 번째부터 써요.'},{text:'스팀 노즐을 한 번 빼서 물기를 날려요.'}]},
  {id:'m5',title:'손 씻기·위생 점검',category:'위생',roles:[],branchId:'all',createdAt:ago(5),updatedAt:ago(5),note:'',reads:['e1','e2','e3'],steps:[{text:'출근하면 비누로 30초 손을 씻어요.',imageId:HAND},{text:'모자·앞치마를 쓰고 거울로 확인해요.'},{text:'냉장고 온도를 점검표에 적어요(0~5℃).'}]},
 ] as any[]}
-let store:any[]|null=null,version=1;
-function view(){const ms=store!;return {version,owner:true,branches:[{id:'branch-main',name:'본점'}],roles:['홀','주방','매니저'],manuals:ms.map(m=>{const aud=EMPS.filter(e=>manualVisibleTo(m,e));return {...m,read:false,reads:undefined,audience:aud.length,readCount:aud.filter(e=>m.reads.includes(e.id)).length,unread:aud.filter(e=>!m.reads.includes(e.id)).map(e=>e.name)}})}}
+let store:any[]|null=null,version=1,runs:any[]=[];
+function view(){const ms=store!;return {checkRuns:[...runs].reverse(),version,owner:true,branches:[{id:'branch-main',name:'본점'}],roles:['홀','주방','매니저'],manuals:ms.map(m=>{const aud=EMPS.filter(e=>manualVisibleTo(m,e));return {...m,read:false,reads:undefined,audience:aud.length,readCount:aud.filter(e=>m.reads.includes(e.id)).length,unread:aud.filter(e=>!m.reads.includes(e.id)).map(e=>e.name)}})}}
 const demoSource:ManualSource={
- load:async()=>{store=seed();version=1;return view()},
+ load:async()=>{store=seed();version=1;runs=[{id:'r0',manualId:'m1',title:'홀 오픈 준비',category:'오픈',by:'김예시',at:new Date(Date.now()-3*3600000).toISOString(),done:[0,1,2],total:3,photoId:null}];return view()},
  call:async(b:any)=>{const now=new Date().toISOString();
   if(b.action==='image')return {id:`data:${b.mime};base64,${b.body}`};
   if(b.action==='save'){const ex=b.id&&store!.find(m=>m.id===b.id);if(ex)Object.assign(ex,{title:b.title,branchId:b.branchId,category:b.category,roles:b.roles,note:b.note||'',steps:b.steps,updatedAt:now,reads:[]});else store!.push({id:'m'+Date.now(),title:b.title,branchId:b.branchId,category:b.category,roles:b.roles,note:'',steps:b.steps,createdAt:now,updatedAt:now,reads:[]})}
   if(b.action==='delete')store=store!.filter(m=>m.id!==b.id);
+  if(b.action==='checkRun'){const m=store!.find(x=>x.id===b.id);if(!m)throw Error('매뉴얼을 찾을 수 없어요. 목록을 새로고침해 주세요.');if(!b.done?.length)throw Error('한 단계 이상 체크해 주세요.');runs.push({id:'r'+Date.now(),manualId:m.id,title:m.title,category:m.category,by:'예시 사장님',at:now,done:b.done,total:m.steps.length,photoId:b.photo?`data:${b.photo.mime};base64,${b.photo.body}`:null})}
   version++;return view()},
 };
 export function DemoManual(){return <StoreManual source={demoSource} branchId="branch-main" demoNote="체험용 예시예요. 분류·검색, 고치기, '직원 화면으로 보기'를 눌러 보세요(새로고침하면 처음으로). 실제 매장에서는 휴대폰으로 찍은 사진이 들어가요."/>}

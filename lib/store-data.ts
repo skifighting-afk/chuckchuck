@@ -15,4 +15,7 @@ export type PayrollRun={month:string,branch:string,locked:boolean,payDate?:strin
 export type JoinCode={branchId:string,code:string,legacyCode?:string,paused?:boolean,expiresAt?:string};
 export type JoinApplication={id:string,userId:string,status:string,branchId:string,name:string,createdAt:string,[k:string]:any};
 /** stores.data를 JSON.parse한 값 */
-export type StoreData=Omit<Team,'payrollRuns'>&{payrollRuns:Record<string,PayrollRun>,_operations?:Operations,_members?:Member[],_manuals?:Manual[],_audit?:AuditEntry[],_account?:Record<string,any>,_hq?:Record<string,unknown>,_attendanceQr?:Record<string,string>,_attendanceQrMode?:Record<string,'static'|'dynamic'>,_joinCodes?:JoinCode[],_joinApplications?:JoinApplication[],_joinTerms?:any[]};
+export type StoreData=Omit<Team,'payrollRuns'>&{payrollRuns:Record<string,PayrollRun>,_operations?:Operations,_members?:Member[],_manuals?:Manual[],_checkRuns?:CheckRun[],_audit?:AuditEntry[],_account?:Record<string,any>,_hq?:Record<string,unknown>,_attendanceQr?:Record<string,string>,_attendanceQrMode?:Record<string,'static'|'dynamic'>,_joinCodes?:JoinCode[],_joinApplications?:JoinApplication[],_joinTerms?:any[]};
+
+/** 지시서 5주차 061: 오픈·마감 체크 실행 기록 */
+export type CheckRun={id:string,manualId:string,title:string,category:string,branchId:string,byId:string,by:string,at:string,done:number[],total:number,photoId?:string|null,note?:string};

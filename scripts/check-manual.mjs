@@ -52,4 +52,16 @@ console.log('PASS: 매장 매뉴얼(작성 권한·지점 범위·사진 검사�
  ok('고치면 다시 안 읽음 + 수정 내용 + 고친 날이 만든 날보다 뒤(바뀜)',[after.read,after.note,after.updatedAt>after.createdAt],[false,'2단계 추가',true]);
  ok('없는 분류는 기타',(await call('boss','/api/manual',{action:'save',version:r.body.version,title:'x',branchId:'all',category:'해킹',steps:[{text:'a'}]})).body.manuals.at(-1).category,'기타');
 }
+// 지시서 061: 오픈·마감 체크 실행(직원도), 사진은 본인·사장님만
+{
+ let all=(await call('amy','/api/manual')).body,mm=all.manuals[0];
+ ok('체크 0단계는 거절',(await call('amy','/api/manual',{action:'checkRun',id:mm.id,done:[]})).status,400);
+ const cr=await call('amy','/api/manual',{action:'checkRun',id:mm.id,done:[0],photo:{mime:'image/png',body:png}});ok('직원 체크 저장',cr.status,200);
+ const mine=cr.body.checkRuns[0];ok('내 체크 기록이 보임',[mine.by,mine.done.length,typeof mine.photoId],['에이미',1,'string']);
+ ok('사장님은 체크 기록을 봄',(await call('boss','/api/manual')).body.checkRuns.length>=1,true);
+ ok('다른 직원은 남의 인증 사진 못 봄',(await raw('far','/api/manual?image='+mine.photoId)).status,404);
+ ok('본인은 인증 사진 봄',(await raw('amy','/api/manual?image='+mine.photoId)).status,200);
+ ok('가짜 사진 거절',(await call('amy','/api/manual',{action:'checkRun',id:mm.id,done:[0],photo:{mime:'image/png',body:btoa('x')}})).status,400);
+ console.log('PASS: 오픈·마감 체크 실행.');
+}
 await closeAll();

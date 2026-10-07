@@ -1,3 +1,4 @@
+import {staffGone} from '../lib/staff-access';
 import {confirmSigner} from './auth-api';
 import {checkBusiness} from '../lib/nts';
 import {isIndustry,industryName} from '../lib/industries';
@@ -18,7 +19,7 @@ export async function resolveStore(db:D1Database,userId:string){
   if(!linked)return null;
   const data=await hydrateAttendance(db,linked.owner,JSON.parse(linked.data));linked.data=JSON.stringify(data);
   const member=data._members?.find((m:any)=>m.userId===userId),employee=data.employees?.find((e:any)=>e.id===member?.employeeId);
-  if(!employee||employee.status==='퇴사')return {row:linked,owner:linked.owner,access:'revoked' as const};
+  if(staffGone(employee))return {row:linked,owner:linked.owner,access:'revoked' as const};
   return {row:linked,owner:linked.owner,access:employee.access==='중간관리자'?'manager' as const:'employee' as const};
 }
 /** 계정 화면에 보여 줄 요금 정보(VAT 포함) */

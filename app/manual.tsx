@@ -70,6 +70,7 @@ export function StoreManual({branchId,source=api,demoNote}:{branchId?:string,sou
      {owner&&!preview&&cur.unread&&cur.unread.length>0&&<p className="footnote">아직 안 읽은 직원: {cur.unread.join(', ')}</p>}
     </header>
     <ol className="manual-steps2">{cur.steps.map((s,i)=><li key={i}><span className="ms-num" aria-hidden="true">{i+1}</span><div className="ms-body"><span className="sr-only">{i+1}단계. </span>{s.imageId&&<ManualImage source={source} id={s.imageId} alt={`${cur.title} ${i+1}단계 사진`}/>}{s.text&&<p>{s.text}</p>}</div></li>)}</ol>
+    {!preview&&<CheckRunner key={cur.id} m={cur} runs={(data.checkRuns||[]).filter((r:any)=>r.manualId===cur.id)} owner={owner} busy={busy} source={source} run={run}/>}
     {owner&&!preview&&<div className="actions"><Btn disabled={busy} onClick={()=>{if(confirm(`'${cur.title}' 매뉴얼을 지울까요? 사진도 함께 지워져요.`))void run({action:'delete',id:cur.id},'매뉴얼을 지웠어요.')}}>삭제</Btn></div>}
    </article>}
   </div>}
@@ -102,5 +103,21 @@ function ManualEditor({edit,setEdit,data,busy,setBusy,error,setError,source,onSa
   </li>)}</ol>
   <div className="actions"><Btn disabled={steps.length>=30} onClick={()=>set([...steps,{text:'',imageId:null}])}>+ 단계 추가</Btn><Btn onClick={()=>{setEdit(null);setError('')}}>취소</Btn><Btn primary disabled={busy||!edit.title.trim()||steps.every((s:Step)=>!s.text.trim()&&!s.imageId)} onClick={()=>onSave({id:edit.id,title:edit.title,branchId:edit.branchId,category:edit.category,roles:edit.roles,note:edit.note,steps:steps.filter((s:Step)=>s.text.trim()||s.imageId)})}>{busy?'저장 중…':'저장하고 직원에게 보이기'}</Btn></div>
   <p className="footnote">손잡이(⠿)를 끌거나 ↑↓로 순서를 바꿔요. 사진은 자동으로 줄여서 올려요(장당 400KB 이하). 고치면 직원 화면에 '바뀜'이 붙고 확인 표시가 처음부터 다시 시작돼요.</p>
+ </section>;
+}
+
+/** 지시서 5주차 061: 오픈·마감 체크 실행(단계 체크 + 사진 인증)과 최근 기록 */
+function CheckRunner({m,runs,owner,busy,source,run}:{m:Manual,runs:any[],owner:boolean,busy:boolean,source:ManualSource,run:(b:any,done?:string)=>Promise<any>}){
+ const [on,setOn]=useState(false),[done,setDone]=useState<number[]>([]),[photo,setPhoto]=useState<{mime:string,body:string}|null>(null),[err,setErr]=useState('');
+ const t=(iso:string)=>{const k=new Date(Date.parse(iso)+9*3600000).toISOString();return `${Number(k.slice(5,7))}/${Number(k.slice(8,10))} ${k.slice(11,16)}`};
+ return <section className="check-run" aria-label="체크 실행">
+  {!on?<button type="button" className="primary" onClick={()=>{setOn(true);setDone([]);setPhoto(null)}}>✓ 지금 이 순서대로 체크하기</button>:<div className="cr-box">
+   <b>{m.title} 체크 · {done.length}/{m.steps.length}</b>
+   <ul>{m.steps.map((st,i)=><li key={i}><label className="t-check"><input type="checkbox" checked={done.includes(i)} onChange={e=>setDone(e.target.checked?[...done,i]:done.filter(x=>x!==i))}/> {i+1}. {st.text||'사진 단계'}</label></li>)}</ul>
+   <label className="sd-file"><input type="file" accept="image/jpeg,image/png" capture="environment" onChange={async e=>{const f=e.target.files?.[0];e.target.value='';if(!f)return;try{setPhoto(await shrinkImage(f))}catch{setErr('사진을 읽지 못했어요. 다른 사진을 골라 주세요.')}}}/>{photo?'✓ 인증 사진 넣음 (다시 찍기)':'인증 사진 찍기(선택)'}</label>
+   {err&&<p className="saas-error" role="alert">{err}</p>}
+   <div className="actions"><Btn onClick={()=>setOn(false)}>그만두기</Btn><Btn primary disabled={busy||!done.length} onClick={async()=>{const d=await run({action:'checkRun',id:m.id,done,...(photo?{photo}:{})},done.length<m.steps.length?`${done.length}/${m.steps.length}단계만 체크해서 저장했어요. 사장님께 알렸어요.`:'체크를 마쳤어요.');if(d)setOn(false)}}>체크 완료</Btn></div>
+  </div>}
+  {runs.length>0&&<div className="cr-log"><b>{owner?'최근 체크 기록':'오늘 내 체크'}</b><ul>{runs.slice(0,7).map(r=><li key={r.id}><span>{t(r.at)} · {r.by} · {r.done.length===r.total?'✓ 모두 체크':`${r.done.length}/${r.total}단계`}</span>{r.photoId&&<details><summary>인증 사진</summary><ManualImage source={source} id={r.photoId} alt={`${r.title} 인증 사진`}/></details>}</li>)}</ul></div>}
  </section>;
 }

@@ -19,7 +19,7 @@ function StartChecklist({state,branch,go}:{state:Team,branch:string,go:Record<st
  const steps=startSteps(state,branch),left=steps.filter(x=>!x.done);
  if(hidden||!left.length)return null;
  const next=left[0];
- return <section className="start-steps" aria-label="시작하기"><div className="start-steps-head"><b>시작하기 {steps.length-left.length}/{steps.length}</b><button type="button" className="saas-text-button" onClick={()=>{setHidden(true);try{localStorage.setItem(KEY,'1')}catch{}}}>숨기기</button></div>
+ return <section className="start-steps" aria-label="시작하기"><div className="start-steps-head"><b>5분 시작하기 {steps.length-left.length}/{steps.length}</b><small className="start-left">남은 일 {left.length}개 · 약 {left.length*1+1}분</small><button type="button" className="saas-text-button" onClick={()=>{setHidden(true);try{localStorage.setItem(KEY,'1')}catch{}}}>숨기기</button></div>
   <ol>{steps.map(x=><li key={x.key} className={x.done?'done':x===next?'next':''}><span aria-hidden="true">{x.done?'✓':''}</span>{x.label}{x===next&&go[x.key]&&<button type="button" onClick={go[x.key]}>지금 하기 →</button>}</li>)}</ol></section>;
 }
 export function HomeOverview({state,branch,onPayroll,onAttendance,onSchedule,onEmployees,onRegister,onJoin,children,assistant,demo=false,onChanged}:{assistant?:import('react').ReactNode;demo?:boolean;onChanged?:()=>void;children?:import('react').ReactNode;state:Team;branch:string;onPayroll:()=>void;onAttendance:()=>void;onSchedule:()=>void;onEmployees:()=>void;onRegister:()=>void;onJoin?:()=>void}){

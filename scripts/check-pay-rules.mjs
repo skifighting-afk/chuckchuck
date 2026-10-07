@@ -1188,7 +1188,7 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('영업시간 2시간 넘게 벗어나면 경고, 준비 1시간은 괜찮음',checkShift(sh,[],emp,'mon',false,{hours:{open:'10:00',close:'22:00'}}).some(c=>c.text.includes('영업시간'))&&!checkShift({...sh,start:'09:00'},[],emp,'mon',false,{hours:{open:'10:00',close:'22:00'}}).length);
  ok('자정 넘는 영업시간',!checkShift({...sh,start:'18:00',end:'02:00'},[],emp,'mon',false,{hours:{open:'17:00',close:'03:00'}}).length);
  const L=[{id:'1',name:'김가',role:'홀',email:'a@x',phone:'010',joined:'2026-01-01',status:'재직',employment:'단시간'},{id:'2',name:'=HACK',role:'주방',email:'',phone:'',joined:'2026-01-01',status:'퇴사',employment:'단시간'}];
- ok('명부 거르기·세기',filterStaff(L,'재직','').length===1&&filterStaff(L,'전체','주방').length===1&&statusCounts(L)['퇴사']===1);
+ ok('명부 거르기·세기(퇴사자는 보관함)',filterStaff(L,'일하는 직원','').length===1&&filterStaff(L,'퇴사자 보관함','주방').length===1&&filterStaff(L,'전체','주방').length===1&&statusCounts(L)['퇴사자 보관함']===1);
  ok('명부 CSV는 수식 막음',rosterCsv(L,'본점').includes(`"'=HACK"`)&&rosterCsv(L,'본점').startsWith('﻿"지점"'));
  console.log('PASS: 지시서 5주차 (서류 기한·휴무일·명부).');
 }
@@ -1267,4 +1267,13 @@ console.log('PASS: 요율 연간 갱신 경고.');
  const st={store:{name:'가게'},employees:[{id:'a',name:'가',contract:{status:'체결 완료',workDays:'월',start:'09:00',end:'18:00',signedAt:null},insurances:{},managerPermissions:[]}],shifts:[{employeeId:'a',date:'2026-10-01',start:'09:00',end:'18:00',breakMinutes:60},{employeeId:'b',date:'2026-10-01',start:'1',end:'2'}],attendance:[],payrollRuns:{k:{locked:true,month:'2026-09',payDate:'2026-10-10',rows:[{employeeId:'a',gross:1,deduction:0,net:1,hours:1},{employeeId:'b',gross:9}]}}};
  const d=myDataExport(st,'a','t');ok('내 자료: 내 것만',d.근무표.length===1&&d.급여.length===1&&d.급여[0].실수령===1&&!('managerPermissions' in d.내정보));
  console.log('PASS: 지시서 11주차 (개인정보 보존·내 자료).');
+}
+// 지시서 5주차: 입사 체크리스트·퇴사일 접속 차단
+{
+ const {onboardingSteps,showOnboarding}=await import('../lib/onboarding.ts');const {staffGone}=await import('../lib/staff-access.ts');
+ const e={id:'a',status:'입사 준비',joined:'2026-10-01',contract:{status:'서명 대기'},onboarding:{docs:'2026-10-02'}};
+ const st=onboardingSteps(e,false);ok('입사 체크 4단계(서류만 끝)',st.length===4&&st.filter(x=>x.done).map(x=>x.key).join()==='docs');
+ ok('다 끝나면 숨김',!showOnboarding({...e,contract:{status:'체결 완료'},onboarding:{docs:'x',training:'y'}},true,'2026-10-07')&&showOnboarding(e,false,'2026-10-07'));
+ ok('퇴사일 전까지는 접속, 지나면 차단',!staffGone({status:'퇴사',endDate:'2026-10-07'},'2026-10-07')&&staffGone({status:'퇴사',endDate:'2026-10-06'},'2026-10-07')&&staffGone({status:'퇴사',endDate:''},'2026-10-07')&&!staffGone({status:'재직'},'2026-10-07')&&staffGone(null));
+ console.log('PASS: 지시서 5주차 보완 (입사 체크·퇴사일 차단).');
 }
