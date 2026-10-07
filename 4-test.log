@@ -1022,103 +1022,110 @@ PASS 349. 근무표 없이 왔다 간 기록
 PASS 350. 퇴근한 사람은 퇴근 시각
 PASS 351. 밤에는 지금 표시가 범위 밖이면 없음
 PASS: 홈 오늘 근무 막대.
-PASS 352. 엑셀 제목 줄+2줄
-PASS 353. 앞 0 빠진 휴대폰 번호 복구
-PASS 354. 엑셀 날짜 숫자 → 날짜
-PASS 355. 따옴표·쉼표 글자 그대로
-PASS 356. 엑셀에서 읽은 두 명 모두 등록 가능
-PASS 357. 일련번호 변환
-PASS 358. CSV 따옴표·빈 줄
-PASS 359. 탭 CSV
+PASS 352. A1 근무표대로 출근한 날은 확인 권장 0건(중간에 다시 출근해도)
+PASS 353. A3 한 직원은 한 줄
+PASS 354. A3 제목과 일하는 중 숫자가 같음
+PASS 355. A2 문제 없으면 비서도 문제 없음
+PASS 356. A1 근무표에 없는 직원이 출근하면 확인 권장 1건
+PASS 357. A2 비서도 같은 건수와 이름
+PASS: 지시서 1라운드 A (A1~A3).
+PASS 358. 엑셀 제목 줄+2줄
+PASS 359. 앞 0 빠진 휴대폰 번호 복구
+PASS 360. 엑셀 날짜 숫자 → 날짜
+PASS 361. 따옴표·쉼표 글자 그대로
+PASS 362. 엑셀에서 읽은 두 명 모두 등록 가능
+PASS 363. 일련번호 변환
+PASS 364. CSV 따옴표·빈 줄
+PASS 365. 탭 CSV
 PASS: 직원 엑셀 파일 읽기.
-PASS 360. 출근 시각 지났는데 기록 없음
-PASS 361. 허용 오차 안이면 아직 예정
-PASS 362. 알림: QR 안 찍음이 맨 앞
-PASS 363. 알림: 지각·퇴근 누락
-PASS 364. 비서 홈 안내
-PASS 365. 비서 출퇴근 기록 안내
-PASS 366. 비서 근무 스케줄 안내
-PASS 367. 비서 급여·명세서 안내
-PASS 368. 비서 직원 관리 안내
-PASS 369. 비서 휴가·공지 안내
-PASS 370. 비서 홈: 지금 상황 요약
-PASS 371. 비서 출퇴근: 알림 그대로
-PASS 372. 직원 없으면 가입 링크 안내
-PASS 373. 질문 검색: 주휴수당
-PASS 374. 질문 검색: 짧은 말은 무시
+PASS 366. 출근 시각 지났는데 기록 없음
+PASS 367. 허용 오차 안이면 아직 예정
+PASS 368. 알림: QR 안 찍음이 맨 앞
+PASS 369. 알림: 지각·퇴근 누락
+PASS 370. 비서 홈 안내
+PASS 371. 비서 출퇴근 기록 안내
+PASS 372. 비서 근무 스케줄 안내
+PASS 373. 비서 급여·명세서 안내
+PASS 374. 비서 직원 관리 안내
+PASS 375. 비서 휴가·공지 안내
+PASS 376. 비서 홈: 지금 상황 요약
+PASS 377. 비서 출퇴근: 알림 그대로
+PASS 378. 직원 없으면 가입 링크 안내
+PASS 379. 질문 검색: 주휴수당
+PASS 380. 질문 검색: 짧은 말은 무시
 PASS: 홈 알림·척척 비서.
-PASS 375. 칸 보기: 지급·공제 항목
-PASS 376. 칸 보기: 합계·실지급
-PASS 377. 칸 보기: 기본 정보
-PASS 378. 글에서 읽은 것과 원래 값이 같음
-PASS 379. 공제 없음
-PASS 380. 명세서가 아닌 글은 null
+PASS 381. 칸 보기: 지급·공제 항목
+PASS 382. 칸 보기: 합계·실지급
+PASS 383. 칸 보기: 기본 정보
+PASS 384. 글에서 읽은 것과 원래 값이 같음
+PASS 385. 공제 없음
+PASS 386. 명세서가 아닌 글은 null
 PASS: 명세서 칸 보기.
-PASS 381. 휴게 시작 30분
-PASS 382. 30분 지나면 휴게 아님
-PASS 383. 휴게 끝을 안 눌러도 퇴근 때 30분만 빠짐
-PASS 384. 일찍 끝내면 실제 쉰 20분
-PASS 385. 지난 휴게가 정리된 뒤 새 휴게 가능
-PASS 386. 길이 없는 휴게는 끝낼 때까지
-PASS 387. 정리하면 60분
-PASS 388. 모르는 기록
+PASS 387. 휴게 시작 30분
+PASS 388. 30분 지나면 휴게 아님
+PASS 389. 휴게 끝을 안 눌러도 퇴근 때 30분만 빠짐
+PASS 390. 일찍 끝내면 실제 쉰 20분
+PASS 391. 지난 휴게가 정리된 뒤 새 휴게 가능
+PASS 392. 길이 없는 휴게는 끝낼 때까지
+PASS 393. 정리하면 60분
+PASS 394. 모르는 기록
 PASS: 휴게 자동 끝.
-PASS 389. 9시부터 6시 → 09:00–18:00
-PASS 390. 오후 2시~10시
-PASS 391. 09:00-15:30
-PASS 392. 9시 반부터 3시
-PASS 393. 밤 10시부터 2시(다음 날)
-PASS 394. 시간 없으면 null
-PASS 395. 내일·모레
-PASS 396. 10월 8일 · 10/8
-PASS 397. 수요일 · 다음주 월요일
-PASS 398. 8일(지난 날이면 다음 달)
-PASS 399. 날짜 없으면 null
-PASS 400. 시급·월급 만원
-PASS 401. 법정 휴게
-PASS 402. 임금 바꾸기 카드(긴 이름 우선)
-PASS 403. 최저시급 경고
-PASS 404. 근무 넣기 카드
-PASS 405. 임금+근무 한 번에
-PASS 406. 없는 이름은 새 직원 등록
-PASS 407. 확정 전이면 급여 화면으로
-PASS 408. 지난달 확정분 모두 보내기
-PASS 409. 한 명만 보내기
-PASS 410. 명세서 보기
-PASS 411. QR · 계약서
-PASS 412. 누가 일해
-PASS 413. 인건비
-PASS 414. 개인 급여
-PASS 415. 도움말
-PASS 416. 모르는 말
-PASS 417. FAQ로 답
-PASS 418. 분석: 주 15시간 경계
-PASS 419. 분석: 1년 근속 임박
-PASS 420. 분석: 다음 주 비었음
-PASS 421. 주휴 질문
-PASS 422. 분석해줘
+PASS 395. 9시부터 6시 → 09:00–18:00
+PASS 396. 오후 2시~10시
+PASS 397. 09:00-15:30
+PASS 398. 9시 반부터 3시
+PASS 399. 밤 10시부터 2시(다음 날)
+PASS 400. 시간 없으면 null
+PASS 401. 내일·모레
+PASS 402. 10월 8일 · 10/8
+PASS 403. 수요일 · 다음주 월요일
+PASS 404. 8일(지난 날이면 다음 달)
+PASS 405. 날짜 없으면 null
+PASS 406. 시급·월급 만원
+PASS 407. 법정 휴게
+PASS 408. 임금 바꾸기 카드(긴 이름 우선)
+PASS 409. 최저시급 경고
+PASS 410. 근무 넣기 카드
+PASS 411. 임금+근무 한 번에
+PASS 412. 없는 이름은 새 직원 등록
+PASS 413. 확정 전이면 급여 화면으로
+PASS 414. 지난달 확정분 모두 보내기
+PASS 415. 한 명만 보내기
+PASS 416. 명세서 보기
+PASS 417. QR · 계약서
+PASS 418. 누가 일해
+PASS 419. 인건비
+PASS 420. 개인 급여
+PASS 421. 도움말
+PASS 422. 모르는 말
+PASS 423. FAQ로 답
+PASS 424. 분석: 주 15시간 경계
+PASS 425. 분석: 1년 근속 임박
+PASS 426. 분석: 다음 주 비었음
+PASS 427. 주휴 질문
+PASS 428. 분석해줘
 PASS: 척척 비서 말 알아듣기·분석.
-PASS 423. 계약서 말한 직원 기억
-PASS 424. 이름 없이 말해도 방금 그 직원
-PASS 425. 계약서 이어서 만들기 버튼
-PASS 426. 기억 없으면 이름 물어봄
-PASS 427. 이름만 답하면 아까 부탁 처리(한 글자 틀려도)
-PASS 428. 이름만 쓰면 직원 요약
-PASS 429. 그 직원 명세서
+PASS 429. 계약서 말한 직원 기억
+PASS 430. 이름 없이 말해도 방금 그 직원
+PASS 431. 계약서 이어서 만들기 버튼
+PASS 432. 기억 없으면 이름 물어봄
+PASS 433. 이름만 답하면 아까 부탁 처리(한 글자 틀려도)
+PASS 434. 이름만 쓰면 직원 요약
+PASS 435. 그 직원 명세서
 PASS: 척척 비서 앞 대화 기억.
-PASS 430. 질문 100가지 이상
-PASS 431. 예시 질문마다 자기 항목으로 감
-PASS 432. 100가지 모두 답이 나옴
-PASS 433. 내일 근무자
-PASS 434. 최저시급 미달 찾기
-PASS 435. 퇴근 누락
-PASS 436. 18세 미만
-PASS 437. 곧 1년
-PASS 438. 노무 상식: 주휴 조건
-PASS 439. 질문은 명령으로 안 감
-PASS 440. 계약서 안 쓴 직원 목록
-PASS 441. 명령은 그대로
-PASS 442. 개인 주휴는 개인 답
+PASS 436. 질문 100가지 이상
+PASS 437. 예시 질문마다 자기 항목으로 감
+PASS 438. 100가지 모두 답이 나옴
+PASS 439. 내일 근무자
+PASS 440. 최저시급 미달 찾기
+PASS 441. 퇴근 누락
+PASS 442. 18세 미만
+PASS 443. 곧 1년
+PASS 444. 노무 상식: 주휴 조건
+PASS 445. 질문은 명령으로 안 감
+PASS 446. 계약서 안 쓴 직원 목록
+PASS 447. 명령은 그대로
+PASS 448. 개인 주휴는 개인 답
 PASS: 척척 비서 질문 100가지.
 
 ── check-claims
@@ -1166,8 +1173,8 @@ PASS 7. 2026-10-04: insured worker has 4대보험 lines
 PASS 8. 2026-10-04: excluded part-timer only has 고용보험
 PASS 9. 2026-10-04: payslips have every required item
 PASS 10. 2026-10-04: wage ledger total equals payroll total
-PASS 11. 2026-10-04: one person still at work today
-PASS 12. 2026-10-04: no attendance in the future
+PASS 11. 2026-10-04: someone is at work at noon
+PASS 12. 2026-10-04: no clock-in or clock-out in the future (A1·A3)
 PASS 13. 2026-02-15: demo state passes the store schema
 PASS 14. 2026-02-15: only synthetic contacts
 PASS 15. 2026-02-15: last month confirmed with today's calculation
@@ -1178,8 +1185,8 @@ PASS 19. 2026-02-15: insured worker has 4대보험 lines
 PASS 20. 2026-02-15: excluded part-timer only has 고용보험
 PASS 21. 2026-02-15: payslips have every required item
 PASS 22. 2026-02-15: wage ledger total equals payroll total
-PASS 23. 2026-02-15: one person still at work today
-PASS 24. 2026-02-15: no attendance in the future
+PASS 23. 2026-02-15: someone is at work at noon
+PASS 24. 2026-02-15: no clock-in or clock-out in the future (A1·A3)
 PASS 25. 2026-03-31: demo state passes the store schema
 PASS 26. 2026-03-31: only synthetic contacts
 PASS 27. 2026-03-31: last month confirmed with today's calculation
@@ -1190,8 +1197,8 @@ PASS 31. 2026-03-31: insured worker has 4대보험 lines
 PASS 32. 2026-03-31: excluded part-timer only has 고용보험
 PASS 33. 2026-03-31: payslips have every required item
 PASS 34. 2026-03-31: wage ledger total equals payroll total
-PASS 35. 2026-03-31: one person still at work today
-PASS 36. 2026-03-31: no attendance in the future
+PASS 35. 2026-03-31: someone is at work at noon
+PASS 36. 2026-03-31: no clock-in or clock-out in the future (A1·A3)
 PASS: 체험 화면 숫자(급여·명세서·임금대장 합계).
 
 ── check-error-messages
