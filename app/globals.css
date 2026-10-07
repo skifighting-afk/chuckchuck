@@ -600,8 +600,8 @@ body.ms-dragging,body.ms-dragging *{user-select:none!important;-webkit-user-sele
 .kakao-login,.kakao-chat{display:flex;align-items:center;justify-content:center;min-height:48px;margin:10px 0;border-radius:10px;background:#FEE500;color:#191600;font-weight:800;text-decoration:none}
 .store-switch{padding:8px 16px;background:#f5f8f4;border-bottom:1px solid #dce7df;font-size:14px}.store-switch label{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.store-switch select{min-height:44px;max-width:100%}
 .coowner-list{list-style:none;padding:0}.coowner-list li{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #eef3ef}
-.gsearch{position:relative}.gsearch input{min-height:40px;width:9.5em;max-width:40vw;border:1px solid #b5c8ba;border-radius:999px;padding:0 12px;font-size:14px}
-.gsearch-pop{position:absolute;right:0;top:46px;z-index:50;width:min(320px,90vw);background:#fff;border:1px solid #b5c8ba;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:8px;display:grid;gap:6px}
+.gsearch{position:relative}.gsearch input{min-height:48px;width:9.5em;max-width:40vw;border:1px solid #b5c8ba;border-radius:999px;padding:0 12px;font-size:14px}
+.gsearch-pop{position:absolute;right:0;top:54px;z-index:50;width:min(320px,90vw);background:#fff;border:1px solid #b5c8ba;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:8px;display:grid;gap:6px}
 .gs-item{padding:6px;border-bottom:1px solid #eef3ef}.gs-item small{display:block;color:#44564b;font-size:12px}.gs-item div{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}.gs-item button{min-height:44px;padding:0 10px;border:1px solid #b5c8ba;border-radius:8px;background:#f5f8f4;color:#173e30;font-size:13px}
 @media(max-width:700px){.t-headerdate{display:none}.gsearch input{width:7em}}
 .weekly-backups{margin-top:14px}.weekly-backups ul{padding-left:18px}.weekly-backups a{display:inline-flex;min-height:44px;align-items:center}
