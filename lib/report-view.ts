@@ -35,3 +35,17 @@ export function summaryLines(cur: {month: string; cost: number; ratioCost?: numb
   if (!out.length) out.push('특별히 확인할 점은 없어요.');
   return out;
 }
+/** 지시서 072: POS·카드사에서 내려받은 매출 파일(CSV)을 월별 합계로. 날짜 칸과 금액 칸을 알아서 찾는다 */
+export function parseSalesCsv(text: string) {
+  const rows = text.replace(/^﻿/, '').split(/\r?\n/).filter(l => l.trim()).map(l => { const out: string[] = []; let cur = '', q = false; for (const ch of l) { if (ch === '"') q = !q; else if ((ch === ',' || ch === '\t') && !q) { out.push(cur); cur = ''; } else cur += ch; } out.push(cur); return out.map(c => c.trim()); });
+  const date = (v: string) => { const m = v.match(/^(\d{4})[-./]?(\d{1,2})[-./]?(\d{1,2})/); return m ? `${m[1]}-${m[2].padStart(2, '0')}` : null; };
+  const money = (v: string) => { const n = Number(v.replace(/[,원\s]/g, '')); return Number.isFinite(n) && /\d/.test(v) ? n : null; };
+  const head = rows[0] || [], amountCol = head.findIndex(h => /매출|금액|합계|amount|total/i.test(h)), dateCol = head.findIndex(h => /날짜|일자|date/i.test(h));
+  const sums: Record<string, number> = {}; let used = 0;
+  for (const r of rows) {
+    const di = dateCol >= 0 ? dateCol : r.findIndex(c => date(c)), d = di >= 0 ? date(r[di] || '') : null; if (!d) continue;
+    const ai = amountCol >= 0 ? amountCol : r.map((c, i) => i).filter(i => i !== di && money(r[i]) !== null).pop() ?? -1, a = ai >= 0 ? money(r[ai] || '') : null; if (a === null || a < 0) continue;
+    sums[d] = (sums[d] || 0) + a; used++;
+  }
+  return {sums: Object.fromEntries(Object.entries(sums).map(([k, v]) => [k, Math.round(v)])), rows: used};
+}

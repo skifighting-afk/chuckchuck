@@ -1277,3 +1277,23 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('퇴사일 전까지는 접속, 지나면 차단',!staffGone({status:'퇴사',endDate:'2026-10-07'},'2026-10-07')&&staffGone({status:'퇴사',endDate:'2026-10-06'},'2026-10-07')&&staffGone({status:'퇴사',endDate:''},'2026-10-07')&&!staffGone({status:'재직'},'2026-10-07')&&staffGone(null));
  console.log('PASS: 지시서 5주차 보완 (입사 체크·퇴사일 차단).');
 }
+// 지시서 6주차 보완: 아침 브리핑·주간 리포트·오늘 인건비
+{
+ const {dailyBrief,weeklyBrief,todayLabor}=await import('../lib/briefing.ts');
+ const iso=(d,hm)=>new Date(Date.parse(`${d}T${hm}:00+09:00`)).toISOString();
+ const E=[{id:'a',name:'가',payType:'시급',wage:10000},{id:'b',name:'나',payType:'월급',wage:3100000},{id:'c',name:'다',status:'퇴사'}];
+ const b=dailyBrief({employees:E,shifts:[{employeeId:'a',date:'2026-10-07',start:'10:00',end:'15:00'},{employeeId:'b',date:'2026-10-07',start:'09:00',end:'18:00'}],attendance:[{employeeId:'a',start:iso('2026-10-06','10:00'),end:null}],requests:[{status:'승인 대기'}],leavesPending:2},'2026-10-07');
+ ok('아침 브리핑: 인원·첫 근무·할 일',b.title==='오늘 2명 근무 · 첫 근무 09:00'&&b.body.includes('정정 요청 1건')&&b.body.includes('휴가 신청 2건')&&b.body.includes('퇴근 안 찍은 기록 1건'));
+ const w=weeklyBrief({employees:E,shifts:[{employeeId:'a',date:'2026-09-30',start:'10:00',end:'15:00'},{employeeId:'a',date:'2026-10-01',start:'10:00',end:'15:00'}],attendance:[{employeeId:'a',start:iso('2026-09-30','10:00'),end:iso('2026-09-30','15:00'),breakMinutes:30}]},'2026-10-05');
+ ok('주간 리포트: 지난주 시간·인건비·빠진 출근',w.title.includes('9/28~10/4')&&w.title.includes('4.5시간')&&w.body.includes('45,000원')&&w.body.includes('출근 기록 없음 1건'));
+ const t=todayLabor(E,[{employeeId:'a',start:iso('2026-10-07','10:00'),end:null}],'2026-10-07',Date.parse('2026-10-07T12:00:00+09:00'));
+ ok('오늘 인건비(시급 2시간 + 월급 하루치)',t.cost===20000+100000&&t.hours===2&&t.working===1);
+ console.log('PASS: 지시서 6주차 보완 (브리핑·주간·오늘 인건비).');
+}
+{
+ const {parseSalesCsv}=await import('../lib/report-view.ts');
+ const r=parseSalesCsv('﻿일자,카드매출,결제건수\n2026.09.30,"1,200,000",31\n2026-10-01,500000,10\n2026/10/02,"250,000원",5\n합계,1950000,46');
+ ok('POS 매출 파일 월별 합계(합계 줄 무시)',r.rows===3&&r.sums['2026-09']===1200000&&r.sums['2026-10']===750000);
+ ok('제목 없는 파일도',parseSalesCsv('20261003,10000\n20261004,5000').sums['2026-10']===15000);
+ console.log('PASS: POS 매출 파일 읽기.');
+}

@@ -6,6 +6,7 @@ import {trialNotice} from '../lib/plans';
 import {notifyUser} from './push-api';
 import {processDeletions} from './withdraw-api';
 import {alertsFor} from '../lib/alert-sweep';
+import {dailyBrief,weeklyBrief} from '../lib/briefing';
 import {loadAttendance} from './attendance-store';
 import {sendAlimtalk} from '../lib/alimtalk-send';
 const json=(d:any,status=200)=>Response.json(d,{status,headers:{'Cache-Control':'no-store'}});
@@ -56,7 +57,12 @@ export async function alertSweep(env:any,now=Date.now(),notify=(uid:string,m:any
   // 출퇴근 기록은 attendance_records 테이블에 있다: 어제~지금만 읽는다
   d.attendance=await loadAttendance(env.DB,r.owner,new Date(now-2*86400000).toISOString(),new Date(now+60000).toISOString()).catch(()=>[]);
   const leaves=(d._operations?.leaves||[]).filter((l:any)=>l.status==='승인');
-  const list=alertsFor({...d,approvedLeaves:leaves,availability:d._operations?.availability||{}},now);if(!list.length)continue;
+  const list:any[]=alertsFor({...d,approvedLeaves:leaves,availability:d._operations?.availability||{}},now);
+  // 지시서 081·073: 매일 아침 8시 브리핑, 월요일엔 지난주 리포트도(사장님 알림 설정에서 끌 수 있음)
+  {const k=new Date(now+9*3600000),today=k.toISOString().slice(0,10);
+   if(k.getUTCHours()===8){const b=dailyBrief({...d,leavesPending:(d._operations?.leaves||[]).filter((l:any)=>l.status==='승인 대기').length},today);list.push({key:'brief:'+today,to:'owner',kind:'brief',title:'☀ '+b.title,body:b.body});
+    if(k.getUTCDay()===1){const wk=await loadAttendance(env.DB,r.owner,new Date(Date.parse(today+'T00:00:00+09:00')-8*86400000).toISOString(),new Date(now).toISOString()).catch(()=>[]);const w=weeklyBrief({...d,attendance:wk},today);list.push({key:'weekly:'+today,to:'owner',kind:'brief',title:w.title,body:w.body});}}}
+  if(!list.length)continue;
   const prev=typeof d._alertsSent==='string'?(()=>{try{return JSON.parse(d._alertsSent)}catch{return {}}})():d._alertsSent||{},done:Record<string,number>={...prev};let changed=false;
   for(const a of list){if(done[a.key])continue;
    const uid=a.to==='owner'?r.owner:(d._members||[]).find((m:any)=>m.employeeId===a.to)?.userId;

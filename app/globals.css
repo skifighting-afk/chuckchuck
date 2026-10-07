@@ -580,3 +580,5 @@ body.ms-dragging,body.ms-dragging *{user-select:none!important;-webkit-user-sele
 .check-run{margin-top:14px;padding-top:12px;border-top:1px solid #dce7df;display:grid;gap:10px}.check-run>button.primary{min-height:48px}
 .cr-box{display:grid;gap:8px;padding:12px;border:2px solid #17583f;border-radius:12px;background:#f5faf6}.cr-box ul,.cr-log ul{list-style:none;padding:0;margin:0;display:grid;gap:2px}.cr-box label.t-check{min-height:44px;display:flex;align-items:center;gap:8px}
 .cr-log{font-size:14px}.cr-log li{padding:6px 0;border-bottom:1px solid #eef3ef}.cr-log summary{min-height:44px;display:flex;align-items:center;cursor:pointer;color:#17583f;font-weight:700}
+.home-today-cost{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin:0 0 10px;padding:12px 14px;border-radius:12px;background:#fff;border:1px solid #dce7df}.home-today-cost span{font-size:14px;color:#344a3d}.home-today-cost b{font-size:20px;color:#17583f}.home-today-cost small{flex-basis:100%;font-size:12px;color:#44564b}
+.live-board .panel-heading small{font-size:13px;color:#344a3d}

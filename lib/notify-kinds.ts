@@ -9,6 +9,7 @@ export const NOTIFY_KINDS = {
   manual: {label: '매뉴얼', who: 'staff', desc: '새 매뉴얼·바뀐 매뉴얼'},
   payroll: {label: '급여·명세서', who: 'both', desc: '명세서 도착, 급여일 전 미확정'},
   staff: {label: '서류·계약 기한', who: 'both', desc: '보건증·계약·수습이 끝나기 전'},
+  brief: {label: '아침 브리핑·주간 리포트', who: 'owner', desc: '매일 아침 8시 오늘 근무·할 일, 월요일엔 지난주 요약'},
   account: {label: '계정·요금', who: 'owner', desc: '체험 종료 안내 등'},
 } as const;
 export type NotifyKind = keyof typeof NOTIFY_KINDS;
