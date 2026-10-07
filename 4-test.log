@@ -1404,7 +1404,7 @@ PASS 36. 2026-03-31: no clock-in or clock-out in the future (A1·A3)
 PASS: 체험 화면 숫자(급여·명세서·임금대장 합계).
 
 ── check-error-messages
-PASS: 오류 문구 442개 모두 다음 행동 안내 포함.
+PASS: 오류 문구 485개 모두 다음 행동 안내 포함.
 PASS: 오류 번호·로그 개인정보 제거.
 
 ── check-attendance-table
@@ -1573,6 +1573,7 @@ PASS: 서명 대기 계약서 다시 알림.
 PASS: 매주 자동 백업.
 PASS: 예약 인상 자동 반영.
 PASS: 근무표 자동 게시.
+PASS: 마감 체크 누락·공지 재알림.
 PASS: 매일 작업 (비밀값·체험 종료 알림 7일·1일 각 한 번).
 
 ── check-support
@@ -1699,6 +1700,48 @@ PASS: 근무표 경고·빈 근무 선착순.
 6. PASS locked month advance cannot be removed
 7. PASS locked month advance cannot be added
 PASS: 가불·선지급.
+
+── check-store-log
+1. PASS fridge 7 is out of range
+2. PASS freezer -20 ok
+3. PASS cash diff
+4. PASS handover needs text
+5. PASS staff writes handover
+6. PASS far branch sees no handover
+7. PASS staff logs temps
+8. PASS staff logs cash
+9. PASS bad photo refused
+10. PASS incident with photo
+11. PASS owner sees all kinds
+12. PASS owner opens photo
+13. PASS other staff cannot open photo
+14. PASS staff cannot change status
+15. PASS owner resolves
+16. PASS staff cannot assign task
+17. PASS owner assigns task
+18. PASS staff sees own task
+19. PASS other staff cannot finish it
+20. PASS staff finishes task
+21. PASS staff cannot request sign
+22. PASS owner requests sign
+23. PASS staff sees doc without others
+24. PASS sign needs agree + exact name
+25. PASS staff signs
+26. PASS cannot sign twice
+27. PASS owner sees 1 of 2 signed
+28. PASS signed doc cannot be deleted
+29. PASS remind unsigned
+30. PASS audit has sign
+31. PASS owner PUT ok
+32. PASS logs survive PUT
+33. PASS bad quiz refused
+34. PASS owner saves quiz manual
+35. PASS staff gets quiz without answers
+36. PASS wrong answer reported by number
+37. PASS all correct passes
+38. PASS staff marked passed
+39. PASS owner sees pass
+PASS: 매장 일지·할 일·서명 서류.
 
 ── check-share
 PASS: 세무사 공유 링크 (확정 급여만·끄기·만료·열람 기록·토큰 해시만 저장).
