@@ -3,6 +3,8 @@
 import {useState} from 'react';
 import {type Team,today} from '../lib/team-model';
 import {payAudit} from '../lib/pay-audit';
+import {deadlinesFor,durunuriCandidates,DURUNURI_LIMIT} from '../lib/tax-calendar';
+import {holidaysFor} from '../lib/holidays';
 import {compareMonths,revisionDiff,paidSummary,bulkAdjust,prevMonthOf,signed,won,bankTransferCsv} from '../lib/payroll-close';
 import {saveFile} from './team-ui';
 
@@ -62,4 +64,17 @@ function BulkAdjust({s,month,rows,busy,update,done}:{s:Team,month:string,rows:an
   <p className="footnote">같은 이름의 항목이 이미 있으면 금액을 새로 바꿔요. 직원마다 금액이 다르면 표의 '수당·공제'에서 따로 고쳐 주세요.</p>
   <button type="button" className="primary" disabled={busy} onClick={save}>{ids.length}명에게 넣기</button>
  </div>;
+}
+
+/** 지시서 115·116·120: 이번 달·다음 달 신고·납부 기한과 두루누리 지원 대상 */
+export function FilingCalendar({s,month,branch,payRows}:{s:Team,month:string,branch:string,payRows:any[]}){
+ const emps=s.employees.filter(e=>e.branchId===branch) as any[],y=Number(month.slice(0,4)),hol=new Set([...holidaysFor(y,true).keys(),...holidaysFor(y+1,true).keys()]);
+ const nm=(()=>{const [a,b]=month.split('-').map(Number);return b===12?`${a+1}-01`:`${a}-${String(b+1).padStart(2,'0')}`})();
+ const list=[...deadlinesFor(month,emps,hol),...deadlinesFor(nm,emps,hol)],td=today();
+ const du=durunuriCandidates(emps,Object.fromEntries(payRows.map((r:any)=>[r.employeeId,r.gross])));
+ return <section className="panel t-gap filing" aria-label="신고·납부 기한"><div className="panel-heading"><h2>신고·납부 기한</h2></div><div className="t-panelbody">
+  {list.length?<ul>{list.map((x,i)=><li key={i} className={x.date<td?'past':''}><span className="fd">{Number(x.date.slice(5,7))}/{Number(x.date.slice(8))}{x.date<td?' (지남)':''}</span><span className={'pc-level '+(x.kind==='4대보험'?'info':'need')}>{x.kind}</span> <b>{x.title}</b><small>{x.detail}</small></li>)}</ul>:<p>이번 달·다음 달에 할 신고가 없어요.</p>}
+  <p className="footnote">주말·공휴일이면 다음 영업일로 옮겼어요. 세무사에게 맡겼다면 세무사와 날짜를 확인해 주세요. 매일 아침 3일 전에 알림도 보내요.</p>
+  {du.eligibleStore&&du.list.length>0&&<div className="notice"><b>두루누리 사회보험료 지원 대상일 수 있어요</b> · {du.list.map(e=>e.name).join(', ')} (월 보수 {won(DURUNURI_LIMIT)}원 미만, 근로자 10명 미만 사업장). 새로 가입한 직원은 고용보험·국민연금 보험료의 80%를 지원받을 수 있어요. 재산·소득 요건이 있으니 <a href="https://insurancesupport.or.kr" target="_blank" rel="noopener">두루누리 누리집</a>이나 공단(1355)에 확인해 주세요.</div>}
+ </div></section>;
 }

@@ -90,3 +90,18 @@ export function bankTransferCsv(rows: Row[], emps: {id: string; name: string; ba
   const csv = '\uFEFF' + [['입금은행', '입금계좌번호', '예금주', '이체금액', '받는분 통장표시', '내 통장표시'], ...ok].map(r => r.map(cell).join(',')).join('\r\n');
   return {csv, count: ok.length, total: ok.reduce((n, r) => n + Number(r[3]), 0), missing};
 }
+
+/** 지시서 7주차 111: 퇴직금 산정 — 퇴직일 전 3개월(달력상) 임금 총액·일수를 확정 급여로 채운다. 3개월이 안 되는 달은 일할 */
+export function retirementBasis(runs: Record<string, any>, employeeId: string, end: string) {
+  const day = 86400000, endMs = Date.parse(end + 'T00:00:00Z'), [y, m, d] = end.split('-').map(Number);
+  const startMs = Date.UTC(y, m - 1 - 3, d), days = Math.round((endMs - startMs) / day);
+  let wages = 0; const used: string[] = [], missing: string[] = [];
+  for (let k = 0; k < 4; k++) {
+    const mm = new Date(Date.UTC(y, m - 1 - k, 1)), month = mm.toISOString().slice(0, 7), mStart = mm.getTime(), mEnd = Date.UTC(mm.getUTCFullYear(), mm.getUTCMonth() + 1, 1);
+    const lo = Math.max(mStart, startMs), hi = Math.min(mEnd, endMs); if (hi <= lo) continue;
+    const row = Object.values(runs || {}).filter((r: any) => r?.locked && r.month === month).flatMap((r: any) => r.rows || []).find((x: any) => x.employeeId === employeeId);
+    if (!row) { missing.push(month); continue; }
+    wages += row.gross * (hi - lo) / (mEnd - mStart); used.push(month);
+  }
+  return {wages: Math.round(wages), days, used, missing};
+}

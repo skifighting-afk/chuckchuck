@@ -75,6 +75,15 @@ export function calculate(s:Team,month:string){
   const hourly=e.payType==='시급'?(allProb?e.wage*rate:e.wage):ordinary.hourly;
   let auto:{lines:any[],notes:string[]}=e.autoPay&&hourly>0?allowances(mine,month,hourly,fivePlus,weekStart,hol,skip,e.weeklyHours>0&&e.weeklyHours<40?e.weeklyHours:undefined):{lines:[],notes:[] as string[]};
   if(e.payType!=='시급'&&auto.lines.length){const incl=(e as any).includesJuhu??(e.payType==='월급');auto={...auto,lines:auto.lines.filter(l=>!(incl&&l.name==='주휴수당')).map(l=>({...l,formula:l.formula+` · 통상시급 ${won(hourly)}원(${ordinary.basis})`}))};}
+  // 지시서 112: 공휴일 유급휴일수당(5명 이상·근로자의 날은 모두) — 시급·일급 직원이 평소 일하는 요일의 공휴일에 쉬면 하루치 지급
+  if(e.autoPay&&(e.payType==='시급'||e.payType==='일급')&&e.weeklyHours>=15&&hourly>0){
+   const first=month+'-01',days:string[]=[];for(const [d,name] of hol)if(d.startsWith(month)&&name!=='주휴일')days.push(d);
+   if(days.length){const from=new Date(Date.parse(first+'T00:00:00Z')-28*86400000).toISOString().slice(0,10),to=month+'-31',cnt=[0,0,0,0,0,0,0];
+    for(const sh of s.shifts.filter(x=>x.employeeId===e.id&&x.date>=from&&x.date<=to&&!hol.has(x.date)))cnt[new Date(sh.date+'T00:00:00Z').getUTCDay()]++;
+    const usual=cnt.map((n,i)=>n>=2?i:-1).filter(i=>i>=0),daily=usual.length?Math.min(8,e.weeklyHours/usual.length):0;
+    const paid=days.filter(d=>usual.includes(new Date(d+'T00:00:00Z').getUTCDay())&&!workedDays.has(d)&&d<=today0);
+    if(paid.length&&daily>0){const amt=Math.round(e.payType==='일급'?paid.length*e.wage:paid.length*daily*hourly);auto={...auto,lines:[...auto.lines,{name:'공휴일 유급휴일수당',amount:amt,formula:`${paid.map(d=>Number(d.slice(5,7))+'/'+Number(d.slice(8))+' '+hol.get(d)).join(', ')} · ${paid.length}일 × ${e.payType==='일급'?won(e.wage)+'원':daily.toFixed(1)+'시간 × '+won(hourly)+'원'} (평소 일하는 요일에 쉰 공휴일)`}]};}}
+  }
   const manual=new Set(adj.earnings.map(x=>x.name));
   const earnings:any[]=[{name:'기본급',amount:base,formula},...auto.lines.filter(x=>!manual.has(x.name)),...adj.earnings];
   const gross=earnings.reduce((n,a)=>n+a.amount,0),taxFree=earnings.filter(x=>x.taxFree).reduce((n,a)=>n+a.amount,0);

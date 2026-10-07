@@ -1297,3 +1297,38 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('제목 없는 파일도',parseSalesCsv('20261003,10000\n20261004,5000').sums['2026-10']===15000);
  console.log('PASS: POS 매출 파일 읽기.');
 }
+// 지시서 7주차 112: 공휴일 유급휴일수당
+{
+ const tm=await import('../dist/server/team-model.js');const t=tm.normalizeTeam(null);const e=t.employees[0];
+ Object.assign(e,{payType:'시급',wage:10000,weeklyHours:24,status:'재직',autoPay:true,joined:'2026-01-01'});
+ // 10월: 3일(토) 개천절, 5~7일 추석 연휴(월~수), 9일(금) 한글날. 평소 월·수·금 8시간 근무
+ const sh=[];for(const d of ['2026-09-07','2026-09-09','2026-09-11','2026-09-14','2026-09-16','2026-09-18','2026-10-12','2026-10-14','2026-10-16'])sh.push({id:d,employeeId:e.id,date:d,start:'09:00',end:'17:00',breakMinutes:0});
+ const r=tm.calculate({...t,settings:{...t.settings,fivePlus:true},shifts:sh,attendance:[]},'2026-10').find(x=>x.employeeId===e.id);
+ const line=r.earnings.find(x=>x.name==='공휴일 유급휴일수당');
+ ok('5명 이상: 평소 근무 요일 공휴일 하루치',!!line&&line.formula.includes('8.0시간')&&line.amount%80000===0&&line.amount>=80000);
+ const r2=tm.calculate({...t,settings:{...t.settings,fivePlus:false},shifts:sh,attendance:[]},'2026-10').find(x=>x.employeeId===e.id);
+ ok('5명 미만은 없음',!r2.earnings.some(x=>x.name==='공휴일 유급휴일수당'));
+ console.log('PASS: 공휴일 유급휴일수당.');
+}
+{
+ const {retirementBasis}=await import('../lib/payroll-close.ts');
+ const runs={a:{locked:true,month:'2026-07',rows:[{employeeId:'x',gross:3100000}]},b:{locked:true,month:'2026-08',rows:[{employeeId:'x',gross:3100000}]},c:{locked:true,month:'2026-09',rows:[{employeeId:'x',gross:3000000}]}};
+ const b=retirementBasis(runs,'x','2026-10-01');
+ ok('퇴직금: 7~9월 확정 급여, 92일',b.days===92&&b.wages===9200000&&b.used.length===3&&!b.missing.length);
+ const c=retirementBasis(runs,'x','2026-10-16');
+ ok('퇴직금: 달 중간 퇴직은 일할, 10월 미확정 표시',c.missing.includes('2026-10')&&c.days===92);
+ console.log('PASS: 퇴직금 자동 채움.');
+}
+// 지시서 7주차 115·116·120: 신고 기한, 취득·상실 신고, 두루누리
+{
+ const {deadlinesFor,nextBusinessDay,upcomingDeadlines,durunuriCandidates}=await import('../lib/tax-calendar.ts');
+ const E=[{id:'a',name:'가',joined:'2026-09-14',status:'재직',income:'근로소득',insurances:{고용보험:{status:'가입'}}},{id:'b',name:'나',joined:'2025-01-01',status:'퇴사',endDate:'2026-09-30',income:'사업소득',insurances:{}}];
+ const d=deadlinesFor('2026-10',E,new Set(['2026-10-09']));
+ ok('10월 기한: 원천세 10/12(10일 토요일→월), 4대보험, 사업소득 간이, 취득·상실',d.find(x=>x.title==='원천세 신고·납부').date==='2026-10-12'&&d.some(x=>x.title==='4대보험료 납부')&&d.some(x=>x.title==='사업소득 간이지급명세서')&&d.some(x=>x.title==='가 4대보험 취득 신고'&&x.date==='2026-10-15')&&d.some(x=>x.title==='나 4대보험 상실 신고'));
+ ok('영업일 계산(공휴일 건너뜀)',nextBusinessDay('2026-10-09',new Set(['2026-10-09']))==='2026-10-12');
+ ok('3월엔 연말정산·보수총액',deadlinesFor('2027-03',E).some(x=>x.title.includes('연말정산'))&&deadlinesFor('2027-03',E).some(x=>x.title.includes('보수총액')));
+ ok('2주 안 기한만',upcomingDeadlines('2026-10-07',E,7).every(x=>x.date<='2026-10-14'&&x.date>='2026-10-07'));
+ const du=durunuriCandidates(E,{a:2000000,b:1000000});ok('두루누리: 10명 미만·270만 미만·가입',du.eligibleStore&&du.list.map(e=>e.id).join()==='a');
+ ok('10명 이상이면 대상 아님',!durunuriCandidates(Array.from({length:10},(_,i)=>({...E[0],id:'x'+i})),{}).eligibleStore);
+ console.log('PASS: 신고 기한·취득상실·두루누리.');
+}

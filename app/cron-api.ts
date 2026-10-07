@@ -7,6 +7,8 @@ import {notifyUser} from './push-api';
 import {processDeletions} from './withdraw-api';
 import {alertsFor} from '../lib/alert-sweep';
 import {dailyBrief,weeklyBrief} from '../lib/briefing';
+import {upcomingDeadlines} from '../lib/tax-calendar';
+import {holidaysFor} from '../lib/holidays';
 import {loadAttendance} from './attendance-store';
 import {sendAlimtalk} from '../lib/alimtalk-send';
 const json=(d:any,status=200)=>Response.json(d,{status,headers:{'Cache-Control':'no-store'}});
@@ -62,6 +64,9 @@ export async function alertSweep(env:any,now=Date.now(),notify=(uid:string,m:any
   {const k=new Date(now+9*3600000),today=k.toISOString().slice(0,10);
    if(k.getUTCHours()===8){const b=dailyBrief({...d,leavesPending:(d._operations?.leaves||[]).filter((l:any)=>l.status==='승인 대기').length},today);list.push({key:'brief:'+today,to:'owner',kind:'brief',title:'☀ '+b.title,body:b.body});
     if(k.getUTCDay()===1){const wk=await loadAttendance(env.DB,r.owner,new Date(Date.parse(today+'T00:00:00+09:00')-8*86400000).toISOString(),new Date(now).toISOString()).catch(()=>[]);const w=weeklyBrief({...d,attendance:wk},today);list.push({key:'weekly:'+today,to:'owner',kind:'brief',title:w.title,body:w.body});}}}
+  // 지시서 115·116: 신고·납부 기한 3일 전·당일 아침 9시 이후 사장님께
+  {const k=new Date(now+9*3600000),today=k.toISOString().slice(0,10);if(k.getUTCHours()>=9){const y=Number(today.slice(0,4)),hol=new Set([...holidaysFor(y,true).keys(),...holidaysFor(y+1,true).keys()]);
+   for(const x of upcomingDeadlines(today,d.employees||[],3,hol)){const left=Math.round((Date.parse(x.date)-Date.parse(today))/86400000);if(left===3||left===0)list.push({key:`tax:${x.date}:${x.title}:${left}`,to:'owner',kind:'payroll',title:left?`${x.title} 기한이 3일 남았어요`:`오늘이 ${x.title} 기한이에요`,body:`${Number(x.date.slice(5,7))}월 ${Number(x.date.slice(8))}일까지 · ${x.detail}`})}}}
   if(!list.length)continue;
   const prev=typeof d._alertsSent==='string'?(()=>{try{return JSON.parse(d._alertsSent)}catch{return {}}})():d._alertsSent||{},done:Record<string,number>={...prev};let changed=false;
   for(const a of list){if(done[a.key])continue;
