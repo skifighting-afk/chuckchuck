@@ -673,3 +673,8 @@ body.ms-dragging,body.ms-dragging *{user-select:none!important;-webkit-user-sele
 .ast-mic{min-height:44px;min-width:44px;padding:0 12px;border:1px solid #b5c8ba;border-radius:999px;background:#fff;color:#1f2a24;white-space:nowrap}.ast-mic.on{background:#fde2e2;border-color:#b42318}.ast-mic-err{font-size:12px;color:#b42318}
 .cal-sub summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:600}.cal-sub input{width:100%;min-height:44px;font-size:13px}.cal-sub .actions a,.cal-sub .actions button{min-height:44px;display:inline-flex;align-items:center}
 .hi-preview{border:1px solid #d7e4dc;border-radius:10px;padding:10px;margin-top:8px}.hi-sample{margin:6px 0;padding-left:18px}
+.login-hist summary,.acc-access summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:600}.login-hist ul{padding-left:18px}
+.acc-access{padding:0 16px}.pay-gate form{display:flex;gap:8px;flex-wrap:wrap}.pay-gate input{min-height:48px;font-size:20px;letter-spacing:.3em;width:10em;max-width:100%}
+.share-runs{list-style:none;padding:0;display:grid;gap:8px}.share-runs li{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.t-support{display:block;color:#1d4ed8;font-weight:600}
+.kakao-bot summary{min-height:44px;display:flex;align-items:center;padding:0 16px;cursor:pointer;font-weight:600}.kakao-code b{font-size:20px;letter-spacing:.05em}

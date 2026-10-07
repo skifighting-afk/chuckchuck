@@ -22,6 +22,8 @@ const env = {
   VAPID_PRIVATE_KEY: read('VAPID_PRIVATE_KEY'),
   VAPID_SUBJECT: read('VAPID_SUBJECT'),
   NTS_API_KEY: read('NTS_API_KEY'), CRON_SECRET: read('CRON_SECRET'),
+  // 알림톡(솔라피)·카카오톡 비서 스킬 키 — GitHub Secrets에 넣으면 배포 때 서버 함수 비밀값으로 들어간다
+  SOLAPI_API_KEY: read('SOLAPI_API_KEY'), SOLAPI_API_SECRET: read('SOLAPI_API_SECRET'), SOLAPI_PFID: read('SOLAPI_PFID'), SOLAPI_SENDER: read('SOLAPI_SENDER'), ALIMTALK_TEMPLATES: read('ALIMTALK_TEMPLATES'), KAKAO_SKILL_KEY: read('KAKAO_SKILL_KEY'),
 };
 // 허용할 화면 주소. 여러 개면 쉼표로 구분하고, 첫 번째가 메일 링크 등에 쓰는 대표 주소다.
 const origins = (read('APP_ORIGIN') || '').split(',').map(s => s.trim().replace(/\/$/, '')).filter(Boolean);

@@ -18,7 +18,13 @@ export async function shareApi(request:Request,env:{DB:D1Database}){
   if(request.method==='GET'&&url.searchParams.get('t')){
    const h=await hash(url.searchParams.get('t')!),s=await env.DB.prepare('SELECT * FROM accountant_shares WHERE hash=?').bind(h).first<any>();
    if(!s||s.revoked_at||Date.parse(s.expires_at)<Date.now())return json({error:'링크가 끝났거나 꺼졌어요. 사장님께 새 링크를 요청해 주세요.'},410);
-   const row=await env.DB.prepare('SELECT data FROM stores WHERE owner=?').bind(s.owner).first<any>();const data=row?JSON.parse(row.data):null,run=data?.payrollRuns?.[s.run_key];
+   const row=await env.DB.prepare('SELECT data FROM stores WHERE owner=?').bind(s.owner).first<any>();const data=row?JSON.parse(row.data):null;
+   // 지시서 097: 세무사 상시 열람(확정된 모든 달, 최근 24개) — 읽기 전용, 사장님이 정한 기간 동안
+   if(s.run_key==='all'){const runs=Object.entries<any>(data?.payrollRuns||{}).filter(([,r])=>r?.locked).sort((a,b)=>b[1].month.localeCompare(a[1].month)).slice(0,24);const br=new Map((data?.branches||[]).map((b:any)=>[b.id,b.name]));
+    await env.DB.prepare("UPDATE accountant_shares SET views=views||jsonb_build_array(?::text) WHERE hash=?").bind(new Date().toISOString(),h).run();
+    const key=url.searchParams.get('key');if(url.searchParams.get('format')==='csv'){const r=runs.find(([k])=>k===key)?.[1];if(!r)return json({error:'확정된 달을 골라 주세요. 목록을 새로고침해 주세요.'},404);return new Response(shareCsv(data.store?.name||'',r),{headers:{'Content-Type':'text/csv;charset=utf-8','Content-Disposition':`attachment; filename*=UTF-8''${encodeURIComponent(`급여자료-${r.month}.csv`)}`,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}})}
+    return json({store:data?.store?.name||'',label:s.label,expiresAt:s.expires_at,runs:runs.map(([k,r])=>({key:k,month:r.month,branch:(data?.branches||[]).length>1?br.get(r.branch)||'':'',payDate:r.payDate,people:(r.rows||[]).length,gross:(r.rows||[]).reduce((n:number,x:any)=>n+x.gross,0)}))})}
+   const run=data?.payrollRuns?.[s.run_key];
    if(!run?.locked)return json({error:'사장님이 급여 확정을 풀어서 지금은 볼 수 없어요. 다시 확정한 뒤 새 링크를 받아 주세요.'},409);
    await env.DB.prepare("UPDATE accountant_shares SET views=views||jsonb_build_array(?::text) WHERE hash=?").bind(new Date().toISOString(),h).run();
    if(url.searchParams.get('format')==='csv')return new Response(shareCsv(data.store?.name||'',run),{headers:{'Content-Type':'text/csv;charset=utf-8','Content-Disposition':`attachment; filename*=UTF-8''${encodeURIComponent(`급여자료-${run.month}.csv`)}`,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
@@ -33,10 +39,10 @@ export async function shareApi(request:Request,env:{DB:D1Database}){
   let b:any;try{b=JSON.parse(await request.text())}catch{return json({error:'요청 내용이 올바르지 않아요. 새로고침한 뒤 다시 시도해 주세요.'},400)}
   if(b.action==='revoke'){const r=await env.DB.prepare("UPDATE accountant_shares SET revoked_at=? WHERE owner=? AND substr(hash,1,16)=? AND revoked_at IS NULL RETURNING hash").bind(new Date().toISOString(),uid,String(b.id||'')).first();return r?json({ok:true}):json({error:'끌 링크를 찾지 못했어요. 목록을 새로고침해 주세요.'},404)}
   if(b.action!=='create')return json({error:'이 작업은 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},400);
-  const data=JSON.parse(own.data),run=data.payrollRuns?.[b.runKey];
-  if(!run?.locked)return json({error:'급여를 먼저 확정한 뒤 링크를 만들어 주세요.'},409);
+  const data=JSON.parse(own.data),all=b.runKey==='all',run=all?null:data.payrollRuns?.[b.runKey],days=all?([30,90,180].includes(b.days)?b.days:90):7;
+  if(!all&&!run?.locked)return json({error:'급여를 먼저 확정한 뒤 링크를 만들어 주세요.'},409);
   const token=crypto.randomUUID().replace(/-/g,'')+crypto.randomUUID().replace(/-/g,''),now=new Date();
-  await env.DB.prepare('INSERT INTO accountant_shares(hash,owner,run_key,label,created_at,expires_at) VALUES(?,?,?,?,?,?)').bind(await hash(token),uid,b.runKey,`${run.month} 급여`,now.toISOString(),new Date(now.getTime()+7*86400000).toISOString()).run();
-  return json({url:`${url.origin}/share?t=${token}`,expiresAt:new Date(now.getTime()+7*86400000).toISOString()},201);
+  await env.DB.prepare('INSERT INTO accountant_shares(hash,owner,run_key,label,created_at,expires_at) VALUES(?,?,?,?,?,?)').bind(await hash(token),uid,b.runKey,all?`세무사 상시 열람(${days}일)`:`${run.month} 급여`,now.toISOString(),new Date(now.getTime()+days*86400000).toISOString()).run();
+  return json({url:`${url.origin}/share?t=${token}`,expiresAt:new Date(now.getTime()+days*86400000).toISOString()},201);
  }catch(e){return serverError('share',e,'세무사 링크를 처리하지 못했어요. 잠시 뒤 다시 시도해 주세요.')}
 }

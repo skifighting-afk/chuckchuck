@@ -65,6 +65,13 @@ export async function nativeAuth(request:Request,env:Env){
    const token=bearer(request);if(token&&token!==env.SUPABASE_ANON_KEY)await gotrue(env,'/logout?scope='+(b.everywhere===true?'global':'local'),{method:'POST',token}).catch(()=>null);
    return json({ok:true,session:null});
   }
+  if(b.action==='loginHistory'){// 지시서 098: 내 최근 로그인 기록(성공·실패)
+   const token=bearer(request);if(!token||token===env.SUPABASE_ANON_KEY)return json({error:'로그인한 뒤 다시 시도해 주세요.'},401);
+   const me=await gotrue(env,'/user',{token}).catch(()=>null);const authId=(me as any)?.data?.id;if(!(me as any)?.ok||!authId)return json({error:'다시 로그인해 주세요.'},401);
+   const u=await env.DB.prepare('SELECT id FROM app_users WHERE auth_id=? OR id=?').bind(authId,'native:'+authId).first<any>().catch(()=>null);
+   const rows=u?(await env.DB.prepare('SELECT at,ok,device,ip FROM login_events WHERE user_id=? ORDER BY at DESC LIMIT 30').bind(u.id).all<any>()).results:[];
+   return json({events:(rows||[]).map((r:any)=>({at:r.at,ok:!!r.ok,device:r.device,ip:r.ip}))});
+  }
   if(b.action==='sessions'){
    const token=bearer(request);if(!token||token===env.SUPABASE_ANON_KEY)return json({error:'로그인한 뒤 다시 시도해 주세요.'},401);
    const me=await gotrue(env,'/user',{token}).catch(()=>null);const authId=(me as any)?.data?.id;if(!(me as any)?.ok||!authId)return json({error:'다시 로그인해 주세요.'},401);
@@ -141,8 +148,10 @@ export async function nativeAuth(request:Request,env:Env){
   if(b.action==='login'){
    if(typeof b.password!=='string'||b.password.length>128)return json({error:'이메일 또는 비밀번호를 확인해 주세요.'},401);
    const login=await gotrue(env,'/token?grant_type=password',{method:'POST',body:{email,password:b.password}});
-   if(!login.ok||!login.data?.user)return json({error:'이메일 또는 비밀번호를 확인해 주세요.'},401);
-   const user=await appUser(env,login.data.user);
+   // 지시서 098: 로그인 기록(실패는 그 이메일 계정에, IP는 앞자리만)
+   const note=async(uid:string|undefined,ok:boolean)=>{if(!uid)return;const ipShort=ip.includes(':')?ip.split(':').slice(0,3).join(':')+':…':ip.split('.').slice(0,2).join('.')+'.*.*';await env.DB.prepare('INSERT INTO login_events(id,user_id,at,ok,device,ip) VALUES(?,?,?,?,?,?)').bind(crypto.randomUUID(),uid,new Date().toISOString(),ok,deviceName(request.headers.get('user-agent')||''),ipShort).run().catch(()=>null);await env.DB.prepare("DELETE FROM login_events WHERE user_id=? AND at<?").bind(uid,new Date(Date.now()-90*86400000).toISOString()).run().catch(()=>null)};
+   if(!login.ok||!login.data?.user){const u=await env.DB.prepare('SELECT id FROM app_users WHERE lower(email)=?').bind(email).first<any>().catch(()=>null);await note(u?.id,false);return json({error:'이메일 또는 비밀번호를 확인해 주세요.'},401);}
+   const user=await appUser(env,login.data.user);await note(user.id,true);
    return json({ok:true,role:user.role,emailVerified:!!user.email_verified,session:session(login.data)});
   }
   return json({error:'이 방법으로는 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},400);

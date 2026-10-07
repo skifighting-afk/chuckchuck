@@ -5,7 +5,7 @@ import {serverError} from '../lib/errors';
 import {shiftsToIcs} from '../lib/ics';
 const json=(v:unknown,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 const hash=async(t:string)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode('ics:'+t)))).map(n=>n.toString(16).padStart(2,'0')).join('');
-export async function icsApi(request:Request,env:{DB:D1Database}){
+export async function icsApi(request:Request,env:{DB:D1Database,SUPABASE_URL?:string}){
  try{
  const url=new URL(request.url);
  if(request.method==='GET'&&url.searchParams.get('t')){
@@ -30,7 +30,8 @@ export async function icsApi(request:Request,env:{DB:D1Database}){
  if(b.action==='off')return json({on:false});
  const t=Array.from(crypto.getRandomValues(new Uint8Array(24)),n=>n.toString(16).padStart(2,'0')).join('');
  await env.DB.prepare('INSERT INTO calendar_tokens(token_hash,owner,employee_id,created_at) VALUES(?,?,?,?)').bind(await hash(t),linked.owner,self.id,new Date().toISOString()).run();
- const feed=new URL('/api/ics?t='+t,request.url).href;
+ // 화면은 GitHub Pages라 /api 주소가 서버로 가지 않는다 — 달력 앱이 직접 부를 서버 함수 주소를 준다
+ const feed=env.SUPABASE_URL?`${env.SUPABASE_URL.replace(/\/$/,'')}/functions/v1/api/ics?t=${t}`:new URL('/api/ics?t='+t,request.url).href;
  return json({on:true,url:feed,webcal:feed.replace(/^https?:/,'webcal:')});
  }catch(e){return serverError('ics',e,'달력 주소를 처리하지 못했어요. 잠시 뒤 다시 시도해 주세요.')}
 }

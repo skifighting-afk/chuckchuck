@@ -27,3 +27,36 @@ export function OwnerExtraSettings({s,busy,save}:{s:Team,busy:boolean,save:(n:Te
   <button type="button" className="primary" disabled={busy} onClick={put}>저장</button>{msg&&<p role="status">{msg}</p>}
  </div></section>;
 }
+
+// 지시서 098: 급여 화면 잠금 — 공용 PC·태블릿에서 다른 사람이 급여를 못 보게 4~6자리 숫자로 잠근다(이 기기에서 연 동안만 풀림).
+// 화면 잠금이에요. 계정 로그인 보안은 비밀번호·기기 목록·로그인 기록으로 지켜요.
+export async function pinHash(pin:string,salt:string){return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode('cc-pay-pin:'+salt+':'+pin)))).map(n=>n.toString(16).padStart(2,'0')).join('')}
+export function PayrollPinSetting({s,busy,save}:{s:Team,busy:boolean,save:(n:Team)=>Promise<any>}){
+ const cur=(s.settings as any).payrollPin,[pin,setPin]=useState(''),[msg,setMsg]=useState('');
+ const set=async()=>{if(!/^\d{4,6}$/.test(pin)){setMsg('숫자 4~6자리로 정해 주세요.');return}const salt=Array.from(crypto.getRandomValues(new Uint8Array(8)),n=>n.toString(16).padStart(2,'0')).join('');if(await save({...s,settings:{...s.settings,payrollPin:{salt,hash:await pinHash(pin,salt)}}} as any)){setPin('');setMsg('급여 화면 잠금을 켰어요. 급여 화면을 열 때 숫자를 물어봐요.')}};
+ return <section className="panel t-gap" aria-label="급여 화면 잠금"><div className="panel-heading"><h2>급여 화면 잠금</h2></div><div className="t-panelbody">
+  <p className="footnote">매장 PC·태블릿을 같이 쓰면 급여·명세서 화면에 숫자 잠금을 걸 수 있어요. 한 번 풀면 이 화면을 닫을 때까지 열려 있어요. 잊으면 여기서 새로 정하면 돼요.</p>
+  <div className="t-inline"><label>잠금 숫자 <input type="password" inputMode="numeric" autoComplete="new-password" maxLength={6} value={pin} onChange={e=>setPin(e.target.value.replace(/\D/g,''))}/></label><button type="button" className="secondary" disabled={busy||!pin} onClick={set}>{cur?'숫자 바꾸기':'잠금 켜기'}</button>{cur&&<button type="button" className="link-btn" disabled={busy} onClick={async()=>{const n:any={...s.settings};delete n.payrollPin;if(await save({...s,settings:n} as any))setMsg('잠금을 껐어요.')}}>잠금 끄기</button>}</div>
+  {msg&&<p role="status" className="saas-success">{msg}</p>}</div></section>;
+}
+export function PayrollGate({s,children}:{s:Team,children:any}){
+ const cur=(s.settings as any).payrollPin,[open,setOpen]=useState(false),[pin,setPin]=useState(''),[err,setErr]=useState(''),[tries,setTries]=useState(0);
+ if(!cur||open)return children;
+ return <section className="panel t-panelbody pay-gate" aria-label="급여 화면 잠금"><h2>급여 화면이 잠겨 있어요</h2><p>사장님이 정한 숫자를 넣어 주세요.</p>
+  <form onSubmit={async e=>{e.preventDefault();if(tries>=5){setErr('여러 번 틀렸어요. 잠시 뒤 다시 해 주세요.');return}if(await pinHash(pin,cur.salt)===cur.hash){setOpen(true);setErr('')}else{setTries(tries+1);setErr('숫자가 맞지 않아요. 다시 넣어 주세요.');setPin('');if(tries+1>=5)setTimeout(()=>setTries(0),60000)}}}>
+   <input type="password" inputMode="numeric" autoComplete="off" aria-label="급여 화면 잠금 숫자" maxLength={6} value={pin} onChange={e=>setPin(e.target.value.replace(/\D/g,''))} autoFocus/><button type="submit" className="primary" disabled={pin.length<4}>열기</button></form>
+  {err&&<p role="alert" className="saas-error">{err}</p>}<p className="footnote">숫자를 잊었으면 설정의 '급여 화면 잠금'에서 새로 정해 주세요.</p></section>;
+}
+
+/** 지시서 084: 카카오톡에서 척척 비서 — 연결 코드 받기(카카오톡 채널 챗봇 설정은 사장님 할 일 목록 참고) */
+export function KakaoBotPanel({demo}:{demo:boolean}){
+ const [st,setSt]=useState<any>(null),[code,setCode]=useState(''),[err,setErr]=useState('');
+ const call=async(action:string)=>{setErr('');try{const r=await fetch('/api/kakao-skill?link=1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action})});const d:any=await r.json();if(!r.ok)throw Error(d.error||'처리하지 못했어요.');return d}catch(e){setErr((e as Error).message);return null}};
+ if(demo)return null;
+ return <details className="panel t-gap kakao-bot" onToggle={async e=>{if((e.target as HTMLDetailsElement).open&&!st)setSt(await call('status'))}}><summary>카카오톡에서 척척 비서 쓰기</summary><div className="t-panelbody">
+  <p className="footnote">카카오톡 채널 대화창에서 "오늘 누가 근무해?", "이번 달 인건비"처럼 물으면 답해요. 근무 넣기·승인 같은 바꾸는 일은 앱에서 해요.</p>
+  {st&&!st.ready&&<p className="notice">아직 카카오톡 채널 챗봇이 연결되지 않았어요. 운영자가 채널 챗봇(스킬 주소{st.skillUrl?`: ${st.skillUrl}`:''})을 설정하면 쓸 수 있어요.</p>}
+  {st?.linked?<p>✓ 카카오톡과 연결돼 있어요{st.since?` (${new Date(st.since).toLocaleDateString('ko-KR')}부터)`:''}. <button type="button" className="link-btn" onClick={async()=>{if(await call('unlink'))setSt({...st,linked:false})}}>연결 끊기</button></p>
+  :<><button type="button" className="secondary" onClick={async()=>{const d=await call('code');if(d)setCode(d.code)}}>연결 코드 받기</button>{code&&<p className="kakao-code">카카오톡 채널에 <b>연결 {code}</b> 라고 보내 주세요. 10분 동안만 쓸 수 있어요.</p>}</>}
+  {err&&<p role="alert" className="saas-error">{err}</p>}</div></details>;
+}
