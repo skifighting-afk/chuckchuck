@@ -55,7 +55,8 @@ async function route(request:Request,env:Env){
  // 가이드 98: 서비스 상태(로그인 없이). DB 연결과 최근 서비스 안내 제목만 알려 준다.
  if(path==='/api/status'){const t0=Date.now();let db=false;try{db=!!(await env.DB.prepare('SELECT 1 AS ok').first())}catch{}
   const notices=db?(await env.DB.prepare('SELECT kind,title,effective_at FROM service_notices ORDER BY created_at DESC LIMIT 5').all<any>().catch(()=>({results:[]}))).results:[];
-  return Response.json({ok:db,db,ms:Date.now()-t0,at:new Date().toISOString(),notices},{status:db?200:503,headers:{'Cache-Control':'no-store','Access-Control-Allow-Origin':'*'}});}
+  const incident=db?await env.DB.prepare('SELECT id,kind,title,body,started_at FROM service_incidents WHERE ended_at IS NULL ORDER BY started_at DESC LIMIT 1').first<any>().catch(()=>null):null;
+  return Response.json({ok:db,db,ms:Date.now()-t0,at:new Date().toISOString(),notices,incident},{status:db?200:503,headers:{'Cache-Control':'no-store','Access-Control-Allow-Origin':'*'}});}
  if(path==='/api/auth')return nativeAuth(request,env);
  request=await withNativeIdentity(request,env);
  // 작업 078: 모든 서버 경로 요청 제한 — IP당 분당 600회, 계정당 저장 요청 분당 300회(로그인 경로는 따로 더 엄격)

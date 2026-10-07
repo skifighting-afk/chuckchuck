@@ -13,6 +13,11 @@ ok('customer has no HQ entry',(await call('customer','/api/account')).data.hq,fa
 ok('HQ flag server assigned',(await call('hq','/api/account')).data.hq,true);
 let list=await call('hq','/api/admin'),item=list.data.stores[0];
 ok('HQ member stats are numbers',typeof list.data.members?.total==='number'&&list.data.members.owners>=1&&typeof list.data.members.clockedToday==='number',true);
+ok('customer cannot post incident',(await call('customer','/api/admin',{action:'incident',kind:'장애',title:'x',body:''})).status,403);
+ok('HQ posts incident',(await call('hq','/api/admin',{action:'incident',kind:'장애',title:'출퇴근 저장 지연',body:'복구 중'})).status,200);
+ok('status shows incident',(await call('','/api/status')).data.incident?.title,'출퇴근 저장 지연');
+ok('HQ closes incident',(await call('hq','/api/admin',{action:'incident',close:true})).status,200);
+ok('status clears incident',(await call('','/api/status')).data.incident,null);
 ok('summary excludes wage fields',JSON.stringify(item).includes('wage'),false);
 ok('cross origin admin write denied',(await call('hq','/api/admin',{action:'support',id:item.id,version:item.version,note:'검수',status:'확인 중'},{origin:'https://evil.invalid'})).status,403);
 ok('invalid status denied',(await call('hq','/api/admin',{action:'support',id:item.id,version:item.version,note:'검수',status:'bad'})).status,400);

@@ -21,12 +21,16 @@ export function trialStatus(a:any,now=Date.now()){
  if(!a)return 'legacy';
  if(a.status==='cancelled')return 'cancelled';
  // 작업 018: 해지 예약은 이번 결제 기간 끝(cancelAt)까지 그대로 이용
+ // 지시서 143: 정기 결제가 실패해도 바로 잠그지 않고 7일 동안은 그대로 쓰게 한다(그동안 결제 수단을 바꾸라고 안내)
+ if(a.status==='past_due'){const f=Date.parse(a.paymentFailedAt||'');return Number.isFinite(f)&&now-f<GRACE_DAYS*86400000?'grace':'expired';}
  if(a.status==='active')return a.cancelAt&&Date.parse(a.cancelAt)<=now?'cancelled':'active';
  // 예전 무료 요금제 가게는 베이직으로 계속 이용(정식 판매 전 가입 고객 보호)
  if(a.status==='free'||a.plan==='free')return 'active';
  return Date.parse(a.trialEndsAt)>now?'trialing':'expired';
 }
-export function canWrite(a:any){if(a?.deletion)return false;return ['legacy','active','trialing'].includes(trialStatus(a))}
+export const GRACE_DAYS=7;
+export function graceLeft(a:any,now=Date.now()){if(a?.status!=='past_due')return null;const f=Date.parse(a.paymentFailedAt||'');return Number.isFinite(f)?Math.max(0,Math.ceil((f+GRACE_DAYS*86400000-now)/86400000)):0}
+export function canWrite(a:any){if(a?.deletion)return false;return ['legacy','active','trialing','grace'].includes(trialStatus(a))}
 export const branchCount=(a:any)=>Math.max(1,Math.min(MAX_BRANCHES,Math.floor(Number(a?.storeSlots)||1)));
 export function planLimits(a:any){
  if(!a||!planId(a.plan))return {employees:100000,branches:MAX_BRANCHES};

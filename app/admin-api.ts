@@ -33,6 +33,14 @@ export async function adminApi(request:Request,env:AdminEnv){
  if(request.method!=='POST')return json({error:'이 방법으로는 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},405);
  if(request.headers.get('origin')!==new URL(request.url).origin)return json({error:'요청 출처를 확인해 주세요.'},403);
  const raw=await request.text();if(raw.length>6000)return json({error:'입력이 너무 깁니다.'},413);const b=JSON.parse(raw);
+ // 지시서 148: 장애·점검 공지 올리기·닫기(바로 모든 화면에 보임)
+ if(b.action==='incident'){
+  if(b.close){await env.DB.prepare('UPDATE service_incidents SET ended_at=? WHERE ended_at IS NULL').bind(new Date().toISOString()).run();await audit('장애·점검 공지 닫기',null,{});return json({ok:true})}
+  if(!['장애','점검'].includes(b.kind)||typeof b.title!=='string'||!b.title.trim()||b.title.length>100||typeof b.body!=='string'||b.body.length>1000)return json({error:'종류·제목(100자)·내용(1,000자)을 확인해 주세요.'},400);
+  await env.DB.prepare('UPDATE service_incidents SET ended_at=? WHERE ended_at IS NULL').bind(new Date().toISOString()).run();
+  await env.DB.prepare('INSERT INTO service_incidents(id,kind,title,body,started_at,created_by) VALUES(?,?,?,?,?,?)').bind(crypto.randomUUID(),b.kind,b.title.trim(),b.body.trim(),new Date().toISOString(),actor).run();
+  await audit('장애·점검 공지',null,{kind:b.kind,title:b.title.trim()});return json({ok:true});
+ }
  if(b.action==='serviceNotice'){
   // 작업 066: 가격·약관 변경은 시행 30일 전까지 고지
   if(!['가격','약관'].includes(b.kind)||typeof b.title!=='string'||!b.title.trim()||b.title.length>100||typeof b.body!=='string'||!b.body.trim()||b.body.length>3000||typeof b.effectiveAt!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(b.effectiveAt))return json({error:'종류·제목·내용·시행일을 확인해 주세요.'},400);

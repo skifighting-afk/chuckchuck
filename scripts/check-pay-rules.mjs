@@ -1357,3 +1357,10 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('5명 이상이면 산업안전',trainingStatus([],2026,5,[]).some(x=>x.kind==='산업안전보건교육'));
  console.log('PASS: 법정 의무교육.');
 }
+{
+ const {trialStatus,canWrite,graceLeft}=await import('../lib/plans.ts');const now=Date.parse('2026-10-07T00:00:00Z');
+ const a={status:'past_due',plan:'basic',paymentFailedAt:'2026-10-03T00:00:00Z'};
+ ok('결제 실패 7일 유예 동안은 그대로 씀',trialStatus(a,now)==='grace'&&canWrite({...a,paymentFailedAt:new Date().toISOString()})&&graceLeft(a,now)===3);
+ ok('유예 지나면 조회만',trialStatus({...a,paymentFailedAt:'2026-09-20T00:00:00Z'},now)==='expired');
+ console.log('PASS: 결제 실패 유예.');
+}

@@ -1,5 +1,6 @@
 import {useRef,useState} from 'react';
 import {ArrowRight,Eye,EyeOff} from 'lucide-react';
+import {kakaoLoginEnabled,kakaoLoginUrl} from './api-client';
 export function AuthForm({role,next,account,admin=false}:{role:'owner'|'employee',next:string,account:any,admin?:boolean}){
  const employee=role==='employee',query=new URLSearchParams(location.search),reset=query.get('reset')||(query.get('mode')==='reset'?(new URLSearchParams(location.hash.slice(1)).get('access_token')||new URLSearchParams(location.hash.slice(1)).get('token')):null);
  const [mode,setMode]=useState<'login'|'register'|'recover'|'reset'>(reset?'reset':location.pathname==='/signup'||location.pathname==='/employee'||query.get('mode')==='signup'?'register':'login');
@@ -24,7 +25,7 @@ export function AuthForm({role,next,account,admin=false}:{role:'owner'|'employee
  {mode==='register'&&<label className="auth-agree"><input type="checkbox" required checked={agree} onChange={e=>setAgree(e.target.checked)}/><span>만 14세 이상이고, <a href="/terms" target="_blank" rel="noopener">이용약관</a>과 <a href="/privacy" target="_blank" rel="noopener">개인정보 처리방침</a>을 읽고 동의해요. (필수)</span></label>}
  {error&&<p className="saas-error" role="alert">{error}</p>}{message&&<p className="saas-success" role="status">{message}</p>}
  <button className="saas-primary" disabled={busy} type="submit">{busy?'잠시만 기다려 주세요…':mode==='register'?'계정 만들고 다음으로':mode==='reset'?'새 비밀번호 저장':'로그인'}</button>
- </form>}{mode==='login'?<button className="auth-text-button" onClick={()=>change('recover')}>비밀번호를 잊었어요</button>:mode==='recover'&&<button className="auth-text-button" onClick={()=>change('login')}>← 로그인으로 돌아가기</button>}
+ </form>}{kakaoLoginEnabled&&!admin&&(mode==='login'||mode==='register')&&<a className="kakao-login" href={kakaoLoginUrl(employee?'/staff-join':'/app')}>카카오로 {mode==='register'?'시작하기':'로그인'}</a>}{mode==='login'?<button className="auth-text-button" onClick={()=>change('recover')}>비밀번호를 잊었어요</button>:mode==='recover'&&<button className="auth-text-button" onClick={()=>change('login')}>← 로그인으로 돌아가기</button>}
  </>}
  {!admin&&<><a href={mode==='register'?(employee?'/signup?role=owner&plan=free':'/employee'):'/login?role='+(employee?'owner':'employee')}>{employee?'사장님 화면으로':'직원 화면으로'}</a><a href="/demo">가입 없이 먼저 체험하기 →</a></>}{admin&&<a href="/admin">← 관리자 화면으로</a>}
  </section>;

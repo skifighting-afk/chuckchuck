@@ -9,6 +9,17 @@ type Session = {access_token: string; refresh_token: string; expires_at: number}
 
 const original = window.fetch.bind(window);
 let current: Session | null = load();
+// 지시서 109: 카카오 간편 로그인(Supabase OAuth) — 돌아온 주소의 #access_token을 세션으로 저장
+try {
+  const q = new URLSearchParams(location.search), h = new URLSearchParams(location.hash.slice(1));
+  if (q.get('oauth') === 'kakao' && h.get('access_token') && h.get('refresh_token')) {
+    save({access_token: h.get('access_token')!, refresh_token: h.get('refresh_token')!, expires_at: Number(h.get('expires_at')) || Math.floor(Date.now() / 1000) + (Number(h.get('expires_in')) || 3600)});
+    q.delete('oauth'); history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : ''));
+  }
+} catch {}
+declare const __KAKAO_LOGIN__: boolean;
+export const kakaoLoginEnabled = typeof __KAKAO_LOGIN__ !== 'undefined' && __KAKAO_LOGIN__;
+export const kakaoLoginUrl = (next = '/app') => SUPABASE + '/auth/v1/authorize?provider=kakao&redirect_to=' + encodeURIComponent(location.origin + next + (next.includes('?') ? '&' : '?') + 'oauth=kakao');
 let refreshing: Promise<void> | null = null;
 
 function load(): Session | null { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch { return null; } }

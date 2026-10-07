@@ -5,6 +5,8 @@ import {changeQuote,refundQuote,validBizNo,monthlyPrice,periodPrice,plans,planId
 const won=(n:number)=>n.toLocaleString('ko-KR');
 const post=async(body:any)=>{const r=await fetch('/api/account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}),d:any=await r.json();if(!r.ok)throw Error(d.error||'저장하지 못했어요.');return d};
 export function TrialBanner({account}:{account:any}){
+ // 지시서 143: 결제 실패 유예 기간 안내(그동안은 그대로 쓸 수 있어요)
+ if(typeof account?.graceLeft==='number')return <div className="trial-banner 1d" role="alert">정기 결제가 되지 않았어요. {account.graceLeft>0?`${account.graceLeft}일 동안은 그대로 쓸 수 있어요.`:'지금은 조회·내려받기만 돼요.'} 카드를 확인하거나 결제 수단을 바꿔 주세요. <a href="/account#checkout-title">결제 수단 확인 →</a></div>;
  const n=account?.notice;if(!n?.level)return null;
  const text=n.level==='ended'?'무료 체험이 끝났어요. 기록 조회와 내려받기는 계속 돼요.':n.level==='1d'?'무료 체험이 내일 끝나요.':`무료 체험이 ${n.daysLeft}일 남았어요.`;
  return <div className={'trial-banner '+n.level} role="status">{text} 자동으로 결제되지 않아요. <a href="/account#checkout-title">결제하기 →</a></div>

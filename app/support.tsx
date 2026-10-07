@@ -1,6 +1,7 @@
 // 가이드 97: 문의하기(회원) · 문의 답변(본사)
 import {useEffect,useState} from 'react';
 import {FAQ} from '../lib/faq';
+import {OPERATOR} from '../lib/operator';
 import {suggestFaq,parseThread} from '../lib/faq-suggest';
 const post=async(body:any)=>{const r=await fetch('/api/support',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const d:any=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||'처리하지 못했어요.');return d};
 const when=(v?:string)=>v?new Date(v).toLocaleString('ko-KR',{dateStyle:'short',timeStyle:'short'}):'';
@@ -10,6 +11,7 @@ export function Support(){
  useEffect(()=>{load()},[]);
  const send=async()=>{setBusy(true);setErr('');setMsg('');try{await post({action:'create',category,body});setBody('');setMsg('문의를 남겼어요. 답변이 오면 알림(켜 둔 경우)과 이 화면으로 알려 드려요.');await load()}catch(e){setErr((e as Error).message)}finally{setBusy(false)}};
  return <main className="saas-policy"><span className="saas-kicker">문의하기</span><h1>무엇을 도와드릴까요?</h1>
+  {OPERATOR.kakaoChannel&&<a className="kakao-chat" href={OPERATOR.kakaoChannel} target="_blank" rel="noopener">카카오톡으로 1:1 상담하기</a>}
   <p>먼저 <a href="/help">자주 묻는 질문</a>을 보면 바로 해결될 수 있어요. 오류라면 화면에 나온 오류 번호(E-로 시작)를 함께 적어 주세요.</p>
   <section className="auth-card"><label className="saas-field" htmlFor="support-cat">문의 종류<select id="support-cat" value={category} onChange={e=>setCategory(e.target.value)}>{(data?.categories||['사용 방법']).map((c:string)=><option key={c}>{c}</option>)}</select></label>
    <label className="saas-field" htmlFor="support-body">내용<textarea id="support-body" rows={6} maxLength={3000} value={body} onChange={e=>setBody(e.target.value)} placeholder="어떤 화면에서 무엇을 하려다 어떻게 됐는지 적어 주세요. 직원 주민번호·계좌번호 같은 정보는 적지 마세요."/></label>

@@ -10,6 +10,7 @@ export const OPERATOR = {
   address: '',            // 사업장 주소
   phone: '',              // 고객 문의 전화
   email: '',              // 고객 문의 이메일
+  kakaoChannel: '',       // 지시서 144: 카카오톡 채널 1:1 상담 주소(예: https://pf.kakao.com/_xxxx/chat)
   privacyOfficer: {name: '', position: '', contact: ''}, // 개인정보 보호책임자
   hosting: 'Supabase Pte. Ltd.(서버·데이터베이스, 서울 리전) · GitHub Inc.(화면 파일)',
 } as const;
