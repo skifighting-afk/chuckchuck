@@ -15,36 +15,37 @@ PASS: migration, auth, forged identity headers, origin, conflicts, owner isolati
 5. PASS HQ sees summary
 6. PASS customer has no HQ entry
 7. PASS HQ flag server assigned
-8. PASS summary excludes wage fields
-9. PASS cross origin admin write denied
-10. PASS invalid status denied
-11. PASS support memo saves
-12. PASS stale save denied
-13. PASS internal memo absent in customer payload
-14. PASS customer save preserves HQ memo
-15. PASS three employees save
-16. PASS no employee limit (fourth employee saves)
-17. PASS branch over chosen count gets capacity code
-18. PASS over branch count never persists
-19. PASS checkout cannot fake payment
-20. PASS biz default 확인 전
-21. PASS biz check needs reason
-22. PASS customer cannot biz check
-23. PASS biz check saves
-24. PASS biz filter
-25. PASS biz filter excludes
-26. PASS support memo kept after biz check
-27. PASS views and actions logged
-28. PASS log records filters
-29. PASS customer cannot read HQ log
-30. PASS notice under 30 days refused
-31. PASS customer cannot post notice
-32. PASS notice posted
-33. PASS owner sees unagreed notice
-34. PASS owner agrees
-35. PASS agreement recorded
-36. PASS HQ sees agreed count
-HQ/capacity checks: 36 passed
+8. PASS HQ member stats are numbers
+9. PASS summary excludes wage fields
+10. PASS cross origin admin write denied
+11. PASS invalid status denied
+12. PASS support memo saves
+13. PASS stale save denied
+14. PASS internal memo absent in customer payload
+15. PASS customer save preserves HQ memo
+16. PASS three employees save
+17. PASS no employee limit (fourth employee saves)
+18. PASS branch over chosen count gets capacity code
+19. PASS over branch count never persists
+20. PASS checkout cannot fake payment
+21. PASS biz default 확인 전
+22. PASS biz check needs reason
+23. PASS customer cannot biz check
+24. PASS biz check saves
+25. PASS biz filter
+26. PASS biz filter excludes
+27. PASS support memo kept after biz check
+28. PASS views and actions logged
+29. PASS log records filters
+30. PASS customer cannot read HQ log
+31. PASS notice under 30 days refused
+32. PASS customer cannot post notice
+33. PASS notice posted
+34. PASS owner sees unagreed notice
+35. PASS owner agrees
+36. PASS agreement recorded
+37. PASS HQ sees agreed count
+HQ/capacity checks: 37 passed
 
 ── check-admin-overview
 1. PASS HQ can open while stray session cookie exists
@@ -177,12 +178,15 @@ PASS 10 correction-input cases: KST, invalid dates/hours, valid, reversed, overn
 47. PASS delegated manager adds shift
 48. PASS unassigned approval blocked
 49. PASS manager can post branch notice
-50. PASS revoked permission blocked immediately
-51. PASS grant recorded
-52. PASS permission change recorded
-53. PASS revoke recorded with before/after
-54. PASS revoked manager loses manager API immediately
-Entry/join/contracts/manager checks: 54 passed
+50. PASS owner grants view permissions
+51. PASS labor total without per-person pay
+52. PASS payroll permission shows per-person pay
+53. PASS revoked permission blocked immediately
+54. PASS grant recorded
+55. PASS permission change recorded
+56. PASS revoke recorded with before/after
+57. PASS revoked manager loses manager API immediately
+Entry/join/contracts/manager checks: 57 passed
 
 ── check-evidence
 PASS expired evidence and login-limit rows are purged; unexpired rows stay.
