@@ -1410,7 +1410,7 @@ PASS 36. 2026-03-31: no clock-in or clock-out in the future (A1·A3)
 PASS: 체험 화면 숫자(급여·명세서·임금대장 합계).
 
 ── check-error-messages
-PASS: 오류 문구 527개 모두 다음 행동 안내 포함.
+PASS: 오류 문구 554개 모두 다음 행동 안내 포함.
 PASS: 오류 번호·로그 개인정보 제거.
 
 ── check-attendance-table
@@ -1840,6 +1840,33 @@ PASS: 지원 근무·준수 현황·여러 가게·휴지통·카카오톡 비�
 17. PASS absence alert at 9am
 18. PASS once a month
 PASS: 키오스크·지각 사유·결근 누적 알림.
+
+── check-open-api
+1. PASS staff cannot make keys
+2. PASS owner makes key
+3. PASS no key
+4. PASS bad key
+5. PASS employees read
+6. PASS range required
+7. PASS range limit
+8. PASS shifts read
+9. PASS attendance read
+10. PASS payroll needs month
+11. PASS payroll read
+12. PASS unknown path
+13. PASS key listed with last use
+14. PASS private webhook refused
+15. PASS add hook returns secret once
+16. PASS webhook sent on clock
+17. PASS webhook signed
+18. PASS revoked key stops
+19. PASS staff cannot log pii
+20. PASS owner pii log
+21. PASS audit has pii view
+22. PASS video must be https
+23. PASS video-only step ok
+24. PASS staff sees video url
+PASS: 오픈 API·웹훅·개인정보 열람 기록·매뉴얼 동영상.
 
 ── check-share
 PASS: 세무사 공유 링크 (확정 급여만·끄기·만료·열람 기록·토큰 해시만 저장).
