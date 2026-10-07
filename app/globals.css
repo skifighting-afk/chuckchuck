@@ -511,3 +511,4 @@ body.ms-dragging,body.ms-dragging *{user-select:none!important;-webkit-user-sele
 .publish-ack{margin:0 0 14px}.publish-ack>div{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:14px;border-radius:12px;border:2px solid #17583f;background:#effaf2;margin-bottom:8px}
 .publish-ack p{margin:0;flex:1 1 220px;font-size:15px}.publish-ack b{display:block}.publish-ack .btn{min-height:48px}
 .draft-due{align-items:flex-end;margin:8px 0 12px}
+.panel-heading button.secondary,.panel-heading button.primary{font-size:14px}.panel-heading button.secondary{color:#173e30}
