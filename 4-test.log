@@ -16,36 +16,41 @@ PASS: migration, auth, forged identity headers, origin, conflicts, owner isolati
 6. PASS customer has no HQ entry
 7. PASS HQ flag server assigned
 8. PASS HQ member stats are numbers
-9. PASS summary excludes wage fields
-10. PASS cross origin admin write denied
-11. PASS invalid status denied
-12. PASS support memo saves
-13. PASS stale save denied
-14. PASS internal memo absent in customer payload
-15. PASS customer save preserves HQ memo
-16. PASS three employees save
-17. PASS no employee limit (fourth employee saves)
-18. PASS branch over chosen count gets capacity code
-19. PASS over branch count never persists
-20. PASS checkout cannot fake payment
-21. PASS biz default 확인 전
-22. PASS biz check needs reason
-23. PASS customer cannot biz check
-24. PASS biz check saves
-25. PASS biz filter
-26. PASS biz filter excludes
-27. PASS support memo kept after biz check
-28. PASS views and actions logged
-29. PASS log records filters
-30. PASS customer cannot read HQ log
-31. PASS notice under 30 days refused
-32. PASS customer cannot post notice
-33. PASS notice posted
-34. PASS owner sees unagreed notice
-35. PASS owner agrees
-36. PASS agreement recorded
-37. PASS HQ sees agreed count
-HQ/capacity checks: 37 passed
+9. PASS customer cannot post incident
+10. PASS HQ posts incident
+11. PASS status shows incident
+12. PASS HQ closes incident
+13. PASS status clears incident
+14. PASS summary excludes wage fields
+15. PASS cross origin admin write denied
+16. PASS invalid status denied
+17. PASS support memo saves
+18. PASS stale save denied
+19. PASS internal memo absent in customer payload
+20. PASS customer save preserves HQ memo
+21. PASS three employees save
+22. PASS no employee limit (fourth employee saves)
+23. PASS branch over chosen count gets capacity code
+24. PASS over branch count never persists
+25. PASS checkout cannot fake payment
+26. PASS biz default 확인 전
+27. PASS biz check needs reason
+28. PASS customer cannot biz check
+29. PASS biz check saves
+30. PASS biz filter
+31. PASS biz filter excludes
+32. PASS support memo kept after biz check
+33. PASS views and actions logged
+34. PASS log records filters
+35. PASS customer cannot read HQ log
+36. PASS notice under 30 days refused
+37. PASS customer cannot post notice
+38. PASS notice posted
+39. PASS owner sees unagreed notice
+40. PASS owner agrees
+41. PASS agreement recorded
+42. PASS HQ sees agreed count
+HQ/capacity checks: 42 passed
 
 ── check-admin-overview
 1. PASS HQ can open while stray session cookie exists
@@ -1295,6 +1300,9 @@ PASS: 서식함.
 PASS 581. 의무교육: 올해 기록·안 들은 직원
 PASS 582. 5명 이상이면 산업안전
 PASS: 법정 의무교육.
+PASS 583. 결제 실패 7일 유예 동안은 그대로 씀
+PASS 584. 유예 지나면 조회만
+PASS: 결제 실패 유예.
 
 ── check-claims
 PASS: 과장·허위 문구 검사 (화면·홈페이지).
@@ -1370,7 +1378,7 @@ PASS 36. 2026-03-31: no clock-in or clock-out in the future (A1·A3)
 PASS: 체험 화면 숫자(급여·명세서·임금대장 합계).
 
 ── check-error-messages
-PASS: 오류 문구 429개 모두 다음 행동 안내 포함.
+PASS: 오류 문구 430개 모두 다음 행동 안내 포함.
 PASS: 오류 번호·로그 개인정보 제거.
 
 ── check-attendance-table
