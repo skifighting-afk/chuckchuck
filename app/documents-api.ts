@@ -38,14 +38,17 @@ export async function documentsApi(request:Request,env:{DB:D1Database}&PushEnv){
   if(!member)return json({error:'이 직원은 아직 앱 계정이 연결되지 않았어요. 직원 정보에서 계정을 연결해 주세요.',code:'NOT_LINKED'},409);
   if(member.userId===uid)return json({error:'사장님 본인 계정과 연결된 직원 기록에는 보낼 수 없어요. 직원 본인 계정을 연결해 주세요.'},409);
   const revision=run.revision||1;
-  const text=payslipText(state.store.name,run.month,run.payDate,row);
+  // 지시서 119: 확정을 풀고 다시 확정한 명세서는 '정정'으로 표시하고 이전 금액·사유를 남긴다
+  const prevRow=revision>1?(run.prevRows||[]).find((x:any)=>x.employeeId===row.employeeId):null,why=[...(run.history||[])].reverse().find((h:any)=>h.kind==='해제')?.reason||'';
+  const fix=revision>1?`■ 정정 명세서(${revision}차)${prevRow?` · 이전 실수령 ${Number(prevRow.net).toLocaleString('ko-KR')}원 → ${Number(row.net).toLocaleString('ko-KR')}원`:''}${why?` · 정정 사유: ${why}`:''}\n\n`:'';
+  const text=fix+payslipText(state.store.name,run.month,run.payDate,row);
   {const miss=payslipMissing(text);if(miss.length)return json({error:`명세서에 필수 기재사항이 빠져 있어요(${miss.join(', ')}). 급여 확정을 풀고 다시 확정해 주세요.`},409)}
   // 매장 데이터의 다른 부분(출퇴근 등)이 바뀌어도 이 급여 확정본이 그대로면 보낸다.
   await env.DB.prepare(`INSERT OR IGNORE INTO payslip_documents(id,owner_id,employee_id,employee_user_id,run_key,revision,document_json,created_at)
    SELECT ?,?,?,?,?,CAST(? AS integer),?,? WHERE EXISTS(SELECT 1 FROM stores WHERE owner=? AND (data::jsonb #> ARRAY['payrollRuns',CAST(? AS text),'locked'])='true'::jsonb AND COALESCE((data::jsonb #>> ARRAY['payrollRuns',CAST(? AS text),'revision'])::integer,1)=CAST(? AS integer))`)
    .bind(crypto.randomUUID(),uid,row.employeeId,member.userId,b.runKey,revision,JSON.stringify({text,name:row.name,month:run.month}),new Date().toISOString(),uid,b.runKey,b.runKey,revision).run();
   const sent=await env.DB.prepare('SELECT id,created_at FROM payslip_documents WHERE owner_id=? AND employee_id=? AND run_key=? AND revision=?').bind(uid,row.employeeId,b.runKey,revision).first<any>();
-  if(sent)await notifyUser(env,member.userId,{title:'급여명세서가 도착했어요',body:`${state.store.name} ${run.month} 급여명세서 · 실수령 ${Number(row.net).toLocaleString('ko-KR')}원`,url:'/app'});
+  if(sent)await notifyUser(env,member.userId,{title:revision>1?'급여명세서가 정정됐어요':'급여명세서가 도착했어요',body:`${state.store.name} ${run.month} 급여명세서 · 실수령 ${Number(row.net).toLocaleString('ko-KR')}원`,url:'/app'});
   // 지시서 2주차 032: 알림톡(설정돼 있을 때만)
   if(sent){const e=state.employees.find((x:any)=>x.id===row.employeeId);await sendAlimtalk(env as any,e?.phone,'PAYSLIP_SENT',{이름:row.name,가게:state.store.name,월:run.month,실수령액:Number(row.net).toLocaleString('ko-KR'),지급일:run.payDate}).catch(()=>null)}
   return sent?json({ok:true,id:sent.id,sentAt:sent.created_at}):json({error:'급여 확정이 바뀌었어요. 새로 확인해 주세요.'},409);

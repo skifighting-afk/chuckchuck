@@ -571,3 +571,5 @@ body.ms-dragging,body.ms-dragging *{user-select:none!important;-webkit-user-sele
 .support-more{margin-top:8px;padding:10px;border-left:3px solid #7da2d6;background:#f3f7fd;border-radius:6px}
 .support-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.support-actions button{min-height:44px}.support-follow{margin-top:8px}
 .retention ul{list-style:none;padding:0;margin:8px 0}.retention li label{min-height:44px;display:flex;align-items:center;gap:6px}.retention .primary,.my-data button{min-height:44px}
+.mgr-list{list-style:none;padding:0;margin:8px 0}.mgr-list li{padding:8px 0;border-bottom:1px solid #dce7df;font-size:15px}
+.ast-undo{margin-left:8px;min-height:44px;padding:0 12px;border:1px solid #17583f;border-radius:8px;background:#fff;color:#17583f;font-weight:700}

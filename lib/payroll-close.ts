@@ -76,3 +76,17 @@ export function bulkAdjust(adj: Adj, month: string, ids: string[], kind: 'earnin
   }
   return {adjustments: next};
 }
+
+/** 지시서 4주차 033: 은행 대량이체 파일(엑셀에서 열리는 CSV). 계좌가 없는 직원은 따로 알려 준다 */
+export function bankTransferCsv(rows: Row[], emps: {id: string; name: string; bankName?: string; bankAccount?: string; bankHolder?: string}[], month: string, storeName: string, paid: Record<string, string> = {}) {
+  const cell = (v: unknown) => '"' + String(v ?? '').replace(/^[=+@\-\t\r]/, "'$&").replace(/"/g, '""') + '"';
+  const ok: string[][] = [], missing: string[] = [];
+  for (const r of rows) {
+    if (paid[r.employeeId] || r.net <= 0) continue;
+    const e = emps.find(x => x.id === r.employeeId), acct = (e?.bankAccount || '').replace(/[^\d-]/g, '');
+    if (!e?.bankName || !acct) { missing.push(r.name); continue; }
+    ok.push([e.bankName, acct, e.bankHolder || r.name, String(Math.round(r.net)), `${storeName.slice(0, 6)} ${Number(month.slice(5))}월급여`, `${r.name} ${Number(month.slice(5))}월급여`]);
+  }
+  const csv = '\uFEFF' + [['입금은행', '입금계좌번호', '예금주', '이체금액', '받는분 통장표시', '내 통장표시'], ...ok].map(r => r.map(cell).join(',')).join('\r\n');
+  return {csv, count: ok.length, total: ok.reduce((n, r) => n + Number(r[3]), 0), missing};
+}

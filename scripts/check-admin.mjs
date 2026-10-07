@@ -12,6 +12,7 @@ ok('HQ sees summary',(await call('hq','/api/admin')).data.total,1);
 ok('customer has no HQ entry',(await call('customer','/api/account')).data.hq,false);
 ok('HQ flag server assigned',(await call('hq','/api/account')).data.hq,true);
 let list=await call('hq','/api/admin'),item=list.data.stores[0];
+ok('HQ member stats are numbers',typeof list.data.members?.total==='number'&&list.data.members.owners>=1&&typeof list.data.members.clockedToday==='number',true);
 ok('summary excludes wage fields',JSON.stringify(item).includes('wage'),false);
 ok('cross origin admin write denied',(await call('hq','/api/admin',{action:'support',id:item.id,version:item.version,note:'검수',status:'확인 중'},{origin:'https://evil.invalid'})).status,403);
 ok('invalid status denied',(await call('hq','/api/admin',{action:'support',id:item.id,version:item.version,note:'검수',status:'bad'})).status,400);

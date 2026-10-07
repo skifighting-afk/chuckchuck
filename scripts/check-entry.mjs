@@ -46,6 +46,10 @@ ok('manager cannot manage foreign employee',(await call('staff','/api/manager',{
 ok('delegated manager adds shift',(await call('staff','/api/manager',{action:'saveShift',version:manager.data.version,shift:{employeeId:eid,date:'2026-10-10',start:'09:00',end:'18:00',breakMinutes:60}})).status,200);
 manager=await call('staff','/api/manager');ok('unassigned approval blocked',(await call('staff','/api/manager',{action:'reviewLeave',version:manager.data.version,id:'x',approve:true,payType:'시급',wage:10320,comment:'test'})).status,403);
 ok('manager can post branch notice',(await call('staff','/api/manager',{action:'postNotice',version:manager.data.version,title:'테스트 공지',body:'가상 검수'})).status,200);
+// 지시서 043: 세분화 권한 — 인건비 합계만 켜면 직원별 급여는 안 보임, 급여 보기를 켜야 보임
+boss=await store('boss');boss.data.state.employees[0].managerPermissions=['laborCost','contacts','attendanceView'];ok('owner grants view permissions',(await store('boss',{state:boss.data.state,version:boss.data.version},'PUT')).status,200);
+manager=await call('staff','/api/manager');ok('labor total without per-person pay',!!manager.data.laborTotal&&!manager.data.payroll&&Array.isArray(manager.data.contacts)&&Array.isArray(manager.data.today),true);
+boss=await store('boss');boss.data.state.employees[0].managerPermissions=['payroll'];await store('boss',{state:boss.data.state,version:boss.data.version},'PUT');manager=await call('staff','/api/manager');ok('payroll permission shows per-person pay',Array.isArray(manager.data.payroll)&&!manager.data.contacts,true);
 boss=await store('boss');boss.data.state.employees[0].managerPermissions=[];await store('boss',{state:boss.data.state,version:boss.data.version},'PUT');manager=await call('staff','/api/manager');
 ok('revoked permission blocked immediately',(await call('staff','/api/manager',{action:'postNotice',version:manager.data.version,title:'test',body:'test'})).status,403);
 // 작업 055: 권한 이력·회수 즉시 반영

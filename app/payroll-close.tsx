@@ -3,7 +3,8 @@
 import {useState} from 'react';
 import {type Team,today} from '../lib/team-model';
 import {payAudit} from '../lib/pay-audit';
-import {compareMonths,revisionDiff,paidSummary,bulkAdjust,prevMonthOf,signed,won} from '../lib/payroll-close';
+import {compareMonths,revisionDiff,paidSummary,bulkAdjust,prevMonthOf,signed,won,bankTransferCsv} from '../lib/payroll-close';
+import {saveFile} from './team-ui';
 
 const md=(d:string)=>`${Number(d.slice(5,7))}/${Number(d.slice(8,10))}`;
 const when=(iso:string)=>{const k=new Date(Date.parse(iso)+9*3600000).toISOString();return `${md(k)} ${k.slice(11,16)}`};
@@ -37,6 +38,7 @@ export function PayrollClose({s,month,branch,run,payRows,compare,busy,mutate,upd
   {sum&&<section className="panel pc-paid" aria-label="지급 현황"><div className="panel-heading"><h2>지급 현황 · {sum.done}/{sum.total}명 지급 완료</h2></div>
    <div className="t-panelbody">{sum.left.length>0?<><p>아직 지급 완료로 표시하지 않은 직원 {sum.left.length}명 · {won(sum.amountLeft)}원</p>
     <div className="t-inline pc-paid-all"><label>지급한 날 <input type="date" value={date} onChange={e=>setDate(e.target.value)}/></label><button type="button" className="primary" disabled={busy} onClick={()=>mutate({action:'markPaid',key,ids:sum.left.map(r=>r.employeeId),date})}>남은 {sum.left.length}명 모두 지급 완료</button></div></>:<p className="pc-ok">✓ 모든 직원 지급 완료로 기록했어요.</p>}
+    {sum.left.length>0&&(()=>{const b=bankTransferCsv(run.rows,s.employees as any,month,s.store.name,run.paid||{});return <div className="pc-bank"><button type="button" className="secondary" disabled={!b.count} onClick={()=>saveFile(`대량이체-${month}.csv`,b.csv,'text/csv;charset=utf-8')}>은행 대량이체 파일 ({b.count}명 · {won(b.total)}원)</button>{b.missing.length>0&&<small>계좌가 없어 빠진 직원: {b.missing.join(', ')} — 직원 관리에서 은행·계좌를 넣어 주세요.</small>}<small>인터넷뱅킹 '대량이체'에 올리는 파일이에요. 은행마다 양식이 조금 다르면 열 순서를 맞춰 주세요.</small></div>})()}
     <ul className="pc-paid-list">{run.rows.map((r:any)=>{const d=run.paid?.[r.employeeId];return <li key={r.employeeId}><span><b>{r.name}</b> {won(r.net)}원</span>{d?<><span className="pc-ok">✓ {md(d)} 지급</span><button type="button" className="secondary" disabled={busy} onClick={()=>mutate({action:'markPaid',key,ids:[r.employeeId],undo:true})}>취소</button></>:<button type="button" className="secondary" disabled={busy} onClick={()=>mutate({action:'markPaid',key,ids:[r.employeeId],date})}>지급 완료</button>}</li>})}</ul>
     <p className="footnote">실제 이체는 은행 앱에서 해 주세요. 여기서는 지급했다는 기록만 남기고, 직원 명세서 화면에도 '지급 완료'로 보여요.</p></div></section>}
   {!run?.locked&&<section className={'panel pc-audit'+(audit.length?'':' clean')} aria-label="급여 정확도 점검"><div className="panel-heading"><h2>급여 정확도 점검 {audit.length?`· ${audit.length}건`:''}</h2></div><div className="t-panelbody">{audit.length?<ul>{audit.map((f,i)=><li key={i}><span className={'pc-level '+(f.level==='확인 필요'?'need':'info')}>{f.level}</span> <b>{f.name}</b> {f.text}<small>{f.fix}</small></li>)}</ul>:<p className="pc-ok">✓ 확정 전에 확인할 기록·설정 문제가 없어요.</p>}</div></section>}

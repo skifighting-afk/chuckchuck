@@ -4,6 +4,16 @@ import {adminProjection,summarizeStore,adminOverview,filterAdminStores} from '..
 export type AdminEnv={DB:D1Database,HQ_ADMIN_EMAIL?:string,HQ_NATIVE_USER_ID?:string,RESEND_API_KEY?:string,EMAIL_FROM?:string};
 export function isHQ(request:Request,env:AdminEnv){const id=request.headers.get('oai-authenticated-user-id'),email=request.headers.get('oai-authenticated-user-email')?.trim().toLowerCase(),verified=request.headers.get('oai-authenticated-user-email-verified')==='true';if(!id)return false;if(env.HQ_NATIVE_USER_ID&&id===env.HQ_NATIVE_USER_ID)return true;return !!env.HQ_ADMIN_EMAIL&&verified&&email===env.HQ_ADMIN_EMAIL.trim().toLowerCase()}
 const json=(data:any,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
+/** 운영 현황: 회원(계정) 수·최근 가입·최근 7일 활동 가게·오늘 출퇴근한 직원 — 숫자만, 개인정보 없음 */
+async function memberStats(env:AdminEnv,now:number){
+ try{
+  const u=await env.DB.prepare("SELECT count(*)::int AS total,count(*) FILTER (WHERE role='owner')::int AS owners,count(*) FILTER (WHERE role='employee')::int AS employees,count(*) FILTER (WHERE created_at>?)::int AS new7d,count(*) FILTER (WHERE created_at>?)::int AS new30d FROM app_users").bind(now-7*86400000,now-30*86400000).first<any>();
+  const active=await env.DB.prepare('SELECT count(*)::int AS n FROM stores WHERE updated_at>?').bind(new Date(now-7*86400000).toISOString()).first<any>();
+  const today=new Date(now+9*3600000).toISOString().slice(0,10),from=new Date(Date.parse(today+'T00:00:00+09:00')).toISOString();
+  const clocked=await env.DB.prepare('SELECT count(DISTINCT owner||employee_id)::int AS n, count(DISTINCT owner)::int AS stores FROM attendance_records WHERE start_at>=?').bind(from).first<any>();
+  return {...u,activeStores7d:active?.n??0,clockedToday:clocked?.n??0,clockedStoresToday:clocked?.stores??0};
+ }catch{return null}
+}
 export async function adminApi(request:Request,env:AdminEnv){
  if(!isHQ(request,env))return json({error:'본사 운영 계정만 쓸 수 있어요. 본사 계정으로 로그인해 주세요.'},403);
  const actor=request.headers.get('oai-authenticated-user-email')||request.headers.get('oai-authenticated-user-id')||'';
@@ -18,7 +28,7 @@ export async function adminApi(request:Request,env:AdminEnv){
  const requested=Math.floor(Math.max(0,Math.min(100000,Number(params.get('page'))||0)));
  const page=Math.min(requested,Math.max(0,Math.ceil(filtered.length/50)-1));
  await audit('가게 목록 열람',null,{filters:Object.fromEntries([...params].filter(([k])=>['q','plan','status','attention','biz','page'].includes(k))),shown:Math.min(50,filtered.length)});
- return json({adminAuthMethod:request.headers.get('oai-authenticated-user-id')?.startsWith('native:')?'email':'platform',total:stores.length,matched:filtered.length,page,pageSize:50,stores:filtered.slice(page*50,(page+1)*50),overview:adminOverview(stores,now),billingEnabled:false,payments:{connected:false,paidRevenue:null,paidCustomers:null},emailReady:mailReady(env),generatedAt:new Date(now).toISOString()});
+ return json({adminAuthMethod:request.headers.get('oai-authenticated-user-id')?.startsWith('native:')?'email':'platform',total:stores.length,matched:filtered.length,page,pageSize:50,stores:filtered.slice(page*50,(page+1)*50),overview:adminOverview(stores,now),members:await memberStats(env,now),billingEnabled:false,payments:{connected:false,paidRevenue:null,paidCustomers:null},emailReady:mailReady(env),generatedAt:new Date(now).toISOString()});
  }
  if(request.method!=='POST')return json({error:'이 방법으로는 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},405);
  if(request.headers.get('origin')!==new URL(request.url).origin)return json({error:'요청 출처를 확인해 주세요.'},403);

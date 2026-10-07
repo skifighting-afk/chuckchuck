@@ -10,7 +10,7 @@ export function retentionDue<T extends M>(list: T[], today: string) {
 }
 export const maskName = (n: string) => n.length <= 1 ? n + '○' : n[0] + '○'.repeat(Math.min(3, n.length - 1));
 export function anonymize<T extends M>(e: T, at: string): T {
-  return {...e, name: maskName(e.name), email: '', phone: '', address: '', notes: '', emergencyName: undefined, emergencyPhone: undefined, birthMonth: '', anonymizedAt: at};
+  return {...e, name: maskName(e.name), email: '', phone: '', address: '', notes: '', emergencyName: undefined, emergencyPhone: undefined, bankName: undefined, bankAccount: undefined, bankHolder: undefined, birthMonth: '', anonymizedAt: at};
 }
 /** 직원 본인 자료 내려받기(개인정보 열람): 내 정보·근무표·출퇴근·확정된 급여 */
 export function myDataExport(state: any, selfId: string, at: string) {
