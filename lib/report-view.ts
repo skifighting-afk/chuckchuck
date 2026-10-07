@@ -41,11 +41,25 @@ export function parseSalesCsv(text: string) {
   const date = (v: string) => { const m = v.match(/^(\d{4})[-./]?(\d{1,2})[-./]?(\d{1,2})/); return m ? `${m[1]}-${m[2].padStart(2, '0')}` : null; };
   const money = (v: string) => { const n = Number(v.replace(/[,원\s]/g, '')); return Number.isFinite(n) && /\d/.test(v) ? n : null; };
   const head = rows[0] || [], amountCol = head.findIndex(h => /매출|금액|합계|amount|total/i.test(h)), dateCol = head.findIndex(h => /날짜|일자|date/i.test(h));
-  const sums: Record<string, number> = {}; let used = 0;
+  // 지시서 075: 시각이 있으면(날짜 칸의 13:25 또는 '시간' 칸) 요일·시간대별 매출도 모은다
+  const timeCol = head.findIndex(h => /시간|시각|time/i.test(h) && !/근무/.test(h));
+  const hourOf = (v: string) => { const m = v.match(/(?:^|[\sT])(\d{1,2}):(\d{2})/); return m && Number(m[1]) < 24 ? Number(m[1]) : null; };
+  const sums: Record<string, number> = {}, hourly: Record<string, {sum: number[][]; dates: string[]}> = {}; let used = 0, timed = 0;
   for (const r of rows) {
     const di = dateCol >= 0 ? dateCol : r.findIndex(c => date(c)), d = di >= 0 ? date(r[di] || '') : null; if (!d) continue;
-    const ai = amountCol >= 0 ? amountCol : r.map((c, i) => i).filter(i => i !== di && money(r[i]) !== null).pop() ?? -1, a = ai >= 0 ? money(r[ai] || '') : null; if (a === null || a < 0) continue;
+    const ai = amountCol >= 0 ? amountCol : r.map((c, i) => i).filter(i => i !== di && i !== timeCol && money(r[i]) !== null).pop() ?? -1, a = ai >= 0 ? money(r[ai] || '') : null; if (a === null || a < 0) continue;
     sums[d] = (sums[d] || 0) + a; used++;
+    const h = hourOf(timeCol >= 0 ? ' ' + (r[timeCol] || '') : r[di] || ''), full = (r[di] || '').match(/^(\d{4})[-./]?(\d{1,2})[-./]?(\d{1,2})/);
+    if (h !== null && full) { const day = `${full[1]}-${full[2].padStart(2, '0')}-${full[3].padStart(2, '0')}`, w = (new Date(day + 'T00:00:00Z').getUTCDay() + 6) % 7, x = hourly[d] ||= {sum: Array.from({length: 7}, () => Array(24).fill(0)), dates: []};
+      x.sum[w][h] += a; if (!x.dates.includes(day)) x.dates.push(day); timed++; }
   }
-  return {sums: Object.fromEntries(Object.entries(sums).map(([k, v]) => [k, Math.round(v)])), rows: used};
+  return {sums: Object.fromEntries(Object.entries(sums).map(([k, v]) => [k, Math.round(v)])), rows: used, timed,
+    hourly: Object.fromEntries(Object.entries(hourly).map(([m, x]) => [m, {sum: x.sum.map(r => r.map(v => Math.round(v))), days: [0, 1, 2, 3, 4, 5, 6].map(w => x.dates.filter(d => (new Date(d + 'T00:00:00Z').getUTCDay() + 6) % 7 === w).length)}]))};
+}
+/** 075: 시간대별 적정 인원 — 그 시간 평균 매출 ÷ 직원 1명이 1시간에 맡을 매출(사장님이 정함), 지금 근무표 평균 인원과 비교 */
+export function staffingAdvice(h: {sum: number[][]; days: number[]} | undefined, grid: number[][], perStaff: number) {
+  if (!h || !(perStaff > 0)) return [];
+  const out: {w: number; hour: number; sales: number; have: number; need: number; gap: number}[] = [];
+  for (let w = 0; w < 7; w++) for (let hr = 0; hr < 24; hr++) { const sales = h.days[w] ? Math.round(h.sum[w][hr] / h.days[w]) : 0; if (!sales) continue; const need = Math.max(1, Math.ceil(sales / perStaff)), have = grid[w]?.[hr] || 0; out.push({w, hour: hr, sales, have, need, gap: Math.round((have - need) * 10) / 10}); }
+  return out;
 }

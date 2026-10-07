@@ -4,6 +4,8 @@ import {useState} from 'react';
 import {type Team,today} from '../lib/team-model';
 import {FORM_KINDS,formText,type FormKind} from '../lib/forms';
 import {trainingStatus} from '../lib/trainings';
+import {inspectionSheets} from '../lib/inspection';
+import {toXls} from '../lib/xls';
 
 export function FormsBox({s,es,openDoc}:{s:Team,es:Team['employees'],openDoc:(title:string,text:string)=>void}){
  const [kind,setKind]=useState<FormKind>('주의·경고 통지서'),[emp,setEmp]=useState(es[0]?.id||'');
@@ -23,4 +25,13 @@ export function TrainingDesk({s,es,busy,save}:{s:Team,es:Team['employees'],busy:
   {f&&<form className="tr-form" onSubmit={async e=>{e.preventDefault();if(await save({...s,trainings:[...recs,{id:crypto.randomUUID(),...f}].slice(-500)} as any))setF(null)}}><b>{f.kind} 이수 기록</b><label>날짜<input type="date" required value={f.date} onChange={e=>setF({...f,date:e.target.value})}/></label><fieldset><legend>들은 직원</legend>{active.map(x=><label key={x.id} className="t-check"><input type="checkbox" checked={f.attendees.includes(x.id)} onChange={e=>setF({...f,attendees:e.target.checked?[...f.attendees,x.id]:f.attendees.filter((i:string)=>i!==x.id)})}/> {x.name}</label>)}</fieldset><label>메모(교육 방법·자료)<input maxLength={300} value={f.note} onChange={e=>setF({...f,note:e.target.value})} placeholder="예: 고용노동부 영상 시청 후 서명"/></label><div className="actions"><button type="button" className="secondary" onClick={()=>setF(null)}>그만두기</button><button className="primary" disabled={busy}>저장</button></div></form>}
   <p className="footnote">기준은 법이 바뀌면 달라질 수 있어요. 근로감독 때 교육 자료·참석 서명을 함께 보여 줘야 하니 따로 보관해 주세요.</p>
  </div></section>;
+}
+
+/** 지시서 085: 근로감독 대비 서류 묶음(최근 3년) — 엑셀 한 파일 */
+export function InspectionBundle({demo}:{demo?:boolean}){
+ const [busy,setBusy]=useState(false),[msg,setMsg]=useState(''),[err,setErr]=useState('');
+ const run=async()=>{if(demo){setErr('체험 화면에서는 내려받을 수 없어요. 내 가게에서 이용해 주세요.');return}setBusy(true);setErr('');setMsg('');try{const r=await fetch('/api/export');const x:any=await r.json();if(!r.ok)throw Error(x.error||'자료를 모으지 못했어요.');const b=inspectionSheets(x);const u=URL.createObjectURL(new Blob([toXls(b.sheets)],{type:'application/vnd.ms-excel'}));const a=document.createElement('a');a.href=u;a.download=`근로감독대비_${today()}.xls`;a.click();setTimeout(()=>URL.revokeObjectURL(u),3000);setMsg(`${b.since} 이후 자료를 담았어요: `+Object.entries(b.counts).map(([k,v])=>`${k} ${v}건`).join(', '))}catch(e){setErr((e as Error).message)}finally{setBusy(false)}};
+ return <section className="panel t-gap" aria-label="근로감독 대비 서류 묶음"><div className="panel-heading"><h2>근로감독 대비 서류 묶음</h2><button type="button" className="secondary" disabled={busy} onClick={run}>{busy?'모으는 중…':'3년치 한 번에 받기'}</button></div><div className="t-panelbody">
+  <p className="footnote">근로자 명부, 근로계약 현황, 임금대장(수당·공제 항목별), 임금명세서 교부 기록, 출퇴근 원본, 휴가, 서명 서류, 의무교육 기록을 엑셀 한 파일에 시트별로 담아요. 근로계약서 원본(서명본)은 근로계약서 화면에서 따로 PDF로 받아 함께 보관하세요.</p>
+  {msg&&<p role="status" className="saas-success">{msg}</p>}{err&&<p role="alert" className="saas-error">{err}</p>}</div></section>;
 }

@@ -24,6 +24,7 @@ import {plans,trialStatus,isPlan,canWrite,capacityError,hasFeature} from '../lib
 import {evidenceApi} from './evidence-api';
 import {manualApi} from './manual-api';
 import {storeLogApi} from './store-log-api';
+import {icsApi} from './ics-api';
 import {staffDocsApi} from './staff-docs-api';
 import {pushApi,notifyUser,notificationsApi} from './push-api';
 import {qrTokenOk} from '../lib/qr-live';
@@ -40,6 +41,7 @@ import {reopenRun,finalizeHistory,markPaid} from '../lib/payroll-close';
 import {staffGone} from '../lib/staff-access';
 import {mergePublished,ackWeek,keyWeek,keyBranch} from '../lib/schedule-publish';
 import {geoCheck} from '../lib/att-extras';
+import {toRecord} from '../lib/history-import';
 const esc=(s:any)=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
 export function slipText(row:any,month:string,date:string,store:string){return payslipText(store,month,date,row)}
 // 가이드 44: 모든 요청을 감싸서 서버 오류(5xx)가 잇달아 나면 본사에 알린다.
@@ -66,6 +68,7 @@ async function route(request:Request,env:Env){
   const slow=()=>Response.json({error:'요청이 너무 많아요. 1분 뒤 다시 시도해 주세요.',code:'RATE_LIMITED'},{status:429,headers:{'Retry-After':'60','Cache-Control':'no-store'}});
   if(ip&&!await authLimit(env as any,'api-ip:'+ip,600,60000))return slow();
   if(uid&&request.method!=='GET'&&!await authLimit(env as any,'api-user:'+uid,300,60000))return slow();}
+ if(path==='/api/ics')return icsApi(request,env);
  if(path==='/api/admin')return adminApi(request,env);
  if(path==='/api/documents')return documentsApi(request,env);
  if(path==='/api/contracts')return contractsApi(request,env);
@@ -100,9 +103,9 @@ async function route(request:Request,env:Env){
  if(linked.access!=='owner'&&(!self||staffGone(self)))return json({error:'이 가게를 볼 권한이 없어요. 사장님께 연결을 요청해 주세요.'},403);
  let name=request.headers.get('oai-authenticated-user-full-name')||request.headers.get('oai-authenticated-user-email')||'사장님';try{if(request.headers.get('oai-authenticated-user-full-name-encoding')==='percent-encoded-utf-8')name=decodeURIComponent(name)}catch{}
  const actor={id:userId,name:self?.name||name,email:request.headers.get('oai-authenticated-user-email')||''};
- let freshPub:string[]=[];let freshOpen:any[]=[];let certReq:any=null;let askNotice:any=null; let inviteUrl:string|undefined;let attendanceQrUrl:string|undefined;
+ let freshPub:string[]=[];let freshOpen:any[]=[];let importResult:any=null;let certReq:any=null;let askNotice:any=null; let inviteUrl:string|undefined;let attendanceQrUrl:string|undefined;
  const result=()=>{
-  if(access==='owner')return {links:{linked:members.map((m:any)=>m.employeeId),invited:Object.fromEntries(invitations.map((i:any)=>[i.employeeId,i.expires]))},state,version:version+1,audit,outbox,actor,emailConnected:!!(env.RESEND_API_KEY&&env.EMAIL_FROM),access,selfId:null,inviteUrl,attendanceQrUrl,qrModes:raw?._attendanceQrMode||{},plan:raw?._account||null,qrRequired:hasFeature(raw?._account,'qr')};
+  if(access==='owner')return {links:{linked:members.map((m:any)=>m.employeeId),invited:Object.fromEntries(invitations.map((i:any)=>[i.employeeId,i.expires]))},state,version:version+1,audit,outbox,actor,emailConnected:!!(env.RESEND_API_KEY&&env.EMAIL_FROM),access,selfId:null,inviteUrl,attendanceQrUrl,qrModes:raw?._attendanceQrMode||{},plan:raw?._account||null,qrRequired:hasFeature(raw?._account,'qr'),...(importResult?{importResult}:{})};
   const filtered=personalTeam(state,self!.id);
   return {state:filtered,version:version+1,audit:[],outbox:[],actor,emailConnected:false,access,selfId:self!.id,plan:raw?._account?{plan:raw._account.plan}:null,qrRequired:hasFeature(raw?._account,'qr')};
  };
@@ -189,6 +192,13 @@ async function route(request:Request,env:Env){
   {const block=checkShift(sh,[...state.shifts,sh],self as any,(state.settings as any).weekStart||'mon').find(c=>c.level==='block');if(block)fail(block.text)}
   state.shifts.push(sh);o.status='배정됨';o.assignedTo=self!.id;o.assignedAt=new Date().toISOString();log('빈 근무 맡음',self!.name,null,{date:o.date,start:o.start,end:o.end});
   askNotice={owner:true,title:`${self!.name}님이 빈 근무를 맡았어요`,body:`${Number(o.date.slice(5,7))}/${Number(o.date.slice(8))} ${o.start}–${o.end} 근무가 근무표에 들어갔어요.`};break;}
+ case 'importAttendance':{// 지시서 087: 다른 서비스 출퇴근 기록 가져오기(사장님 입력으로 남김, 겹치거나 확정된 달은 건너뜀)
+  const list=Array.isArray(b.items)?b.items.slice(0,5000):[];if(!list.length)fail('가져올 기록이 없어요. 파일을 다시 골라 주세요.');let added=0,skipped=0;
+  for(const x of list){const e=state.employees.find(e=>e.id===x?.employeeId);if(!e){skipped++;continue}const r=toRecord(x);const n:any={id:crypto.randomUUID(),employeeId:e.id,start:r.start,end:r.end,breakMinutes:Math.min(720,r.breakMinutes||0),breakStart:null,source:'owner',otApproved:{by:actor.name||'사장님',at:new Date().toISOString()}};
+   if(!attendanceSchema.safeParse(n).success||Date.parse(n.end)>Date.now()+60000||locked(n)||correctionError(state.attendance,{id:n.id,employeeId:n.employeeId},n)){skipped++;continue}
+   applyCredit(n,state);state.attendance.push(n);added++}
+  if(!added)fail(`넣을 수 있는 기록이 없었어요(${skipped}건은 겹치거나 확정된 달·미래 시각이라 건너뜀). 파일을 확인해 주세요.`);
+  log('데이터 가져오기','출퇴근',null,{added,skipped},String(b.source||'다른 서비스').slice(0,60));importResult={added,skipped};break;}
  case 'approveOvertime':{// 지시서 005: 예정보다 늦은 퇴근을 승인해야 급여에 반영(원본 시각은 그대로)
   const a:any=state.attendance.find(a=>a.id===b.id);if(!a||!a.end)fail('끝난 근무 기록을 골라 주세요. 새로고침해 보세요.');if(locked(a))fail('급여가 확정된 달이에요. 확정을 먼저 해제해 주세요.');
   const before=a.credit;a.otApproved=b.undo?null:{by:actor.name||'사장님',at:new Date().toISOString()};applyCredit(a,state,true);log(b.undo?'연장근무 승인 취소':'연장근무 승인',state.employees.find(e=>e.id===a.employeeId)?.name||a.employeeId,before,a.credit);break;}

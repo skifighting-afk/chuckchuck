@@ -33,8 +33,17 @@ export function AssistantDock({state,branch,page,run}:{state:Team,branch:string,
     {msgs.map(m=><div key={m.id} className={'ast-msg '+m.from+(m.tone?' '+m.tone:'')}>{m.lines.map((l,i)=><p key={i}>{l}</p>)}{m.actions&&m.actions.length>0&&<div className="ast-acts">{m.actions.map((a,i)=>m.done?.[i]?<span key={i} className="ast-done" role="status">✓ {m.done[i]}{m.undo?.[i]&&<button type="button" className="ast-undo" disabled={busy>=0} onClick={()=>revert(m,i)}>되돌리기</button>}</span>:<button type="button" key={i} disabled={busy>=0} className={i===0?'primary':''} onClick={()=>act(m,i)}>{busy===m.id*100+i?'하는 중…':a.label}</button>)}</div>}</div>)}
    </div>
    {list&&<div className="ast-list" role="region" aria-label="물어볼 수 있는 것">{[...new Set(KB.map(k=>k.group))].map(g=><section key={g}><h3>{g}</h3>{KB.filter(k=>k.group===g).map(k=><button type="button" key={k.id} onClick={()=>{setList(false);ask(k.q)}}>{k.q}</button>)}</section>)}</div>}<div className="ast-chips"><button type="button" className="ast-all" aria-expanded={list} onClick={()=>setList(!list)}>{list?'목록 닫기':`물어볼 수 있는 것 ${KB.length}가지`}</button>{CHIPS.map(c=><button type="button" key={c} onClick={()=>ask(c)}>{c}</button>)}</div>
-   <form className="ast-input" onSubmit={e=>{e.preventDefault();ask(q)}}><label htmlFor="ast-q" className="sr-only">척척 비서에게 말하기</label><input id="ast-q" value={q} onChange={e=>setQ(e.target.value)} placeholder="예: 김민지 내일 9시부터 6시 근무" autoComplete="off"/><button type="submit">보내기</button></form>
+   <form className="ast-input" onSubmit={e=>{e.preventDefault();ask(q)}}><label htmlFor="ast-q" className="sr-only">척척 비서에게 말하기</label><input id="ast-q" value={q} onChange={e=>setQ(e.target.value)} placeholder="예: 김민지 내일 9시부터 6시 근무" autoComplete="off"/><VoiceButton onText={t=>{setQ(t);ask(t)}}/><button type="submit">보내기</button></form>
   </aside>
   {open&&<div className="ast-scrim" onClick={()=>setOpen(false)} aria-hidden="true"/>}
  </>;
+}
+
+/** 지시서 083: 말로 시키기 — 휴대폰·크롬의 음성 인식(지원하는 브라우저에서만 버튼이 보여요). 말한 내용은 글로 바뀌어 위 칸에 들어가요. */
+function VoiceButton({onText}:{onText:(t:string)=>void}){
+ const SR=typeof window!=='undefined'?((window as any).SpeechRecognition||(window as any).webkitSpeechRecognition):null;
+ const [on,setOn]=useState(false),[err,setErr]=useState('');
+ if(!SR)return null;
+ const start=()=>{setErr('');try{const r=new SR();r.lang='ko-KR';r.interimResults=false;r.maxAlternatives=1;r.onresult=(e:any)=>{const t=e.results?.[0]?.[0]?.transcript||'';if(t.trim())onText(t.trim())};r.onerror=(e:any)=>setErr(e.error==='not-allowed'?'마이크 권한을 허용해 주세요.':'잘 못 들었어요. 다시 눌러 말해 주세요.');r.onend=()=>setOn(false);r.start();setOn(true)}catch{setErr('음성 인식을 시작하지 못했어요. 글로 적어 주세요.');setOn(false)}};
+ return <><button type="button" className={'ast-mic'+(on?' on':'')} aria-pressed={on} aria-label={on?'듣는 중':'말로 시키기'} onClick={start} disabled={on}>{on?'듣는 중…':'🎤 말하기'}</button>{err&&<span role="status" className="ast-mic-err">{err}</span>}</>;
 }

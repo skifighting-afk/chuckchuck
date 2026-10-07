@@ -1295,6 +1295,11 @@ console.log('PASS: 요율 연간 갱신 경고.');
  const r=parseSalesCsv('﻿일자,카드매출,결제건수\n2026.09.30,"1,200,000",31\n2026-10-01,500000,10\n2026/10/02,"250,000원",5\n합계,1950000,46');
  ok('POS 매출 파일 월별 합계(합계 줄 무시)',r.rows===3&&r.sums['2026-09']===1200000&&r.sums['2026-10']===750000);
  ok('제목 없는 파일도',parseSalesCsv('20261003,10000\n20261004,5000').sums['2026-10']===15000);
+ {const {staffingAdvice}=await import('../lib/report-view.ts');const h=parseSalesCsv('결제일시,금액\n2026-10-06 12:10,100000\n2026-10-06 12:40,80000\n2026-10-13 12:05,60000\n2026-10-06 15:00,20000');
+  ok('시각 있는 매출: 시간대별',h.timed===4&&h.hourly['2026-10'].sum[1][12]===240000&&h.hourly['2026-10'].days[1]===2);
+  const g=Array.from({length:7},()=>Array(24).fill(0));g[1][12]=1;const adv=staffingAdvice(h.hourly['2026-10'],g,60000);
+  ok('적정 인원: 화 12시 평균 12만 → 2명',adv.find(x=>x.w===1&&x.hour===12).need===2&&adv.find(x=>x.w===1&&x.hour===12).gap===-1);
+  ok('시각 없는 파일은 시간대 없음',parseSalesCsv('일자,매출\n2026-10-01,5000').timed===0);}
  console.log('PASS: POS 매출 파일 읽기.');
 }
 // 지시서 7주차 112: 공휴일 유급휴일수당

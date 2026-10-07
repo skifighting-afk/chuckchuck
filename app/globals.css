@@ -669,3 +669,7 @@ body.ms-dragging,body.ms-dragging *{user-select:none!important;-webkit-user-sele
 .quiz-edit{border:1px dashed #b5c8ba;border-radius:10px;padding:10px;margin:12px 0}.quiz-q{border-bottom:1px solid #e6ece8;padding:8px 0}.quiz-opt{gap:6px;margin:4px 0;flex-wrap:wrap}.quiz-opt input:not([type=radio]){min-height:44px;flex:1;min-width:0}
 .quiz-box{border:1px solid #d7e4dc;border-radius:12px;padding:12px;margin:12px 0}.quiz-box h3{margin:0 0 8px;font-size:16px}.quiz-box fieldset{border:0;padding:0;margin:0 0 8px}.quiz-box legend{font-weight:600;margin-bottom:4px}.quiz-box label{min-height:44px;align-items:center}
 .t-check input[type=checkbox],.t-check input[type=radio]{width:22px;height:22px;flex:none}
+.sa-list{list-style:none;padding:0;display:grid;gap:6px}.sa-short{color:#b42318;font-weight:700}.sa-over{color:#1d4ed8;font-weight:700}
+.ast-mic{min-height:44px;min-width:44px;padding:0 12px;border:1px solid #b5c8ba;border-radius:999px;background:#fff;color:#1f2a24;white-space:nowrap}.ast-mic.on{background:#fde2e2;border-color:#b42318}.ast-mic-err{font-size:12px;color:#b42318}
+.cal-sub summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:600}.cal-sub input{width:100%;min-height:44px;font-size:13px}.cal-sub .actions a,.cal-sub .actions button{min-height:44px;display:inline-flex;align-items:center}
+.hi-preview{border:1px solid #d7e4dc;border-radius:10px;padding:10px;margin-top:8px}.hi-sample{margin:6px 0;padding-left:18px}
