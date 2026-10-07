@@ -1690,6 +1690,16 @@ PASS: 출퇴근 위치·기기·연장 승인·휴게 구간.
 14. PASS second take refused
 PASS: 근무표 경고·빈 근무 선착순.
 
+── check-pay-more
+1. PASS owner records advance
+2. PASS advance audit
+3. PASS advance becomes deduction
+4. PASS net reduced
+5. PASS staff sees own advance without author
+6. PASS locked month advance cannot be removed
+7. PASS locked month advance cannot be added
+PASS: 가불·선지급.
+
 ── check-share
 PASS: 세무사 공유 링크 (확정 급여만·끄기·만료·열람 기록·토큰 해시만 저장).
 
