@@ -1,5 +1,5 @@
 {
- "at": "2026-10-07T07:38:09.251Z",
+ "at": "2026-10-07T07:51:37.427Z",
  "changedPercent": {
   "public-home": 0,
   "public-start": 0,
@@ -12,21 +12,21 @@
   "public-pricing": 0,
   "public-status": 0.06,
   "public-privacy": 0,
-  "demo-home": 0.19,
-  "demo-employees": 0.08,
-  "demo-attendance": 0.12,
-  "demo-schedule": 0.13,
-  "demo-payroll": 0.07,
-  "demo-contracts": 0.13,
-  "demo-retirement": 0.16,
-  "demo-outbox": 0.3,
-  "demo-operations": 0.14,
-  "demo-manual": 0.18,
-  "demo-reports": 0.14,
-  "demo-stores": 0.17,
-  "demo-settings": 0.08,
-  "demo-guide": 0.04,
-  "demo-staff": 10.91
+  "demo-home": 0,
+  "demo-employees": 0,
+  "demo-attendance": 0.07,
+  "demo-schedule": 0,
+  "demo-payroll": 0,
+  "demo-contracts": 0,
+  "demo-retirement": 0,
+  "demo-outbox": 0,
+  "demo-operations": 1.21,
+  "demo-manual": 0,
+  "demo-reports": 0,
+  "demo-stores": 0,
+  "demo-settings": 0,
+  "demo-guide": 0,
+  "demo-staff": 0
  },
  "failures": []
 }
