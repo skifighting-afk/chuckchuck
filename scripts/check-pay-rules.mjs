@@ -1415,3 +1415,27 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('근무표 변경 이력 요약',t.includes('추가 1건(가 10/8')&&t.includes('변경 1건(가 10/5 10:00–15:00 → 10/7 11:00')&&t.includes('삭제 1건(가 10/6)'));
  console.log('PASS: 근무표 변경 이력.');
 }
+// ④ 183 월급 결근·지각 공제, 185 인센티브
+{
+ const tm=await import('../dist/server/team-model.js');const t=tm.normalizeTeam(null);const e=t.employees[0];
+ Object.assign(e,{payType:'월급',wage:2090000,weeklyHours:40,status:'재직',joined:'2026-01-01',absenceDeduct:true});
+ const iso=(d,hm)=>new Date(Date.parse(`${d}T${hm}:00+09:00`)).toISOString();
+ const sh=['2026-09-01','2026-09-02'].map(d=>({id:d,employeeId:e.id,date:d,start:'09:00',end:'18:00',breakMinutes:60}));
+ const att=[{id:'a1',employeeId:e.id,start:iso('2026-09-01','09:30'),end:iso('2026-09-01','18:00'),breakMinutes:60,breakStart:null}];
+ const r=tm.calculate({...t,shifts:sh,attendance:att},'2026-09').find(x=>x.employeeId===e.id);
+ ok('월급 결근 1일·지각 30분 공제(통상시급 기준)',r.earnings[0].formula.includes('결근 1일')&&r.earnings[0].formula.includes('지각 30분')&&r.earnings[0].amount<2090000);
+ Object.assign(e,{absenceDeduct:false,incentive:{kind:'salesPct',rate:2,label:'매출 인센티브'}});
+ const r2=tm.calculate({...t,shifts:[],attendance:[],adjustments:{['2026-09:'+e.id]:{earnings:[],deductions:[],note:'',incentiveBase:5000000}}},'2026-09').find(x=>x.employeeId===e.id);
+ ok('인센티브: 매출 500만 × 2% = 10만',r2.earnings.some(x=>x.name==='매출 인센티브'&&x.amount===100000));
+ console.log('PASS: 결근 공제·인센티브.');
+}
+{
+ const {retroPay,annualStatement,accountantCsv}=await import('../lib/payroll-close.ts');
+ const r=retroPay({},'2026-12','a',30000,'12/24 근무 누락');ok('소급: 다음 해 1월에 넣음',r.next==='2027-01'&&r.adjustments['2027-01:a'].earnings[0].name==='12월분 소급 지급'&&!!retroPay({},'2026-09','a',0,'x').error);
+ const row=(g,t)=>({employeeId:'a',name:'가',gross:g,net:g-t,deduction:t,earnings:[{name:'기본급',amount:g-50000},{name:'주휴수당',amount:50000}],deductions:[{name:'고용보험',amount:t}]});
+ const runs={x:{locked:true,month:'2026-01',payDate:'2026-02-10',rows:[row(1000000,9000)]},y:{locked:true,month:'2026-02',payDate:'2026-03-10',rows:[row(1200000,10800)]},z:{locked:true,month:'2025-12',rows:[row(1,0)]}};
+ const st=annualStatement(runs,'a','2026');ok('연간 지급 내역',st.months.length===2&&st.total.gross===2200000&&st.total['고용보험']===19800);
+ const csv=accountantCsv([row(1000000,9000)],'2026-01','2026-02-10',[{id:'a',name:'가',joined:'2025-01-01'}]);
+ ok('세무사 양식: 주휴 칸·차인지급액',csv.includes('"주휴수당"')&&csv.includes('"50000"')&&csv.includes('"991000"'));
+ console.log('PASS: 소급·연간 내역·세무사 양식.');
+}

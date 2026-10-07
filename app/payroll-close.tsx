@@ -1,11 +1,14 @@
 'use client';
 // 지시서 4주차: 급여 화면의 마감 도우미 — 지급 완료 기록, 재확정 때 바뀐 점, 지난달 대비, 확정 이력, 수당·공제 한꺼번에 넣기
-import {useState} from 'react';
+import {useState,useEffect} from 'react';
 import {type Team,today} from '../lib/team-model';
 import {payAudit} from '../lib/pay-audit';
 import {deadlinesFor,durunuriCandidates,DURUNURI_LIMIT} from '../lib/tax-calendar';
 import {holidaysFor} from '../lib/holidays';
-import {compareMonths,revisionDiff,paidSummary,bulkAdjust,prevMonthOf,signed,won,bankTransferCsv} from '../lib/payroll-close';
+import {compareMonths,revisionDiff,paidSummary,bulkAdjust,prevMonthOf,signed,won,bankTransferCsv,retroPay,annualStatement,accountantCsv} from '../lib/payroll-close';
+import {createPortal} from 'react-dom';
+import {PayslipView} from './payslip-view';
+import {payslipFromRow} from '../lib/payslip';
 import {saveFile} from './team-ui';
 
 const md=(d:string)=>`${Number(d.slice(5,7))}/${Number(d.slice(8,10))}`;
@@ -47,6 +50,7 @@ export function PayrollClose({s,month,branch,run,payRows,compare,busy,mutate,upd
   {diff.length>0&&<section className="notice pc-rev" role="status"><b>지난 확정({run.revision||1}차)과 달라진 직원 {diff.length}명</b> 다시 확정하면 아래처럼 바뀌어요.<ul>{diff.map(d=><li key={d.employeeId}>{d.name}: {d.before===null?'새로 들어감':won(d.before)+'원'} → {d.after===null?'빠짐':won(d.after)+'원'} ({signed(d.diff)}{d.hours?`, 근무 ${d.hours>0?'+':''}${d.hours}시간`:''})</li>)}</ul></section>}
   {(gone.length>0||big.length>0)&&!run?.locked&&<section className="notice pc-cmp" role="note"><b>지난달과 비교해 확인할 직원</b><ul>{big.map(c=><li key={c.employeeId}>{c.name}: 실수령 {won(c.prevNet||0)}원 → {won(c.net||0)}원 ({signed(c.diff)}). 근무 기록과 수당·공제를 한 번 더 봐 주세요.</li>)}{gone.map(c=><li key={c.employeeId}>{c.name}: 지난달엔 있었는데 이번 달 급여가 없어요. 퇴사했거나 근무 기록이 빠졌는지 확인해 주세요.</li>)}</ul></section>}
   {!run?.locked&&<details className="pc-bulk" open={bulk} onToggle={e=>setBulk((e.target as HTMLDetailsElement).open)}><summary>여러 직원에게 같은 수당·공제 한꺼번에 넣기</summary>{bulk&&<BulkAdjust s={s} month={month} rows={payRows} busy={busy} update={update} demo={demo} done={()=>setBulk(false)}/>}</details>}
+  {run?.locked&&<LockedTools s={s} month={month} branch={branch} run={run} update={update} busy={busy}/>}
   {hist.length>0&&<details className="pc-history"><summary>확정 이력 {hist.length}건</summary><ol>{hist.map((h:any,i:number)=><li key={i}><b>{h.revision}차 {h.kind}</b> · {when(h.at)} · {h.by||'사장님'}{h.kind==='확정'?` · 실수령 합계 ${won(h.total)}원`:` · 사유: ${h.reason}`}</li>)}</ol></details>}
  </div>;
 }
@@ -90,4 +94,20 @@ export function StaffAsksDesk({s,busy,mutate}:{s:Team,busy:boolean,mutate:(b:any
   <label>답<input value={ans[x.id]||''} maxLength={1000} onChange={e=>setAns({...ans,[x.id]:e.target.value})} placeholder={x.type==='pay'?'예: 10/3 근무를 추가해 다시 확정할게요':'예: 바꿨어요'}/></label>
   <div className="actions">{x.type==='profile'||x.type==='clock'?<><button type="button" className="primary" disabled={busy} onClick={()=>mutate({action:'answerAsk',id:x.id,apply:true,answer:ans[x.id]||'바꿨어요'})}>그대로 반영</button><button type="button" className="secondary" disabled={busy||!ans[x.id]?.trim()} onClick={()=>mutate({action:'answerAsk',id:x.id,reject:true,answer:ans[x.id]})}>반려</button></>:<button type="button" className="primary" disabled={busy||!ans[x.id]?.trim()} onClick={()=>mutate({action:'answerAsk',id:x.id,answer:ans[x.id]})}>답 보내기</button>}</div>
  </li>)}</ul></section>;
+}
+
+/** 지시서 186 소급 추가 지급 · 187 명세서 묶음 인쇄 · 188 연간 지급 내역 · 189 세무사 양식 */
+function LockedTools({s,month,branch,run,update,busy}:{s:Team,month:string,branch:string,run:any,update:(s:Team,close?:boolean)=>Promise<any>,busy:boolean}){
+ const [emp,setEmp]=useState(run.rows[0]?.employeeId||''),[amt,setAmt]=useState(''),[why,setWhy]=useState(''),[msg,setMsg]=useState(''),[print,setPrint]=useState(false),[yEmp,setYEmp]=useState(run.rows[0]?.employeeId||'');
+ useEffect(()=>{if(!print)return;const done=()=>setPrint(false);addEventListener('afterprint',done);const t=setTimeout(()=>window.print(),80);return()=>{clearTimeout(t);removeEventListener('afterprint',done)}},[print]);
+ const year=month.slice(0,4),st=annualStatement(s.payrollRuns as any,yEmp,year),nm=(id:string)=>run.rows.find((r:any)=>r.employeeId===id)?.name||'';
+ const dl=(name:string,text:string)=>saveFile(name,text,'text/csv;charset=utf-8');
+ return <details className="pc-bulk"><summary>확정 뒤 할 일 · 소급 지급·명세서 묶음·연간 내역·세무사 양식</summary><div className="pc-bulk-body">
+  <div className="actions"><button type="button" className="secondary" onClick={()=>setPrint(true)}>명세서 {run.rows.length}장 한 번에 인쇄·PDF</button><button type="button" className="secondary" onClick={()=>dl(`세무사양식-급여대장-${month}.csv`,accountantCsv(run.rows,month,run.payDate,s.employees as any))}>세무사 프로그램 양식(급여대장)</button></div>
+  <fieldset className="pc-bulk-who"><legend>빠진 금액 추가 지급(다음 달 급여에 소급)</legend><label>직원<select value={emp} onChange={e=>setEmp(e.target.value)}>{run.rows.map((r:any)=><option key={r.employeeId} value={r.employeeId}>{r.name}</option>)}</select></label><label>금액(원)<input inputMode="numeric" value={amt} onChange={e=>setAmt(e.target.value.replace(/\D/g,''))}/></label><label>빠진 이유<input maxLength={300} value={why} onChange={e=>setWhy(e.target.value)} placeholder="예: 9/24 연장 2시간 누락"/></label><button type="button" className="primary" disabled={busy} onClick={async()=>{const r=retroPay(s.adjustments as any,month,emp,Number(amt),why);if(r.error){setMsg(r.error);return}if(await update({...s,adjustments:r.adjustments as any},false)){setMsg(`${nm(emp)}님 ${Number(r.next!.slice(5))}월 급여에 ${won(Number(amt))}원을 소급 지급으로 넣었어요.`);setAmt('');setWhy('')}}}>다음 달에 넣기</button></fieldset>
+  {msg&&<p role="status" className="saas-success">{msg}</p>}
+  <fieldset className="pc-bulk-who"><legend>{year}년 연간 지급 내역(연말정산·원천징수영수증 준비)</legend><label>직원<select value={yEmp} onChange={e=>setYEmp(e.target.value)}>{run.rows.map((r:any)=><option key={r.employeeId} value={r.employeeId}>{r.name}</option>)}</select></label>
+   <p>확정 {st.months.length}개월 · 지급 합계 {won(st.total.gross)}원 · 비과세 {won(st.total.taxFree)}원 · 소득세 {won((st.total as any)['근로소득세'])}원 · 지방소득세 {won((st.total as any)['지방소득세'])}원</p>
+   <button type="button" className="secondary" disabled={!st.months.length} onClick={()=>{const H=['귀속월','지급일','지급액','비과세','국민연금','건강보험','장기요양보험','고용보험','근로소득세','지방소득세','사업소득 원천징수','실수령'];const rows=[...st.months.map((m:any)=>[m.month,m.payDate,m.gross,m.taxFree,m['국민연금'],m['건강보험'],m['장기요양보험'],m['고용보험'],m['근로소득세'],m['지방소득세'],m['사업소득 원천징수'],m.net]),['합계','',st.total.gross,st.total.taxFree,(st.total as any)['국민연금'],(st.total as any)['건강보험'],(st.total as any)['장기요양보험'],(st.total as any)['고용보험'],(st.total as any)['근로소득세'],(st.total as any)['지방소득세'],(st.total as any)['사업소득 원천징수'],st.total.net]];dl(`${year}-연간지급내역-${nm(yEmp)}.csv`,'\uFEFF'+[H,...rows].map(r=>r.map(v=>'"'+String(v??'')+'"').join(',')).join('\r\n'))}}>파일로 받기</button><small>원천징수영수증 자체는 홈택스나 세무사가 발급해요. 이 파일은 그 준비 자료예요.</small></fieldset>
+ </div>{print&&createPortal(<div className="print-sheet slips-print" aria-hidden="true">{run.rows.map((r:any)=><section key={r.employeeId}><PayslipView v={payslipFromRow(s.store.name,month,run.payDate,r)}/></section>)}</div>,document.body)}</details>;
 }

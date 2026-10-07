@@ -105,3 +105,34 @@ export function retirementBasis(runs: Record<string, any>, employeeId: string, e
   }
   return {wages: Math.round(wages), days, used, missing};
 }
+
+/** 지시서 186: 확정 뒤 빠진 금액 — 다음 달 급여에 '○월분 소급 지급'으로 넣는다 */
+export function retroPay(adj: Adj, month: string, employeeId: string, amount: number, reason: string) {
+  const [y, m] = month.split('-').map(Number), next = m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, '0')}`;
+  if (!(amount > 0)) return {error: '추가로 줄 금액을 0원보다 크게 적어 주세요.'};
+  if (!reason.trim()) return {error: '빠진 이유를 적어 주세요(명세서에 계산 근거로 나가요).'};
+  const k = `${next}:${employeeId}`, cur = adj[k] || {earnings: [], deductions: [], note: ''};
+  return {next, adjustments: {...adj, [k]: {...cur, earnings: [...cur.earnings, {name: `${m}월분 소급 지급`, amount: Math.round(amount), formula: reason.trim().slice(0, 300)}]}} as Adj};
+}
+/** 지시서 188: 연간 근로소득 지급 내역(연말정산·원천징수영수증 준비용, 확정 급여 기준) */
+export function annualStatement(runs: Record<string, any>, employeeId: string, year: string) {
+  const rows = Object.values(runs || {}).filter((r: any) => r?.locked && String(r.month).startsWith(year)).map((r: any) => ({month: r.month as string, payDate: r.payDate as string, row: (r.rows || []).find((x: any) => x.employeeId === employeeId)})).filter(x => x.row).sort((a, b) => a.month.localeCompare(b.month));
+  const sum = (f: (row: any) => number) => rows.reduce((n, x) => n + f(x.row), 0);
+  const ded = (row: any, name: string) => (row.deductions || []).filter((d: any) => d.name === name).reduce((n: number, d: any) => n + d.amount, 0);
+  const taxFree = (row: any) => (row.earnings || []).filter((x: any) => x.taxFree).reduce((n: number, x: any) => n + x.amount, 0);
+  const names = ['국민연금', '건강보험', '장기요양보험', '고용보험', '근로소득세', '지방소득세', '사업소득 원천징수'];
+  return {months: rows.map(x => ({month: x.month, payDate: x.payDate, gross: x.row.gross, taxFree: taxFree(x.row), ...Object.fromEntries(names.map(n => [n, ded(x.row, n)])), net: x.row.net})), total: {gross: sum(r => r.gross), taxFree: sum(taxFree), ...Object.fromEntries(names.map(n => [n, sum(r => ded(r, n))])), net: sum(r => r.net)}};
+}
+/** 지시서 189: 세무사 프로그램(더존·세무사랑 등)에 옮기기 쉬운 급여대장 양식 */
+export function accountantCsv(rows: any[], month: string, payDate: string, emps: {id: string; name: string; joined?: string; birthMonth?: string}[]) {
+  const cell = (v: unknown) => '"' + String(v ?? '').replace(/^[=+@\-\t\r]/, "'$&").replace(/"/g, '""') + '"';
+  const E = (r: any, re: RegExp) => (r.earnings || []).filter((x: any) => re.test(x.name)).reduce((n: number, x: any) => n + x.amount, 0);
+  const D = (r: any, n: string) => (r.deductions || []).filter((x: any) => x.name === n).reduce((a: number, x: any) => a + x.amount, 0);
+  const head = ['귀속연월', '지급일', '사원번호', '성명', '입사일', '기본급', '연장근로수당', '야간근로수당', '휴일근로수당', '주휴수당', '기타수당', '비과세(식대 등)', '지급합계', '국민연금', '건강보험', '장기요양보험', '고용보험', '소득세', '지방소득세', '기타공제', '공제합계', '차인지급액'];
+  const out = rows.map(r => {
+    const e = emps.find(x => x.id === r.employeeId), base = E(r, /^기본급$/), ot = E(r, /연장/), night = E(r, /야간/), hol = E(r, /휴일/), juhu = E(r, /주휴/), free = (r.earnings || []).filter((x: any) => x.taxFree).reduce((n: number, x: any) => n + x.amount, 0);
+    const other = r.gross - base - ot - night - hol - juhu - free, std = ['국민연금', '건강보험', '장기요양보험', '고용보험', '근로소득세', '지방소득세'].reduce((n, k) => n + D(r, k), 0);
+    return [month, payDate, r.employeeId.slice(0, 8).toUpperCase(), r.name, e?.joined || '', base, ot, night, hol, juhu, other, free, r.gross, D(r, '국민연금'), D(r, '건강보험'), D(r, '장기요양보험'), D(r, '고용보험'), D(r, '근로소득세'), D(r, '지방소득세'), r.deduction - std, r.deduction, r.net];
+  });
+  return '﻿' + [head, ...out].map(r => r.map(cell).join(',')).join('\r\n');
+}

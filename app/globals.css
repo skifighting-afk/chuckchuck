@@ -623,3 +623,5 @@ body.ms-dragging,body.ms-dragging *{user-select:none!important;-webkit-user-sele
 .t-add{display:block;width:100%;min-height:44px;border:1px dashed #b5c8ba;border-radius:8px;background:transparent;color:#17583f;font-size:20px}
 .t-shift{border-left-width:5px!important;border-left-style:solid!important}.month-bar{border-left:4px solid}.t-note{display:block;font-size:12px}
 .sched-hist{padding:0 14px}.sched-hist summary{min-height:48px;display:flex;align-items:center;font-weight:700;cursor:pointer}.sched-hist ul{padding-left:18px;font-size:14px}.sched-hist li{padding:4px 0}
+.pay-memo{display:block;font-size:12px;color:#5a3a00}
+.slips-print section{break-after:page}
