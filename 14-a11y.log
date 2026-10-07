@@ -1,1 +1,29 @@
-접근성 점검 통과: 12개 화면 × 2개 크기 (axe 포함)
+접근성 문제 28건:
+390px /demo?screen=attendance [axe color-contrast] Elements must meet minimum color contrast ratio thresholds — .panel-heading > .t-inline > .secondary[type="button"]
+390px /demo?screen=attendance [axe nested-interactive] Interactive controls must not be nested — .att-tl
+390px /demo?screen=attendance 작은 글자 11px: 08
+390px /demo?screen=attendance 작은 글자 11px: 10
+390px /demo?screen=attendance 작은 글자 11px: 12
+390px /demo?screen=attendance 작은 글자 11px: 14
+390px /demo?screen=attendance 작은 글자 11px: 16
+390px /demo?screen=attendance 작은 글자 11px: 18
+390px /demo?screen=attendance 작은 글자 11px: 20
+390px /demo?screen=attendance 작은 글자 11px: 22
+390px /demo?screen=attendance 작은 글자 11px: 09:00
+390px /demo?screen=attendance 작은 글자 11px: ~
+390px /demo?screen=attendance 작은 글자 11px: 10:00
+390px /demo?screen=attendance 작은 글자 11px: 13:00
+1280px /demo?screen=attendance [axe color-contrast] Elements must meet minimum color contrast ratio thresholds — .panel-heading > .t-inline > .secondary[type="button"]
+1280px /demo?screen=attendance [axe nested-interactive] Interactive controls must not be nested — .att-tl
+1280px /demo?screen=attendance 작은 글자 11px: 08
+1280px /demo?screen=attendance 작은 글자 11px: 10
+1280px /demo?screen=attendance 작은 글자 11px: 12
+1280px /demo?screen=attendance 작은 글자 11px: 14
+1280px /demo?screen=attendance 작은 글자 11px: 16
+1280px /demo?screen=attendance 작은 글자 11px: 18
+1280px /demo?screen=attendance 작은 글자 11px: 20
+1280px /demo?screen=attendance 작은 글자 11px: 22
+1280px /demo?screen=attendance 작은 글자 11px: 09:00
+1280px /demo?screen=attendance 작은 글자 11px: ~
+1280px /demo?screen=attendance 작은 글자 11px: 10:00
+1280px /demo?screen=attendance 작은 글자 11px: 13:00
