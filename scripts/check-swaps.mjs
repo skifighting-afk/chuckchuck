@@ -71,4 +71,27 @@ ok('unread list names branch staff',r.body.notices.at(-1).unread.sort(),['벤','
 me=(await ops('amy')).body;await ops('amy',{action:'readNotice',version:me.version,id:nid});
 const nn=(await ops('boss')).body.notices.find(x=>x.id===nid);ok('reader moves to read list',[nn.readers,nn.unread.includes('에이미')],[['에이미'],false]);
 ok('staff do not see who read','readers' in (await ops('ben')).body.notices.find(x=>x.id===nid),false);
+// 지시서 1라운드 C: 공지 대상·예약·다시 알리기, 휴가 승인 시 근무 자동 제외, 반려 사유 필수
+{
+ let x=await read();x.employees.find(e=>e.id===A).role='주방';x.employees.find(e=>e.id===B).role='홀';x.employees.find(e=>e.id===C).role='홀';await save(x);
+ o=(await ops('boss')).body;r=await ops('boss',{action:'postNotice',version:o.version,title:'주방만',body:'냉장고 정리',branchId:'branch-main',target:{type:'role',roles:['주방']}});
+ const kn=r.body.notices.at(-1);ok('업무별 공지: 받는 사람만 집계',[kn.audience,kn.unread],[1,['에이미']]);
+ ok('대상 아닌 직원은 공지가 안 보임',(await ops('ben')).body.notices.some(n=>n.id===kn.id),false);
+ ok('대상 직원은 보임',(await ops('amy')).body.notices.some(n=>n.id===kn.id),true);
+ o=(await ops('boss')).body;r=await ops('boss',{action:'postNotice',version:o.version,title:'예약',body:'내일 아침',branchId:'branch-main',publishAt:new Date(Date.now()+86400000).toISOString()});
+ const sn=r.body.notices.at(-1);ok('예약 공지는 사장님에게 예약으로',sn.scheduled,true);ok('예약 시각 전에는 직원에게 안 보임',(await ops('amy')).body.notices.some(n=>n.id===sn.id),false);
+ o=(await ops('boss')).body;ok('지난 시각으로 예약 불가',(await ops('boss',{action:'postNotice',version:o.version,title:'x',body:'y',branchId:'branch-main',publishAt:new Date(Date.now()-3600000).toISOString()})).status,400);
+ o=(await ops('boss')).body;r=await ops('boss',{action:'remindNotice',version:o.version,id:kn.id});ok('다시 알리기',[r.status,!!r.body.notices.find(n=>n.id===kn.id).remindedAt],[200,true]);
+ o=(await ops('boss')).body;ok('10분 안에 또 알리기는 막음',(await ops('boss',{action:'remindNotice',version:o.version,id:kn.id})).status,429);
+ me=(await ops('ben')).body;ok('직원은 다시 알리기 불가',(await ops('ben',{action:'remindNotice',version:me.version,id:kn.id})).status,403);
+ // 휴가 승인 → 그 기간 근무가 근무표에서 빠짐
+ x=await read();x.shifts.push({id:'lv1',employeeId:C,date:day(9),start:'10:00',end:'14:00',breakMinutes:0});x._account={...(x._account||{})};await save(x);
+ me=(await ops('cat')).body;r=await ops('cat',{action:'requestLeave',version:me.version,employeeId:C,start:day(9),end:day(9),days:1,kind:'무급휴가',reason:'개인 사정'});ok('휴가 신청',r.status,200);
+ const lid=r.body.leaves.at(-1).id;
+ o=(await ops('boss')).body;ok('사장님은 근무 목록을 받아 영향 계산',o.shifts.some(s=>s.id==='lv1'),true);
+ o=(await ops('boss')).body;ok('반려는 사유가 있어야',(await ops('boss',{action:'reviewLeave',version:o.version,id:lid,approve:false,comment:' '})).status,400);
+ o=(await ops('boss')).body;r=await ops('boss',{action:'reviewLeave',version:o.version,id:lid,approve:true,comment:'승인'});ok('승인',r.status,200);
+ ok('승인하면 그날 근무가 근무표에서 빠짐',(await read()).shifts.some(s=>s.id==='lv1'),false);
+ ok('뺀 근무를 기록',r.body.leaves.find(l=>l.id===lid).removedShifts.map(s=>s.id),['lv1']);
+}
 await closeAll();

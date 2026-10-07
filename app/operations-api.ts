@@ -7,28 +7,34 @@ import {z} from 'zod';
 import {leaveBalanceFor,unusedLeavePay} from '../lib/annual-leave';
 import {ordinaryHourly} from '../lib/team-model';
 import {same} from '../lib/same';
+import {noticeAudience} from '../lib/ops-view';
 import type {StoreData,Operations,Swap,ShiftSnap} from '../lib/store-data';
 type Emp=StoreData['employees'][number];type Shift=StoreData['shifts'][number];
 const kstToday=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date());
 const json=(v:unknown,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store'}});
 const date=z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(v=>!isNaN(Date.parse(v))&&new Date(v).toISOString().slice(0,10)===v);
 const leaveSchema=z.object({employeeId:z.string().max(100),start:date,end:date,kind:z.enum(['연차','무급휴가']),days:z.number().min(.5).max(31).multipleOf(.5),reason:z.string().trim().min(1).max(500)}).refine(v=>v.end>=v.start&&(+new Date(v.end)-+new Date(v.start))/86400000<31&&v.days<=(+new Date(v.end)-+new Date(v.start))/86400000+1,'휴가 날짜와 차감 일수를 확인해 주세요.');
-const noticeSchema=z.object({title:z.string().trim().min(1).max(100),body:z.string().trim().min(1).max(3000),branchId:z.string().max(100)});
+const noticeSchema=z.object({title:z.string().trim().min(1).max(100),body:z.string().trim().min(1).max(3000),branchId:z.string().max(100),
+ target:z.union([z.object({type:z.literal('all')}),z.object({type:z.literal('role'),roles:z.array(z.string().max(20)).min(1).max(10)}),z.object({type:z.literal('people'),ids:z.array(z.string().max(100)).min(1).max(200)})]).optional(),
+ publishAt:z.string().datetime({offset:true}).nullable().optional(),
+ // 사진은 화면에서 줄여 보낸 jpeg 한 장(약 250KB 이하)
+ photo:z.string().regex(/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/).max(350000).nullable().optional()});
 export async function operationsApi(request:Request,env:{DB:D1Database}&PushEnv){
  const userId=request.headers.get('oai-authenticated-user-id');if(!userId)return json({error:'로그인이 필요합니다.'},401);
  try{
  const linked=await resolveStore(env.DB,userId);if(!linked)return json({error:'먼저 가게를 등록해 주세요.'},409);if(linked.access==='revoked')return json({error:'이 기능을 쓸 권한이 없어요. 사장님께 확인해 주세요.'},403);
  const {row,access}=linked,data:StoreData=JSON.parse(row.data),ops:Operations=data._operations||{leaves:[],notices:[]};
  const self=data.employees.find((e)=>e.id===data._members?.find((m)=>m.userId===userId)?.employeeId);
- const fivePlus=!!data.settings?.fivePlus,asOf=kstToday();
+ const fivePlus=!!data.settings?.fivePlus,asOf=kstToday(),nowIso=new Date().toISOString(),plus=(d:string,n:number)=>new Date(Date.parse(d+'T00:00:00Z')+n*86400000).toISOString().slice(0,10);
  const accrual=(e:Emp)=>{const r=leaveBalanceFor(e,ops.leaves.filter((l)=>l.employeeId===e.id),asOf,fivePlus);let hourly=0;try{hourly=ordinaryHourly(e).hourly}catch{};return {eligible:r.eligible,reason:r.reason,earned:r.earned,used:r.used,remaining:r.remaining,next:r.next,grants:r.grants.length,unusedPay:r.eligible?unusedLeavePay(r.remaining,hourly):0}};
  const myBranch=self?.branchId,visibleSwap=(w:Swap)=>access==='owner'||w.branchId===myBranch;
  const upcoming=(s:Shift)=>s.date>=asOf&&(access==='owner'||s.employeeId===self?.id);
- const view=()=>({fivePlus,availability:Object.fromEntries(Object.entries(ops.availability||{}).filter(([k])=>access==='owner'||k===self?.id)),swaps:(ops.swaps||[]).filter(visibleSwap).slice(-200),myShifts:data.shifts.filter(upcoming).sort((a:any,b:any)=>(a.date+a.start<b.date+b.start?-1:1)).slice(0,200).map((s)=>({id:s.id,employeeId:s.employeeId,date:s.date,start:s.start,end:s.end})),colleagues:data.employees.filter((e)=>e.status!=='퇴사'&&(access==='owner'||(e.branchId===myBranch&&e.id!==self?.id))).map((e)=>({id:e.id,name:e.name,branchId:e.branchId})),version:row.version,access,selfId:self?.id||null,employees:data.employees.filter((e)=>access==='owner'||e.id===self?.id).map((e)=>({id:e.id,name:e.name,branchId:e.branchId,leaveBalance:e.leaveBalance,joined:e.joined,accrual:accrual(e)})),branches:access==='owner'?data.branches:data.branches.filter((b)=>b.id===self?.branchId),leaves:ops.leaves.filter((l)=>access==='owner'||l.employeeId===self?.id),notices:ops.notices.filter((n)=>access==='owner'||n.branchId==='all'||n.branchId===self?.branchId).map((n)=>({id:n.id,title:n.title,body:n.body,branchId:n.branchId,createdAt:n.createdAt,author:n.author,read:n.reads.includes(userId),...(access==='owner'?(()=>{const members=(data._members||[]).map((m)=>({uid:m.userId,e:data.employees.find((e)=>e.id===m.employeeId)})).filter((x):x is {uid:string,e:Emp}=>!!x.e&&x.e.status!=='퇴사'&&(n.branchId==='all'||x.e.branchId===n.branchId));return {readCount:n.reads.length,readers:members.filter((x)=>n.reads.includes(x.uid)).map((x)=>x.e.name),unread:members.filter((x)=>!n.reads.includes(x.uid)).map((x)=>x.e.name)}})():{})}))});
+ const view=()=>({fivePlus,availability:Object.fromEntries(Object.entries(ops.availability||{}).filter(([k])=>access==='owner'||k===self?.id)),swaps:(ops.swaps||[]).filter(visibleSwap).slice(-200),myShifts:data.shifts.filter(upcoming).sort((a:any,b:any)=>(a.date+a.start<b.date+b.start?-1:1)).slice(0,200).map((s)=>({id:s.id,employeeId:s.employeeId,date:s.date,start:s.start,end:s.end})),colleagues:data.employees.filter((e)=>e.status!=='퇴사'&&(access==='owner'||(e.branchId===myBranch&&e.id!==self?.id))).map((e)=>({id:e.id,name:e.name,branchId:e.branchId,role:e.role})),weekStart:(data.settings as any)?.weekStart||'mon',today:asOf,
+ shifts:access==='owner'?data.shifts.filter((s)=>s.date>=plus(asOf,-7)&&s.date<=plus(asOf,60)).map((s)=>({id:s.id,employeeId:s.employeeId,date:s.date,start:s.start,end:s.end,breakMinutes:s.breakMinutes})):[],version:row.version,access,selfId:self?.id||null,employees:data.employees.filter((e)=>access==='owner'||e.id===self?.id).map((e)=>({id:e.id,name:e.name,branchId:e.branchId,role:e.role,leaveBalance:e.leaveBalance,joined:e.joined,accrual:accrual(e)})),branches:access==='owner'?data.branches:data.branches.filter((b)=>b.id===self?.branchId),leaves:ops.leaves.filter((l)=>access==='owner'||l.employeeId===self?.id),notices:ops.notices.filter((n)=>access==='owner'||((n.branchId==='all'||n.branchId===self?.branchId)&&(!n.publishAt||n.publishAt<=nowIso)&&(!n.target||!!self&&noticeAudience(n.target,[{id:self.id,name:self.name,role:self.role,branchId:self.branchId}],n.branchId).includes(self.id)))).map((n)=>({id:n.id,title:n.title,body:n.body,branchId:n.branchId,createdAt:n.createdAt,author:n.author,read:n.reads.includes(userId),target:n.target||{type:'all'},publishAt:n.publishAt||null,photo:n.photo||null,remindedAt:n.remindedAt||null,scheduled:!!n.publishAt&&n.publishAt>nowIso,...(access==='owner'?(()=>{const members=(data._members||[]).map((m)=>({uid:m.userId,e:data.employees.find((e)=>e.id===m.employeeId)})).filter((x):x is {uid:string,e:Emp}=>!!x.e&&x.e.status!=='퇴사'&&(n.branchId==='all'||x.e.branchId===n.branchId));const aud=new Set(noticeAudience(n.target,data.employees.map((e)=>({id:e.id,name:e.name,role:e.role,branchId:e.branchId})),n.branchId)),tm=members.filter((x)=>aud.has(x.e.id));return {readCount:tm.filter((x)=>n.reads.includes(x.uid)).length,audience:tm.length,readers:tm.filter((x)=>n.reads.includes(x.uid)).map((x)=>x.e.name),unread:tm.filter((x)=>!n.reads.includes(x.uid)).map((x)=>x.e.name)}})():{})}))});
  if(request.method==='GET')return json(view());
  if(request.method!=='POST')return json({error:'이 방법으로는 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},405);
  if(request.headers.get('origin')!==new URL(request.url).origin)return json({error:'요청 출처를 확인할 수 없어요. 척척사장 화면을 새로고침한 뒤 다시 시도해 주세요.'},403);
- const raw=await request.text();if(raw.length>15000)return json({error:'보낸 내용이 너무 커요. 내용을 줄여서 다시 시도해 주세요.'},413);let b:any;try{b=JSON.parse(raw)}catch{return json({error:'요청을 읽지 못했어요. 새로고침한 뒤 다시 시도해 주세요.'},400)};
+ const raw=await request.text();if(raw.length>(raw.includes('"postNotice"')?400000:15000))return json({error:'보낸 내용이 너무 커요. 내용을 줄여서 다시 시도해 주세요.'},413);let b:any;try{b=JSON.parse(raw)}catch{return json({error:'요청을 읽지 못했어요. 새로고침한 뒤 다시 시도해 주세요.'},400)};
  if(data._account&&!canWrite(data._account))return json({error:'체험이 끝나 지금은 조회·내려받기만 할 수 있어요. 계정·요금제 화면에서 요금제를 결제하면 다시 저장할 수 있어요.'},403);
  if(b.version!==row.version)return json({error:'새로운 변경이 있습니다. 새로고침하고 다시 처리해 주세요.'},409);
  const now=new Date().toISOString(),actor={id:userId,name:self?.name||request.headers.get('oai-authenticated-user-email')||'사장님'};
@@ -47,7 +53,10 @@ export async function operationsApi(request:Request,env:{DB:D1Database}&PushEnv)
   const l=ops.leaves.find((l)=>l.id===b.id);if(!l||l.status!=='승인 대기')return json({error:'처리할 신청이 없어요. 목록을 새로고침해 주세요.'},409);
   const e=data.employees.find((e)=>e.id===l.employeeId&&e.status!=='퇴사');if(!e)return json({error:'재직 직원을 확인해 주세요.'},400);
   if(b.approve){
-   if(data.shifts.some((s)=>s.employeeId===l.employeeId&&s.date>=l.start&&s.date<=l.end))return json({error:'휴가 기간에 근무가 등록되어 있습니다. 근무표를 먼저 조정해 주세요.'},409);
+   // 지시서 1라운드 C: 승인하면 휴가 기간의 그 직원 근무를 근무표에서 뺀다(확정된 달이면 막는다).
+   const off=data.shifts.filter((s)=>s.employeeId===l.employeeId&&s.date>=l.start&&s.date<=l.end);
+   if(off.some((s)=>Object.values(data.payrollRuns||{}).some((r)=>r.locked&&r.month===s.date.slice(0,7)&&r.rows?.some((x)=>x.employeeId===l.employeeId))))return json({error:'휴가 기간에 급여가 확정된 달의 근무가 있어요. 급여 확정을 먼저 해제해 주세요.'},409);
+   if(off.length){const ids=new Set(off.map((s)=>s.id));data.shifts=data.shifts.filter((s)=>!ids.has(s.id));(l as any).removedShifts=off.map((s)=>({id:s.id,date:s.date,start:s.start,end:s.end}));}
    if(l.kind==='연차'){if(e.leaveBalance<l.days)return json({error:'남은 연차가 부족해요. 날짜를 줄이거나 사장님께 잔여일 확인을 요청해 주세요.'},409);e.leaveBalance-=l.days;}
   }
   l.status=b.approve?'승인':'반려';l.reviewedAt=now;l.reviewer=actor.name;l.comment=b.comment.trim();label='휴가 '+l.status;target=e.name;
@@ -92,6 +101,7 @@ export async function operationsApi(request:Request,env:{DB:D1Database}&PushEnv)
    }else{
     if(access!=='owner')return json({error:'승인은 사장님만 할 수 있어요. 사장님께 확인을 요청해 주세요.'},403);
     if(w.status!=='승인 대기'||typeof b.approve!=='boolean')return json({error:'처리할 요청이 없어요. 목록을 새로고침해 주세요.'},409);
+    if(!b.approve&&(typeof b.comment!=='string'||!b.comment.trim()))return json({error:'반려 사유를 고르거나 적어 주세요.'},400);
     if(b.approve){
      if(!shift||!same(core(shift),core(w.shift)))return json({error:'요청 이후 근무가 바뀌어 승인할 수 없어요. 반려한 뒤 다시 요청받아 주세요.'},409);
      const cid=w.counter?.id,counter=cid?data.shifts.find((s)=>s.id===cid):null;if(w.counter&&(!counter||!same(core(counter),core(w.counter))))return json({error:'바꿀 근무가 바뀌어 승인할 수 없어요. 반려한 뒤 다시 요청받아 주세요.'},409);
@@ -114,9 +124,18 @@ export async function operationsApi(request:Request,env:{DB:D1Database}&PushEnv)
   const parsed=noticeSchema.safeParse(b);if(!parsed.success)return json({error:'제목과 내용을 확인해 주세요.'},400);const n=parsed.data;
   if(n.branchId!=='all'&&!data.branches.some((v)=>v.id===n.branchId))return json({error:'없는 지점이에요. 지점을 다시 골라 주세요.'},400);
   if(ops.notices.length>=500)return json({error:'공지를 더 저장할 수 없어요. 지난 공지를 정리한 뒤 다시 등록해 주세요.'},400);
-  ops.notices.push({...n,id:crypto.randomUUID(),author:actor.name,createdAt:now,reads:[]});label='매장 공지 등록';target=n.title;
+  if(n.publishAt&&(Date.parse(n.publishAt)<Date.now()-60000||Date.parse(n.publishAt)>Date.now()+60*86400000))return json({error:'예약 시각은 지금부터 60일 안으로 골라 주세요.'},400);
+  if(n.target?.type==='people'&&n.target.ids.some((id)=>!data.employees.some((e)=>e.id===id)))return json({error:'받는 사람을 다시 골라 주세요.'},400);
+  ops.notices.push({...n,target:n.target||{type:'all'},publishAt:n.publishAt||null,photo:n.photo||null,id:crypto.randomUUID(),author:actor.name,createdAt:now,reads:[]});label=n.publishAt?'매장 공지 예약':'매장 공지 등록';target=n.title;
+  // 사진은 최근 공지 30개만 보관(저장 공간을 아끼려고), 글은 그대로
+  ops.notices.slice(0,-30).forEach((x)=>{if(x.photo)x.photo=null});
+ }else if(b.action==='remindNotice'){
+  if(access!=='owner')return json({error:'다시 알리기는 사장님만 할 수 있어요.'},403);
+  const n=ops.notices.find((n)=>n.id===b.id);if(!n)return json({error:'공지를 찾을 수 없어요. 목록을 새로고침해 주세요.'},404);
+  if(n.remindedAt&&Date.now()-Date.parse(n.remindedAt)<10*60000)return json({error:'방금 알렸어요. 10분 뒤에 다시 알릴 수 있어요.'},429);
+  n.remindedAt=now;label='매장 공지 다시 알림';target=n.title;
  }else if(b.action==='readNotice'){
-  const n=ops.notices.find((n)=>n.id===b.id);if(!n||(access!=='owner'&&n.branchId!=='all'&&n.branchId!==self?.branchId))return json({error:'볼 수 없는 공지예요. 목록을 새로고침해 주세요.'},404);
+  const n=ops.notices.find((n)=>n.id===b.id);if(!n||(access!=='owner'&&((n.branchId!=='all'&&n.branchId!==self?.branchId)||(n.publishAt&&n.publishAt>now)||(n.target&&!(self&&noticeAudience(n.target,[{id:self.id,name:self.name,role:self.role,branchId:self.branchId}],n.branchId).includes(self.id))))))return json({error:'볼 수 없는 공지예요. 목록을 새로고침해 주세요.'},404);
   if(!n.reads.includes(userId))n.reads.push(userId);label='매장 공지 확인';target=n.title;
  }else return json({error:'이 작업은 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},400);
  data._operations=ops;data._audit=[...(data._audit||[]),{id:crypto.randomUUID(),at:now,actor,action:label,target,before:null,after:{id:b.id||null},reason:b.comment||b.reason||''}];
@@ -124,6 +143,8 @@ export async function operationsApi(request:Request,env:{DB:D1Database}&PushEnv)
  if(!result.meta.changes)return json({error:'동시 변경이 있습니다. 새로고침해 주세요.'},409);row.version++;
  // 작업 092: 휴가 처리 결과·대타 요청 알림
  if(b.action==='reviewLeave'){const l=ops.leaves.find((x)=>x.id===b.id);const uidOf=(eid:string)=>data._members?.find((m)=>m.employeeId===eid)?.userId;if(l)await notifyUser(env,uidOf(l.employeeId),{title:'휴가 신청 '+l.status,body:`${l.start}~${l.end} ${l.kind} 신청이 ${l.status}되었어요.`,url:'/app'})}
+ // 공지 알림: 지금 보내기는 받는 사람 모두에게, 다시 알리기는 아직 안 읽은 사람에게만
+ if(b.action==='postNotice'||b.action==='remindNotice'){const n=b.action==='postNotice'?ops.notices.at(-1):ops.notices.find((x)=>x.id===b.id);if(n&&(!n.publishAt||n.publishAt<=now||b.action==='remindNotice')){const aud=new Set(noticeAudience(n.target,data.employees.filter((e)=>e.status!=='퇴사').map((e)=>({id:e.id,name:e.name,role:e.role,branchId:e.branchId})),n.branchId));for(const m of data._members||[]){if(!m.employeeId||!aud.has(m.employeeId)||(b.action==='remindNotice'&&n.reads.includes(m.userId)))continue;await notifyUser(env,m.userId,{title:(b.action==='remindNotice'?'[다시 알림] ':'')+'매장 공지',body:n.title,url:'/app'}).catch(()=>{})}}}
  if(b.action==='requestSwap'){const w=(ops.swaps||[]).at(-1);const tid=w?.targetId?data._members?.find((m)=>m.employeeId===w.targetId)?.userId:null;if(w&&tid)await notifyUser(env,tid,{title:w.kind+' 요청',body:`${w.shift.name}님이 ${w.shift.date} ${w.shift.start}~${w.shift.end} 근무 ${w.kind}를 부탁했어요.`,url:'/app'})}
  return json(view());
  }catch(e){return serverError('operations',e,'정보를 처리하지 못했어요. 잠시 뒤 다시 시도해 주세요.')}

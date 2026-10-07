@@ -68,7 +68,7 @@ await step('작업 048: 근무표 반복 등록 → 템플릿 저장 → 다음 
  await owner.evaluate(()=>{window.print=()=>{}});await owner.click('button:has-text("인쇄 (A4 가로)")');await owner.emulateMedia({media:'print'});const cells=await owner.locator('.print-sheet tbody td div').count();if(!cells)throw Error('인쇄용 근무표가 비어 있어요');await owner.emulateMedia({media:'screen'});
 });
 await step('작업 050: 직원이 근무 가능 시간 제출 → 사장님 초안 화면에서 확인',async()=>{
- await staff.goto(B+'/app',{waitUntil:'networkidle'});await staff.click("button:has-text(\"더보기\")");await staff.click('button:has-text("휴가·공지")');await staff.click('button:has-text("근무 요청")');
+ await staff.goto(B+'/app',{waitUntil:'networkidle'});await staff.click("button:has-text(\"더보기\")");await staff.click('button:has-text("휴가·공지")');await staff.click('.ops-tabs button:has-text("대타·교대")');
  await staff.locator('.avail-row',{hasText:'토요일'}).locator('input[type=checkbox]').check();await staff.click('button:has-text("가능 시간 내기")');await staff.getByText('제출').first().waitFor();
  const av=JSON.parse((await srv.db.q('SELECT data FROM stores LIMIT 1').first()).data)._operations.availability;if(!Object.values(av).some(a=>a.slots.some(x=>x.weekday===6)))throw Error('가능 시간 저장 안 됨');
  await owner.goto(B+'/app?screen=schedule',{waitUntil:'networkidle'});await owner.click('button:has-text("가능 시간으로 초안")');await owner.getByText('근무 가능 시간 낸 직원 1/1명').waitFor();await owner.getByText('토 09:00~18:00').waitFor();await owner.click('[role=dialog] button:has-text("닫기")');
