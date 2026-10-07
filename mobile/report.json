@@ -1,5 +1,5 @@
 {
- "at": "2026-10-07T08:23:06.824Z",
+ "at": "2026-10-07T08:26:17.563Z",
  "changedPercent": {
   "public-home": 0,
   "public-start": 0,
@@ -10,23 +10,23 @@
   "public-refund": 0,
   "public-terms": 0,
   "public-pricing": 0,
-  "public-status": 0.06,
+  "public-status": 0.03,
   "public-privacy": 0,
   "demo-home": 0,
   "demo-employees": 0,
   "demo-attendance": 0,
-  "demo-schedule": 25.69,
+  "demo-schedule": 0,
   "demo-payroll": 0,
   "demo-contracts": 0,
   "demo-retirement": 0,
   "demo-outbox": 0,
-  "demo-operations": 0.2,
+  "demo-operations": 0,
   "demo-manual": 0,
   "demo-reports": 0,
   "demo-stores": 0,
   "demo-settings": 0,
   "demo-guide": 0,
-  "demo-staff": 7.46
+  "demo-staff": 0
  },
  "failures": []
 }
