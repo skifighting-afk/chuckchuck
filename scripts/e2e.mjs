@@ -95,13 +95,13 @@ await step('작업 100: 도움말 검색',async()=>{
  await owner.fill('input[type=search]','대타');await owner.getByText('같은 지점 동료가 수락하고').first().waitFor();
 });
 await step('매장 매뉴얼: 사장님이 사진과 함께 작성 → 직원이 바로 확인',async()=>{
- await owner.goto(B+'/app?screen=manual',{waitUntil:'networkidle'});await owner.click('button:has-text("새 매뉴얼")');
- await owner.fill('label:has-text("제목") input','마감 청소 순서');await owner.fill('label:has-text("1단계") textarea','바닥을 쓸고 대걸레로 닦아요');
+ await owner.goto(B+'/app?screen=manual',{waitUntil:'networkidle'});await owner.click('button:has-text("매뉴얼 만들기")');
+ await owner.fill('label:has-text("제목") input','마감 청소 순서');await owner.fill('label:has-text("1단계 설명") textarea','바닥을 쓸고 대걸레로 닦아요');
  const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==','base64');
- await owner.locator('.manual-upload input[type=file]').first().setInputFiles({name:'floor.png',mimeType:'image/png',buffer:png});await owner.locator('.manual-steps img.manual-img').waitFor();
- await owner.click('button:has-text("저장하고 직원에게 보이기")');await owner.getByText('매뉴얼을 저장했어요').waitFor();
- await staff.goto(B+'/app',{waitUntil:'networkidle'});await staff.click("button:has-text(\"더보기\")");await staff.click('button:has-text("매뉴얼")');await staff.click('button:has-text("마감 청소 순서")');
- await staff.getByText('바닥을 쓸고 대걸레로 닦아요').waitFor();await staff.locator('.manual-view img.manual-img').waitFor();await staff.getByText('확인함').waitFor();
+ await owner.locator('.manual-upload input[type=file]').first().setInputFiles({name:'floor.png',mimeType:'image/png',buffer:png});await owner.locator('.manual-steps-edit img.manual-img').waitFor();
+ await owner.click('button:has-text("저장하고 직원에게 보이기")');await owner.getByText('매뉴얼을 만들었어요').waitFor();
+ await staff.goto(B+'/app',{waitUntil:'networkidle'});await staff.click("button:has-text(\"더보기\")");await staff.click('button:has-text("매뉴얼")');await staff.click('.manual-item:has-text("마감 청소 순서")');
+ await staff.getByText('바닥을 쓸고 대걸레로 닦아요').waitFor();await staff.locator('.manual-steps2 img.manual-img').waitFor();if(await staff.locator('.manual-back').isVisible())await staff.click('.manual-back');await staff.locator('.manual-item:has-text("마감 청소 순서")').getByText('확인함').waitFor();
  await staff.goto(B+'/app',{waitUntil:'networkidle'});
 });
 await step('매장 QR로 출근·퇴근 (QR 없이 누르면 기록 안 됨)',async()=>{

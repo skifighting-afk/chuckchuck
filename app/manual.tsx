@@ -1,10 +1,15 @@
 'use client';
-// 매장 매뉴얼: 사장님은 단계별 글·사진으로 만들고, 직원은 휴대폰에서 바로 따라 본다.
-import {useEffect,useState} from 'react';
+// 매장 매뉴얼(지시서 1라운드 D): 찾기 쉬운 목록 + 따라 하기 쉬운 단계.
+// 위: 검색·분류 칩·만들기 / 왼쪽: 매뉴얼 카드 / 오른쪽: 큰 번호·사진·한 문장 단계. 휴대폰은 목록과 상세를 나눈다.
+// 실제 매장은 /api/manual, 체험 화면은 메모리(source)로 같은 화면을 쓴다.
+import {useEffect,useMemo,useRef,useState} from 'react';
 import {Btn,Badge,Field} from './team-ui';
+import {MANUAL_CATEGORIES,filterManuals,categoryCounts,audienceLabel,audienceLine,staffState,wasEdited,manualVisibleTo} from '../lib/manual-view';
 type Step={text:string,imageId?:string|null};
-type Manual={id:string,title:string,branchId:string,steps:Step[],updatedAt:string,read:boolean,readCount?:number};
-async function call(body?:any){const r=await fetch('/api/manual',body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:undefined),d:any=await r.json();if(!r.ok)throw Error(d.error||'처리하지 못했어요. 다시 시도해 주세요.');return d}
+type Manual={id:string,title:string,branchId:string,steps:Step[],createdAt?:string,updatedAt:string,read:boolean,readCount?:number,audience?:number,unread?:string[],category?:string,roles?:string[],note?:string};
+export type ManualSource={load:()=>Promise<any>,call:(body:any)=>Promise<any>,imageUrl?:(id:string)=>string|null};
+const api:ManualSource={load:()=>req(),call:b=>req(b)};
+async function req(body?:any){const r=await fetch('/api/manual',body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:undefined),d:any=await r.json();if(!r.ok)throw Error(d.error||'처리하지 못했어요. 다시 시도해 주세요.');return d}
 /** 사진을 긴 변 1280px JPEG로 줄여서 400KB 이하로 */
 export async function shrinkImage(file:File):Promise<{mime:string,body:string}>{
  const bmp=await createImageBitmap(file);let side=1280;
@@ -14,31 +19,88 @@ export async function shrinkImage(file:File):Promise<{mime:string,body:string}>{
   side=Math.round(side*0.8)}
  throw Error('사진이 너무 커요. 다른 사진을 골라 주세요.');
 }
-function ManualImage({id,alt}:{id:string,alt:string}){
- const [src,setSrc]=useState('');
- useEffect(()=>{let url='',alive=true;fetch('/api/manual?image='+encodeURIComponent(id)).then(r=>r.ok?r.blob():null).then(b=>{if(b&&alive){url=URL.createObjectURL(b);setSrc(url)}}).catch(()=>{});return()=>{alive=false;if(url)URL.revokeObjectURL(url)}},[id]);
+function ManualImage({id,alt,source}:{id:string,alt:string,source:ManualSource}){
+ const direct=source.imageUrl?.(id)||(id.startsWith('data:')?id:null);
+ const [src,setSrc]=useState(direct||'');
+ useEffect(()=>{if(direct){setSrc(direct);return}let url='',alive=true;fetch('/api/manual?image='+encodeURIComponent(id)).then(r=>r.ok?r.blob():null).then(b=>{if(b&&alive){url=URL.createObjectURL(b);setSrc(url)}}).catch(()=>{});return()=>{alive=false;if(url)URL.revokeObjectURL(url)}},[id]);
  return src?<img className="manual-img" src={src} alt={alt}/>:<div className="manual-img manual-img-wait" aria-label="사진 불러오는 중"/>;
 }
-export function StoreManual({branchId}:{branchId?:string}){
- const [data,setData]=useState<any>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[open,setOpen]=useState<string>(''),[edit,setEdit]=useState<any>(null),[msg,setMsg]=useState('');
- const load=()=>call().then(setData).catch(e=>setError(e.message));
+const day=(iso:string)=>new Date(iso).toLocaleDateString('ko-KR',{month:'numeric',day:'numeric'});
+function stateBadge(m:Manual){const s=staffState(m as any);return <Badge tone={s==='확인함'?'green':s==='바뀜'?'amber':'blue'}><span aria-hidden="true">{s==='확인함'?'✓ ':s==='바뀜'?'↻ ':'● '}</span>{s}</Badge>}
+
+export function StoreManual({branchId,source=api,demoNote}:{branchId?:string,source?:ManualSource,demoNote?:string}){
+ const [data,setData]=useState<any>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[sel,setSel]=useState(''),[edit,setEdit]=useState<any>(null),[msg,setMsg]=useState('');
+ const [cat,setCat]=useState('전체'),[q,setQ]=useState(''),[detail,setDetail]=useState(false),[preview,setPreview]=useState<string>('');
+ const load=()=>source.load().then(setData).catch(e=>setError(e.message));
  useEffect(()=>{load()},[]);
- const run=async(b:any,done?:string)=>{setBusy(true);setError('');setMsg('');try{const d=await call({...b,version:data.version});setData(d);if(done){setMsg(done);setEdit(null)}}catch(e){setError((e as Error).message)}finally{setBusy(false)}};
+ const run=async(b:any,done?:string)=>{setBusy(true);setError('');setMsg('');try{const d=await source.call({...b,version:data.version});setData(d);if(done){setMsg(done);setEdit(null)}return d}catch(e){setError((e as Error).message)}finally{setBusy(false)}};
+ const owner=!!data?.owner;
+ const all:Manual[]=useMemo(()=>!data?[]:data.manuals.filter((m:Manual)=>!branchId||!owner||m.branchId==='all'||m.branchId===branchId),[data,branchId]);
+ // 사장님의 '직원 화면으로 보기': 고른 업무의 직원에게 보이는 것만
+ const pool=preview?all.filter(m=>manualVisibleTo(m as any,{branchId:branchId||m.branchId,role:preview==='전체'?'':preview})&&(preview!=='전체'||!m.roles?.length)):all;
+ const list=filterManuals(pool as any,cat,q) as Manual[],counts=categoryCounts(pool as any);
+ const cur=list.find(m=>m.id===sel)||list[0];
+ const branchName=(id:string)=>id==='all'?'전체 지점':data?.branches?.find((b:any)=>b.id===id)?.name||'';
+ const open=(m:Manual)=>{setSel(m.id);setDetail(true);if(!owner&&!m.read)void run({action:'read',id:m.id})};
  if(!data)return <section className="panel t-panelbody"><p role={error?'alert':undefined}>{error||'매뉴얼을 불러오고 있어요.'}</p>{error&&<Btn onClick={()=>{setError('');load()}}>다시 불러오기</Btn>}</section>;
- const list:Manual[]=data.manuals.filter((m:Manual)=>!branchId||!data.owner||m.branchId==='all'||m.branchId===branchId);
- const branchName=(id:string)=>id==='all'?'전체 지점':data.branches.find((b:any)=>b.id===id)?.name||'';
- async function upload(i:number,file?:File|null){if(!file)return;setBusy(true);setError('');try{const img=await shrinkImage(file);const r=await call({action:'image',...img});const steps=edit.steps.slice();steps[i]={...steps[i],imageId:r.id};setEdit({...edit,steps})}catch(e){setError((e as Error).message)}finally{setBusy(false)}}
- if(edit)return <section className="panel t-panelbody manual-edit"><h2>{edit.id?'매뉴얼 고치기':'새 매뉴얼'}</h2>{error&&<p className="saas-error" role="alert">{error}</p>}
-  <div className="t-formgrid"><Field label="제목"><input maxLength={80} value={edit.title} placeholder="예: 마감 청소 순서" onChange={e=>setEdit({...edit,title:e.target.value})}/></Field><Field label="보여 줄 지점"><select value={edit.branchId} onChange={e=>setEdit({...edit,branchId:e.target.value})}><option value="all">전체 지점</option>{data.branches.map((b:any)=><option key={b.id} value={b.id}>{b.name}</option>)}</select></Field></div>
-  <ol className="manual-steps">{edit.steps.map((s:Step,i:number)=><li key={i}><Field label={`${i+1}단계`}><textarea rows={3} maxLength={1000} value={s.text} onChange={e=>{const steps=edit.steps.slice();steps[i]={...s,text:e.target.value};setEdit({...edit,steps})}}/></Field>{s.imageId&&<ManualImage id={s.imageId} alt={`${i+1}단계 사진`}/>}<div className="t-wrapactions"><label className="saas-secondary manual-upload">{s.imageId?'사진 바꾸기':'사진 넣기'}<input type="file" accept="image/*" hidden disabled={busy} onChange={e=>upload(i,e.target.files?.[0])}/></label>{s.imageId&&<Btn onClick={()=>{const steps=edit.steps.slice();steps[i]={...s,imageId:null};setEdit({...edit,steps})}}>사진 빼기</Btn>}<Btn disabled={i===0} onClick={()=>{const steps=edit.steps.slice();[steps[i-1],steps[i]]=[steps[i],steps[i-1]];setEdit({...edit,steps})}}>위로</Btn><Btn disabled={edit.steps.length<2} onClick={()=>setEdit({...edit,steps:edit.steps.filter((_:any,j:number)=>j!==i)})}>단계 삭제</Btn></div></li>)}</ol>
-  <div className="actions"><Btn disabled={edit.steps.length>=30} onClick={()=>setEdit({...edit,steps:[...edit.steps,{text:'',imageId:null}]})}>단계 추가</Btn><Btn onClick={()=>{setEdit(null);setError('')}}>취소</Btn><Btn primary disabled={busy||!edit.title.trim()||edit.steps.every((s:Step)=>!s.text.trim()&&!s.imageId)} onClick={()=>run({action:'save',id:edit.id,title:edit.title,branchId:edit.branchId,steps:edit.steps.filter((s:Step)=>s.text.trim()||s.imageId)},'매뉴얼을 저장했어요. 직원 화면에 바로 보여요.')}>{busy?'저장 중…':'저장하고 직원에게 보이기'}</Btn></div>
-  <p className="footnote">사진은 휴대폰에서 자동으로 줄여서 올려요(장당 400KB 이하). 고치면 직원 확인 표시가 처음부터 다시 시작돼요.</p>
- </section>;
- return <section className="manual"><div className="t-toolbar"><p className="footnote">{data.owner?'자주 설명하는 일을 단계별 글·사진으로 남겨 두면 직원이 휴대폰에서 바로 따라 해요.':'사장님이 정리한 우리 매장 일하는 방법이에요.'}</p>{data.owner&&<Btn primary onClick={()=>{setMsg('');setEdit({title:'',branchId:branchId||'all',steps:[{text:'',imageId:null}]})}}>새 매뉴얼</Btn>}</div>
+ if(edit)return <ManualEditor edit={edit} setEdit={setEdit} data={data} busy={busy} setBusy={setBusy} error={error} setError={setError} source={source}
+  onSave={(m:any)=>run({action:'save',...m},m.id?'저장했어요. 대상 직원에게 바뀐 걸 알렸어요.':'매뉴얼을 만들었어요. 대상 직원 화면에 바로 보여요.').then(d=>{if(d&&!m.id)setSel(d.manuals.at(-1)?.id||'')})}/>;
+ return <section className="manual2">
+  {demoNote&&<p className="notice">{demoNote}</p>}
+  <div className="manual-top">
+   <label className="manual-search"><span className="sr-only">매뉴얼 찾기</span><input type="search" placeholder="매뉴얼 찾기 (예: 마감, 커피)" value={q} onChange={e=>{setQ(e.target.value);setDetail(false)}}/></label>
+   {owner&&!preview&&<Btn primary onClick={()=>{setMsg('');setEdit({title:'',branchId:branchId||'all',category:cat!=='전체'?cat:'오픈',roles:[],note:'',steps:[{text:'',imageId:null}]})}}>+ 매뉴얼 만들기</Btn>}
+  </div>
+  <div className="manual-chips" role="group" aria-label="분류">{['전체',...MANUAL_CATEGORIES].map(c=><button key={c} type="button" aria-pressed={cat===c} onClick={()=>{setCat(c);setDetail(false)}}>{c} <b>{counts[c]||0}</b></button>)}</div>
+  {owner&&<div className="manual-preview-bar">{preview?<><span>직원 화면 미리보기: <b>{preview==='전체'?'업무 지정 없는 직원':preview+' 직원'}</b>에게 보이는 매뉴얼만 보여요.</span><select aria-label="어느 업무로 볼까요" value={preview} onChange={e=>setPreview(e.target.value)}>{['전체',...(data.roles||[])].map((r:string)=><option key={r} value={r}>{r==='전체'?'업무 지정 없음':r}</option>)}</select><Btn onClick={()=>setPreview('')}>사장님 화면으로</Btn></>:null}</div>}
   {error&&<p className="saas-error" role="alert">{error}</p>}{msg&&<p className="saas-success" role="status">{msg}</p>}
-  {list.map(m=><article className="panel manual-card" key={m.id}><button className="manual-head" aria-expanded={open===m.id} onClick={()=>{setOpen(open===m.id?'':m.id);if(open!==m.id&&!data.owner&&!m.read)run({action:'read',id:m.id})}}><b>{m.title}</b><span>{m.steps.length}단계</span>{data.owner?<Badge>{branchName(m.branchId)} · {m.readCount}명 확인</Badge>:m.read?<Badge tone="green">확인함</Badge>:<Badge tone="amber">새 매뉴얼</Badge>}</button>
-   {open===m.id&&<div className="t-panelbody"><ol className="manual-view">{m.steps.map((s,i)=><li key={i}>{s.text&&<p>{s.text}</p>}{s.imageId&&<ManualImage id={s.imageId} alt={`${m.title} ${i+1}단계`}/>}</li>)}</ol><small className="footnote">마지막 수정 {new Date(m.updatedAt).toLocaleDateString('ko-KR')}</small>{data.owner&&<div className="actions"><Btn onClick={()=>setEdit({id:m.id,title:m.title,branchId:m.branchId,steps:m.steps.map(s=>({...s}))})}>고치기</Btn><Btn disabled={busy} onClick={()=>{if(confirm(`'${m.title}' 매뉴얼을 지울까요? 사진도 함께 지워져요.`))run({action:'delete',id:m.id},'매뉴얼을 지웠어요.')}}>삭제</Btn></div>}</div>}
-  </article>)}
-  {!list.length&&<section className="panel empty">{data.owner?'아직 매뉴얼이 없어요. 오픈·마감 순서, 기계 사용법처럼 자주 묻는 일부터 만들어 보세요.':'아직 등록된 매뉴얼이 없어요.'}</section>}
- </section>
+  {!pool.length?<section className="panel empty">{owner?'아직 매뉴얼이 없어요. 오픈·마감 순서, 기계 사용법처럼 자주 묻는 일부터 만들어 보세요.':'아직 등록된 매뉴얼이 없어요.'}</section>:
+  <div className={'manual-layout'+(detail?' show-detail':'')}>
+   <ul className="manual-list" aria-label="매뉴얼 목록">{list.map(m=><li key={m.id}><button type="button" className={'manual-item'+(cur?.id===m.id?' on':'')} aria-current={cur?.id===m.id?'true':undefined} onClick={()=>open(m)}>
+    <span className="mi-top"><Badge>{m.category||'기타'}</Badge>{(owner&&!preview)?(wasEdited(m as any)&&<small className="mi-changed">↻ 바뀜</small>):stateBadge(m)}</span>
+    <b>{m.title}</b>
+    <span className="mi-meta">{m.steps.length}단계 · {audienceLabel(m)} · {day(m.updatedAt)} 수정</span>
+    {owner&&!preview&&<span className="mi-meta">{m.readCount??0}/{m.audience??0}명 읽음{data.branches?.length>1?' · '+branchName(m.branchId):''}</span>}
+   </button></li>)}{!list.length&&<li className="empty">'{q||cat}'에 맞는 매뉴얼이 없어요.</li>}</ul>
+   {cur&&<article className="manual-detail panel" aria-labelledby="manual-title">
+    <button type="button" className="manual-back" onClick={()=>setDetail(false)}>← 목록</button>
+    <header><Badge>{cur.category||'기타'}</Badge><h2 id="manual-title">{cur.title}</h2><p className="md-who">{audienceLine(cur)}{data.branches?.length>1&&owner?` · ${branchName(cur.branchId)}`:''}</p>
+     {cur.note&&wasEdited(cur as any)&&<p className="md-note"><b>최근 수정</b> {day(cur.updatedAt)} · {cur.note}</p>}
+     {owner&&!preview&&<div className="actions"><Btn onClick={()=>{setPreview((cur.roles||[])[0]||'전체');setDetail(false)}}>직원 화면으로 보기</Btn><Btn primary onClick={()=>setEdit({id:cur.id,title:cur.title,branchId:cur.branchId,category:cur.category||'기타',roles:cur.roles||[],note:'',steps:cur.steps.map(s=>({...s}))})}>고치기</Btn></div>}
+     {owner&&!preview&&cur.unread&&cur.unread.length>0&&<p className="footnote">아직 안 읽은 직원: {cur.unread.join(', ')}</p>}
+    </header>
+    <ol className="manual-steps2">{cur.steps.map((s,i)=><li key={i}><span className="ms-num" aria-hidden="true">{i+1}</span><div className="ms-body"><span className="sr-only">{i+1}단계. </span>{s.imageId&&<ManualImage source={source} id={s.imageId} alt={`${cur.title} ${i+1}단계 사진`}/>}{s.text&&<p>{s.text}</p>}</div></li>)}</ol>
+    {owner&&!preview&&<div className="actions"><Btn disabled={busy} onClick={()=>{if(confirm(`'${cur.title}' 매뉴얼을 지울까요? 사진도 함께 지워져요.`))void run({action:'delete',id:cur.id},'매뉴얼을 지웠어요.')}}>삭제</Btn></div>}
+   </article>}
+  </div>}
+ </section>;
+}
+
+function ManualEditor({edit,setEdit,data,busy,setBusy,error,setError,source,onSave}:any){
+ const roles:string[]=data.roles||['홀','주방','매니저'];
+ const steps:Step[]=edit.steps,set=(st:Step[])=>setEdit({...edit,steps:st});
+ const drag=useRef<{from:number}|null>(null),[over,setOver]=useState<number|null>(null);
+ async function upload(i:number,file?:File|null){if(!file)return;setBusy(true);setError('');try{const img=await shrinkImage(file);const r=await source.call({action:'image',...img});const st=steps.slice();st[i]={...st[i],imageId:r.id};set(st)}catch(e){setError((e as Error).message)}finally{setBusy(false)}}
+ const move=(a:number,b:number)=>{if(b<0||b>=steps.length||a===b)return;const st=steps.slice();const [x]=st.splice(a,1);st.splice(b,0,x);set(st)};
+ // 손잡이를 끌어 순서 바꾸기(마우스·손가락 모두)
+ function grip(e:React.PointerEvent,i:number){e.preventDefault();drag.current={from:i};setOver(i);(e.target as Element).setPointerCapture?.(e.pointerId);
+  const mv=(ev:PointerEvent)=>{for(const el of document.elementsFromPoint(ev.clientX,ev.clientY)){const li=(el as HTMLElement).closest?.('[data-step]');if(li){setOver(Number(li.getAttribute('data-step')));break}}};
+  const up=()=>{removeEventListener('pointermove',mv);removeEventListener('pointerup',up);removeEventListener('pointercancel',up);setOver(o=>{if(drag.current&&o!=null)move(drag.current.from,o);drag.current=null;return null})};
+  addEventListener('pointermove',mv);addEventListener('pointerup',up);addEventListener('pointercancel',up)}
+ return <section className="panel t-panelbody manual-edit"><h2>{edit.id?'매뉴얼 고치기':'새 매뉴얼'}</h2>{error&&<p className="saas-error" role="alert">{error}</p>}
+  <div className="t-formgrid"><Field label="제목"><input maxLength={80} value={edit.title} placeholder="예: 마감 청소 순서" onChange={e=>setEdit({...edit,title:e.target.value})}/></Field>
+   <Field label="분류"><select value={edit.category} onChange={e=>setEdit({...edit,category:e.target.value})}>{MANUAL_CATEGORIES.map(c=><option key={c}>{c}</option>)}</select></Field>
+   {data.branches?.length>1&&<Field label="보여 줄 지점"><select value={edit.branchId} onChange={e=>setEdit({...edit,branchId:e.target.value})}><option value="all">전체 지점</option>{data.branches.map((b:any)=><option key={b.id} value={b.id}>{b.name}</option>)}</select></Field>}</div>
+  <fieldset className="ops-fs manual-aud"><legend>누구에게 보일까요</legend><div className="ops-seg"><label><input type="radio" name="maud" checked={!edit.roles.length} onChange={()=>setEdit({...edit,roles:[]})}/>모든 직원</label>{roles.map(r=><label key={r}><input type="checkbox" checked={edit.roles.includes(r)} onChange={e=>setEdit({...edit,roles:e.target.checked?[...edit.roles,r]:edit.roles.filter((x:string)=>x!==r)})}/>{r}만</label>)}</div></fieldset>
+  {edit.id&&<Field label="무엇을 바꿨나요 (직원에게 같이 알려요)"><input maxLength={200} value={edit.note} placeholder="예: 3단계 세제 바뀜" onChange={e=>setEdit({...edit,note:e.target.value})}/></Field>}
+  <ol className="manual-steps manual-steps-edit">{steps.map((s,i)=><li key={i} data-step={i} className={over===i&&drag.current?.from!==i?'drop':''}>
+   <div className="mse-head"><button type="button" className="mse-grip" aria-label={`${i+1}단계 끌어서 순서 바꾸기`} onPointerDown={e=>grip(e,i)} onKeyDown={e=>{if(e.key==='ArrowUp'){e.preventDefault();move(i,i-1)}if(e.key==='ArrowDown'){e.preventDefault();move(i,i+1)}}}>⠿</button><span className="ms-num small" aria-hidden="true">{i+1}</span><b>{i+1}단계</b>
+    <span className="mse-tools"><button type="button" aria-label={`${i+1}단계 위로`} disabled={i===0} onClick={()=>move(i,i-1)}>↑</button><button type="button" aria-label={`${i+1}단계 아래로`} disabled={i===steps.length-1} onClick={()=>move(i,i+1)}>↓</button><button type="button" aria-label={`${i+1}단계 삭제`} disabled={steps.length<2} onClick={()=>set(steps.filter((_,j)=>j!==i))}>삭제</button></span></div>
+   <Field label={`${i+1}단계 설명 (한 문장)`}><textarea rows={2} maxLength={1000} value={s.text} onChange={e=>{const st=steps.slice();st[i]={...s,text:e.target.value};set(st)}}/></Field>
+   {s.imageId&&<ManualImage source={source} id={s.imageId} alt={`${i+1}단계 사진`}/>}
+   <div className="t-wrapactions"><label className="saas-secondary manual-upload">사진 찍기<input type="file" accept="image/*" capture="environment" hidden disabled={busy} onChange={e=>upload(i,e.target.files?.[0])}/></label><label className="saas-secondary manual-upload">{s.imageId?'사진 바꾸기':'사진 고르기'}<input type="file" accept="image/*" hidden disabled={busy} onChange={e=>upload(i,e.target.files?.[0])}/></label>{s.imageId&&<Btn onClick={()=>{const st=steps.slice();st[i]={...s,imageId:null};set(st)}}>사진 빼기</Btn>}</div>
+  </li>)}</ol>
+  <div className="actions"><Btn disabled={steps.length>=30} onClick={()=>set([...steps,{text:'',imageId:null}])}>+ 단계 추가</Btn><Btn onClick={()=>{setEdit(null);setError('')}}>취소</Btn><Btn primary disabled={busy||!edit.title.trim()||steps.every((s:Step)=>!s.text.trim()&&!s.imageId)} onClick={()=>onSave({id:edit.id,title:edit.title,branchId:edit.branchId,category:edit.category,roles:edit.roles,note:edit.note,steps:steps.filter((s:Step)=>s.text.trim()||s.imageId)})}>{busy?'저장 중…':'저장하고 직원에게 보이기'}</Btn></div>
+  <p className="footnote">손잡이(⠿)를 끌거나 ↑↓로 순서를 바꿔요. 사진은 자동으로 줄여서 올려요(장당 400KB 이하). 고치면 직원 화면에 '바뀜'이 붙고 확인 표시가 처음부터 다시 시작돼요.</p>
+ </section>;
 }

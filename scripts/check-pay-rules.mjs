@@ -890,6 +890,14 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('되돌리기 문구',moveMessage('김예시','2026-10-08','2026-10-09')==='김예시 10월 8일 → 9일로 옮겼어요'&&moveMessage('김예시','2026-10-31','2026-11-02')==='김예시 10월 31일 → 11월 2일로 옮겼어요');
  console.log('PASS: 지시서 1라운드 B (근무 옮기기 규칙).');
 }
+{
+ const {manualVisibleTo,filterManuals,staffState}=await import('../lib/manual-view.ts');
+ const ms=[{id:'1',title:'마감 순서',branchId:'all',category:'마감',roles:['홀'],steps:[{text:'의자'}],createdAt:'2026-10-01',updatedAt:'2026-10-05'},{id:'2',title:'커피 머신',branchId:'all',category:'기기',roles:[],steps:[{text:'예열 15분'}],createdAt:'2026-10-01',updatedAt:'2026-10-01'}];
+ ok('주방 직원에겐 홀 전용 안 보임',!manualVisibleTo(ms[0],{branchId:'b',role:'주방'})&&manualVisibleTo(ms[1],{branchId:'b',role:'주방'}));
+ ok('분류 칩',filterManuals(ms,'마감','').map(m=>m.id).join()==='1');ok('검색은 단계 글에서도',filterManuals(ms,'전체','예열').map(m=>m.id).join()==='2');
+ ok('바뀜·새·확인함',staffState({...ms[0],read:false})==='바뀜'&&staffState({...ms[1],read:false})==='새 매뉴얼'&&staffState({...ms[1],read:true})==='확인함');
+ console.log('PASS: 지시서 1라운드 D (매뉴얼 규칙).');
+}
 // 직원 엑셀 파일 등록: .xlsx·CSV 읽기
 {
  const {readFileSync}=await import('node:fs');

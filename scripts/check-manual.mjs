@@ -36,4 +36,20 @@ ok('store save keeps manuals',(await call('boss','/api/manual')).body.manuals.le
 m=(await call('boss','/api/manual')).body;r=await call('boss','/api/manual',{action:'delete',id:mid,version:m.version});ok('owner deletes',r.body.manuals.length,3);
 ok('unused image removed',Number((await q('SELECT count(*) AS n FROM store_manual_images WHERE owner=?',id('boss')).first()).n),0);
 console.log('PASS: 매장 매뉴얼(작성 권한·지점 범위·사진 검사·확인 표시·정리).');
+// 지시서 1라운드 D: 분류·업무별 공개·바뀜
+{
+ let x=JSON.parse((await q('SELECT data FROM stores WHERE owner=?',id('boss')).first()).data);const A=x._members.find(m=>m.userId===id('amy')).employeeId;x.employees.find(e=>e.id===A).role='주방';await q('UPDATE stores SET data=?,version=version+1 WHERE owner=?',JSON.stringify(x),id('boss')).run();
+ let m=(await call('boss','/api/manual')).body;let r=await call('boss','/api/manual',{action:'save',version:m.version,title:'홀 마감',branchId:'all',category:'마감',roles:['홀'],steps:[{text:'의자 올리기'}]});
+ const hall=r.body.manuals.at(-1);ok('분류·대상 저장',[hall.category,hall.roles],['마감',['홀']]);
+ ok('주방 직원에게 홀 전용 매뉴얼이 안 보임',(await call('amy','/api/manual')).body.manuals.some(z=>z.id===hall.id),false);
+ r=await call('boss','/api/manual',{action:'save',version:r.body.version,title:'주방 마감',branchId:'all',category:'마감',roles:['주방'],steps:[{text:'가스 잠그기'}]});const kit=r.body.manuals.at(-1);
+ ok('주방 직원에게 주방 매뉴얼은 보임',(await call('amy','/api/manual')).body.manuals.some(z=>z.id===kit.id),true);
+ ok('사장님 화면: 받는 사람 수',r.body.manuals.find(z=>z.id===kit.id).audience,1);
+ const me=(await call('amy','/api/manual')).body;await call('amy','/api/manual',{action:'read',id:kit.id,version:me.version});
+ ok('읽음',(await call('amy','/api/manual')).body.manuals.find(z=>z.id===kit.id).read,true);
+ m=(await call('boss','/api/manual')).body;await new Promise(z=>setTimeout(z,5));r=await call('boss','/api/manual',{action:'save',id:kit.id,version:m.version,title:'주방 마감',branchId:'all',category:'마감',roles:['주방'],note:'2단계 추가',steps:[{text:'가스 잠그기'},{text:'냉장고 스티커'}]});
+ const after=(await call('amy','/api/manual')).body.manuals.find(z=>z.id===kit.id);
+ ok('고치면 다시 안 읽음 + 수정 내용 + 고친 날이 만든 날보다 뒤(바뀜)',[after.read,after.note,after.updatedAt>after.createdAt],[false,'2단계 추가',true]);
+ ok('없는 분류는 기타',(await call('boss','/api/manual',{action:'save',version:r.body.version,title:'x',branchId:'all',category:'해킹',steps:[{text:'a'}]})).body.manuals.at(-1).category,'기타');
+}
 await closeAll();

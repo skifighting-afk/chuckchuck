@@ -3,17 +3,22 @@ import {resolveStore} from './saas-api';
 import {serverError} from '../lib/errors';
 import {canWrite} from '../lib/plans';
 import type {StoreData,Manual} from '../lib/store-data';
+import {manualVisibleTo,MANUAL_CATEGORIES} from '../lib/manual-view';
+import {notifyUser} from './push-api';
+import type {PushEnv} from '../lib/webpush';
 const json=(v:unknown,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 export const MANUAL_LIMITS={manuals:100,steps:30,title:80,text:1000,imageBytes:400000,images:500};
 type Step={text:string,imageId?:string|null};
-export async function manualApi(request:Request,env:{DB:D1Database}){
+export async function manualApi(request:Request,env:{DB:D1Database}&PushEnv){
  const user=request.headers.get('oai-authenticated-user-id');if(!user)return json({error:'로그인한 뒤 다시 시도해 주세요.'},401);
  try{
  const linked=await resolveStore(env.DB,user);if(!linked||linked.access==='revoked')return json({error:'먼저 매장에 연결해 주세요. 사장님께 초대를 요청해 주세요.'},403);
  const {row,access}=linked,data:StoreData=JSON.parse(row.data),owner=access==='owner',url=new URL(request.url);
  const self=data.employees.find((e)=>e.id===data._members?.find((m)=>m.userId===user)?.employeeId);
- const manuals:Manual[]=data._manuals||[],visible=(m:Manual)=>owner||m.branchId==='all'||m.branchId===self?.branchId;
- const view=()=>({version:row.version,owner,branches:owner?data.branches.map((b)=>({id:b.id,name:b.name})):[],manuals:manuals.filter(visible).map(m=>({...m,read:(m.reads||[]).includes(user),reads:undefined,...(owner?{readCount:(m.reads||[]).length}:{})}))});
+ const manuals:Manual[]=data._manuals||[],visible=(m:Manual)=>owner||manualVisibleTo(m,self);
+ // 사장님 화면: 그 매뉴얼을 받는 직원 수(지점·업무 기준)와 그중 읽은 수
+ const audience=(m:Manual)=>(data._members||[]).map((x)=>({uid:x.userId,e:data.employees.find((e)=>e.id===x.employeeId)})).filter((x)=>x.e&&x.e.status!=='퇴사'&&manualVisibleTo(m,x.e));
+ const view=()=>({version:row.version,owner,branches:owner?data.branches.map((b)=>({id:b.id,name:b.name})):[],roles:owner?[...new Set(data.employees.map((e)=>e.role).filter(Boolean))]:[],manuals:manuals.filter(visible).map(m=>({...m,category:m.category||'기타',roles:m.roles||[],note:m.note||'',read:(m.reads||[]).includes(user),reads:undefined,...(owner?(()=>{const a=audience(m);return {audience:a.length,readCount:a.filter((x)=>(m.reads||[]).includes(x.uid)).length,unread:a.filter((x)=>!(m.reads||[]).includes(x.uid)).map((x)=>x.e!.name)}})():{})}))});
  if(request.method==='GET'){
   const image=url.searchParams.get('image');
   if(image){if(!owner&&!manuals.some(m=>visible(m)&&m.steps.some((s:Step)=>s.imageId===image)))return json({error:'볼 수 없는 사진이에요. 매뉴얼 목록을 새로고침해 주세요.'},404);const f=await env.DB.prepare('SELECT mime,body FROM store_manual_images WHERE owner=? AND id=?').bind(linked.owner,image).first<any>();if(!f)return json({error:'사진을 찾을 수 없어요. 사장님께 다시 올려 달라고 해 주세요.'},404);const bin=Uint8Array.from(atob(f.body),c=>c.charCodeAt(0));return new Response(bin,{headers:{'Content-Type':f.mime,'Cache-Control':'private, max-age=86400','X-Content-Type-Options':'nosniff'}})}
@@ -42,11 +47,17 @@ export async function manualApi(request:Request,env:{DB:D1Database}){
   if(branchId!=='all'&&!data.branches.some((x)=>x.id===branchId))return json({error:'없는 지점이에요. 지점을 다시 골라 주세요.'},400);
   if(!Array.isArray(b.steps)||!b.steps.length||b.steps.length>MANUAL_LIMITS.steps)return json({error:'단계를 1~30개로 만들어 주세요.'},400);
   const steps:Step[]=[];for(const s of b.steps){const text=typeof s?.text==='string'?s.text.trim():'';if(!text&&!s?.imageId)return json({error:'빈 단계가 있어요. 내용을 쓰거나 사진을 넣어 주세요.'},400);if(text.length>MANUAL_LIMITS.text)return json({error:'한 단계는 1000자 이내로 써 주세요.'},400);if(s.imageId&&(typeof s.imageId!=='string'||!await env.DB.prepare('SELECT 1 FROM store_manual_images WHERE owner=? AND id=?').bind(linked.owner,s.imageId).first()))return json({error:'사진을 다시 올려 주세요.'},400);steps.push({text,imageId:s.imageId||null})}
+  const category=MANUAL_CATEGORIES.includes(b.category)?b.category:'기타';
+  const roles=Array.isArray(b.roles)?[...new Set(b.roles.filter((r:any)=>typeof r==='string'&&r.length<=20))].slice(0,10) as string[]:[];
+  const note=typeof b.note==='string'?b.note.trim().slice(0,200):'';
   const existing=b.id?manuals.find(m=>m.id===b.id):null;if(b.id&&!existing)return json({error:'매뉴얼을 찾을 수 없어요. 목록을 새로고침해 주세요.'},404);
   if(!existing&&manuals.length>=MANUAL_LIMITS.manuals)return json({error:'매뉴얼은 100개까지 만들 수 있어요. 쓰지 않는 것을 지워 주세요.'},400);
   const before=existing?.steps.map((s:Step)=>s.imageId).filter((x):x is string=>!!x)||[];
-  if(existing)Object.assign(existing,{title,branchId,steps,updatedAt:now,reads:[]});else manuals.push({id:crypto.randomUUID(),title,branchId,steps,createdAt:now,updatedAt:now,reads:[]});
-  data._manuals=manuals;await save();await dropUnused(before);return json(view());
+  if(existing)Object.assign(existing,{title,branchId,steps,category,roles,note,createdAt:existing.createdAt||existing.updatedAt,updatedAt:now,reads:[]});else manuals.push({id:crypto.randomUUID(),title,branchId,steps,category,roles,note:'',createdAt:now,updatedAt:now,reads:[]});
+  data._manuals=manuals;await save();await dropUnused(before);
+  // 대상 직원에게 알림(새 매뉴얼·바뀐 매뉴얼)
+  if(b.notify!==false){const m=existing||manuals.at(-1)!;for(const x of audience(m))await notifyUser(env as any,x.uid,{title:existing?'매뉴얼이 바뀌었어요':'새 매뉴얼',body:m.title+(note&&existing?' · '+note:''),url:'/app'}).catch(()=>{})}
+  return json(view());
  }
  if(b.action==='delete'){const m=manuals.find(m=>m.id===b.id);if(!m)return json({error:'매뉴얼을 찾을 수 없어요. 목록을 새로고침해 주세요.'},404);data._manuals=manuals.filter(x=>x.id!==b.id);manuals.splice(manuals.indexOf(m),1);await save();await dropUnused(m.steps.map((s:Step)=>s.imageId).filter((x):x is string=>!!x));return json(view())}
  return json({error:'이 작업은 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},400);
