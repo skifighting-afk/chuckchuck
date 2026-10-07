@@ -1275,59 +1275,62 @@ PASS 562. 오늘 인건비(시급 2시간 + 월급 하루치)
 PASS: 지시서 6주차 보완 (브리핑·주간·오늘 인건비).
 PASS 563. POS 매출 파일 월별 합계(합계 줄 무시)
 PASS 564. 제목 없는 파일도
+PASS 565. 시각 있는 매출: 시간대별
+PASS 566. 적정 인원: 화 12시 평균 12만 → 2명
+PASS 567. 시각 없는 파일은 시간대 없음
 PASS: POS 매출 파일 읽기.
-PASS 565. 5명 이상: 평소 근무 요일 공휴일 하루치
-PASS 566. 5명 미만은 없음
+PASS 568. 5명 이상: 평소 근무 요일 공휴일 하루치
+PASS 569. 5명 미만은 없음
 PASS: 공휴일 유급휴일수당.
-PASS 567. 퇴직금: 7~9월 확정 급여, 92일
-PASS 568. 퇴직금: 달 중간 퇴직은 일할, 10월 미확정 표시
+PASS 570. 퇴직금: 7~9월 확정 급여, 92일
+PASS 571. 퇴직금: 달 중간 퇴직은 일할, 10월 미확정 표시
 PASS: 퇴직금 자동 채움.
-PASS 569. 10월 기한: 원천세 10/12(10일 토요일→월), 4대보험, 사업소득 간이, 취득·상실
-PASS 570. 영업일 계산(공휴일 건너뜀)
-PASS 571. 3월엔 연말정산·보수총액
-PASS 572. 2주 안 기한만
-PASS 573. 두루누리: 10명 미만·270만 미만·가입
-PASS 574. 10명 이상이면 대상 아님
+PASS 572. 10월 기한: 원천세 10/12(10일 토요일→월), 4대보험, 사업소득 간이, 취득·상실
+PASS 573. 영업일 계산(공휴일 건너뜀)
+PASS 574. 3월엔 연말정산·보수총액
+PASS 575. 2주 안 기한만
+PASS 576. 두루누리: 10명 미만·270만 미만·가입
+PASS 577. 10명 이상이면 대상 아님
 PASS: 신고 기한·취득상실·두루누리.
-PASS 575. 6자리 코드
-PASS 576. 지금·직전 1분 코드 통과, 고정·움직이는 QR 매장 모두
-PASS 577. 2분 지난 코드·틀린 코드·다른 매장 거절
+PASS 578. 6자리 코드
+PASS 579. 지금·직전 1분 코드 통과, 고정·움직이는 QR 매장 모두
+PASS 580. 2분 지난 코드·틀린 코드·다른 매장 거절
 PASS: 매장 코드 출퇴근.
-PASS 578. 서식 5종
-PASS 579. 해고예고: 30일 뒤·제26조·예고수당 안내
-PASS 580. 사직서는 직원이 쓰는 서류 안내
+PASS 581. 서식 5종
+PASS 582. 해고예고: 30일 뒤·제26조·예고수당 안내
+PASS 583. 사직서는 직원이 쓰는 서류 안내
 PASS: 서식함.
-PASS 581. 의무교육: 올해 기록·안 들은 직원
-PASS 582. 5명 이상이면 산업안전
+PASS 584. 의무교육: 올해 기록·안 들은 직원
+PASS 585. 5명 이상이면 산업안전
 PASS: 법정 의무교육.
-PASS 583. 결제 실패 7일 유예 동안은 그대로 씀
-PASS 584. 유예 지나면 조회만
+PASS 586. 결제 실패 7일 유예 동안은 그대로 씀
+PASS 587. 유예 지나면 조회만
 PASS: 결제 실패 유예.
-PASS 585. 엑셀: 시트 7개·글자 이스케이프·숫자 칸
+PASS 588. 엑셀: 시트 7개·글자 이스케이프·숫자 칸
 PASS: 엑셀 내보내기.
-PASS 586. 인상 방식
-PASS 587. 예약 인상: 지금 시급은 그대로, 이력에 남김, 이미 높은 직원은 제외
-PASS 588. 그날이 되면 반영
-PASS 589. 달 중간 인상: 날짜별로 나눠 계산
+PASS 589. 인상 방식
+PASS 590. 예약 인상: 지금 시급은 그대로, 이력에 남김, 이미 높은 직원은 제외
+PASS 591. 그날이 되면 반영
+PASS 592. 달 중간 인상: 날짜별로 나눠 계산
 PASS: 시급 인상·예약·달 중간 변경.
-PASS 590. 반복 고치기: 이 날 이후만
-PASS 591. 반복 지우기: 이 날 이후만
-PASS 592. 한 주 하루 뒤로: 막힌 건 건너뜀
-PASS 593. 겹치면 안 옮김
-PASS 594. 하루 지우기
+PASS 593. 반복 고치기: 이 날 이후만
+PASS 594. 반복 지우기: 이 날 이후만
+PASS 595. 한 주 하루 뒤로: 막힌 건 건너뜀
+PASS 596. 겹치면 안 옮김
+PASS 597. 하루 지우기
 PASS: 반복 고치기·통째로 옮기기.
-PASS 595. 겸직: 주방으로 잡은 날은 주방 시급
+PASS 598. 겸직: 주방으로 잡은 날은 주방 시급
 PASS: 겸직 포지션 시급.
-PASS 596. 근무표 변경 이력 요약
+PASS 599. 근무표 변경 이력 요약
 PASS: 근무표 변경 이력.
-PASS 597. 월급 결근 1일·지각 30분 공제(통상시급 기준)
-PASS 598. 인센티브: 매출 500만 × 2% = 10만
+PASS 600. 월급 결근 1일·지각 30분 공제(통상시급 기준)
+PASS 601. 인센티브: 매출 500만 × 2% = 10만
 PASS: 결근 공제·인센티브.
-PASS 599. 소급: 다음 해 1월에 넣음
-PASS 600. 연간 지급 내역
-PASS 601. 세무사 양식: 주휴 칸·차인지급액
+PASS 602. 소급: 다음 해 1월에 넣음
+PASS 603. 연간 지급 내역
+PASS 604. 세무사 양식: 주휴 칸·차인지급액
 PASS: 소급·연간 내역·세무사 양식.
-PASS 602. 3일 넘은 요청만
+PASS 605. 3일 넘은 요청만
 PASS: 오래된 요청.
 
 ── check-claims
@@ -1404,7 +1407,7 @@ PASS 36. 2026-03-31: no clock-in or clock-out in the future (A1·A3)
 PASS: 체험 화면 숫자(급여·명세서·임금대장 합계).
 
 ── check-error-messages
-PASS: 오류 문구 485개 모두 다음 행동 안내 포함.
+PASS: 오류 문구 490개 모두 다음 행동 안내 포함.
 PASS: 오류 번호·로그 개인정보 제거.
 
 ── check-attendance-table
@@ -1742,6 +1745,32 @@ PASS: 가불·선지급.
 38. PASS staff marked passed
 39. PASS owner sees pass
 PASS: 매장 일지·할 일·서명 서류.
+
+── check-history
+1. PASS excel serial date
+2. PASS dotted date
+3. PASS excel time fraction
+4. PASS 오후 time
+5. PASS attendance kind
+6. PASS 2 items + 1 problem
+7. PASS overnight record
+8. PASS shift kind
+9. PASS pay kind
+10. PASS unknown header
+11. PASS staff cannot import
+12. PASS import adds and skips
+13. PASS imported as owner input
+14. PASS audit import
+15. PASS owner has no calendar
+16. PASS staff makes feed
+17. PASS feed is public calendar
+18. PASS new link revokes old
+19. PASS off revokes
+20. PASS bad token
+21. PASS inspection sheets
+22. PASS attendance in bundle
+23. PASS roster has staff
+PASS: 달력 구독·기록 가져오기·근로감독 묶음.
 
 ── check-share
 PASS: 세무사 공유 링크 (확정 급여만·끄기·만료·열람 기록·토큰 해시만 저장).
