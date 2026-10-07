@@ -1,5 +1,5 @@
 {
- "at": "2026-10-07T10:18:40.127Z",
+ "at": "2026-10-07T10:24:51.359Z",
  "changedPercent": {
   "public-home": 0,
   "public-start": 0,
@@ -10,7 +10,7 @@
   "public-refund": 0,
   "public-terms": 0,
   "public-pricing": 0,
-  "public-status": 0.04,
+  "public-status": 0.07,
   "public-privacy": 0,
   "demo-home": 0,
   "demo-employees": 0,
@@ -24,9 +24,9 @@
   "demo-manual": 0,
   "demo-reports": 0,
   "demo-stores": 0,
-  "demo-settings": 0,
+  "demo-settings": 8.47,
   "demo-guide": 0,
-  "demo-staff": 0
+  "demo-staff": 36.91
  },
  "failures": []
 }

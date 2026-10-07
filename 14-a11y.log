@@ -1,1 +1,13 @@
-접근성 점검 통과: 12개 화면 × 2개 크기 (axe 포함)
+접근성 문제 6건:
+390px /demo?role=employee [axe aria-required-children] Certain ARIA roles must contain particular children — .my-cal-grid
+390px /demo?role=employee [axe aria-required-parent] Certain ARIA roles must be contained by particular parents — .my-cal-h[role="columnheader"]:nth-child(1) | .my-cal-h[role="columnheader"]:nth-child(2) | .my-cal-h[role="columnheader"]:nth-child(3)
+390px /demo?role=employee [axe label-content-name-mismatch] Elements must have their visible text as part of their accessible name — button[aria-label="1일 근무함 5시간"] | button[aria-label="2일 근무함 5시간"] | button[aria-label="3일 근무 없음"]
+1280px /demo?role=employee [axe aria-required-children] Certain ARIA roles must contain particular children — .my-cal-grid
+1280px /demo?role=employee [axe aria-required-parent] Certain ARIA roles must be contained by particular parents — .my-cal-h[role="columnheader"]:nth-child(1) | .my-cal-h[role="columnheader"]:nth-child(2) | .my-cal-h[role="columnheader"]:nth-child(3)
+1280px /demo?role=employee [axe label-content-name-mismatch] Elements must have their visible text as part of their accessible name — button[aria-label="1일 근무함 5시간"] | button[aria-label="2일 근무함 5시간"] | button[aria-label="3일 근무 없음"]
+::error title=접근성::390px /demo?role=employee [axe aria-required-children] Certain ARIA roles must contain particular children — .my-cal-grid
+::error title=접근성::390px /demo?role=employee [axe aria-required-parent] Certain ARIA roles must be contained by particular parents — .my-cal-h[role="columnheader"]:nth-child(1) | .my-cal-h[role="columnheader"]:nth-child(2) | .my-cal-h[role="columnheader"]:nth-child(3)
+::error title=접근성::390px /demo?role=employee [axe label-content-name-mismatch] Elements must have their visible text as part of their accessible name — button[aria-label="1일 근무함 5시간"] | button[aria-label="2일 근무함 5시간"] | button[aria-label="3일 근무 없음"]
+::error title=접근성::1280px /demo?role=employee [axe aria-required-children] Certain ARIA roles must contain particular children — .my-cal-grid
+::error title=접근성::1280px /demo?role=employee [axe aria-required-parent] Certain ARIA roles must be contained by particular parents — .my-cal-h[role="columnheader"]:nth-child(1) | .my-cal-h[role="columnheader"]:nth-child(2) | .my-cal-h[role="columnheader"]:nth-child(3)
+::error title=접근성::1280px /demo?role=employee [axe label-content-name-mismatch] Elements must have their visible text as part of their accessible name — button[aria-label="1일 근무함 5시간"] | button[aria-label="2일 근무함 5시간"] | button[aria-label="3일 근무 없음"]
