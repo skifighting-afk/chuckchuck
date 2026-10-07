@@ -1633,6 +1633,46 @@ PASS: 직원 요청(명세서 문의·정보 변경·증명서).
 16. PASS removed coowner sees only own store
 PASS: 공동 관리자·가게 전환.
 
+── check-att-extras
+1. PASS distance ~111m per 0.001 lat
+2. PASS geo off → null
+3. PASS geo missing coords
+4. PASS geo inside
+5. PASS geo accuracy capped at 100m
+6. PASS shared device found
+7. PASS same person twice is not shared
+8. PASS approval rule caps at schedule before approval
+9. PASS approval rule pays actual after approval
+10. PASS pending overtime minutes
+11. PASS approved has no pending
+12. PASS planned break kept as span
+13. PASS break minutes
+14. PASS break spans helper
+15. PASS manual break span
+16. PASS filter late
+17. PASS filter absent
+18. PASS filter geo
+19. PASS range rows header + 1
+20. PASS range rows break text
+21. PASS calendar worst status wins
+22. PASS block mode: no location → 400
+23. PASS block mode: far away → 400
+24. PASS block mode: inside → 200
+25. PASS geo saved without coordinates
+26. PASS device saved
+27. PASS staff clocks out
+28. PASS warn mode: far away still records
+29. PASS warn mode flags
+30. PASS invalid device not stored
+31. PASS open record cannot be approved
+32. PASS staff cannot approve overtime
+33. PASS owner approves overtime
+34. PASS approval stored with name
+35. PASS audit logged
+36. PASS owner undoes approval
+37. PASS approval removed
+PASS: 출퇴근 위치·기기·연장 승인·휴게 구간.
+
 ── check-share
 PASS: 세무사 공유 링크 (확정 급여만·끄기·만료·열람 기록·토큰 해시만 저장).
 
