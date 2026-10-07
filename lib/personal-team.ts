@@ -23,6 +23,6 @@ export function personalTeam(state:Team,selfId:string):Team{
    .map(r=>({...r,reviewer:r.reviewer?{name:r.reviewer.name}:undefined})),
   // 지시서 3주차 023: 내 매장 공개 근무표와 내 확인 기록만
   ...((state as any).publishedWeeks?{publishedWeeks:Object.fromEntries(Object.entries((state as any).publishedWeeks).filter(([k])=>k.startsWith(self.branchId+':')).map(([k,v]:any)=>[k,{at:v.at,acks:v.acks?.[selfId]?{[selfId]:v.acks[selfId]}:{}}]))}:{}),
-  settings:{accountantName:'',accountantEmail:'',autoPayslip:false,autoContract:false,autoAccountant:false,employerName:'',fivePlus:false,...((state.settings as any).weekStart?{weekStart:(state.settings as any).weekStart}:{})} as any
+  settings:{accountantName:'',accountantEmail:'',autoPayslip:false,autoContract:false,autoAccountant:false,employerName:'',fivePlus:!!state.settings.fivePlus,...((state.settings as any).weekStart?{weekStart:(state.settings as any).weekStart}:{}),...((state.settings as any).attendanceRule?{attendanceRule:(state.settings as any).attendanceRule}:{}),...((state.settings as any).staffPayEstimate===false?{staffPayEstimate:false}:{})} as any
  };
 }

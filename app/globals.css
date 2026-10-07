@@ -550,3 +550,18 @@ body.ms-dragging,body.ms-dragging *{user-select:none!important;-webkit-user-sele
 @media print{.t-sidebar,.t-topbar,.assistant-fab,.demo-shell>header,.report-summary button,nav,.t-toolbar{display:none!important}.panel{break-inside:avoid}}
 .pc-audit ul{list-style:none;margin:0;padding:0}.pc-audit li{padding:10px 0;border-bottom:1px solid #dce7df;font-size:14px}.pc-audit li small{display:block;color:#344a3d;margin-top:3px;font-size:13px}
 .pc-level{display:inline-block;font-size:12px;font-weight:800;border-radius:6px;padding:1px 6px;border:1px solid}.pc-level.need{color:#8a2b00;border-color:#c96a2b;background:#fff1e6}.pc-level.info{color:#1f4e8a;border-color:#7da2d6;background:#eef4fc}
+/* 지시서 8주차: 직원 화면 */
+.staff-week,.staff-pay-est{margin:12px 0;padding:14px;border-radius:14px;background:#fff;border:1px solid #dce7df}
+.sw-head{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:15px}.sw-head span{color:#344a3d;font-size:13px}
+.sw-bar{height:12px;border-radius:999px;background:#e3ece5;margin:8px 0;overflow:hidden}.sw-bar span{display:block;height:100%;background:#17583f;border-radius:999px}
+.staff-week p{margin:0;font-size:14px;color:#173e30}
+.staff-pay-est{display:grid;gap:2px}.staff-pay-est span{font-size:13px;color:#344a3d}.staff-pay-est b{font-size:22px;color:#17583f}.staff-pay-est small{font-size:12px;color:#44564b}
+.my-cal-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 16px 8px}.my-cal-nav button{min-width:48px;min-height:48px}.my-cal-nav b{font-size:14px;text-align:center}
+.my-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;padding:0 12px}
+.my-cal-h{text-align:center;font-size:12px;color:#344a3d;padding:4px 0}
+.my-cal-d{min-height:48px;border:1px solid #dce7df;border-radius:8px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2px;color:#173e30}
+.my-cal-d .n{font-size:13px}.my-cal-d .h{font-size:12px;font-weight:700}
+.my-cal-d.s-ok{background:#effaf2;border-color:#9cc7a9}.my-cal-d.s-now{background:#e6f1ff;border-color:#7da2d6}.my-cal-d.s-warn,.my-cal-d.s-miss{background:#fff3dc;border-color:#c98a2b;border-style:dashed}.my-cal-d.s-plan{border-style:dashed}
+.my-cal-d.today{outline:2px solid #17583f;outline-offset:-2px}.my-cal-d.on{box-shadow:0 0 0 3px #17583f inset}
+.my-cal-sel{margin:10px 16px 0;font-size:14px}
+.cert-req .t-panelbody{display:grid;gap:10px}.cert-purpose{display:flex;flex-direction:column;gap:4px;font-size:14px}.cert-purpose input{min-height:44px;border:1px solid #b5c8ba;border-radius:8px;padding:0 10px}.cert-req [role=group] label{display:inline-flex;align-items:center;gap:6px;min-height:44px}

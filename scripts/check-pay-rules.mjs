@@ -1225,3 +1225,15 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('5명 이상: 주 52시간 넘김',payAudit([E()],big,[],'2026-10',true).some(x=>x.text.includes('52시간'))&&!payAudit([E()],big,[],'2026-10',false).some(x=>x.text.includes('52시간')));
  console.log('PASS: 지시서 7주차 (월급 최저임금 환산·급여 정확도 점검).');
 }
+// 지시서 8주차: 직원 화면 — 주휴 조건 진행, 내 근무 달력
+{
+ const {weekProgress,myMonth}=await import('../lib/staff-home.ts');
+ const iso=(d,hm)=>new Date(Date.parse(`${d}T${hm}:00+09:00`)).toISOString(),now=Date.parse('2026-10-07T20:00:00+09:00');
+ const recs=[{start:iso('2026-10-05','10:00'),end:iso('2026-10-05','16:00'),breakMinutes:30},{start:iso('2026-10-06','10:00'),end:iso('2026-10-06','16:00'),breakMinutes:30}];
+ let p=weekProgress(recs,[{date:'2026-10-09',start:'10:00',end:'15:00'}],now);
+ ok('주휴 진행: 기록 11시간 + 남은 근무 5시간이면 넘는다고 안내',p.done===11&&p.ahead===5&&p.text.includes('넘어요')&&p.from==='2026-10-05');
+ p=weekProgress(recs,[],now);ok('주휴 진행: 모자라면 모자라다고',p.text.includes('적어요'));
+ const c=myMonth('2026-10',[...recs,{start:iso('2026-10-07','18:00'),end:null,breakMinutes:0}],[{date:'2026-10-02',start:'10:00',end:'12:00'},{date:'2026-10-20',start:'10:00',end:'12:00'}],now);
+ ok('내 근무 달력: 상태 글자',c.days[4].state==='근무함'&&c.days[4].hours===5.5&&c.days[6].state==='근무 중'&&c.days[1].state==='기록 없음'&&c.days[19].state==='예정'&&c.lead===4&&c.workedDays===3);
+ console.log('PASS: 지시서 8주차 (직원 화면 주휴 진행·근무 달력).');
+}

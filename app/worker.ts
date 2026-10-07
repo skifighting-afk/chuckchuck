@@ -93,7 +93,7 @@ async function route(request:Request,env:Env){
  if(owner!==userId&&(!self||self.status==='퇴사'))return json({error:'이 가게를 볼 권한이 없어요. 사장님께 연결을 요청해 주세요.'},403);
  let name=request.headers.get('oai-authenticated-user-full-name')||request.headers.get('oai-authenticated-user-email')||'사장님';try{if(request.headers.get('oai-authenticated-user-full-name-encoding')==='percent-encoded-utf-8')name=decodeURIComponent(name)}catch{}
  const actor={id:userId,name:self?.name||name,email:request.headers.get('oai-authenticated-user-email')||''};
- let freshPub:string[]=[]; let inviteUrl:string|undefined;let attendanceQrUrl:string|undefined;
+ let freshPub:string[]=[];let certReq:any=null; let inviteUrl:string|undefined;let attendanceQrUrl:string|undefined;
  const result=()=>{
   if(access==='owner')return {state,version:version+1,audit,outbox,actor,emailConnected:!!(env.RESEND_API_KEY&&env.EMAIL_FROM),access,selfId:null,inviteUrl,attendanceQrUrl,qrModes:raw?._attendanceQrMode||{},plan:raw?._account||null,qrRequired:hasFeature(raw?._account,'qr')};
   const filtered=personalTeam(state,self!.id);
@@ -106,7 +106,7 @@ async function route(request:Request,env:Env){
  if(request.headers.get('origin')!==new URL(request.url).origin)return json({error:'요청 출처를 확인할 수 없어요. 척척사장 화면을 새로고침한 뒤 다시 시도해 주세요.'},403);
  const text=await request.text();if(text.length>1500000)return json({error:'한 번에 저장할 수 있는 양을 넘었어요. 오래된 기록을 정리하거나 나눠서 저장해 주세요.'},413);
  let b:any;try{b=JSON.parse(text)}catch{return json({error:'요청을 읽지 못했어요. 새로고침한 뒤 다시 시도해 주세요.'},400)}
- if(access!=='owner'&&(request.method==='PUT'||!['attendance','request','ackWeek'].includes(b.action)))return json({error:'이 작업은 사장님만 할 수 있어요. 사장님께 요청해 주세요.'},403);
+ if(access!=='owner'&&(request.method==='PUT'||!['attendance','request','ackWeek','requestCertificate'].includes(b.action)))return json({error:'이 작업은 사장님만 할 수 있어요. 사장님께 요청해 주세요.'},403);
  if(access!=='owner'&&b.action==='attendance'&&b.employeeId!==self!.id)return json({error:'본인 출퇴근만 기록할 수 있어요. 내 계정으로 로그인했는지 확인해 주세요.'},403);
  if(access!=='owner'&&b.action==='request'){const target=state.attendance.find(a=>a.id===b.id);if(!target||target.employeeId!==self!.id)return json({error:'본인 출퇴근만 정정 요청할 수 있어요.'},403);}
  // 출퇴근은 화면이 조금 오래돼도 지금 서버 기록을 기준으로 처리한다(같은 시각에 여러 직원이 찍어도 막지 않음). 저장은 아래 version 조건으로 원자적.
@@ -141,6 +141,10 @@ async function route(request:Request,env:Env){
  case 'invite':{const e=state.employees.find(e=>e.id===b.id);if(!e?.email)fail('직원 이메일을 먼저 등록해 주세요.');const token=crypto.randomUUID()+crypto.randomUUID();const hash=await hashToken(token);invitations=invitations.filter(i=>i.employeeId!==e!.id);invitations.push({hash,employeeId:e!.id,email:e!.email.toLowerCase(),expires:Date.now()+7*86400000});inviteUrl=new URL('/?invite='+token,request.url).href;log('직원 초대 링크 생성',e!.name,null,{expires:'7일'});break;}
  case 'attendanceQr':{if(!state.branches.some(x=>x.id===b.branchId))fail('매장을 확인해 주세요.');raw._attendanceQr ||= {};if(b.mode==='dynamic'||b.mode==='static'){raw._attendanceQrMode={...(raw._attendanceQrMode||{}),[b.branchId]:b.mode}}if(!raw._attendanceQr[b.branchId]||b.rotate===true)raw._attendanceQr[b.branchId]=crypto.randomUUID()+crypto.randomUUID();attendanceQrUrl=new URL('/app?branch='+encodeURIComponent(b.branchId)+'&attendanceQr='+encodeURIComponent(raw._attendanceQr[b.branchId])+'#attendance',request.url).href;log('출퇴근 QR 발급',b.branchId,null,{renewed:b.rotate===true,mode:raw._attendanceQrMode?.[b.branchId]||'static'});break;}
  case 'attendance':{if(access!=='owner'&&['in','out','break','resume'].includes(b.kind)&&hasFeature(raw?._account,'qr')){if(!await qrTokenOk(raw?._attendanceQr?.[self!.branchId],raw?._attendanceQrMode?.[self!.branchId],b.qrToken))return json({error:raw?._attendanceQrMode?.[self!.branchId]==='dynamic'?'QR을 찍은 지 1분이 지났어요. 매장 화면의 QR을 다시 찍고 바로 기록해 주세요.':'매장의 새 출퇴근 QR을 찍은 뒤 다시 기록해 주세요.',code:'QR_REQUIRED'},403);}const e=state.employees.find(e=>e.id===b.employeeId);if(!e||e.status==='퇴사')fail('재직 중인 직원을 선택해 주세요.');const a=state.attendance.find(a=>a.employeeId===b.employeeId&&!a.end);if(b.kind==='in'){if(a)fail('이미 출근한 직원입니다.');const n={id:crypto.randomUUID(),employeeId:b.employeeId,start:new Date().toISOString(),end:null,breakMinutes:0,breakStart:null};if(locked(n))fail('확정된 월은 변경할 수 없습니다.');state.attendance.push(n);log('출근 기록',e!.name,null,n);}else{if(!a)fail('출근 기록이 없습니다.');if(locked(a))fail('급여 확정을 먼저 해제해 주세요.');const before={...a!};{const err=applyClock(a!,b.kind,Date.now(),b.minutes===undefined?undefined:Number(b.minutes));if(err)fail(err)}if(b.kind==='out')applyCredit(a!,state);log('근태 기록',e!.name,before,a);}break;}
+ case 'requestCertificate':{// 지시서 8주차: 직원이 재직·경력증명서를 요청(하루 한 번)
+  if(!self)fail('직원 계정에서만 요청할 수 있어요. 직원으로 로그인해 주세요.');if(!['재직','경력'].includes(b.kind))fail('증명서 종류를 골라 주세요.');if(b.kind==='재직'&&self!.status==='퇴사')fail('퇴사한 뒤에는 경력증명서를 요청해 주세요.');
+  const day=kdate(new Date().toISOString());if(audit.some((x:any)=>x.action==='증명서 요청'&&x.actor?.id===actor.id&&kdate(x.at)===day))fail('오늘 이미 요청했어요. 사장님이 확인할 때까지 기다려 주세요.');
+  log('증명서 요청',self!.name,null,{kind:b.kind,purpose:String(b.purpose||'').slice(0,60)});certReq={name:self!.name,kind:b.kind,purpose:String(b.purpose||'').slice(0,60)};break;}
  case 'ackWeek':{if(!self)fail('직원 계정에서만 확인할 수 있어요. 직원으로 로그인해 주세요.');const r=ackWeek((state as any).publishedWeeks,String(b.key||''),self!.id,self!.branchId,new Date().toISOString());if(r.error)fail(r.error);(state as any).publishedWeeks=r.published;log('근무표 확인',self!.name,null,{week:keyWeek(String(b.key))});break;}
  case 'manualAttendance':{// 지시서 2라운드 011: 사장님 직접 기록 추가(바로 반영, 사유 필수, 이력에 '사장님 직접 입력')
   const e=state.employees.find(e=>e.id===b.employeeId);if(!e||e.status==='퇴사')fail('재직 중인 직원을 선택해 주세요.');
@@ -172,6 +176,7 @@ if(!m||!['발송 대기','발송 실패','결과 확인 필요'].includes(m.stat
  if(!(await q.run()).meta.changes)return json({error:'동시에 변경된 내용이 있습니다. 새로고침해 주세요.'},409);
  // 지시서 2주차 024: 근무표가 바뀐 직원에게만 알림(오늘 이후 근무)
  if(Array.isArray(raw?.shifts)){const ch=scheduleChanges(raw.shifts,checked.data.shifts,kdate(new Date().toISOString()));for(const [emp,text] of ch){const uid=(members||[]).find((m:any)=>m.employeeId===emp)?.userId;if(uid&&uid!==request.headers.get('oai-authenticated-user-id')){await notifyUser(env,uid,{title:'근무표가 바뀌었어요',body:text,url:'/app',kind:'schedule'});const e=checked.data.employees.find((x:any)=>x.id===emp);await sendAlimtalk(env as any,e?.phone,'SCHEDULE_CHANGED',{이름:e?.name||'',가게:checked.data.store.name,내용:text}).catch(()=>null)}}}
+ if(certReq)await notifyUser(env,owner,{title:`${certReq.name}님이 ${certReq.kind}증명서를 요청했어요`,body:(certReq.purpose?`쓰실 곳: ${certReq.purpose}. `:'')+'직원 관리에서 증명서를 만들어 전달해 주세요.',url:'/app?screen=employees',kind:'staff'}).catch(()=>null);
  // 지시서 3주차 023: 공개한 주의 직원에게 알림
  for(const k of freshPub){const br=keyBranch(k),w=keyWeek(k);for(const e of checked.data.employees.filter((x:any)=>x.branchId===br&&x.status!=='퇴사')){const uid=(members||[]).find((m:any)=>m.employeeId===e.id)?.userId;if(uid)await notifyUser(env,uid,{title:'근무표가 공개됐어요',body:`${Number(w.slice(5,7))}월 ${Number(w.slice(8))}일부터 일주일 근무표를 확인하고 '확인했어요'를 눌러 주세요.`,url:'/app?screen=schedule',kind:'schedule'}).catch(()=>null)}}
  // 작업 092: 출퇴근 정정 결과를 요청한 사람에게 알림
