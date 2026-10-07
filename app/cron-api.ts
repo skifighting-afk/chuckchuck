@@ -13,7 +13,7 @@ import {retentionDue} from '../lib/retention';
 import {applyDueRaises} from '../lib/wage-raise';
 import {holidaysFor} from '../lib/holidays';
 import {loadAttendance} from './attendance-store';
-import {closingMissed,noticeReminders} from '../lib/ops-alerts';
+import {closingMissed,noticeReminders,absenceAlerts} from '../lib/ops-alerts';
 import {sendAlimtalk} from '../lib/alimtalk-send';
 const json=(d:any,status=200)=>Response.json(d,{status,headers:{'Cache-Control':'no-store'}});
 function same(a:string,b:string){if(a.length!==b.length)return false;let r=0;for(let i=0;i<a.length;i++)r|=a.charCodeAt(i)^b.charCodeAt(i);return r===0}
@@ -92,6 +92,8 @@ export async function alertSweep(env:any,now=Date.now(),notify=(uid:string,m:any
     if(k.getUTCDay()===1){const wk=await loadAttendance(env.DB,r.owner,new Date(Date.parse(today+'T00:00:00+09:00')-8*86400000).toISOString(),new Date(now).toISOString()).catch(()=>[]);const w=weeklyBrief({...d,attendance:wk},today);list.push({key:'weekly:'+today,to:'owner',kind:'brief',title:w.title,body:w.body});}}}
   // 지시서 067·052: 마감 체크 없이 퇴근 · 24시간 지나도 안 읽은 공지
   list.push(...closingMissed(d,now),...noticeReminders(d,now));
+  // 지시서 010: 결근·지각 누적 — 하루 한 번(오전 9시 첫 점검)만 이번 달 기록을 읽는다
+  {const k=new Date(now+9*3600000);if(k.getUTCHours()===9&&k.getUTCMinutes()<10){const month=k.toISOString().slice(0,7),full=await loadAttendance(env.DB,r.owner,new Date(Date.parse(month+'-01T00:00:00+09:00')).toISOString(),new Date(now).toISOString()).catch(()=>null);if(full)list.push(...absenceAlerts({...d,attendance:full},month,now))}}
   // 지시서 195: 3일 넘게 대기 중인 요청 — 하루 한 번(오전 9시 이후) 사장님께
   {const k=new Date(now+9*3600000),today=k.toISOString().slice(0,10);if(k.getUTCHours()>=9){const st=staleRequests(d,now);if(st.total)list.push({key:'stale:'+today,to:'owner',kind:'leave',title:`3일 넘게 기다리는 요청 ${st.total}건`,body:st.text+' · 직원이 답을 기다리고 있어요.'})}}
   // 지시서 199: 근무표 자동 게시 — 정해 둔 요일·시각에 다음 주 근무표를 공개하고 직원에게 알림
@@ -112,7 +114,7 @@ export async function alertSweep(env:any,now=Date.now(),notify=(uid:string,m:any
    if(uid){await notify(uid,{title:a.title,body:a.body,url:'/app',kind:a.kind});sent++}
    if(a.kind==='clockout'&&a.to!=='owner'){const e=d.employees.find((x:any)=>x.id===a.to);await sendAlimtalk(env,e?.phone,'CLOCKOUT_MISSING',{이름:e?.name||'',날짜:new Date(now+9*3600000).toISOString().slice(5,10).replace('-','/')}).catch(()=>null)}
    done[a.key]=now;changed=true}
-  if(changed){for(const k of Object.keys(done))if(now-done[k]>3*86400000)delete done[k];
+  if(changed){for(const k of Object.keys(done))if(now-done[k]>(/^(absentcnt|latecnt):/.test(k)?35:3)*86400000)delete done[k];
    await env.DB.prepare("UPDATE stores SET data=jsonb_set(data::jsonb,'{_alertsSent}',(CAST(? AS text))::jsonb)::text WHERE owner=?").bind(JSON.stringify(done),r.owner).run()}
  }
  return sent;

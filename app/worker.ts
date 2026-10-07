@@ -27,6 +27,7 @@ import {storeLogApi} from './store-log-api';
 import {icsApi} from './ics-api';
 import {multiStoreApi} from './multi-store-api';
 import {kakaoSkillApi} from './kakao-skill-api';
+import {kioskApi,kioskPinHash} from './kiosk-api';
 import {staffDocsApi} from './staff-docs-api';
 import {pushApi,notifyUser,notificationsApi} from './push-api';
 import {qrTokenOk} from '../lib/qr-live';
@@ -72,6 +73,7 @@ async function route(request:Request,env:Env){
   if(uid&&request.method!=='GET'&&!await authLimit(env as any,'api-user:'+uid,300,60000))return slow();}
  if(path==='/api/ics')return icsApi(request,env);
  if(path==='/api/kakao-skill')return kakaoSkillApi(request,env as any);
+ if(path==='/api/kiosk')return kioskApi(request,env);
  if(path==='/api/admin')return adminApi(request,env);
  if(path==='/api/documents')return documentsApi(request,env);
  if(path==='/api/contracts')return contractsApi(request,env);
@@ -107,9 +109,9 @@ async function route(request:Request,env:Env){
  if(linked.access!=='owner'&&(!self||staffGone(self)))return json({error:'이 가게를 볼 권한이 없어요. 사장님께 연결을 요청해 주세요.'},403);
  let name=request.headers.get('oai-authenticated-user-full-name')||request.headers.get('oai-authenticated-user-email')||'사장님';try{if(request.headers.get('oai-authenticated-user-full-name-encoding')==='percent-encoded-utf-8')name=decodeURIComponent(name)}catch{}
  const actor={id:userId,name:self?.name||name,email:request.headers.get('oai-authenticated-user-email')||''};
- let freshPub:string[]=[];let freshOpen:any[]=[];let importResult:any=null;let trash:any[]=Array.isArray(raw?._trash)?raw._trash:[];let certReq:any=null;let askNotice:any=null; let inviteUrl:string|undefined;let attendanceQrUrl:string|undefined;
+ let freshPub:string[]=[];let freshOpen:any[]=[];let importResult:any=null;let kioskUrl:string|undefined;let trash:any[]=Array.isArray(raw?._trash)?raw._trash:[];let certReq:any=null;let askNotice:any=null; let inviteUrl:string|undefined;let attendanceQrUrl:string|undefined;
  const result=()=>{
-  if(access==='owner')return {links:{linked:members.map((m:any)=>m.employeeId),invited:Object.fromEntries(invitations.map((i:any)=>[i.employeeId,i.expires]))},state,version:version+1,audit,outbox,actor,emailConnected:!!(env.RESEND_API_KEY&&env.EMAIL_FROM),access,selfId:null,inviteUrl,attendanceQrUrl,qrModes:raw?._attendanceQrMode||{},plan:raw?._account||null,qrRequired:hasFeature(raw?._account,'qr'),...(importResult?{importResult}:{}),trash:trash.filter((t:any)=>t.at>=new Date(Date.now()-30*86400000).toISOString()).slice(-200).reverse().map((t:any)=>({id:t.id,kind:t.kind,at:t.at,by:t.by,label:t.kind==='shift'?`${state.employees.find(e=>e.id===t.item.employeeId)?.name||'직원'} ${t.item.date} ${t.item.start}–${t.item.end}`:t.item.name}))};
+  if(access==='owner')return {links:{linked:members.map((m:any)=>m.employeeId),invited:Object.fromEntries(invitations.map((i:any)=>[i.employeeId,i.expires]))},state,version:version+1,audit,outbox,actor,emailConnected:!!(env.RESEND_API_KEY&&env.EMAIL_FROM),access,selfId:null,inviteUrl,attendanceQrUrl,qrModes:raw?._attendanceQrMode||{},plan:raw?._account||null,qrRequired:hasFeature(raw?._account,'qr'),...(importResult?{importResult}:{}),...(kioskUrl!==undefined?{kioskUrl}:{}),trash:trash.filter((t:any)=>t.at>=new Date(Date.now()-30*86400000).toISOString()).slice(-200).reverse().map((t:any)=>({id:t.id,kind:t.kind,at:t.at,by:t.by,label:t.kind==='shift'?`${state.employees.find(e=>e.id===t.item.employeeId)?.name||'직원'} ${t.item.date} ${t.item.start}–${t.item.end}`:t.item.name}))};
   const filtered=personalTeam(state,self!.id);
   return {state:filtered,version:version+1,audit:[],outbox:[],actor,emailConnected:false,access,selfId:self!.id,plan:raw?._account?{plan:raw._account.plan}:null,qrRequired:hasFeature(raw?._account,'qr')};
  };
@@ -120,7 +122,7 @@ async function route(request:Request,env:Env){
  if(request.headers.get('origin')!==new URL(request.url).origin)return json({error:'요청 출처를 확인할 수 없어요. 척척사장 화면을 새로고침한 뒤 다시 시도해 주세요.'},403);
  const text=await request.text();if(text.length>1500000)return json({error:'한 번에 저장할 수 있는 양을 넘었어요. 오래된 기록을 정리하거나 나눠서 저장해 주세요.'},413);
  let b:any;try{b=JSON.parse(text)}catch{return json({error:'요청을 읽지 못했어요. 새로고침한 뒤 다시 시도해 주세요.'},400)}
- if(access!=='owner'&&(request.method==='PUT'||!['attendance','request','ackWeek','requestCertificate','staffAsk','takeOpenShift'].includes(b.action)))return json({error:'이 작업은 사장님만 할 수 있어요. 사장님께 요청해 주세요.'},403);
+ if(access!=='owner'&&(request.method==='PUT'||!['attendance','request','ackWeek','requestCertificate','staffAsk','takeOpenShift','lateReason','setKioskPin'].includes(b.action)))return json({error:'이 작업은 사장님만 할 수 있어요. 사장님께 요청해 주세요.'},403);
  if(access!=='owner'&&b.action==='attendance'&&b.employeeId!==self!.id)return json({error:'본인 출퇴근만 기록할 수 있어요. 내 계정으로 로그인했는지 확인해 주세요.'},403);
  if(access!=='owner'&&b.action==='request'){const target=state.attendance.find(a=>a.id===b.id);if(!target||target.employeeId!==self!.id)return json({error:'본인 출퇴근만 정정 요청할 수 있어요.'},403);}
  // 출퇴근은 화면이 조금 오래돼도 지금 서버 기록을 기준으로 처리한다(같은 시각에 여러 직원이 찍어도 막지 않음). 저장은 아래 version 조건으로 원자적.
@@ -199,7 +201,7 @@ async function route(request:Request,env:Env){
   if(raw?._operations?.leaves?.some((l:any)=>l.status==='승인'&&l.employeeId===self!.id&&o.date>=l.start&&o.date<=l.end))fail('그날은 내 휴가가 승인돼 있어요. 휴가를 먼저 취소해 주세요.');
   {const block=checkShift(sh,[...state.shifts,sh],self as any,(state.settings as any).weekStart||'mon').find(c=>c.level==='block');if(block)fail(block.text)}
   state.shifts.push(sh);o.status='배정됨';o.assignedTo=self!.id;o.assignedAt=new Date().toISOString();log('빈 근무 맡음',self!.name,null,{date:o.date,start:o.start,end:o.end});
-  askNotice={owner:true,title:`${self!.name}님이 빈 근무를 맡았어요`,body:`${Number(o.date.slice(5,7))}/${Number(o.date.slice(8))} ${o.start}–${o.end} 근무가 근무표에 들어갔어요.`};break;}
+  askNotice={owner:true,url:'/app?screen=schedule',title:`${self!.name}님이 빈 근무를 맡았어요`,body:`${Number(o.date.slice(5,7))}/${Number(o.date.slice(8))} ${o.start}–${o.end} 근무가 근무표에 들어갔어요.`};break;}
  case 'importAttendance':{// 지시서 087: 다른 서비스 출퇴근 기록 가져오기(사장님 입력으로 남김, 겹치거나 확정된 달은 건너뜀)
   const list=Array.isArray(b.items)?b.items.slice(0,5000):[];if(!list.length)fail('가져올 기록이 없어요. 파일을 다시 골라 주세요.');let added=0,skipped=0;
   for(const x of list){const e=state.employees.find(e=>e.id===x?.employeeId);if(!e){skipped++;continue}const r=toRecord(x);const n:any={id:crypto.randomUUID(),employeeId:e.id,start:r.start,end:r.end,breakMinutes:Math.min(720,r.breakMinutes||0),breakStart:null,source:'owner',otApproved:{by:actor.name||'사장님',at:new Date().toISOString()}};
@@ -212,6 +214,21 @@ async function route(request:Request,env:Env){
   if(t.kind==='shift'){if(!state.employees.some(e=>e.id===t.item.employeeId))fail('그 직원이 없어 근무를 되살릴 수 없어요. 직원을 먼저 되살려 주세요.');if(state.shifts.some(x=>x.id===t.item.id))fail('이미 근무표에 있어요. 근무표를 확인해 주세요.');if(findShiftConflict([...state.shifts,t.item] as any))fail('그 시간에 같은 직원의 다른 근무가 있어요. 근무표를 고친 뒤 되살려 주세요.');state.shifts.push(t.item);}
   else if(t.kind==='employee'){if(state.employees.some(e=>e.id===t.item.id))fail('이미 직원 목록에 있어요. 직원 관리에서 확인해 주세요.');if(!state.branches.some(x=>x.id===t.item.branchId))t.item.branchId=state.branches[0].id;if(t.item.email&&state.employees.some(e=>e.email&&e.email.toLowerCase()===t.item.email.toLowerCase()))fail('같은 이메일의 직원이 있어 되살릴 수 없어요. 이메일을 확인해 주세요.');state.employees.push(t.item);}
   trash=trash.filter((x:any)=>x.id!==b.id);log('휴지통에서 되살림',t.kind==='shift'?'근무 스케줄':t.item.name,null,{kind:t.kind,id:t.item.id});break;}
+ case 'lateReason':{// 지시서 009: 늦게 찍은 직원이 이유 한 줄(본인 기록, 오늘·어제만)
+  if(!self)fail('직원 계정에서만 적을 수 있어요. 직원으로 로그인해 주세요.');const a:any=state.attendance.find(x=>x.id===b.id&&x.employeeId===self!.id);if(!a)fail('내 출근 기록을 찾을 수 없어요. 새로고침해 주세요.');
+  if(kdate(a.start)<kdate(new Date(Date.now()-86400000).toISOString()))fail('지난 기록은 수정 요청으로 사유를 남겨 주세요.');if(locked(a))fail('급여가 확정된 달이에요. 사장님께 말씀해 주세요.');
+  const reason=String(b.reason||'').trim().slice(0,100);if(!reason)fail('이유를 한 줄 적어 주세요.');const before=a.lateReason;a.lateReason=reason;log('지각 사유',self!.name,before?{lateReason:before}:null,{lateReason:reason});askNotice={owner:true,title:`${self!.name}님 지각 사유`,body:reason.slice(0,60),url:'/app?screen=attendance'};break;}
+ case 'setKioskPin':{// 지시서 020: 태블릿 출퇴근 비밀번호(직원 본인이 정하거나, 사장님이 지워 다시 정하게)
+  const e:any=access==='owner'?state.employees.find(x=>x.id===b.employeeId):self;if(!e)fail('직원을 찾을 수 없어요. 새로고침해 주세요.');
+  if(access==='owner'){delete e.kioskPin;log('태블릿 비밀번호 초기화',e.name,null,null);break}
+  if(!/^\d{4,6}$/.test(String(b.pin||'')))fail('숫자 4~6자리로 정해 주세요.');if(/^(\d)\1+$/.test(b.pin)||'0123456789'.includes(b.pin)||'9876543210'.includes(b.pin))fail('1111·1234처럼 쉬운 숫자는 쓸 수 없어요. 다른 숫자로 정해 주세요.');
+  const salt=Array.from(crypto.getRandomValues(new Uint8Array(8)),n=>n.toString(16).padStart(2,'0')).join('');e.kioskPin={salt,hash:await kioskPinHash(e.id,salt,String(b.pin))};log('태블릿 비밀번호 설정',e.name,null,null);break;}
+ case 'kioskLink':{// 지시서 020: 매장 태블릿 주소 만들기·끄기(지점별 하나)
+  if(!state.branches.some(x=>x.id===b.branchId))fail('지점을 골라 주세요.');await env.DB.prepare('DELETE FROM kiosk_tokens WHERE owner=? AND branch_id=?').bind(owner,b.branchId).run();
+  if(b.off){log('태블릿 주소 끄기',b.branchId,null,null);kioskUrl='';break}
+  const tok=Array.from(crypto.getRandomValues(new Uint8Array(24)),n=>n.toString(16).padStart(2,'0')).join('');
+  await env.DB.prepare('INSERT INTO kiosk_tokens(token_hash,owner,branch_id,created_at) VALUES(?,?,?,?)').bind(await hashToken('kiosk-token:'+tok),owner,b.branchId,new Date().toISOString()).run();
+  kioskUrl=new URL('/kiosk?k='+tok,request.url).href;log('태블릿 주소 만들기',b.branchId,null,null);break;}
  case 'approveOvertime':{// 지시서 005: 예정보다 늦은 퇴근을 승인해야 급여에 반영(원본 시각은 그대로)
   const a:any=state.attendance.find(a=>a.id===b.id);if(!a||!a.end)fail('끝난 근무 기록을 골라 주세요. 새로고침해 보세요.');if(locked(a))fail('급여가 확정된 달이에요. 확정을 먼저 해제해 주세요.');
   const before=a.credit;a.otApproved=b.undo?null:{by:actor.name||'사장님',at:new Date().toISOString()};applyCredit(a,state,true);log(b.undo?'연장근무 승인 취소':'연장근무 승인',state.employees.find(e=>e.id===a.employeeId)?.name||a.employeeId,before,a.credit);break;}
@@ -249,7 +266,7 @@ if(!m||!['발송 대기','발송 실패','결과 확인 필요'].includes(m.stat
  for(const e of checked.data.employees as any[])if(e.anonymizedAt&&!(raw?.employees||[]).find((x:any)=>x.id===e.id)?.anonymizedAt)await env.DB.prepare('DELETE FROM staff_documents WHERE owner=? AND employee_id=?').bind(owner,e.id).run().catch(()=>null);
  // 지시서 118: 지급 완료를 기록하면 그 직원에게 알림
  if(b.action==='markPaid'&&!b.undo&&Array.isArray(b.ids)){const run:any=checked.data.payrollRuns[b.key];for(const id of b.ids){const uid=(members||[]).find((m:any)=>m.employeeId===id)?.userId;const row=run?.rows?.find((r:any)=>r.employeeId===id);if(uid&&row)await notifyUser(env,uid,{title:`${Number(run.month.slice(5))}월 급여가 지급됐어요`,body:`실수령 ${Math.round(row.net).toLocaleString('ko-KR')}원을 ${String(b.date).slice(5).replace('-','/')}에 보냈다고 사장님이 기록했어요. 통장을 확인해 주세요.`,url:'/app?screen=payroll',kind:'payroll'}).catch(()=>null)}}
- if(askNotice)await notifyUser(env,askNotice.owner?owner:askNotice.uid,{title:askNotice.title,body:askNotice.body,url:askNotice.owner?'/app?screen=payroll':'/app?screen=payroll',kind:askNotice.owner?'staff':'payroll'}).catch(()=>null);
+ if(askNotice)await notifyUser(env,askNotice.owner?owner:askNotice.uid,{title:askNotice.title,body:askNotice.body,url:askNotice.url||'/app?screen=payroll',kind:askNotice.owner?'staff':'payroll'}).catch(()=>null);
  if(certReq)await notifyUser(env,owner,{title:`${certReq.name}님이 ${certReq.kind}증명서를 요청했어요`,body:(certReq.purpose?`쓰실 곳: ${certReq.purpose}. `:'')+'직원 관리에서 증명서를 만들어 전달해 주세요.',url:'/app?screen=employees',kind:'staff'}).catch(()=>null);
  for(const o of freshOpen)for(const e of checked.data.employees.filter((x:any)=>x.branchId===o.branchId&&x.status!=='퇴사')){const uid=(members||[]).find((m:any)=>m.employeeId===e.id)?.userId;if(uid)await notifyUser(env,uid,{title:'빈 근무를 모집해요',body:`${Number(o.date.slice(5,7))}/${Number(o.date.slice(8))} ${o.start}–${o.end} · 먼저 누른 사람이 맡아요.`,url:'/app?screen=schedule',kind:'schedule'}).catch(()=>null)}
  // 지시서 3주차 023: 공개한 주의 직원에게 알림

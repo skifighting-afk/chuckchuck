@@ -24,7 +24,7 @@ export const geoText = (x?: {ok: boolean; m: number}) => !x ? '' : x.m < 0 ? '�
 /** 007: 같은 날 한 휴대폰으로 서로 다른 직원 2명 이상이 출근 */
 export function sharedDevices(att: Att[], date: string) {
   const by = new Map<string, Set<string>>();
-  for (const a of att) if (a.device && kd(a.start) === date) { const s = by.get(a.device) || new Set(); s.add(a.employeeId); by.set(a.device, s) }
+  for (const a of att) if (a.device && a.device !== 'kiosk' && kd(a.start) === date) { const s = by.get(a.device) || new Set(); s.add(a.employeeId); by.set(a.device, s) }
   return [...by.entries()].filter(([, s]) => s.size >= 2).map(([device, s]) => ({device, employeeIds: [...s]}));
 }
 

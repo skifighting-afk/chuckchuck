@@ -3,6 +3,7 @@
 import {useState,useEffect} from 'react';
 import {type Team,today,calculate,won} from '../lib/team-model';
 import {weekProgress,myMonth} from '../lib/staff-home';
+import {dayRows} from '../lib/attendance-check';
 
 export function StaffWeek({state,selfId}:{state:Team,selfId:string}){
  const p=weekProgress(state.attendance.filter(a=>a.employeeId===selfId) as any,state.shifts.filter(s=>s.employeeId===selfId),Date.now(),((state.settings as any).weekStart||'mon'));
@@ -72,4 +73,21 @@ export function PinnedNotices({demo}:{demo:boolean}){
  useEffect(()=>{if(demo)return;let alive=true;fetch('/api/operations').then(r=>r.ok?r.json():null).then((d:any)=>{if(alive&&d)setList((d.notices||[]).filter((n:any)=>n.pinned))}).catch(()=>{});return()=>{alive=false}},[demo]);
  if(!list.length)return null;
  return <section className="pinned-notices" aria-label="중요 공지">{list.slice(0,3).map(n=><article key={n.id}><b>📌 {n.title}</b><p>{n.body}</p></article>)}</section>;
+}
+
+/** 지시서 009: 늦게 찍었으면 이유 한 줄(선택) — 사장님께 알림이 가고 기록 옆에 보여요 */
+export function LateReason({state,selfId,busy,mutate}:{state:Team,selfId:string,busy:boolean,mutate:(b:any)=>Promise<boolean>}){
+ const t=today(),rows=dayRows(t,state.shifts.filter(x=>x.employeeId===selfId),state.attendance.filter(a=>a.employeeId===selfId) as any),row=rows.find(r=>r.statuses.some(x=>x.kind==='지각')&&r.records.length);
+ const rec:any=row?.records[0],[v,setV]=useState(''),[hide,setHide]=useState(false);
+ if(!rec||rec.lateReason||hide)return null;
+ const mins=row!.statuses.find(x=>x.kind==='지각')?.minutes;
+ return <form className="panel t-gap late-reason" onSubmit={async e=>{e.preventDefault();if(await mutate({action:'lateReason',id:rec.id,reason:v}))setV('')}}><p><b>{mins?`${mins}분 `:''}늦게 출근했어요.</b> 이유를 한 줄 남기면 사장님께 전해 드려요(선택).</p>
+  <div className="t-inline"><input aria-label="늦은 이유" maxLength={100} value={v} onChange={e=>setV(e.target.value)} placeholder="예: 버스가 20분 늦게 왔어요"/><button type="submit" className="primary" disabled={busy||!v.trim()}>보내기</button><button type="button" className="link-btn" onClick={()=>setHide(true)}>안 적을래요</button></div></form>;
+}
+
+/** 지시서 020: 매장 태블릿에서 출퇴근할 때 쓰는 내 비밀번호(숫자 4~6자리) */
+export function KioskPinSetting({state,selfId,busy,mutate}:{state:Team,selfId:string,busy:boolean,mutate:(b:any)=>Promise<boolean>}){
+ const me:any=state.employees.find(e=>e.id===selfId),[pin,setPin]=useState(''),[ok,setOk]=useState('');
+ return <details className="panel t-gap kiosk-pin-set"><summary>태블릿 출퇴근 비밀번호 {me?.kioskPin?'· 정해 둠':''}</summary><div className="t-panelbody"><p className="footnote">매장 태블릿에서 내 이름을 누르고 이 숫자를 넣으면 출퇴근돼요. 1111·1234처럼 쉬운 숫자는 안 돼요. 다른 사람에게 알려 주지 마세요.</p>
+  <form className="t-inline" onSubmit={async e=>{e.preventDefault();if(await mutate({action:'setKioskPin',pin})){setPin('');setOk('비밀번호를 정했어요.')}}}><input type="password" inputMode="numeric" autoComplete="new-password" aria-label="태블릿 비밀번호" maxLength={6} value={pin} onChange={e=>setPin(e.target.value.replace(/\D/g,''))}/><button type="submit" className="secondary" disabled={busy||pin.length<4}>{me?.kioskPin?'바꾸기':'정하기'}</button></form>{ok&&<p role="status" className="saas-success">{ok}</p>}</div></details>;
 }

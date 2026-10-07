@@ -32,6 +32,7 @@ const PricingPage=lazy(()=>import('./public-pages').then(x=>({default:x.PricingP
 const StatusPage=lazy(()=>import('./status-page').then(x=>({default:x.StatusPage})));
 const Support=lazy(()=>import('./support').then(x=>({default:x.Support})));
 const SharePage=lazy(()=>import('./accountant-share').then(x=>({default:x.SharePage})));
+const KioskPage=lazy(()=>import('./kiosk').then(x=>({default:x.KioskPage})));
 const SupportDesk=lazy(()=>import('./support').then(x=>({default:x.SupportDesk})));
 const PasswordDesk=lazy(()=>import('./support').then(x=>({default:x.PasswordDesk})));
 
@@ -50,7 +51,7 @@ export default function Platform(){
  const [account,setAccount]=useState<any>(null),[status,setStatus]=useState('loading'),[error,setError]=useState('');
  const path=location.pathname,query=new URLSearchParams(location.search),invite=query.get('invite'),qrEntry=attendanceQrEntry(path,location.search);
  const reload=async()=>{setError('');setStatus('loading');try{const r=await fetch('/api/account');const d:any=await r.json();if(r.status===401){setStatus('anonymous');return}if(!r.ok)throw Error(d.error);setAccount(d);setStatus('ready')}catch(e){setError(e instanceof Error?e.message:'연결할 수 없습니다.');setStatus('error')}};
- useEffect(()=>{if(!['/demo','/try','/start','/calculator','/help','/refund','/admin','/admin/login'].includes(path))reload()},[]);
+ useEffect(()=>{if(!['/demo','/try','/start','/calculator','/help','/refund','/admin','/admin/login','/kiosk'].includes(path))reload()},[]);
  if(path==='/admin/login')return <Shell><main className="native-auth-wrap"><AuthForm role="owner" next="/admin" account={null} admin/></main></Shell>;
  if(path==='/admin')return <Shell><AdminDesk/><SupportDesk/><PasswordDesk/><section className="saas-account" aria-label="본사 알림"><p className="saas-fine">서버 오류가 10분 안에 3번 넘게 나면 이 기기로 알림을 보내요.</p><PushToggle/></section></Shell>;
  if(path==='/verify-email')return <Shell><VerifyEmail/></Shell>;
@@ -61,6 +62,7 @@ export default function Platform(){
  if(path==='/pricing')return <Shell><PricingPage/></Shell>;
  if(path==='/status')return <Shell><StatusPage/></Shell>;
  if(path==='/share')return <Shell><SharePage/></Shell>;
+ if(path==='/kiosk')return <KioskPage/>;
  if(path==='/logout')return <Logout/>;
  if(path==='/start')return <Start/>;
  if(path==='/demo'||path==='/try')return <TeamApp demo/>;

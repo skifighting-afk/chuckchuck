@@ -60,3 +60,12 @@ export function KakaoBotPanel({demo}:{demo:boolean}){
   :<><button type="button" className="secondary" onClick={async()=>{const d=await call('code');if(d)setCode(d.code)}}>연결 코드 받기</button>{code&&<p className="kakao-code">카카오톡 채널에 <b>연결 {code}</b> 라고 보내 주세요. 10분 동안만 쓸 수 있어요.</p>}</>}
   {err&&<p role="alert" className="saas-error">{err}</p>}</div></details>;
 }
+
+/** 지시서 010: 결근·지각 누적 알림 기준 */
+export function AbsenceAlertSetting({s,busy,save}:{s:Team,busy:boolean,save:(n:Team)=>Promise<any>}){
+ const cur=(s.settings as any).absenceAlert||{absent:2,late:4},[v,setV]=useState(cur),[msg,setMsg]=useState('');
+ return <section className="panel t-gap" aria-label="결근·지각 누적 알림"><div className="panel-heading"><h2>결근·지각 누적 알림</h2></div><div className="t-panelbody">
+  <p className="footnote">한 달에 정한 횟수에 닿으면 다음 날 아침 9시에 알려 드려요. 0으로 두면 끄기예요.</p>
+  <div className="t-inline"><label>결근 <input type="number" min={0} max={31} value={v.absent} onChange={e=>setV({...v,absent:Math.max(0,Math.min(31,Number(e.target.value)||0))})}/>번</label><label>지각 <input type="number" min={0} max={31} value={v.late} onChange={e=>setV({...v,late:Math.max(0,Math.min(31,Number(e.target.value)||0))})}/>번</label><button type="button" className="secondary" disabled={busy} onClick={async()=>{if(await save({...s,settings:{...s.settings,absenceAlert:v}} as any))setMsg('저장했어요.')}}>저장</button></div>
+  {msg&&<p role="status" className="saas-success">{msg}</p>}</div></section>;
+}
