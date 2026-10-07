@@ -32,8 +32,8 @@ export function HomeOverview({state,branch,onPayroll,onAttendance,onSchedule,onE
  if(!employees.length)return <>{!demo&&<JoinInbox onChanged={onChanged||(()=>location.reload())}/>}{checklist}<section className="home-start"><img src="/cheokcheoki-welcome.png" alt="" width="88" height="88"/><h2>직원이 직접 신청하면, 사장님은 수락만</h2><p>직원에게 가입 주소를 알려 주세요. 합류 신청을 확인하고 수락하면 우리 가게에 연결돼요.</p><button className="home-main-action" onClick={onJoin||(()=>location.assign('/staff-requests'))}>직원 가입 안내·신청 확인 →</button><p><button onClick={onRegister}>사장님이 직접 직원 입력하기</button></p></section></>;
  const tolName=((state.settings as any).attendanceTolerance||'normal'),board=todayBoard(state,branch,today(),findings,Date.now(),tolName==='lenient'?10:tolName==='strict'?0:5),alerts=homeAlerts(state,branch,today(),board),budget=budgetStatus(state,branch,month),span=board.hi-board.lo,pos=(h:number)=>((h-board.lo)/span*100)+'%';
  const nowLabel=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric',weekday:'long'}).format(new Date())+' '+new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',hour:'numeric',minute:'2-digit'}).format(new Date());
- const count=(st:string[])=>board.rows.filter(r=>st.includes(r.status)).length;
- const groups=[{key:'working',label:'일하는 중',n:count(['working','extra'])},{key:'late',label:'늦게 출근',n:count(['late'])},{key:'noshow',label:'출근 기록 없음',n:count(['noshow','missed'])},{key:'planned',label:'출근 전',n:count(['planned'])},{key:'done',label:'퇴근',n:count(['done'])}].filter(g=>g.n>0);
+ const count=(st:string[])=>new Set(board.rows.filter(r=>st.includes(r.status)).map(r=>r.employeeId)).size;
+ const groups=[{key:'working',label:'일하는 중',n:count(['working','late','extra'])},{key:'late',label:'그중 늦게 출근',n:count(['late'])},{key:'noshow',label:'출근 기록 없음',n:count(['noshow','missed'])},{key:'planned',label:'출근 전',n:count(['planned'])},{key:'done',label:'퇴근',n:count(['done'])}].filter(g=>g.n>0);
  const ticks=Array.from({length:5},(_,i)=>board.lo+Math.round(span*i/4));
  const shown=board.rows.slice(0,10);
  return <div className="home-overview">{!demo&&<JoinInbox onChanged={onChanged||(()=>location.reload())}/>}{checklist}

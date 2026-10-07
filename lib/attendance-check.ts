@@ -17,14 +17,15 @@ export function checkDay(date: string, shifts: Shift[], attendance: Att[], toler
   const todays = shifts.filter(s => s.date === date), recs = attendance.filter(a => kdate(a.start) === date), used = new Set<string>();
   for (const s of todays) {
     const ss = at(s.date, s.start), se = at(s.date, s.end) + (s.end <= s.start ? DAY : 0);
-    // 같은 직원의 출퇴근 중 근무 시간과 가장 가까운 것
-    const mine = recs.filter(a => a.employeeId === s.employeeId && !used.has(a.id)).sort((a, b) => Math.abs(Date.parse(a.start) - ss) - Math.abs(Date.parse(b.start) - ss));
-    const a = mine.find(a => Date.parse(a.start) < se && (a.end ? Date.parse(a.end) : now) > ss - 2 * 3600000);
-    if (!a) { if (se <= now) out.push({kind: '미출근', employeeId: s.employeeId, date, shiftId: s.id}); continue; }
-    used.add(a.id);
-    const late = Date.parse(a.start) - ss;
-    if (late > tol) out.push({kind: '지각', employeeId: s.employeeId, date, minutes: Math.round(late / 60000), shiftId: s.id, attendanceId: a.id});
-    if (a.end) { const early = se - Date.parse(a.end); if (early > tol) out.push({kind: '조퇴', employeeId: s.employeeId, date, minutes: Math.round(early / 60000), shiftId: s.id, attendanceId: a.id}); }
+    // 같은 직원이 근무 시간 안에서 찍은 기록은 모두 이 근무에 묶는다(중간에 퇴근했다 다시 출근해도 '예정 외'가 아님).
+    const mine = recs.filter(a => a.employeeId === s.employeeId && !used.has(a.id) && Date.parse(a.start) < se && (a.end ? Date.parse(a.end) : now) > ss - 2 * 3600000)
+      .sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
+    if (!mine.length) { if (se <= now) out.push({kind: '미출근', employeeId: s.employeeId, date, shiftId: s.id}); continue; }
+    for (const a of mine) used.add(a.id);
+    const first = mine[0], last = mine[mine.length - 1];
+    const late = Date.parse(first.start) - ss;
+    if (late > tol) out.push({kind: '지각', employeeId: s.employeeId, date, minutes: Math.round(late / 60000), shiftId: s.id, attendanceId: first.id});
+    if (last.end) { const early = se - Date.parse(last.end); if (early > tol) out.push({kind: '조퇴', employeeId: s.employeeId, date, minutes: Math.round(early / 60000), shiftId: s.id, attendanceId: last.id}); }
   }
   for (const a of recs) if (!used.has(a.id)) out.push({kind: '예정 외 출근', employeeId: a.employeeId, date, attendanceId: a.id});
   return out;

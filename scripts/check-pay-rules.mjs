@@ -848,6 +848,29 @@ console.log('PASS: 요율 연간 갱신 경고.');
  const late=todayBoard(t,a.branchId,d,f2,Date.parse(d+'T23:59:00+09:00'));ok('밤에는 지금 표시가 범위 밖이면 없음',late.now===null||late.now<=late.hi);
  console.log('PASS: 홈 오늘 근무 막대.');
 }
+// 지시서 1라운드 A: 근무표와 맞는 출근은 '예정 외'가 아니고, 화면·비서·홈 숫자가 같다
+{
+ const {todayBoard}=await import('../dist/server/close-check.js');
+ const {checkDay}=await import('../lib/attendance-check.ts');
+ const {assistantBrief}=await import('../dist/server/assistant.js');
+ const t=normalizeTeam(null);delete t.legacy;const [a]=t.employees;const mk=(id,name)=>({...a,id,name});
+ t.employees=[mk('k1','김예시'),mk('k2','박샘플'),mk('k3','이체험')];const d='2026-10-06',iso=(h)=>new Date(Date.parse(d+'T'+h+':00+09:00')).toISOString(),now=Date.parse(d+'T14:00:00+09:00');
+ t.shifts=[{id:'s1',employeeId:'k1',date:d,start:'09:00',end:'15:00',breakMinutes:60},{id:'s2',employeeId:'k2',date:d,start:'13:00',end:'21:00',breakMinutes:60},{id:'s3',employeeId:'k3',date:d,start:'10:00',end:'19:00',breakMinutes:60}];
+ // 김예시가 근무 중간에 퇴근했다가 다시 출근(체험 화면에서 퇴근→출근 누름)
+ t.attendance=[{id:'a1',employeeId:'k1',start:iso('09:00'),end:iso('12:00'),breakMinutes:0},{id:'a1b',employeeId:'k1',start:iso('12:30'),end:null,breakMinutes:0},{id:'a2',employeeId:'k2',start:iso('13:00'),end:null,breakMinutes:0},{id:'a3',employeeId:'k3',start:iso('10:00'),end:null,breakMinutes:0}];
+ const f=checkDay(d,t.shifts,t.attendance,'normal',now);
+ ok('A1 근무표대로 출근한 날은 확인 권장 0건(중간에 다시 출근해도)',f.length===0);
+ const b=todayBoard(t,a.branchId,d,f,now),ids=b.rows.map(r=>r.employeeId);
+ ok('A3 한 직원은 한 줄',new Set(ids).size===ids.length&&ids.length===3);
+ ok('A3 제목과 일하는 중 숫자가 같음',b.working===new Set(b.rows.filter(r=>['working','late','extra'].includes(r.status)).map(r=>r.employeeId)).size&&b.working===3);
+ const brief=assistantBrief(t,a.branchId,'출퇴근 기록',d,now);
+ ok('A2 문제 없으면 비서도 문제 없음',brief.some(x=>x.text.includes('출퇴근 문제가 없어요')));
+ t.employees.push(mk('k4','정가상'));t.attendance.push({id:'a4',employeeId:'k4',start:iso('11:00'),end:null,breakMinutes:0});
+ const f2=checkDay(d,t.shifts,t.attendance,'normal',now),brief2=assistantBrief(t,a.branchId,'출퇴근 기록',d,now);
+ ok('A1 근무표에 없는 직원이 출근하면 확인 권장 1건',f2.length===1&&f2[0].kind==='예정 외 출근'&&f2[0].employeeId==='k4');
+ ok('A2 비서도 같은 건수와 이름',brief2.some(x=>x.text.includes('확인 권장 1건')&&x.text.includes('정가상')));
+ console.log('PASS: 지시서 1라운드 A (A1~A3).');
+}
 // 직원 엑셀 파일 등록: .xlsx·CSV 읽기
 {
  const {readFileSync}=await import('node:fs');

@@ -19,7 +19,7 @@ const iso = (d: string, hm: string) => new Date(`${d}T${hm}:00+09:00`).toISOStri
 const monthStart = (d: string) => d.slice(0, 8) + '01';
 const prevMonth = (d: string) => { const [y, m] = d.split('-').map(Number); return m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, '0')}`; };
 
-export function demoTeam(now = today()): Team {
+export function demoTeam(now = today(), clock = Date.now()): Team {
   const s = normalizeTeam(null); delete s.legacy;
   s.store = {name: '척척이네 식당', branch: '본점'}; s.branches = [{id: 'branch-main', name: '본점', address: ''}];
   const base = s.employees[0];
@@ -37,8 +37,14 @@ export function demoTeam(now = today()): Team {
   for (let d = from; d <= now; d = datePlus(d, 1)) {
     PEOPLE.forEach((p, i) => {
       if (!p.days.includes(dow(d))) return;
-      const open = d === now && i === PEOPLE.findIndex(x => x.days.includes(dow(now)));
-      s.attendance.push({id: `demo-attendance-${i}-${d}`, employeeId: `e${i}a1b2c3-demo`, start: iso(d, p.start), end: open ? null : iso(d, p.end), breakMinutes: p.brk, breakStart: null});
+      // 오늘은 지금 시각 기준: 아직 출근 시각 전이면 기록 없음, 퇴근 시각 전이면 근무 중. 체험 첫 화면엔 한 명 이상 근무 중이게 첫 근무자는 근무 중으로 둔다.
+      if (d === now) {
+        const st = Date.parse(iso(d, p.start)), en = Date.parse(iso(d, p.end)), first = i === PEOPLE.findIndex(x => x.days.includes(dow(now)));
+        if (st > clock && !first) return;
+        s.attendance.push({id: `demo-attendance-${i}-${d}`, employeeId: `e${i}a1b2c3-demo`, start: st > clock ? new Date(Math.max(clock - 30 * 60000, Date.parse(iso(d, '00:01')))).toISOString() : iso(d, p.start), end: en <= clock && !first ? iso(d, p.end) : null, breakMinutes: p.brk, breakStart: null});
+        return;
+      }
+      s.attendance.push({id: `demo-attendance-${i}-${d}`, employeeId: `e${i}a1b2c3-demo`, start: iso(d, p.start), end: iso(d, p.end), breakMinutes: p.brk, breakStart: null});
     });
   }
   s.shifts = s.employees.flatMap((e, i) => Array.from({length: 7}, (_, j) => datePlus(now, j)).filter(d => PEOPLE[i].days.includes(dow(d))).map((d, j) => ({id: `demo-shift-${i}-${j}`, employeeId: e.id, date: d, start: PEOPLE[i].start, end: PEOPLE[i].end, breakMinutes: PEOPLE[i].brk})));

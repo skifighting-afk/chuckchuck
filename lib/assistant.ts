@@ -28,7 +28,12 @@ export function assistantBrief(s:Team,branch:string,page:string,date:string,now=
   const tasks=todayTasks(s,branch,date);if(tasks.length)out.push({text:`처리할 일이 ${tasks.reduce((n,t)=>n+t.count,0)}건 있어요. 가장 많은 건 '${tasks.slice().sort((a,b)=>b.count-a.count)[0].label}'이에요.`,tone:'amber',target:tasks.slice().sort((a,b)=>b.count-a.count)[0].target});
   const b=budgetStatus(s,branch,date.slice(0,7));if(b)out.push({text:`이번 달 근무표대로면 인건비가 예산의 ${Math.round(b.ratio*100)}%(${won(b.planned)}원)예요.`,tone:b.over?'red':b.near?'amber':'ok',target:'reports'});
  }else if(page==='출퇴근 기록'){
-  if(alerts.length)for(const a of alerts.slice(0,4))out.push({text:a.title+'. '+a.detail+'.',tone:a.tone});
+  // 화면의 '확인 권장'과 같은 판정(checkDay)을 그대로 쓴다: 건수와 이름이 화면과 같아야 한다.
+  if(findings.length){
+   const nm=(id:string)=>es.find(e=>e.id===id)?.name||'직원';
+   out.push({text:`확인 권장 ${findings.length}건: `+findings.slice(0,4).map(f=>`${nm(f.employeeId)} ${f.kind}${f.minutes?` ${f.minutes}분`:''}`).join(', ')+(findings.length>4?` 외 ${findings.length-4}건`:'')+'.',tone:findings.some(f=>f.kind==='미출근')?'red':'amber'});
+   for(const a of alerts.filter(a=>a.key.startsWith('noshow')).slice(0,2))out.push({text:a.title+'. '+a.detail+'.',tone:a.tone});
+  }else if(alerts.length)for(const a of alerts.slice(0,4))out.push({text:a.title+'. '+a.detail+'.',tone:a.tone});
   else out.push({text:'오늘은 출퇴근 문제가 없어요. 근무표대로 찍혔어요.',tone:'ok'});
   if(pendingFix)out.push({text:`직원이 보낸 출퇴근 수정 요청 ${pendingFix}건이 수정 승인함에서 기다려요.`,tone:'amber'});
   out.push({text:'QR을 잘못 찍었다면 그 줄의 수정 요청으로 고치세요. 누가 언제 무엇을 바꿨는지 변경 이력에 남아요.'});

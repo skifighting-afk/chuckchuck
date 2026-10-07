@@ -54,3 +54,4 @@ tsconfig.tsbuildinfo
 coverage-summary.json
 ci-logs/
 reel-out/
+scripts/.probe/

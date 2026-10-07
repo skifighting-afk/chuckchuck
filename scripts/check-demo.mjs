@@ -7,7 +7,7 @@ import {payslipText,payslipMissing} from '../lib/payslip.ts';
 let n=0;const ok=(name,v)=>{assert.ok(v,name);console.log(`PASS ${++n}. ${name}`)};
 const sum=(xs)=>xs.reduce((t,x)=>t+x.amount,0);
 for(const now of ['2026-10-04','2026-02-15','2026-03-31']){
- const s=demoTeam(now),prev=Object.values(s.payrollRuns)[0];
+ const clock=Date.parse(now+'T12:00:00+09:00'),s=demoTeam(now,clock),prev=Object.values(s.payrollRuns)[0];
  ok(`${now}: demo state passes the store schema`,teamSchema.safeParse(s).success);
  ok(`${now}: only synthetic contacts`,s.employees.every(e=>e.email.endsWith('@example.invalid')&&e.phone==='010-0000-0000'));
  ok(`${now}: last month confirmed with today's calculation`,JSON.stringify(prev.rows)===JSON.stringify(calculate(s,prev.month).filter(r=>r.branchId==='branch-main')));
@@ -27,7 +27,7 @@ for(const now of ['2026-10-04','2026-02-15','2026-03-31']){
  const ledger=wageLedger(s,prev.month,prev.month);
  ok(`${now}: wage ledger total equals payroll total`,ledger.reduce((t,e)=>t+e.net,0)===rows.reduce((t,r)=>t+r.net,0)&&ledger.length===4);
  const open=s.attendance.filter(a=>!a.end);
- ok(`${now}: one person still at work today`,open.length===1&&open[0].start.startsWith(now));
- ok(`${now}: no attendance in the future`,s.attendance.every(a=>a.start.slice(0,10)<=now));
+ ok(`${now}: someone is at work at noon`,open.length>=1&&open.every(a=>Date.parse(a.start)<=clock));
+ ok(`${now}: no clock-in or clock-out in the future (A1·A3)`,s.attendance.every(a=>Date.parse(a.start)<=clock&&(!a.end||Date.parse(a.end)<=clock)));
 }
 console.log('PASS: 체험 화면 숫자(급여·명세서·임금대장 합계).');

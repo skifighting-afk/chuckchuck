@@ -75,7 +75,7 @@ export function todayBoard(s:Team,branch:string,date:string,findings:{kind:strin
  const recs=s.attendance.filter(a=>ids.has(a.employeeId)&&kdate(a.start)===date);
  const rows:BoardRow[]=s.shifts.filter(x=>ids.has(x.employeeId)&&x.date===date).sort((a,b)=>a.start.localeCompare(b.start)).map(x=>{
   const from=hourOf(x.start),to=hourOf(x.end)+(x.end<=x.start?24:0),f=findings.filter(f=>f.shiftId===x.id);
-  const late=f.find(f=>f.kind==='지각'),att=late?.attendanceId?recs.find(a=>a.id===late.attendanceId):recs.find(a=>a.employeeId===x.employeeId);
+  const late=f.find(f=>f.kind==='지각'),mine=recs.filter(a=>a.employeeId===x.employeeId).sort((a,b)=>a.start.localeCompare(b.start)),att=mine.find(a=>!a.end||Date.parse(a.end)>now)||mine[mine.length-1];
   const open=att&&(!att.end||Date.parse(att.end)>now),status:BoardStatus=f.some(f=>f.kind==='미출근')?'missed':open?(late?'late':'working'):att?'done':late?'late':'planned';
   // 출근 시각이 지났는데 아직 기록이 없으면(근무가 끝나기 전) '출근 기록 없음'
   const startMs=Date.parse(x.date+'T'+x.start+':00+09:00'),waited=Math.floor((now-startMs)/60000);
@@ -87,6 +87,7 @@ export function todayBoard(s:Team,branch:string,date:string,findings:{kind:strin
  for(const f of findings)if(f.kind==='예정 외 출근'){const a=recs.find(a=>a.id===f.attendanceId);if(!a)continue;const st=kTime(a.start),en=a.end?kTime(a.end):kTime(new Date(Math.max(now,Date.parse(a.start)+3600000)).toISOString());const from=hourOf(st);let to=hourOf(en);if(to<=from)to=from+1;rows.push({id:a.id,employeeId:a.employeeId,name:name(a.employeeId),start:st,end:a.end?en:'',from,to,status:a.end?'done':'extra',label:a.end?'예정 외 · 퇴근 '+en:'예정 외 출근 · 근무 중'})}
  const nowH=hourOf(kTime(new Date(now).toISOString()));
  let lo=Math.floor(Math.min(9,...rows.map(r=>r.from))),hi=Math.ceil(Math.max(lo+8,...rows.map(r=>r.to)));if(hi-lo>24)hi=lo+24;
+ // 한 직원은 한 번만 센다(홈 제목과 '일하는 중' 묶음이 같은 숫자를 쓴다)
  const working=new Set(rows.filter(r=>r.status==='working'||r.status==='late'||r.status==='extra').map(r=>r.employeeId)).size;
  const left=rows.filter(r=>r.status==='planned').length;
  return {rows,lo,hi,now:nowH>=lo&&nowH<=hi?nowH:null,working,left,attention:rows.filter(r=>r.status==='late'||r.status==='missed'||r.status==='noshow').length};

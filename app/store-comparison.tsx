@@ -1,11 +1,12 @@
 'use client';
 import {useState} from 'react';
-import {type Team,calculate,worked,kdate,won,today} from '../lib/team-model';
+import {type Team,calculate,worked,kdate,won} from '../lib/team-model';
 import {planLimits,hasFeature} from '../lib/plans';
 import {Btn,Field,Badge,saveFile} from './team-ui';
 import QRCode from 'qrcode';
-export function StoreComparison({state,plan,onSave,onOpen,onIssue,demo,busy}:{state:Team,plan:any,onSave:(s:Team)=>Promise<boolean>,onOpen:(id:string)=>void,onIssue:(id:string)=>void,demo:boolean,busy:boolean}){
- const [month,setMonth]=useState(today().slice(0,7)),[name,setName]=useState(''),[message,setMessage]=useState(''),[qr,setQr]=useState(''),[qrName,setQrName]=useState('');
+// 기준 월은 인건비 리포트와 같은 값(team.tsx의 month)을 받아 써서 두 화면 숫자가 같은 달을 가리키게 한다.
+export function StoreComparison({state,plan,onSave,onOpen,onIssue,demo,busy,month,setMonth}:{state:Team,plan:any,onSave:(s:Team)=>Promise<boolean>,onOpen:(id:string)=>void,onIssue:(id:string)=>void,demo:boolean,busy:boolean,month:string,setMonth:(m:string)=>void}){
+ const [name,setName]=useState(''),[message,setMessage]=useState(''),[qr,setQr]=useState(''),[qrName,setQrName]=useState('');
  const limits=planLimits(plan),compare=demo||hasFeature(plan,'comparison');
  const pay=calculate(state,month),rows=state.branches.map(b=>{const es=state.employees.filter(e=>e.branchId===b.id),ids=new Set(es.map(e=>e.id)),att=state.attendance.filter(a=>ids.has(a.employeeId)&&kdate(a.start).startsWith(month));return {...b,employees:es.filter(e=>e.status!=='퇴사').length,hours:att.reduce((n,a)=>n+worked(a),0),cost:pay.filter(r=>ids.has(r.employeeId)).reduce((n,r)=>n+r.gross,0),missing:att.filter(a=>!a.end).length}});
  async function add(){if(!name.trim()||busy)return;setMessage('');if(state.branches.length>=limits.branches){setMessage('현재 요금제의 매장 수를 모두 사용했어요. 계정·요금제에서 매장 수를 늘려 주세요.');return}if(await onSave({...state,branches:[...state.branches,{id:crypto.randomUUID(),name:name.trim(),address:''}]})){setName('');setMessage('새 매장을 만들었어요. 직원부터 등록해 주세요.')}}
