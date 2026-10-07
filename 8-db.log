@@ -1,6 +1,0 @@
-Connecting to remote database...
-Do you want to push these migrations to the remote database?
- • 20261009100000_calendar_tokens.sql
- [Y/n] 
-Applying migration 20261009100000_calendar_tokens.sql...
-Finished supabase db push.

@@ -1407,7 +1407,7 @@ PASS 36. 2026-03-31: no clock-in or clock-out in the future (A1·A3)
 PASS: 체험 화면 숫자(급여·명세서·임금대장 합계).
 
 ── check-error-messages
-PASS: 오류 문구 490개 모두 다음 행동 안내 포함.
+PASS: 오류 문구 506개 모두 다음 행동 안내 포함.
 PASS: 오류 번호·로그 개인정보 제거.
 
 ── check-attendance-table
@@ -1771,6 +1771,33 @@ PASS: 매장 일지·할 일·서명 서류.
 22. PASS attendance in bundle
 23. PASS roster has staff
 PASS: 달력 구독·기록 가져오기·근로감독 묶음.
+
+── check-franchise
+1. PASS support hours split
+2. PASS cost split by hours
+3. PASS compliance numbers
+4. PASS add shift
+5. PASS delete shift
+6. PASS deleted shift in trash
+7. PASS staff sees no trash
+8. PASS restore shift
+9. PASS shift back, trash empty
+10. PASS restore twice fails
+11. PASS owner sees own store
+12. PASS not my store refused
+13. PASS broadcast to own store
+14. PASS staff sees HQ notice
+15. PASS staff cannot broadcast
+16. PASS wrong skill key
+17. PASS unlinked asks to link
+18. PASS code is 6 digits
+19. PASS bad code
+20. PASS link with code
+21. PASS code single use
+22. PASS linked answers
+23. PASS status linked
+24. PASS staff link answers staff-only
+PASS: 지원 근무·준수 현황·여러 가게·휴지통·카카오톡 비서.
 
 ── check-share
 PASS: 세무사 공유 링크 (확정 급여만·끄기·만료·열람 기록·토큰 해시만 저장).
