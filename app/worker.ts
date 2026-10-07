@@ -93,8 +93,8 @@ async function route(request:Request,env:Env){
  const raw=row?JSON.parse(row.data):null;let state=normalizeTeam(raw);
  // 작업 026: 승인된 휴가(주휴 개근 판단용, 읽기 전용)
  (state as any).approvedLeaves=(raw?._operations?.leaves||[]).filter((l:any)=>l.status==='승인'&&l.start&&l.end).map((l:any)=>({employeeId:l.employeeId,start:l.start,end:l.end}));let audit:any[]=raw?._audit||[],outbox:any[]=raw?._outbox||[],invitations:any[]=raw?._invitations||[],members:any[]=raw?._members||[];const version=row?.version||0;
- const self=state.employees.find(e=>e.id===members.find(m=>m.userId===userId)?.employeeId),access=owner===userId?'owner':self?.access==='중간관리자'?'manager':'employee';
- if(owner!==userId&&(!self||staffGone(self)))return json({error:'이 가게를 볼 권한이 없어요. 사장님께 연결을 요청해 주세요.'},403);
+ const self=state.employees.find(e=>e.id===members.find(m=>m.userId===userId)?.employeeId),access=linked.access==='owner'?'owner':self?.access==='중간관리자'?'manager':'employee';
+ if(linked.access!=='owner'&&(!self||staffGone(self)))return json({error:'이 가게를 볼 권한이 없어요. 사장님께 연결을 요청해 주세요.'},403);
  let name=request.headers.get('oai-authenticated-user-full-name')||request.headers.get('oai-authenticated-user-email')||'사장님';try{if(request.headers.get('oai-authenticated-user-full-name-encoding')==='percent-encoded-utf-8')name=decodeURIComponent(name)}catch{}
  const actor={id:userId,name:self?.name||name,email:request.headers.get('oai-authenticated-user-email')||''};
  let freshPub:string[]=[];let certReq:any=null;let askNotice:any=null; let inviteUrl:string|undefined;let attendanceQrUrl:string|undefined;
@@ -195,7 +195,7 @@ if(!m||!['발송 대기','발송 실패','결과 확인 필요'].includes(m.stat
  delete (state as any).approvedLeaves;const checked=teamSchema.safeParse(state);if(!checked.success)return json({error:checked.error.issues[0].message},400);
  // 지시서 3주차 127: 새로 넣거나 바꾼 근무가 연소자 제한(밤·하루 7시간·주 35시간)에 걸리면 저장하지 않는다
  {const prevById=new Map((raw?.shifts||[]).map((x:any)=>[x.id,JSON.stringify([x.employeeId,x.date,x.start,x.end,x.breakMinutes])]));for(const sh of checked.data.shifts){if(prevById.get(sh.id)===JSON.stringify([sh.employeeId,sh.date,sh.start,sh.end,sh.breakMinutes]))continue;const block=checkShift(sh,checked.data.shifts,checked.data.employees.find(e=>e.id===sh.employeeId) as any,(checked.data.settings as any).weekStart||'mon').find(c=>c.level==='block');if(block)return json({error:block.text},400)}}
- const data=JSON.stringify({...checked.data,_attendanceQr:raw?._attendanceQr,_attendanceQrMode:raw?._attendanceQrMode,_hq:raw?._hq,_joinTerms:raw?._joinTerms,_joinCodes:raw?._joinCodes,_joinApplications:raw?._joinApplications,_account:raw?._account,_operations:raw?._operations,_manuals:raw?._manuals,_attendanceFrom:raw?._attendanceFrom,_alertsSent:raw?._alertsSent,_audit:audit,_outbox:outbox,_invitations:invitations,_members:members}),updatedAt=new Date().toISOString();
+ const data=JSON.stringify({...checked.data,_attendanceQr:raw?._attendanceQr,_attendanceQrMode:raw?._attendanceQrMode,_hq:raw?._hq,_joinTerms:raw?._joinTerms,_joinCodes:raw?._joinCodes,_joinApplications:raw?._joinApplications,_account:raw?._account,_operations:raw?._operations,_manuals:raw?._manuals,_attendanceFrom:raw?._attendanceFrom,_alertsSent:raw?._alertsSent,_coowners:raw?._coowners,_coownerInvites:raw?._coownerInvites,_checkRuns:raw?._checkRuns,_audit:audit,_outbox:outbox,_invitations:invitations,_members:members}),updatedAt=new Date().toISOString();
  const q=version===0?env.DB.prepare('INSERT OR IGNORE INTO stores(owner,data,version,updated_at) VALUES(?,?,?,?)').bind(owner,data,1,updatedAt):env.DB.prepare('UPDATE stores SET data=?,version=?,updated_at=? WHERE owner=? AND version=?').bind(data,version+1,updatedAt,owner,version);
  if(!(await q.run()).meta.changes)return json({error:'동시에 변경된 내용이 있습니다. 새로고침해 주세요.'},409);
  // 지시서 2주차 024: 근무표가 바뀐 직원에게만 알림(오늘 이후 근무)

@@ -35,10 +35,22 @@ export async function cronApi(request:Request,env:any){
  const reminders=await trialReminders(env);
  const deletions=await processDeletions(env,20).catch(()=>0);
  const contracts=await contractReminders(env).catch(()=>0);
+ const backups=await weeklyBackups(env).catch(()=>0);
  await env.DB.prepare('DELETE FROM notifications WHERE created_at<?').bind(new Date(Date.now()-90*86400000).toISOString()).run().catch(()=>{});
- return json({ok:true,reminders,deletions,contracts});
+ return json({ok:true,reminders,deletions,contracts,backups});
 }
 
+/** 지시서 147: 매주 월요일 가게마다 백업 한 벌(가게 데이터 + 최근 5주 출퇴근), 4주치만 남긴다 */
+export async function weeklyBackups(env:any,now=Date.now()){
+ const k=new Date(now+9*3600000);if(k.getUTCDay()!==1)return 0;const week=k.toISOString().slice(0,10);let n=0;
+ const rows=(await env.DB.prepare('SELECT s.owner,s.data FROM stores s WHERE NOT EXISTS(SELECT 1 FROM store_backups b WHERE b.owner=s.owner AND b.week=?) LIMIT 200').bind(week).all()).results as any[];
+ for(const r of rows){let d:any;try{d=JSON.parse(r.data)}catch{continue}
+  d.attendance=await loadAttendance(env.DB,r.owner,new Date(now-35*86400000).toISOString(),new Date(now+60000).toISOString()).catch(()=>[]);
+  const body=JSON.stringify({format:'chukchuk-weekly-backup/1',week,createdAt:new Date(now).toISOString(),note:'매주 자동 백업 · 최근 5주 출퇴근 포함. 전체 기록은 설정의 전체 내려받기로 받으세요.',store:d});
+  await env.DB.prepare('INSERT INTO store_backups(owner,week,data,bytes,created_at) VALUES(?,?,?,?,?) ON CONFLICT(owner,week) DO NOTHING').bind(r.owner,week,body,body.length,new Date(now).toISOString()).run();
+  await env.DB.prepare('DELETE FROM store_backups WHERE owner=? AND week NOT IN (SELECT week FROM store_backups WHERE owner=? ORDER BY week DESC LIMIT 4)').bind(r.owner,r.owner).run();n++}
+ return n;
+}
 /** 지시서 9주차: 서명 요청 뒤 2일 넘게 서명하지 않은 계약서 — 직원·사장님에게 다시 알림(3일에 한 번, 최대 3번) */
 export async function contractReminders(env:any,now=Date.now(),notify=(uid:string,m:any)=>notifyUser(env,uid,m)){
  const cut=new Date(now-2*86400000).toISOString(),again=new Date(now-3*86400000).toISOString();

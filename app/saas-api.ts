@@ -1,3 +1,4 @@
+import {digest} from '../lib/password';
 import {staffGone} from '../lib/staff-access';
 import {confirmSigner} from './auth-api';
 import {checkBusiness} from '../lib/nts';
@@ -11,16 +12,35 @@ import {LEGAL,consentCurrent} from '../lib/legal';
 import {plans,planId,TRIAL_DAYS,trialStatus,planLimits,monthlyPrice,periodPrice,capacityError,branchCount,MAX_BRANCHES,CONTRACTS_FREE_PER_MONTH,CONTRACT_EXTRA_PRICE,trialNotice,validBizNo,graceLeft} from '../lib/plans';
 type Env={DB:D1Database,HQ_ADMIN_EMAIL?:string,HQ_NATIVE_USER_ID?:string,NTS_API_KEY?:string};
 const json=(v:unknown,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
+/** 지시서 108·145: 이 계정이 들어갈 수 있는 가게 — 내 가게, 공동 관리자로 초대받은 가게, 직원으로 일하는 가게 */
+export async function storesForUser(db:D1Database,userId:string){
+  const out:{owner:string,name:string,access:'owner'|'coowner'|'staff'}[]=[];
+  const own=await db.prepare("SELECT owner,data::jsonb#>>'{store,name}' AS name FROM stores WHERE owner=?").bind(userId).first<any>();if(own)out.push({owner:own.owner,name:own.name||'내 가게',access:'owner'});
+  const co=(await db.prepare("SELECT owner,data::jsonb#>>'{store,name}' AS name FROM stores WHERE try_jsonb(data)->'_coowners' @> jsonb_build_array(jsonb_build_object('userId',CAST(? AS text))) LIMIT 20").bind(userId).all<any>()).results||[];for(const r of co)if(!out.some(x=>x.owner===r.owner))out.push({owner:r.owner,name:r.name||'가게',access:'coowner'});
+  const mem=(await db.prepare("SELECT owner,data::jsonb#>>'{store,name}' AS name FROM stores WHERE try_jsonb(data)->'_members' @> jsonb_build_array(jsonb_build_object('userId',CAST(? AS text))) LIMIT 20").bind(userId).all<any>()).results||[];for(const r of mem)if(!out.some(x=>x.owner===r.owner))out.push({owner:r.owner,name:r.name||'가게',access:'staff'});
+  return out;
+}
 export async function resolveStore(db:D1Database,userId:string){
+  // 지시서 108: 사용자가 고른 가게가 있으면 그 가게부터(들어갈 수 있는 곳일 때만)
+  const pref=await db.prepare('SELECT owner FROM user_store_pref WHERE user_id=?').bind(userId).first<any>().catch(()=>null);
+  const tryOwner=async(owner:string)=>{
+    const row=await db.prepare('SELECT owner,data,version,updated_at FROM stores WHERE owner=?').bind(owner).first<any>();if(!row)return null;
+    const raw=JSON.parse(row.data);
+    if(owner===userId||(raw._coowners||[]).some((c:any)=>c.userId===userId)){row.data=JSON.stringify(await hydrateAttendance(db,owner,raw));return {row,owner,access:'owner' as const,coowner:owner!==userId};}
+    const member=raw._members?.find((m:any)=>m.userId===userId);if(!member)return null;
+    const data=await hydrateAttendance(db,owner,raw);row.data=JSON.stringify(data);const employee=data.employees?.find((e:any)=>e.id===member.employeeId);
+    if(staffGone(employee))return {row,owner,access:'revoked' as const};
+    return {row,owner,access:employee.access==='중간관리자'?'manager' as const:'employee' as const};
+  };
+  if(pref?.owner){const r=await tryOwner(pref.owner);if(r&&r.access!=='revoked')return r;}
   // Owners keep their existing store even if a stale invite also exists.
-  const own=await db.prepare('SELECT owner,data,version,updated_at FROM stores WHERE owner=?').bind(userId).first<any>();
-  if(own){own.data=JSON.stringify(await hydrateAttendance(db,userId,JSON.parse(own.data)));return {row:own,owner:userId,access:'owner' as const};}
-  const linked=await db.prepare("SELECT owner,data,version,updated_at FROM stores WHERE try_jsonb(data)->'_members' @> jsonb_build_array(jsonb_build_object('userId',CAST(? AS text))) LIMIT 1").bind(userId).first<any>();
+  const own=await db.prepare('SELECT owner FROM stores WHERE owner=?').bind(userId).first<any>();
+  if(own)return tryOwner(userId);
+  const co=await db.prepare("SELECT owner FROM stores WHERE try_jsonb(data)->'_coowners' @> jsonb_build_array(jsonb_build_object('userId',CAST(? AS text))) LIMIT 1").bind(userId).first<any>();
+  if(co)return tryOwner(co.owner);
+  const linked=await db.prepare("SELECT owner FROM stores WHERE try_jsonb(data)->'_members' @> jsonb_build_array(jsonb_build_object('userId',CAST(? AS text))) LIMIT 1").bind(userId).first<any>();
   if(!linked)return null;
-  const data=await hydrateAttendance(db,linked.owner,JSON.parse(linked.data));linked.data=JSON.stringify(data);
-  const member=data._members?.find((m:any)=>m.userId===userId),employee=data.employees?.find((e:any)=>e.id===member?.employeeId);
-  if(staffGone(employee))return {row:linked,owner:linked.owner,access:'revoked' as const};
-  return {row:linked,owner:linked.owner,access:employee.access==='중간관리자'?'manager' as const:'employee' as const};
+  return tryOwner(linked.owner);
 }
 /** 계정 화면에 보여 줄 요금 정보(VAT 포함) */
 export function accountView(a:any,contractsThisMonth=0){
@@ -56,6 +76,9 @@ export async function accountApi(request:Request,env:Env){
    if(linked?.access==='owner'){const rows=await env.DB.prepare('SELECT n.id,n.kind,n.title,n.body,n.effective_at,c.agreed_at FROM service_notices n LEFT JOIN service_notice_consents c ON c.notice_id=n.id AND c.user_id=? WHERE n.effective_at>=? ORDER BY n.effective_at').bind(id,new Date(Date.now()-90*86400000).toISOString().slice(0,10)).all<any>();v.serviceNotices=rows.results.map((r:any)=>({id:r.id,kind:r.kind,title:r.title,body:r.body,effectiveAt:r.effective_at,agreedAt:r.agreed_at||null}))}
    // 작업 057: 나에게 넘겨진 가게(이메일 확인된 계정만)
    if(email&&v.user.emailVerified&&linked?.access!=='owner'){const rows=await env.DB.prepare("SELECT owner,data FROM stores WHERE lower(try_jsonb(data)#>>'{_account,transfer,toEmail}')=lower(?)").bind(email).all<any>();v.transferOffers=rows.results.map((r:any)=>{const d=JSON.parse(r.data);return Date.parse(d._account.transfer.expiresAt)>Date.now()?{owner:r.owner,storeName:d.store?.name||'',fromEmail:d._account.transfer.fromEmail||'',expiresAt:d._account.transfer.expiresAt}:null}).filter(Boolean)}
+   // 지시서 108·145: 들어갈 수 있는 가게 목록, 공동 관리자
+   v.stores=await storesForUser(env.DB as any,id).catch(()=>[]);v.currentStore=linked?.owner||null;v.coowner=!!(linked as any)?.coowner;
+   if(linked?.access==='owner'&&!(linked as any).coowner)v.coowners=(data?._coowners||[]).map((c:any)=>({userId:c.userId,email:c.email,name:c.name,addedAt:c.addedAt}));
    return json(v)}
   if(request.method!=='POST')return json({error:'이 방법으로는 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},405);
   if(request.headers.get('origin')!==new URL(request.url).origin)return json({error:'요청 출처를 확인할 수 없어요. 척척사장 화면을 새로고침한 뒤 다시 시도해 주세요.'},403);
@@ -92,6 +115,22 @@ export async function accountApi(request:Request,env:Env){
    const n=await env.DB.prepare('SELECT id FROM service_notices WHERE id=?').bind(typeof b.id==='string'?b.id:'').first();if(!n)return json({error:'안내를 찾을 수 없어요. 새로고침해 주세요.'},404);
    await env.DB.prepare('INSERT INTO service_notice_consents(notice_id,user_id,agreed_at) VALUES(?,?,?) ON CONFLICT DO NOTHING').bind(b.id,id,new Date().toISOString()).run();return json({ok:true});
   }
+  // 지시서 108: 보고 있는 가게 바꾸기
+  if(b.action==='switchStore'){const list=await storesForUser(env.DB as any,id);if(!list.some(x=>x.owner===b.owner))return json({error:'들어갈 수 없는 가게예요. 목록을 새로고침해 주세요.'},403);await env.DB.prepare('INSERT INTO user_store_pref(user_id,owner,updated_at) VALUES(?,?,?) ON CONFLICT(user_id) DO UPDATE SET owner=excluded.owner,updated_at=excluded.updated_at').bind(id,b.owner,new Date().toISOString()).run();return json({ok:true})}
+  // 지시서 145: 공동 관리자(가족·동업자) 초대 수락 — 링크의 토큰으로 가게를 찾는다
+  if(b.action==='acceptCoowner'){
+   if(typeof b.token!=='string'||b.token.length<20||b.token.length>200)return json({error:'초대 링크를 다시 확인해 주세요.'},400);
+   const hash=await digest('coowner:'+b.token),row=await env.DB.prepare("SELECT owner,data,version FROM stores WHERE try_jsonb(data)->'_coownerInvites' @> jsonb_build_array(jsonb_build_object('hash',CAST(? AS text))) LIMIT 1").bind(hash).first<any>();
+   if(!row)return json({error:'초대가 없거나 이미 쓴 링크예요. 가게 대표님께 새 링크를 받아 주세요.'},404);
+   if(row.owner===id)return json({error:'내 가게 초대 링크예요. 공동 관리자가 될 분의 계정으로 열어 주세요.'},400);
+   const d=JSON.parse(row.data),inv=(d._coownerInvites||[]).find((x:any)=>x.hash===hash);if(!inv||Date.parse(inv.expiresAt)<Date.now())return json({error:'초대 기간(7일)이 지났어요. 새 링크를 받아 주세요.'},410);
+   if((d._members||[]).some((m:any)=>m.userId===id))return json({error:'이 가게에 직원으로 연결된 계정이에요. 다른 계정으로 수락해 주세요.'},409);
+   const now=new Date().toISOString();d._coownerInvites=(d._coownerInvites||[]).filter((x:any)=>x.hash!==hash);d._coowners=[...(d._coowners||[]).filter((c:any)=>c.userId!==id),{userId:id,email,name:request.headers.get('oai-authenticated-user-full-name')?decodeURIComponent(request.headers.get('oai-authenticated-user-full-name')!):email,addedAt:now}].slice(0,5);
+   d._audit=[...(d._audit||[]),{id:crypto.randomUUID(),at:now,actor:{id,name:email,email},action:'공동 관리자 추가',target:email,before:null,after:{email},reason:'초대 링크 수락'}];
+   const r=await env.DB.prepare('UPDATE stores SET data=?,version=version+1,updated_at=? WHERE owner=? AND version=?').bind(JSON.stringify(d),now,row.owner,row.version).run();if(!r.meta.changes)return json({error:'다른 변경이 있어요. 다시 시도해 주세요.'},409);
+   await env.DB.prepare('INSERT INTO user_store_pref(user_id,owner,updated_at) VALUES(?,?,?) ON CONFLICT(user_id) DO UPDATE SET owner=excluded.owner,updated_at=excluded.updated_at').bind(id,row.owner,now).run();
+   return json({ok:true,message:(d.store?.name||'가게')+'의 공동 관리자가 되었어요.'});
+  }
   if(b.action==='transferAccept'){
    // 작업 057: 넘겨받는 쪽 확인(이메일 확인된 계정 + 비밀번호)
    if(linked?.access==='owner')return json({error:'이미 내 가게가 있는 계정은 다른 가게를 넘겨받을 수 없어요. 다른 계정으로 로그인해 주세요.'},409);
@@ -109,6 +148,16 @@ export async function accountApi(request:Request,env:Env){
   }
   if(!linked)return json({error:'매장 등록을 먼저 완료해 주세요.'},409);
   if(linked.access!=='owner')return json({error:'요금제는 사장님만 바꿀 수 있어요.'},403);
+  // 지시서 145: 공동 관리자 초대·내보내기(대표 계정만). 요금제·대표 변경도 대표 계정만
+  if((linked as any).coowner)return json({error:'요금제·공동 관리자·대표 변경은 가게 대표 계정만 할 수 있어요. 대표님께 요청해 주세요.'},403);
+  if(b.action==='coownerInvite'||b.action==='removeCoowner'){
+   const now=new Date().toISOString();let out:any={ok:true};
+   if(b.action==='coownerInvite'){if((data._coowners||[]).length>=5)return json({error:'공동 관리자는 5명까지예요. 먼저 한 명을 내보내 주세요.'},400);const token=crypto.randomUUID()+crypto.randomUUID();data._coownerInvites=[...(data._coownerInvites||[]).filter((x:any)=>Date.parse(x.expiresAt)>Date.now()),{hash:await digest('coowner:'+token),expiresAt:new Date(Date.now()+7*86400000).toISOString(),at:now}].slice(-5);out.url=new URL('/coowner?token='+token,request.url).href;}
+   else{const before=(data._coowners||[]).length;data._coowners=(data._coowners||[]).filter((c:any)=>c.userId!==b.userId);if(before===data._coowners.length)return json({error:'공동 관리자를 찾을 수 없어요. 새로고침해 주세요.'},404);await env.DB.prepare('DELETE FROM user_store_pref WHERE user_id=? AND owner=?').bind(String(b.userId),id).run();}
+   data._audit=[...(data._audit||[]),{id:crypto.randomUUID(),at:now,actor:{id,name:email,email},action:b.action==='coownerInvite'?'공동 관리자 초대':'공동 관리자 내보내기',target:'',before:null,after:null,reason:''}];
+   const saved=await env.DB.prepare('UPDATE stores SET data=?,version=?,updated_at=? WHERE owner=? AND version=?').bind(JSON.stringify(data),linked.row.version+1,now,id,linked.row.version).run();
+   return saved.meta.changes?json(out):json({error:'다른 변경이 있습니다. 새로고침해 주세요.'},409);
+  }
   if(b.action==='checkout')return json({error:'아직 결제를 받지 않아요. 지금은 무료·체험으로 계속 이용하시면 돼요.',code:'BILLING_NOT_READY'},503);
   if(!data._account)return json({error:'기존 매장은 지금 이용 상태 그대로 쓸 수 있어요. 요금제는 정식 판매 전에 따로 안내할게요.'},409);
   if(b.action==='changePlan'){

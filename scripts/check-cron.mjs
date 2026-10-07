@@ -47,5 +47,15 @@ console.log('PASS: 서비스 상태(/api/status).');
  await env.DB.prepare("DELETE FROM contract_envelopes WHERE id IN ('env-old','env-new')").run();
  console.log('PASS: 서명 대기 계약서 다시 알림.');
 }
+// 지시서 147: 월요일 자동 백업(4주치)
+{
+ const mod=await import('../dist/server/cron.js');const mon=Date.parse('2026-10-05T01:00:00Z');
+ await env.DB.prepare('INSERT INTO stores(owner,data,version,updated_at) VALUES(?,?,1,?) ON CONFLICT(owner) DO NOTHING').bind('bk-owner',JSON.stringify({store:{name:'백업'},employees:[],shifts:[]}),new Date().toISOString()).run();
+ assert.ok(await mod.weeklyBackups(env,mon)>=1);assert.equal(await mod.weeklyBackups(env,mon),0,'같은 주는 한 번');assert.equal(await mod.weeklyBackups(env,mon+86400000),0,'월요일에만');
+ for(let i=1;i<=5;i++)await mod.weeklyBackups(env,mon+i*7*86400000);
+ assert.equal(Number((await env.DB.prepare("SELECT count(*) AS n FROM store_backups WHERE owner='bk-owner'").first()).n),4,'4주치만');
+ await env.DB.prepare("DELETE FROM store_backups").run();await env.DB.prepare("DELETE FROM stores WHERE owner='bk-owner'").run();
+ console.log('PASS: 매주 자동 백업.');
+}
 console.log('PASS: 매일 작업 (비밀값·체험 종료 알림 7일·1일 각 한 번).');
 await closeAll();

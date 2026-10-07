@@ -36,18 +36,20 @@ export async function contractsApi(request:Request,env:Env){
  const uid=request.headers.get('oai-authenticated-user-id');if(!uid)return json({error:'로그인한 뒤 계약서를 확인해 주세요.'},401);
  try{
   const url=new URL(request.url),id=url.searchParams.get('id'),linked=await resolveStore(env.DB,uid);
+  // 지시서 145: 공동 관리자도 가게 주인 자리(owner)로 계약서를 다룬다
+  const ownerKey=linked?.access==='owner'?linked.owner:uid;
   const own=linked?.access==='owner',raw=linked?JSON.parse(linked.row.data):null,team=raw?normalizeTeam(raw):null;
   if(request.method==='GET'){
-   if(id){const row=await env.DB.prepare('SELECT * FROM contract_envelopes WHERE id=? AND (owner_id=? OR employee_user_id=?)').bind(id,uid,uid).first<any>();if(!row)return json({error:'계약서를 찾을 수 없어요. 목록을 새로고침해 주세요.'},404);
+   if(id){const row=await env.DB.prepare('SELECT * FROM contract_envelopes WHERE id=? AND (owner_id=? OR employee_user_id=?)').bind(id,ownerKey,uid).first<any>();if(!row)return json({error:'계약서를 찾을 수 없어요. 목록을 새로고침해 주세요.'},404);
     if(url.searchParams.get('download')==='1')return new Response(contractCopy(row),{headers:{'Content-Type':'text/html; charset=utf-8','Content-Disposition':'attachment; filename="contract-'+row.id+'.html"','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
     const events=await env.DB.prepare('SELECT version,status,recorded_at,record_json FROM contract_events WHERE envelope_id=? ORDER BY id').bind(id).all<any>();return json({envelope:{...parse(row),activity:await documentActivity(env.DB,'contract',row.id)},events:events.results.map(e=>({...e,record:JSON.parse(e.record_json)}))});
    }
    const page=Math.max(0,Math.floor(Number(url.searchParams.get('page'))||0));
-   const signed=own?(await env.DB.prepare("SELECT employee_id,document_json,completed_at FROM contract_envelopes WHERE owner_id=? AND status='signed' ORDER BY completed_at DESC").bind(uid).all<any>()).results:[];
+   const signed=own?(await env.DB.prepare("SELECT employee_id,document_json,completed_at FROM contract_envelopes WHERE owner_id=? AND status='signed' ORDER BY completed_at DESC").bind(ownerKey).all<any>()).results:[];
    const signedChange=async(e:Member)=>{const last=signed.find((r:any)=>r.employee_id===e.id);if(!last)return null;const d=JSON.parse(last.document_json);if(d.sourceHash===await digest(source(e)))return null;
     if(!d.source)return {signedAt:last.completed_at,changes:[],note:''};const changes=termChanges(d.source,JSON.parse(source(e)));if(!changes.length)return null;
     return {signedAt:last.completed_at,changes,note:`■ 변경 근로계약서 · ${new Date().toISOString().slice(0,10)} 변경\n`+changes.map(c=>`· ${c.label}: ${c.from} → ${c.to}`).join('\n')+`\n(${String(last.completed_at).slice(0,10)} 체결한 계약을 위 내용으로 변경하며, 나머지 조건은 아래와 같습니다.)\n\n`};};
-   const rows=await env.DB.prepare("SELECT c.*,COALESCE(json_build_object('viewed_at',a.viewed_at,'download_requested_at',a.download_requested_at,'saved_at',a.saved_at),'{}'::json) AS activity FROM contract_envelopes c LEFT JOIN document_activity a ON a.kind='contract' AND a.document_id=c.id WHERE (c.owner_id=? OR c.employee_user_id=?) ORDER BY c.created_at DESC LIMIT 20 OFFSET ?").bind(uid,uid,page*20).all<any>();
+   const rows=await env.DB.prepare("SELECT c.*,COALESCE(json_build_object('viewed_at',a.viewed_at,'download_requested_at',a.download_requested_at,'saved_at',a.saved_at),'{}'::json) AS activity FROM contract_envelopes c LEFT JOIN document_activity a ON a.kind='contract' AND a.document_id=c.id WHERE (c.owner_id=? OR c.employee_user_id=?) ORDER BY c.created_at DESC LIMIT 20 OFFSET ?").bind(ownerKey,uid,page*20).all<any>();
    return json({owner:own,canCreate:!!own&&hasFeature(raw?._account,'contracts')&&canWrite(raw?._account),mailReady:mailReady(env),native:uid.startsWith('native:'),verified:!uid.startsWith('native:')||request.headers.get('oai-authenticated-user-email-verified')==='true',page,envelopes:rows.results.map(row=>({...lite(parse(row)),activity:typeof row.activity==='string'?JSON.parse(row.activity):row.activity||{}})),employees:own?await Promise.all(team!.employees.filter(e=>e.status!=='퇴사').map(async e=>({change:await signedChange(e),id:e.id,name:e.name,linked:!!raw._members?.find((m:any)=>m.employeeId===e.id&&m.userId!==uid),employer:e.contract.employer||team!.settings.employerName,draft:clean(e.contract.draftText||standardContractDraft(team!,e))}))):[]});
   }
   if(request.method!=='POST')return json({error:'이 방법으로는 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},405);
@@ -67,15 +69,15 @@ export async function contractsApi(request:Request,env:Env){
    const doc={text:clean(b.text.trim()),employeeName:e.name,employeeEmail:e.email,employeeId:e.id,employer:e.contract.employer,storeName:team.store.name,sourceHash:await digest(source(e)),source:JSON.parse(source(e)),formatVersion:1},document_json=JSON.stringify(doc),hash=await digest(document_json);
    const signature={...identity,name:b.name.trim(),at:now,documentHash:hash,statement:'계약 내용을 확인했고, 사업주로서 이 문서에 전자서명합니다.',statementVersion:1,...(drawing.value?{drawing:drawing.value,drawingHash:await digest(drawing.value)}:{})};
    const contractId=crypto.randomUUID();
-   const inserted=await env.DB.prepare("INSERT OR IGNORE INTO contract_envelopes(id,owner_id,employee_id,employee_user_id,document_json,document_hash,owner_signature,status,created_at) VALUES(?,?,?,?,?,?,?,'waiting',?)").bind(contractId,uid,e.id,m.userId,document_json,hash,JSON.stringify(signature),now).run();
+   const inserted=await env.DB.prepare("INSERT OR IGNORE INTO contract_envelopes(id,owner_id,employee_id,employee_user_id,document_json,document_hash,owner_signature,status,created_at) VALUES(?,?,?,?,?,?,?,'waiting',?)").bind(contractId,ownerKey,e.id,m.userId,document_json,hash,JSON.stringify(signature),now).run();
    if(!inserted.meta.changes)return json({error:'이 직원에게 이미 확인 중인 계약서가 있어요. 철회한 뒤 새로 요청해 주세요.'},409);
    await notifyUser(env,m.userId,{title:'근로계약서 서명 요청',body:`${team!.store.name}에서 근로계약서 확인과 서명을 요청했어요.`,url:'/contracts'});
    return json({ok:true,id:contractId,message:'직원 화면에 서명 요청을 보냈어요.'},201);
   }
-  const row=await env.DB.prepare('SELECT * FROM contract_envelopes WHERE id=? AND (owner_id=? OR employee_user_id=?)').bind(b.id||'',uid,uid).first<any>();
+  const row=await env.DB.prepare('SELECT * FROM contract_envelopes WHERE id=? AND (owner_id=? OR employee_user_id=?)').bind(b.id||'',ownerKey,uid).first<any>();
   if(!row)return json({error:'계약서를 찾을 수 없어요. 목록을 새로고침해 주세요.'},404);
   if(row.version!==b.version)return json({error:'계약서 상태가 바뀌었어요. 새로 확인해 주세요.'},409);
-  const isOwner=row.owner_id===uid,isEmployee=row.employee_user_id===uid,now=new Date().toISOString();
+  const isOwner=row.owner_id===ownerKey,isEmployee=row.employee_user_id===uid,now=new Date().toISOString();
   if(b.action==='sign'){
    if(!isEmployee||row.status!=='waiting')return json({error:'본인 계약서만 서명할 수 있어요. 내 계정으로 로그인했는지 확인해 주세요.'},403);
    const d=JSON.parse(row.document_json);

@@ -1364,3 +1364,9 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('유예 지나면 조회만',trialStatus({...a,paymentFailedAt:'2026-09-20T00:00:00Z'},now)==='expired');
  console.log('PASS: 결제 실패 유예.');
 }
+{
+ const {toXls,exportSheets}=await import('../lib/xls.ts');
+ const x=toXls(exportSheets({store:{employees:[{id:'a',name:'<김&예시>',role:'홀',status:'재직',wage:10320}],shifts:[{employeeId:'a',date:'2026-10-01',start:'09:00',end:'15:00',breakMinutes:30}],attendance:[{employeeId:'a',start:'2026-10-01T00:00:00Z',end:'2026-10-01T06:00:00Z',breakMinutes:30}],payrollRuns:{k:{locked:true,month:'2026-09',rows:[{employeeId:'a',name:'김예시',gross:1,net:1}]}}},contracts:[],payslips:[]}));
+ ok('엑셀: 시트 7개·글자 이스케이프·숫자 칸',(x.match(/<Worksheet /g)||[]).length===7&&x.includes('&lt;김&amp;예시&gt;')&&x.includes('<Data ss:Type="Number">10320</Data>')&&x.includes('2026-10-01 09:00')&&x.includes('<Data ss:Type="Number">5.5</Data>'));
+ console.log('PASS: 엑셀 내보내기.');
+}
