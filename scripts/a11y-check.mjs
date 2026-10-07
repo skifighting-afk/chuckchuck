@@ -39,5 +39,5 @@ for(const width of [390,1280])for(const path of pages){
 }
 await browser.close();
 if(!axeSource)console.log('axe-core가 없어 우리 기준만 확인했어요.');
-if(problems.length){console.error(`접근성 문제 ${problems.length}건:\n`+problems.join('\n'));process.exit(1)}
+if(problems.length){console.error(`접근성 문제 ${problems.length}건:\n`+problems.join('\n'));if(process.env.GITHUB_ACTIONS)for(const p of problems.slice(0,25))console.log('::error title=접근성::'+String(p).replace(/\r?\n/g,' ').slice(0,400));process.exit(1)}
 console.log(`접근성 점검 통과: ${pages.length}개 화면 × 2개 크기${axeSource?' (axe 포함)':''}`);
