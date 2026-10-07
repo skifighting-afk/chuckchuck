@@ -6,6 +6,8 @@ import {useMemo,useState} from 'react';
 import {Btn,Badge,Field} from './team-ui';
 import {Dialog,DialogContent,DialogHeader,DialogTitle,DialogDescription} from '@/components/ui/dialog';
 import {type Team,kdate,clock,worked,workedRaw,datePlus,today,DEFAULT_RULE,ruleLabel,type AttendanceRule} from '../lib/team-model';
+import {sharedDevices,breakSpans,pendingOvertime,FILTERS,rowMatches,rangeRows,calCell,geoText,type Filter} from '../lib/att-extras';
+import {toXls} from '../lib/xls';
 import {dayRows,checkDay,TOLERANCE_NAMES,TOLERANCE_MINUTES,type Tolerance,type DayRow,type Status,shiftSpan} from '../lib/attendance-check';
 
 type Att=Team['attendance'][number];
@@ -24,12 +26,17 @@ export type AttCtx={s:Team,es:Team['employees'],day:string,setDay:(d:string)=>vo
 
 export function AttendanceTop({ctx}:{ctx:AttCtx}){
  const {s,es,day,setDay,demo,busy}=ctx;
- const [view,setView]=useState<'day'|'week'|'month'>('day'),[add,setAdd]=useState<any>(null),[openEmp,setOpenEmp]=useState('');
+ const [view,setView]=useState<'day'|'week'|'month'>('day'),[add,setAdd]=useState<any>(null),[openEmp,setOpenEmp]=useState(''),[fEmp,setFEmp]=useState(''),[fSt,setFSt]=useState<Filter>('전체'),[dl,setDl]=useState<{from:string,to:string}|null>(null);
  const ids=useMemo(()=>new Set(es.map(e=>e.id)),[es]),name=(id:string)=>es.find(e=>e.id===id)?.name||'직원';
  const tol=((s.settings as any).attendanceTolerance||'normal') as Tolerance,leaves=((s as any).approvedLeaves||[]) as {employeeId:string,start:string,end:string}[];
  const shifts=s.shifts.filter(x=>ids.has(x.employeeId)),att=s.attendance.filter(a=>ids.has(a.employeeId)),now=Date.now();
  const rule:AttendanceRule=(s.settings as any).attendanceRule||DEFAULT_RULE,ws=((s.settings as any).weekStart||'mon') as 'mon'|'sun';
- const rows=dayRows(day,shifts,att,tol,now,leaves),findings=checkDay(day,shifts,att,tol,now,leaves);
+ const allRows=dayRows(day,shifts,att,tol,now,leaves),findings=checkDay(day,shifts,att,tol,now,leaves);
+ // 016: 직원·상태 필터(시간표·기록표에 같이)
+ const rows=allRows.filter(r=>(!fEmp||r.employeeId===fEmp)&&rowMatches(r.statuses,r.records as any,fSt));
+ const shared=sharedDevices(att as any,day),otWait=att.filter(a=>kdate(a.start)===day&&pendingOvertime(a as any)>0),offsite=att.filter(a=>kdate(a.start)===day&&(a as any).geo&&!(a as any).geo.ok);
+ const approveOt=(a:Att,undo=false)=>ctx.mutate({action:'approveOvertime',id:a.id,undo},'POST',false);
+ const download=()=>{if(!dl)return;const names=Object.fromEntries(es.map(e=>[e.id,e.name]));const xml=toXls([{name:'출퇴근 원본',rows:rangeRows(att as any,names,dl.from,dl.to)}]);const u=URL.createObjectURL(new Blob([xml],{type:'application/vnd.ms-excel'}));const el=document.createElement('a');el.href=u;el.download=`출퇴근_${dl.from}_${dl.to}.xls`;el.click();setTimeout(()=>URL.revokeObjectURL(u),2000);setDl(null)};
  const step=(n:number)=>setDay(view==='day'?datePlus(day,n):view==='week'?datePlus(day,7*n):monthShift(day,n));
  const label=view==='day'?(day===today()?'오늘':md(day)):view==='week'?`${md(weekStartOf(day,ws))} ~ ${md(datePlus(weekStartOf(day,ws),6))}`:`${Number(day.slice(0,4))}년 ${Number(day.slice(5,7))}월`;
  const openAdd=(employeeId?:string,shift?:Team['shifts'][number])=>{const d=shift?.date||day;setAdd({employeeId:employeeId||es[0]?.id||'',start:`${d}T${shift?.start||'09:00'}`,end:shift?`${shift.end<=shift.start?datePlus(d,1):d}T${shift.end}`:'',breakMinutes:shift?.breakMinutes??0,reason:''})};
@@ -38,26 +45,37 @@ export function AttendanceTop({ctx}:{ctx:AttCtx}){
   <div className="t-toolbar att-nav">
    <div className="att-views" role="group" aria-label="보기">{([['day','일'],['week','주'],['month','월']] as const).map(([v,l])=><button key={v} type="button" aria-pressed={view===v} onClick={()=>setView(v)}>{l}</button>)}</div>
    <div className="t-inline att-datenav"><Btn onClick={()=>step(-1)}>{view==='day'?'← 전날':view==='week'?'← 이전 주':'← 이전 달'}</Btn><input aria-label="근태 날짜" type="date" value={day} onInput={e=>{if(e.currentTarget.value)setDay(e.currentTarget.value)}} onChange={e=>{if(e.target.value)setDay(e.target.value)}}/><Btn onClick={()=>step(1)}>{view==='day'?'다음 날 →':view==='week'?'다음 주 →':'다음 달 →'}</Btn><Btn onClick={()=>setDay(today())}>오늘</Btn></div>
-   <div className="t-inline att-actions"><Btn disabled={busy} onClick={ctx.onQr}>출퇴근 QR</Btn><Btn onClick={ctx.onClock}>출퇴근 기록</Btn><Btn primary onClick={()=>openAdd()}>+ 직접 기록 추가</Btn></div>
+   <div className="t-inline att-actions"><Btn disabled={busy} onClick={ctx.onQr}>출퇴근 QR</Btn><Btn onClick={ctx.onClock}>출퇴근 기록</Btn><Btn onClick={()=>setDl({from:day.slice(0,7)+'-01',to:day})}>엑셀 내려받기</Btn><Btn primary onClick={()=>openAdd()}>+ 직접 기록 추가</Btn></div>
   </div>
   <p className="att-label"><b>{label}</b> <Badge tone="green">수정 이력 자동 기록</Badge></p>
   {view==='day'&&<>
    <section className="panel att-check" aria-labelledby="att-check-title"><div className="panel-heading"><h2 id="att-check-title">확인 권장 <Badge tone={findings.length?'amber':'green'}>{findings.length}</Badge></h2><label className="att-tol">허용 오차<select value={tol} disabled={busy||demo} onChange={e=>ctx.update({...s,settings:{...s.settings,attendanceTolerance:e.target.value}} as any,false)}>{(Object.keys(TOLERANCE_NAMES) as Tolerance[]).map(k=><option key={k} value={k}>{TOLERANCE_NAMES[k]}</option>)}</select></label></div>
-    {findings.length?<ul className="att-findings">{rows.filter(r=>r.statuses.some(x=>!['정상','휴게 중','휴가','출근 전'].includes(x.kind))).map(r=><li key={r.key}><b>{name(r.employeeId)}</b>{r.statuses.filter(x=>!['정상','출근 전'].includes(x.kind)).map((x,i)=><StatusChip key={i} x={x}/>)}<small>{r.shift?`예정 ${r.shift.start}–${r.shift.end}`:'근무표에 없는 출근'}</small>{!r.records.length&&r.shift&&<button type="button" className="att-link" onClick={()=>openAdd(r.employeeId,r.shift)}>직접 기록</button>}</li>)}</ul>:<p className="footnote">근무표대로 출퇴근했어요. 허용 오차 안의 기록은 '정상'이에요.</p>}
+    {(shared.length>0||otWait.length>0||offsite.length>0)&&<ul className="att-findings att-extra">
+     {shared.map(g=><li key={g.device}><Badge tone="amber"><span aria-hidden="true">📱 </span>한 휴대폰</Badge><b>{g.employeeIds.map(name).join(', ')}</b><small>같은 휴대폰으로 출근을 찍었어요. 대신 찍어 준 건지 확인해 보세요.</small></li>)}
+     {offsite.map(a=><li key={a.id}><Badge tone="amber"><span aria-hidden="true">📍 </span>위치 확인</Badge><b>{name(a.employeeId)}</b><small>{clock(a.start)} 출근 · {geoText((a as any).geo)}</small></li>)}
+     {otWait.map(a=><li key={a.id}><Badge tone="blue"><span aria-hidden="true">⏳ </span>연장 승인 대기</Badge><b>{name(a.employeeId)}</b><small>예정보다 {pendingOvertime(a as any)}분 늦게 퇴근 · 승인하면 급여에 넣어요</small><button type="button" className="att-link" disabled={busy} onClick={()=>approveOt(a)}>연장 인정</button></li>)}
+    </ul>}
+    {findings.length?<ul className="att-findings">{allRows.filter(r=>r.statuses.some(x=>!['정상','휴게 중','휴가','출근 전'].includes(x.kind))).map(r=><li key={r.key}><b>{name(r.employeeId)}</b>{r.statuses.filter(x=>!['정상','출근 전'].includes(x.kind)).map((x,i)=><StatusChip key={i} x={x}/>)}<small>{r.shift?`예정 ${r.shift.start}–${r.shift.end}`:'근무표에 없는 출근'}</small>{!r.records.length&&r.shift&&<button type="button" className="att-link" onClick={()=>openAdd(r.employeeId,r.shift)}>직접 기록</button>}</li>)}</ul>:<p className="footnote">근무표대로 출퇴근했어요. 허용 오차 안의 기록은 '정상'이에요.</p>}
    </section>
+   <div className="t-inline att-filter" role="group" aria-label="기록 거르기"><label>직원 <select value={fEmp} onChange={e=>setFEmp(e.target.value)}><option value="">전체 직원</option>{es.map(e=><option key={e.id} value={e.id}>{e.name}</option>)}</select></label><label>상태 <select value={fSt} onChange={e=>setFSt(e.target.value as Filter)}>{FILTERS.map(f=><option key={f} value={f}>{f==='전체'?'모든 상태':f+'만'}</option>)}</select></label>{(fEmp||fSt!=='전체')&&<><small role="status">{rows.length}/{allRows.length}명 보는 중</small><button type="button" className="att-link" onClick={()=>{setFEmp('');setFSt('전체')}}>거르기 풀기</button></>}</div>
    <AttendanceTimeline rows={rows} date={day} es={es} att={att} shifts={shifts} now={now} onEditShift={ctx.onEditShift}/>
    <section className="panel t-tablewrap att-table"><table className="t-table"><thead><tr>{['직원','상태','출근','퇴근','휴게','실근무(인정)','관리'].map(v=><th key={v}>{v}</th>)}</tr></thead><tbody>
     {rows.flatMap(r=>(r.records.length?r.records:[null]).map((a,i)=><tr key={r.key+(a?.id||'none')}>
-     <td><b>{name(r.employeeId)}</b>{r.shift&&i===0&&<small>예정 {r.shift.start}–{r.shift.end}</small>}{(a as any)?.source==='owner'&&<small className="att-owner">사장님 입력</small>}</td>
+     <td><b>{name(r.employeeId)}</b>{r.shift&&i===0&&<small>예정 {r.shift.start}–{r.shift.end}</small>}{(a as any)?.source==='owner'&&<small className="att-owner">사장님 입력</small>}{(a as any)?.geo&&!(a as any).geo.ok&&<small className="att-geo">📍 {geoText((a as any).geo)}</small>}</td>
      <td>{i===0?<span className="att-chips">{r.statuses.map((x,j)=><StatusChip key={j} x={x}/>)}</span>:<small>같은 근무</small>}</td>
      <td>{a?clock(a.start):'—'}</td><td>{a?(a.end?clock(a.end):<Badge tone="green">{a.breakStart?'휴게 중':'근무 중'}</Badge>):'—'}</td><td>{a?Math.round(a.breakMinutes)+'분':'—'}</td>
-     <td>{a?a.end?<>{worked(a).toFixed(2)}시간{a.credit&&Math.abs(worked(a)-workedRaw(a))>0.004&&<small className="att-raw">찍힌 {clock(a.start)}–{clock(a.end)} · {workedRaw(a).toFixed(2)}시간</small>}</>:'진행 중':'—'}</td>
+     <td>{a?a.end?<>{worked(a).toFixed(2)}시간{a.credit&&Math.abs(worked(a)-workedRaw(a))>0.004&&<small className="att-raw">찍힌 {clock(a.start)}–{clock(a.end)} · {workedRaw(a).toFixed(2)}시간</small>}{pendingOvertime(a as any)>0&&<button type="button" className="att-link" disabled={busy} onClick={()=>approveOt(a)}>연장 {pendingOvertime(a as any)}분 인정</button>}{(a as any).otApproved&&<small className="att-raw">연장 승인 · {(a as any).otApproved.by} <button type="button" className="att-link" disabled={busy} onClick={()=>approveOt(a,true)}>취소</button></small>}</>:'진행 중':'—'}</td>
      <td>{a?<button onClick={()=>ctx.onCorrection(a)}>수정 요청</button>:r.shift&&<button onClick={()=>openAdd(r.employeeId,r.shift)}>직접 기록</button>}</td></tr>))}
    </tbody></table>{!rows.length&&<div className="empty">이날은 근무표도 출퇴근 기록도 없어요.</div>}</section>
   </>}
   {view==='week'&&<WeekView es={es} shifts={shifts} att={att} start={weekStartOf(day,ws)} tol={tol} now={now} leaves={leaves} onDay={d=>{setDay(d);setView('day')}}/>}
   {view==='month'&&<MonthView es={es} shifts={shifts} att={att} month={day.slice(0,7)} tol={tol} now={now} leaves={leaves} open={openEmp} setOpen={setOpenEmp} onDay={d=>{setDay(d);setView('day')}}/>}
   <RulePanel rule={rule} busy={busy} demo={demo} onSave={r=>ctx.update({...s,settings:{...s.settings,attendanceRule:r}} as any,false)} tolMinutes={TOLERANCE_MINUTES[tol]}/>
+  <Dialog open={!!dl} onOpenChange={v=>{if(!v)setDl(null)}}><DialogContent className="t-dialog"><DialogHeader><DialogTitle>출퇴근 기록 엑셀로 받기</DialogTitle><DialogDescription>찍은 원본 시각, 휴게 구간, 인정 시간, 사장님 입력 여부를 기간별로 한 시트에 담아요.</DialogDescription></DialogHeader>
+   {dl&&<form onSubmit={e=>{e.preventDefault();download()}}><div className="t-formgrid"><Field label="시작일"><input type="date" required value={dl.from} onChange={e=>setDl({...dl,from:e.target.value})}/></Field><Field label="끝일"><input type="date" required value={dl.to} min={dl.from} onChange={e=>setDl({...dl,to:e.target.value})}/></Field></div>
+    <p className="footnote">지금 화면에 불러온 기록(최근 약 1년)에서 골라요. 그보다 오래된 기록은 설정의 '가게 데이터 전체 내려받기'로 받아 주세요.</p>
+    <div className="actions"><Btn onClick={()=>setDl(null)}>취소</Btn><button type="submit" className="primary" disabled={!dl.from||!dl.to||dl.to<dl.from}>내려받기</button></div></form>}
+  </DialogContent></Dialog>
   <Dialog open={!!add} onOpenChange={v=>{if(!v)setAdd(null)}}><DialogContent className="t-dialog"><DialogHeader><DialogTitle>직접 기록 추가</DialogTitle><DialogDescription>저장하면 바로 반영되고, 변경 이력에 '사장님 직접 입력'과 사유가 남아요. 직원 화면에는 '사장님 입력'으로 보여요.</DialogDescription></DialogHeader>
    {add&&<form onSubmit={e=>{e.preventDefault();void saveAdd()}}><div className="t-formgrid">
     <Field label="직원"><select value={add.employeeId} onChange={e=>setAdd({...add,employeeId:e.target.value})}>{es.map(e=><option key={e.id} value={e.id}>{e.name}</option>)}</select></Field>
@@ -85,18 +103,19 @@ function AttendanceTimeline({rows,date,es,att,shifts,now,onEditShift}:{rows:DayR
  const nowH=date===today()?H(now):null,ticks=Array.from({length:hi-lo+1},(_,i)=>lo+i).filter((_,i,a)=>a.length<=13||i%2===0);
  const name=(id:string)=>es.find(e=>e.id===id)?.name||'직원',role=(id:string)=>es.find(e=>e.id===id)?.role||'';
  return <section className="panel att-timeline" aria-labelledby="att-tl-title"><div className="panel-heading"><h2 id="att-tl-title">{date===today()?'오늘':md(date)} 시간표</h2><div className="t-inline"><label className="att-full"><input type="checkbox" checked={full} onChange={e=>setFull(e.target.checked)}/> 24시간 보기</label><Btn onClick={onEditShift}>근무표 고치기</Btn></div></div>
-  <div className="att-legend" aria-hidden="true"><span><i className="lg-plan"/>예정</span><span><i className="lg-real"/>실제</span><span><i className="lg-late"/>늦은 구간</span>{nowH!=null&&<span><i className="lg-now"/>지금</span>}</div>
+  <div className="att-legend" aria-hidden="true"><span><i className="lg-plan"/>예정</span><span><i className="lg-real"/>실제</span><span><i className="lg-late"/>늦은 구간</span><span><i className="lg-break"/>휴게</span>{nowH!=null&&<span><i className="lg-now"/>지금</span>}</div>
   {items.length?<div className="att-tl" aria-label={`${md(date)} 예정과 실제 근무 시간표`} role="group">
    <div className="att-tl-scale"><span/>{<div className="att-tl-ticks">{ticks.map(t=><span key={t} style={{left:pct(t)}}>{String(t%24).padStart(2,'0')}{t>=24&&t%24===0?'(+1)':''}</span>)}</div>}</div>
    {items.map(({r,sp,recs})=><div className="att-tl-row" key={r.key}><div className="att-tl-name"><b>{name(r.employeeId)}</b><small>{role(r.employeeId)}</small></div>
     <div className="att-tl-track">{nowH!=null&&nowH>=lo&&nowH<=hi&&<i className="att-now" style={{left:pct(nowH)}}/>}
      {sp&&<button type="button" className="tl-plan" style={{left:pct(H(sp[0])),width:w(H(sp[0]),H(sp[1]))}} onClick={onEditShift} title="눌러서 근무 시간 고치기">{r.shift!.start}–{r.shift!.end}</button>}
+     {r.records.flatMap((a,i)=>breakSpans(a as any).map(([x,y],j)=><span key={'b'+i+j} className="tl-break" style={{left:pct(H(x)),width:w(H(x),H(y))}} title={`휴게 ${hm(x)}–${hm(y)}`} aria-hidden="true"/>))}
      {recs.map(([a,b],i)=><span key={i} className={'tl-real'+(r.records[i]?.end?'':' open')} style={{left:pct(H(a)),width:w(H(a),H(b))}}>{hm(a)}{r.records[i]?.end?'–'+hm(b):' ~'}</span>)}
      {sp&&recs.length>0&&recs[0][0]>sp[0]&&r.statuses.some(x=>x.kind==='지각')&&<span className="tl-late" style={{left:pct(H(sp[0])),width:w(H(sp[0]),H(recs[0][0]))}} aria-hidden="true"/>}
      {sp&&!recs.length&&r.statuses.map((x,i)=>['미출근','결근','휴가'].includes(x.kind)?<span key={i} className={'tl-miss '+(x.kind==='휴가'?'leave':'')} style={{left:pct(H(sp[0]))}}>{x.kind}{x.minutes?` ${x.minutes}분`:''}</span>:null)}
     </div></div>)}
   </div>:<p className="empty">이날은 근무표도 출퇴근 기록도 없어요.</p>}
-  <div className="sr-only"><h3>{md(date)} 근무 시간 목록</h3><ul>{items.map(({r})=><li key={r.key}>{name(r.employeeId)}: 예정 {r.shift?`${r.shift.start}–${r.shift.end}`:'없음'}, 실제 {r.records.map(a=>`${clock(a.start)}–${a.end?clock(a.end):'근무 중'}`).join(', ')||'기록 없음'}, 상태 {r.statuses.map(x=>x.kind+(x.minutes?` ${x.minutes}분`:'')).join(', ')}</li>)}</ul></div>
+  <div className="sr-only"><h3>{md(date)} 근무 시간 목록</h3><ul>{items.map(({r})=><li key={r.key}>{name(r.employeeId)}: 예정 {r.shift?`${r.shift.start}–${r.shift.end}`:'없음'}, 실제 {r.records.map(a=>`${clock(a.start)}–${a.end?clock(a.end):'근무 중'}${breakSpans(a as any).length?' (휴게 '+breakSpans(a as any).map(([x,y])=>hm(x)+'–'+hm(y)).join(', ')+')':''}`).join(', ')||'기록 없음'}, 상태 {r.statuses.map(x=>x.kind+(x.minutes?` ${x.minutes}분`:'')).join(', ')}</li>)}</ul></div>
  </section>;
 }
 
@@ -113,11 +132,16 @@ function MonthView({es,shifts,att,month,tol,now,leaves,open,setOpen,onDay}:{es:T
  const all=days.map(d=>({d,rows:dayRows(d,shifts,att,tol,now,leaves)}));
  const stat=es.map(e=>{const recs=att.filter(a=>a.employeeId===e.id&&kdate(a.start).startsWith(month));const c={지각:0,조퇴:0,결근:0};for(const {rows} of all)for(const r of rows)if(r.employeeId===e.id)for(const x of r.statuses)if(x.kind in c)(c as any)[x.kind]++;
   return {e,recs,days:new Set(recs.map(a=>kdate(a.start))).size,hours:recs.filter(a=>a.end).reduce((n,a)=>n+worked(a),0),...c}});
- const total=stat.reduce((n,x)=>n+x.hours,0);
- return <section className="panel t-tablewrap"><table className="t-table att-month"><thead><tr>{['직원','근무일수','인정 시간 합계','지각','조퇴','결근',''].map(h=><th key={h}>{h}</th>)}</tr></thead>
+ const total=stat.reduce((n,x)=>n+x.hours,0),[cal,setCal]=useState(false);
+ const toggle=<div className="att-views att-calmode" role="group" aria-label="월 보기 방식"><button type="button" aria-pressed={!cal} onClick={()=>setCal(false)}>합계표</button><button type="button" aria-pressed={cal} onClick={()=>setCal(true)}>근태 달력</button></div>;
+ // 019: 직원 × 날짜 한 장(글자 표시: ○ 정상 · 지 지각 · 조 조퇴 · ✕ 결근 · ! 미퇴근 · 휴 휴가 · ＋ 예정 외)
+ if(cal)return <>{toggle}<section className="panel t-tablewrap" tabIndex={0} role="region" aria-label="월간 근태 달력"><table className="t-table att-cal"><thead><tr><th>직원</th>{days.map(d=><th key={d} scope="col"><button type="button" className="att-link" onClick={()=>onDay(d)} aria-label={md(d)}>{Number(d.slice(8))}</button></th>)}<th>지각·결근</th></tr></thead>
+  <tbody>{stat.map(x=><tr key={x.e.id}><th scope="row">{x.e.name}</th>{all.map(({d,rows})=>{const c=calCell(rows.filter(r=>r.employeeId===x.e.id).flatMap(r=>r.statuses));return <td key={d} className={c?'cal-'+c.kind:''} title={c?`${md(d)} ${c.kind}`:undefined}>{c?<><span aria-hidden="true">{c.mark}</span><span className="sr-only">{md(d)} {c.kind}</span></>:''}</td>})}<td>{x.지각}·{x.결근}</td></tr>)}</tbody></table>
+  <p className="footnote t-panelbody">○ 정상 · 지 지각 · 조 조퇴 · ✕ 결근·미출근 · ! 미퇴근 · 휴 휴가 · ＋ 근무표 밖 출근. 날짜를 누르면 그날 기록으로 가요.</p></section></>;
+ return <>{toggle}<section className="panel t-tablewrap"><table className="t-table att-month"><thead><tr>{['직원','근무일수','인정 시간 합계','지각','조퇴','결근',''].map(h=><th key={h}>{h}</th>)}</tr></thead>
   <tbody>{stat.flatMap(x=>[<tr key={x.e.id} className="att-mrow"><th scope="row"><button type="button" className="att-link" aria-expanded={open===x.e.id} onClick={()=>setOpen(open===x.e.id?'':x.e.id)}>{x.e.name}</button></th><td>{x.days}일</td><td><b>{x.hours.toFixed(2)}시간</b></td><td>{x.지각}번</td><td>{x.조퇴}번</td><td>{x.결근}번</td><td><button type="button" className="att-link" onClick={()=>setOpen(open===x.e.id?'':x.e.id)}>{open===x.e.id?'접기':'일별 기록'}</button></td></tr>,
    open===x.e.id&&<tr key={x.e.id+'-d'}><td colSpan={7}><ul className="att-mdays">{x.recs.slice().sort((a,b)=>a.start.localeCompare(b.start)).map(a=><li key={a.id}><button type="button" className="att-link" onClick={()=>onDay(kdate(a.start))}>{md(kdate(a.start))}</button> {clock(a.start)}–{a.end?clock(a.end):'근무 중'} · {a.end?worked(a).toFixed(2)+'시간':'진행 중'}{(a as any).source==='owner'&&' · 사장님 입력'}</li>)}{!x.recs.length&&<li>이 달 기록이 없어요.</li>}</ul></td></tr>])}</tbody>
-  <tfoot><tr><th scope="row">합계</th><td/><td><b>{total.toFixed(2)}시간</b></td><td colSpan={4}><small>완료된 기록의 인정 시간 합계 · 인건비 리포트 '완료된 실근무'와 같은 기준</small></td></tr></tfoot></table></section>;
+  <tfoot><tr><th scope="row">합계</th><td/><td><b>{total.toFixed(2)}시간</b></td><td colSpan={4}><small>완료된 기록의 인정 시간 합계 · 인건비 리포트 '완료된 실근무'와 같은 기준</small></td></tr></tfoot></table></section></>;
 }
 
 /** 004 인정 시간 규칙 */
@@ -126,7 +150,7 @@ function RulePanel({rule,busy,demo,onSave,tolMinutes}:{rule:AttendanceRule,busy:
  return <details className="panel att-rule"><summary><b>인정 시간 규칙</b> <small>{ruleLabel(rule)}</small></summary>
   <div className="t-formgrid">
    <Field label="일찍 출근하면"><select value={r.earlyIn} onChange={e=>setR({...r,earlyIn:e.target.value as any})}><option value="scheduled">예정 시각부터 인정</option><option value="actual">찍은 시각부터 인정</option></select></Field>
-   <Field label="늦게 퇴근하면"><select value={r.lateOut} onChange={e=>setR({...r,lateOut:e.target.value as any})}><option value="actual">찍은 시각까지 인정</option><option value="scheduled">예정 시각까지 인정</option></select></Field>
+   <Field label="늦게 퇴근하면"><select value={r.lateOut} onChange={e=>setR({...r,lateOut:e.target.value as any})}><option value="actual">찍은 시각까지 인정</option><option value="scheduled">예정 시각까지 인정</option><option value="approval">예정 초과분은 사장님이 승인하면 인정</option></select></Field>
    <Field label="계산 단위"><select value={r.unit} onChange={e=>setR({...r,unit:Number(e.target.value) as any})}><option value={1}>1분</option><option value={5}>5분 (직원에게 유리하게)</option><option value={10}>10분 (직원에게 유리하게)</option></select></Field>
   </div>
   <p className="notice">근무 시간은 1분 단위가 원칙이에요. 직원에게 불리하게 버리면 임금 체불이 될 수 있어요. 5분·10분 단위는 출근은 내리고 퇴근은 올려서, 직원에게 유리한 쪽으로만 맞춰요.</p>

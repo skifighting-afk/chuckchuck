@@ -68,6 +68,7 @@ import {AccountantShare} from './accountant-share';
 import {AssistantDock} from './assistant';
 import {type Action as AstAction} from '../lib/assistant';
 import {JoinInbox} from './join-inbox';
+import {deviceId,currentPos} from './att-device';
 const pages=[['홈',LayoutDashboard],['직원 관리',Users],['출퇴근 기록',Clock3],['근무 스케줄',CalendarDays],['급여·명세서',Wallet],['근로계약서',FileText],['퇴직금 확인',ShieldCheck],['전송함',Mail],['휴가·공지',CalendarDays],['매장 매뉴얼',BookOpen],['인건비 리포트',Wallet],['매장 관리·비교',Store],['설정',Settings],['근로기준 안내',BookOpen]] as const;
 const titles:Record<string,string>={'휴가·공지':'쉬는 날도, 전할 말도 한곳에서','인건비 리포트':'우리 팀의 근무와 비용을 한눈에','홈':'오늘도, 함께 일하는 우리 팀','직원 관리':'직원 한 명의 시작부터 퇴직까지','출퇴근 기록':'근무는 정확하게, 변경은 투명하게','근무 스케줄':'함께 확인하는 우리 팀 일정','급여·명세서':'근무 기록에서 급여명세서까지','근로계약서':'입사와 동시에 준비하는 근로계약','퇴직금 확인':'근로조건에 맞춰 퇴직금 확인','전송함':'직원과 세무사에게 필요한 자료만','설정':'매장과 전달 방식을 설정하세요','근로기준 안내':'필요할 때 찾아보는 근로 기준'};
 const demoScreens:Record<string,string>={home:'홈',employees:'직원 관리',attendance:'출퇴근 기록',schedule:'근무 스케줄',payroll:'급여·명세서',contracts:'근로계약서',retirement:'퇴직금 확인',outbox:'전송함',operations:'휴가·공지',manual:'매장 매뉴얼',reports:'인건비 리포트',stores:'매장 관리·비교',settings:'설정',guide:'근로기준 안내'};
@@ -134,9 +135,10 @@ export default function TeamApp({demo=false}:{demo?:boolean}){
  if(body.action==='answerAsk'){const x=((next as any).staffAsks||[]).find((x:any)=>x.id===body.id);if(!x)return false;if(body.apply){const e=next.employees.find(e=>e.id===x.employeeId)!;Object.assign(e,x.changes);x.status='반영함'}else{if(!body.answer?.trim()){toast.error('답을 적어 주세요.');return false}x.status=body.reject?'반려':'답변함'}x.answer=body.answer;setS(next);toast.success('처리했어요(체험).');return true}
  if(body.action==='requestCertificate'){toast.success('체험 화면이라 실제로 보내지 않았어요. 내 가게에서는 사장님께 알림이 가요.');return true}
  if(body.action==='ackWeek'){const me=next.employees[0];if(!me)return false;const r=ackWeek((next as any).publishedWeeks,String(body.key||''),me.id,me.branchId,new Date().toISOString());if(r.error){toast.error(r.error);return false}(next as any).publishedWeeks=r.published;setS(next);toast.success('근무표를 확인했어요. 사장님 화면에 확인으로 표시돼요.');return true}
+ if(body.action==='approveOvertime'){const a:any=next.attendance.find(x=>x.id===body.id);if(!a?.end)return false;a.otApproved=body.undo?null:{by:'예시 사장님',at:new Date().toISOString()};applyCredit(a,next,true);setS(next);toast.success(body.undo?'연장 승인을 취소했어요(체험).':'연장근무를 인정했어요(체험). 급여에 들어가요.');return true}
  if(body.action==='manualAttendance'){
  const e=next.employees.find(x=>x.id===body.employeeId);const reason=String(body.reason||'').trim();if(!e){toast.error('직원을 골라 주세요.');return false}if(!reason){toast.error('사유를 적어 주세요.');return false}
- const n:any={id:crypto.randomUUID(),employeeId:e.id,start:body.start,end:body.end||null,breakMinutes:Math.round(Number(body.breakMinutes)||0),breakStart:null,source:'owner'};
+ const n:any={id:crypto.randomUUID(),employeeId:e.id,start:body.start,end:body.end||null,breakMinutes:Math.round(Number(body.breakMinutes)||0),breakStart:null,source:'owner',otApproved:{by:'예시 사장님',at:new Date().toISOString()}};
  if(n.end&&Date.parse(n.end)<=Date.parse(n.start)){toast.error('퇴근은 출근보다 뒤여야 해요.');return false}
  if(Date.parse(n.start)>Date.now()+60000||(n.end&&Date.parse(n.end)>Date.now()+60000)){toast.error('아직 오지 않은 시각은 기록할 수 없어요.');return false}
  const c=correctionError(next.attendance,{id:n.id,employeeId:n.employeeId},n);if(c){toast.error(c);return false}
@@ -153,7 +155,9 @@ export default function TeamApp({demo=false}:{demo?:boolean}){
  const openQr=async()=>{if(!demo){await mutate({action:'attendanceQr',branchId:branch});return}const u=location.origin+'/demo?role=employee&branch='+encodeURIComponent(branch)+'#attendance';setQrUrl(u);setQr(await QRCode.toDataURL(u,{width:360,margin:2}));setModal('qr')};
  const sRef=useRef(s);sRef.current=s;
  // 지시서 149: 인터넷이 끊겼을 때 출퇴근은 휴대폰에 저장해 두고, 연결되면 사장님 확인 요청으로 보낸다
- const staffMutate=async(b:any,method?:string,close?:boolean)=>{if(b?.action==='attendance'&&['in','out'].includes(b.kind)&&typeof navigator!=='undefined'&&navigator.onLine===false){queueOffline(b.kind);toast.success(b.kind==='in'?'인터넷이 끊겨 출근 시각을 휴대폰에 저장했어요. 연결되면 사장님께 보내요.':'인터넷이 끊겨 퇴근 시각을 휴대폰에 저장했어요. 연결되면 사장님께 보내요.');return true}return mutate(b,method,close)};
+ const staffMutate=async(b:any,method?:string,close?:boolean)=>{if(b?.action==='attendance'&&['in','out'].includes(b.kind)&&typeof navigator!=='undefined'&&navigator.onLine===false){queueOffline(b.kind);toast.success(b.kind==='in'?'인터넷이 끊겨 출근 시각을 휴대폰에 저장했어요. 연결되면 사장님께 보내요.':'인터넷이 끊겨 퇴근 시각을 휴대폰에 저장했어요. 연결되면 사장님께 보내요.');return true}// 지시서 006·007: 출근할 때 찍은 휴대폰 표시와(정한 지점이면) 위치를 함께 보낸다
+ if(b?.action==='attendance'&&b.kind==='in'&&b.employeeId===selfId){b={...b,device:deviceId()};const g=(s?.branches.find(x=>x.id===s?.employees.find(e=>e.id===selfId)?.branchId) as any)?.geo;if(g){const p=await currentPos();if(p)b={...b,...p}}}
+ return mutate(b,method,close)};
  const runAction=async(a:AstAction):Promise<string|{text:string,undo:()=>Promise<string>}>=>{if(!s)return '';
   if(a.type==='go'){if(a.target==='attendance')setDay(today());setPage(TARGET_PAGE[a.target] as any);return '열었어요.'}
   if(a.type==='qr'){await openQr();return 'QR을 띄웠어요.'}

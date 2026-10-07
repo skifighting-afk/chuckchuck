@@ -45,11 +45,25 @@ export {pubKey,weekStartOf};
 
 /** 지시서 5주차: 지점 영업시간·정기 휴무일·매장 전화(근무표에서 휴무일·영업시간 밖 근무를 알려 준다) */
 const DAYS=['일','월','화','수','목','금','토'];
-export function BranchHours({b,set}:{b:{hours?:{open:string,close:string},closedDays?:number[],phone?:string},set:(p:any)=>void}){
+export function BranchHours({b,set}:{b:{hours?:{open:string,close:string},closedDays?:number[],phone?:string,geo?:any},set:(p:any)=>void}){
  const h=b.hours,closed=b.closedDays||[];
  return <div className="branch-hours">
   <fieldset><legend>영업시간</legend><label className="t-check"><input type="checkbox" checked={!!h} onChange={e=>set({hours:e.target.checked?{open:'10:00',close:'22:00'}:undefined})}/> 영업시간 정하기</label>{h&&<span className="t-inline"><label>여는 시간 <input type="time" value={h.open} onChange={e=>set({hours:{...h,open:e.target.value}})}/></label><label>닫는 시간 <input type="time" value={h.close} onChange={e=>set({hours:{...h,close:e.target.value}})}/></label></span>}</fieldset>
   <fieldset><legend>정기 휴무일</legend><span className="branch-days">{[1,2,3,4,5,6,0].map(d=><label key={d} className="t-check"><input type="checkbox" checked={closed.includes(d)} onChange={e=>set({closedDays:e.target.checked?[...closed,d].sort():closed.filter(x=>x!==d)})}/> {DAYS[d]}</label>)}</span></fieldset>
+  <BranchGeo geo={b.geo} set={g=>set({geo:g})}/>
   <label className="branch-phone">매장 전화 <input inputMode="tel" value={b.phone||''} onChange={e=>set({phone:e.target.value.replace(/[^\d-]/g,'').slice(0,20)||undefined})} placeholder="02-123-4567"/></label>
  </div>;
+}
+
+/** 지시서 006: 출퇴근 위치 확인 — 매장에서 지금 위치를 저장하고 반경을 정한다(QR과 함께 써요) */
+function BranchGeo({geo,set}:{geo?:{lat:number,lng:number,radius:number,mode:'warn'|'block'},set:(g:any)=>void}){
+ const [msg,setMsg]=useState(''),[busy,setBusy]=useState(false);
+ const here=async()=>{setBusy(true);setMsg('');const {currentPos}=await import('./att-device');const p=await currentPos();setBusy(false);if(!p){setMsg('위치를 받지 못했어요. 휴대폰 위치 권한을 켜고 매장 안에서 다시 눌러 주세요.');return}set({lat:Math.round(p.lat*1e6)/1e6,lng:Math.round(p.lng*1e6)/1e6,radius:geo?.radius||150,mode:geo?.mode||'warn'});setMsg(`지금 위치를 매장 위치로 정했어요(오차 약 ${p.acc}m). 아래 '저장'을 눌러야 반영돼요.`)};
+ return <fieldset className="branch-geo"><legend>출근 위치 확인</legend>
+  {geo?<><p className="footnote">매장 위치 저장됨 · 반경 안에서 찍었는지 함께 확인해요.</p>
+   <span className="t-inline"><label>반경 <select value={geo.radius} onChange={e=>set({...geo,radius:Number(e.target.value)})}>{[50,100,150,300,500].map(r=><option key={r} value={r}>{r}m</option>)}</select></label>
+   <label>반경 밖이면 <select value={geo.mode} onChange={e=>set({...geo,mode:e.target.value})}><option value="warn">기록하고 '위치 확인' 표시</option><option value="block">출근을 막기</option></select></label></span>
+   <span className="t-inline"><button type="button" className="secondary" disabled={busy} onClick={here}>지금 위치로 다시 정하기</button><button type="button" className="secondary" onClick={()=>set(undefined)}>위치 확인 끄기</button></span></>
+  :<><p className="footnote">매장 안에서 눌러 지금 위치를 저장하면, 직원이 출근할 때 매장 근처인지 확인해요. 위치는 출근 순간에만 확인하고 계속 따라다니지 않아요.</p><button type="button" className="secondary" disabled={busy} onClick={here}>{busy?'위치 받는 중…':'지금 위치를 매장 위치로'}</button></>}
+  {msg&&<p role="status" className="footnote">{msg}</p>}</fieldset>;
 }

@@ -1,0 +1,4 @@
+// 지시서 006·007: 출근할 때 함께 보내는 휴대폰 표시(무작위 값, 개인정보 아님)와 현재 위치
+export function deviceId(){try{let v=localStorage.getItem('cc-device');if(!v||!/^[a-z0-9]{8,40}$/i.test(v)){v=Array.from(crypto.getRandomValues(new Uint8Array(12)),b=>b.toString(36).padStart(2,'0')).join('').slice(0,20);localStorage.setItem('cc-device',v)}return v}catch{return undefined}}
+/** 위치 권한이 없거나 8초 안에 못 받으면 null(서버가 지점 설정대로 판단) */
+export function currentPos():Promise<{lat:number,lng:number,acc:number}|null>{return new Promise(res=>{if(typeof navigator==='undefined'||!navigator.geolocation)return res(null);const t=setTimeout(()=>res(null),8000);navigator.geolocation.getCurrentPosition(p=>{clearTimeout(t);res({lat:p.coords.latitude,lng:p.coords.longitude,acc:Math.round(p.coords.accuracy||0)})},()=>{clearTimeout(t);res(null)},{enableHighAccuracy:true,timeout:7500,maximumAge:60000})})}
