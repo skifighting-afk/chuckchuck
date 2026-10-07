@@ -57,6 +57,8 @@ export function demoTeam(now = today(), clock = Date.now()): Team {
   // 025: 승인된 휴가 하나(며칠 뒤 근무일 하나를 휴가로 — 그날 근무는 빠지고 근무표에 '휴가'로 보인다)
   {const i = 1, d = [2, 3, 4, 5, 6, 7, 8].map(n => datePlus(now, n)).find(d => PEOPLE[i].days.includes(dow(d)))!; (s as any).approvedLeaves = [{employeeId: s.employees[i].id, start: d, end: d}]; s.shifts = s.shifts.filter(x => !(x.employeeId === s.employees[i].id && x.date === d));}
   (s as any).publishedWeeks = {[`branch-main:${mon}`]: {at: new Date(Date.parse(mon + 'T00:00:00Z') - 2 * 86400000 + 9 * 3600000).toISOString(), acks: {[s.employees[1].id]: new Date(Date.parse(mon + 'T00:00:00Z') - 86400000).toISOString()}}};
+  // 지시서 028: 모집 중인 빈 근무 하나(직원 화면에서 '맡을게요'를 눌러 볼 수 있게)
+  (s as any).openShifts = [{id: 'demo-open-1', branchId: 'branch-main', date: datePlus(now, 3), start: '18:00', end: '22:00', breakMinutes: 0, position: '홀', note: '주말 저녁 대타', status: '모집 중', createdAt: new Date(Date.parse(now + 'T00:00:00Z')).toISOString()}];
   s.settings = {...s.settings, employerName: '예시 사장님', autoPayslip: false, autoContract: false, fivePlus: false};
   // 지난달 급여는 확정해 둔다(화면이 다시 계산한 값과 같아야 한다).
   s.payrollRuns = {};

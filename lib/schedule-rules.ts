@@ -46,6 +46,15 @@ export function checkShift(shift: Shift, all: Shift[], emp: Emp | undefined, ws:
   if (branch?.closedDays?.includes(new Date(shift.date + 'T00:00:00Z').getUTCDay())) out.push({level: 'warn', text: '그날은 매장 정기 휴무일이에요. 영업하는 날이 맞는지 확인해 주세요.'});
   if (branch?.hours) { const o = mins(branch.hours.open), c0 = mins(branch.hours.close), c = c0 <= o ? c0 + 1440 : c0, a = mins(shift.start), b0 = mins(shift.end), b = b0 <= a ? b0 + 1440 : b0;
     if (a < o - 120 || b > c + 120) out.push({level: 'warn', text: `영업시간(${branch.hours.open}–${branch.hours.close})보다 2시간 넘게 벗어난 근무예요.`}); }
+  // 지시서 026: 연속 근무일 · 근무 사이 쉬는 시간 · 하루 8시간(5인 이상)
+  const mine = all.filter(x => x.employeeId === emp.id && x.id !== shift.id), days = new Set([...mine.map(x => x.date), shift.date]);
+  let run = 1; for (let d = plus(shift.date, -1); days.has(d); d = plus(d, -1)) run++; for (let d = plus(shift.date, 1); days.has(d); d = plus(d, 1)) run++;
+  if (run >= 7) out.push({level: 'warn', text: `${emp.name}님이 ${run}일 연속 근무가 돼요. 1주에 하루 이상은 쉬는 날(주휴일)을 줘야 해요.`});
+  const span = (x: Shift) => { const a = Date.parse(x.date + 'T00:00:00Z') / 60000 + mins(x.start); let b = Date.parse(x.date + 'T00:00:00Z') / 60000 + mins(x.end); if (b <= a) b += 1440; return [a, b]; };
+  const [ss, se] = span(shift); let gap = Infinity;
+  for (const x of mine) { const [a, b] = span(x); if (b <= ss) gap = Math.min(gap, ss - b); else if (a >= se) gap = Math.min(gap, a - se); }
+  if (gap < 11 * 60 && gap >= 0) out.push({level: 'warn', text: `앞뒤 근무 사이 쉬는 시간이 ${r1(gap / 60)}시간뿐이에요. 11시간 이상 쉬게 하는 것을 권해요.`});
+  if (fivePlus && shiftHours(shift) > 8) out.push({level: 'warn', text: `하루 ${r1(shiftHours(shift))}시간 근무라 8시간을 넘는 ${r1(shiftHours(shift) - 8)}시간은 연장수당(1.5배)이 붙어요.`});
   if (fivePlus && after > 52) out.push({level: 'warn', text: `${emp.name}님이 그 주 ${r1(after)}시간이 돼 주 52시간을 넘어요.`});
   return out;
 }

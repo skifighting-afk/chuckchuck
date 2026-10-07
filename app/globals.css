@@ -640,3 +640,10 @@ body.ms-dragging,body.ms-dragging *{user-select:none!important;-webkit-user-sele
 .att-extra{margin-bottom:8px}
 .branch-geo{margin-top:8px}.branch-geo select,.branch-geo button{min-height:48px}
 .rq-list{list-style:none;padding:0;display:grid;gap:6px;max-height:50vh;overflow:auto}.rq-list label{min-height:44px;align-items:center}
+/* 지시서 '다음' 근무표 묶음 */
+.t-hol,.t-closed{display:block;font-size:12px;font-weight:600;line-height:1.3}.t-hol{color:#b42318}.t-closed{color:#5b6470}
+.day-marks:empty{display:none}.day-marks{margin:4px 0}
+.live-cost{margin:8px 0;padding:10px 12px;border:1px solid #b5c8ba;border-radius:10px;background:#f4faf6}.live-cost small{display:block;color:#5b6470;font-size:12px}
+.os-list{list-style:none;padding:0;margin:0;display:grid;gap:8px}.os-list li{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 0;border-bottom:1px solid #e6ece8}.os-list button{min-height:44px}
+.os-done{color:#17583f;font-weight:600}.os-wait{color:#8a4b00;font-weight:600}
+.os-form .t-formgrid input{min-height:48px}
