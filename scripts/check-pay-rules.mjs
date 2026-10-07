@@ -1340,3 +1340,20 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('2분 지난 코드·틀린 코드·다른 매장 거절',!(await qrTokenOk('secret-x','dynamic','C.'+c.code,now+125000))&&!(await qrTokenOk('secret-x','static','C.000000',now)&&c.code!=='000000')&&!(await qrTokenOk('secret-y','static','C.'+c.code,now)));
  console.log('PASS: 매장 코드 출퇴근.');
 }
+// 지시서 9주차 보완: 서식함
+{
+ const {formText,FORM_KINDS}=await import('../lib/forms.ts');
+ const e={name:'김예시',role:'홀',joined:'2026-01-02',endDate:'2026-12-31'},s={store:'척척이네',owner:'예시 대표'};
+ ok('서식 5종',FORM_KINDS.length===5&&FORM_KINDS.every(k=>formText(k,s,e,'2026-10-07').includes('김예시')));
+ ok('해고예고: 30일 뒤·제26조·예고수당 안내',formText('해고예고 통지서',s,e,'2026-10-07').includes('2026년 11월 6일')&&formText('해고예고 통지서',s,e,'2026-10-07').includes('해고예고수당'));
+ ok('사직서는 직원이 쓰는 서류 안내',formText('사직서',s,e,'2026-10-07').includes('강요하면 해고'));
+ console.log('PASS: 서식함.');
+}
+{
+ const {trainingStatus}=await import('../lib/trainings.ts');
+ const st=trainingStatus([{id:'1',kind:'직장 내 성희롱 예방교육',date:'2026-03-02',attendees:['a']},{id:'2',kind:'직장 내 성희롱 예방교육',date:'2025-03-02',attendees:['a','b']}],2026,3,['a','b','c']);
+ const s1=st.find(x=>x.kind==='직장 내 성희롱 예방교육');
+ ok('의무교육: 올해 기록·안 들은 직원',s1.done&&s1.last==='2026-03-02'&&s1.missing.join()==='b,c'&&!st.some(x=>x.kind==='산업안전보건교육')&&!st.some(x=>x.kind==='퇴직연금 교육'));
+ ok('5명 이상이면 산업안전',trainingStatus([],2026,5,[]).some(x=>x.kind==='산업안전보건교육'));
+ console.log('PASS: 법정 의무교육.');
+}

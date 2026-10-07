@@ -8,6 +8,7 @@ import {processDeletions} from './withdraw-api';
 import {alertsFor} from '../lib/alert-sweep';
 import {dailyBrief,weeklyBrief} from '../lib/briefing';
 import {upcomingDeadlines} from '../lib/tax-calendar';
+import {retentionDue} from '../lib/retention';
 import {holidaysFor} from '../lib/holidays';
 import {loadAttendance} from './attendance-store';
 import {sendAlimtalk} from '../lib/alimtalk-send';
@@ -64,6 +65,8 @@ export async function alertSweep(env:any,now=Date.now(),notify=(uid:string,m:any
   {const k=new Date(now+9*3600000),today=k.toISOString().slice(0,10);
    if(k.getUTCHours()===8){const b=dailyBrief({...d,leavesPending:(d._operations?.leaves||[]).filter((l:any)=>l.status==='승인 대기').length},today);list.push({key:'brief:'+today,to:'owner',kind:'brief',title:'☀ '+b.title,body:b.body});
     if(k.getUTCDay()===1){const wk=await loadAttendance(env.DB,r.owner,new Date(Date.parse(today+'T00:00:00+09:00')-8*86400000).toISOString(),new Date(now).toISOString()).catch(()=>[]);const w=weeklyBrief({...d,attendance:wk},today);list.push({key:'weekly:'+today,to:'owner',kind:'brief',title:w.title,body:w.body});}}}
+  // 지시서 130: 보존 기간(퇴사 후 3년)이 지난 퇴사자 개인정보 — 매달 1일 아침 알림
+  {const k=new Date(now+9*3600000),today=k.toISOString().slice(0,10);if(k.getUTCDate()===1&&k.getUTCHours()>=9){const due=retentionDue(d.employees||[],today);if(due.length)list.push({key:'retention:'+today.slice(0,7),to:'owner',kind:'staff',title:`보존 기간이 지난 퇴사자 ${due.length}명이 있어요`,body:'설정 → 개인정보 보존 기간에서 연락처를 지워 주세요. 법정 보존 기간(3년)이 지났어요.'})}}
   // 지시서 115·116: 신고·납부 기한 3일 전·당일 아침 9시 이후 사장님께
   {const k=new Date(now+9*3600000),today=k.toISOString().slice(0,10);if(k.getUTCHours()>=9){const y=Number(today.slice(0,4)),hol=new Set([...holidaysFor(y,true).keys(),...holidaysFor(y+1,true).keys()]);
    for(const x of upcomingDeadlines(today,d.employees||[],3,hol)){const left=Math.round((Date.parse(x.date)-Date.parse(today))/86400000);if(left===3||left===0)list.push({key:`tax:${x.date}:${x.title}:${left}`,to:'owner',kind:'payroll',title:left?`${x.title} 기한이 3일 남았어요`:`오늘이 ${x.title} 기한이에요`,body:`${Number(x.date.slice(5,7))}월 ${Number(x.date.slice(8))}일까지 · ${x.detail}`})}}}
