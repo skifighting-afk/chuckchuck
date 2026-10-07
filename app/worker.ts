@@ -99,7 +99,7 @@ async function route(request:Request,env:Env){
  const actor={id:userId,name:self?.name||name,email:request.headers.get('oai-authenticated-user-email')||''};
  let freshPub:string[]=[];let certReq:any=null;let askNotice:any=null; let inviteUrl:string|undefined;let attendanceQrUrl:string|undefined;
  const result=()=>{
-  if(access==='owner')return {state,version:version+1,audit,outbox,actor,emailConnected:!!(env.RESEND_API_KEY&&env.EMAIL_FROM),access,selfId:null,inviteUrl,attendanceQrUrl,qrModes:raw?._attendanceQrMode||{},plan:raw?._account||null,qrRequired:hasFeature(raw?._account,'qr')};
+  if(access==='owner')return {links:{linked:members.map((m:any)=>m.employeeId),invited:Object.fromEntries(invitations.map((i:any)=>[i.employeeId,i.expires]))},state,version:version+1,audit,outbox,actor,emailConnected:!!(env.RESEND_API_KEY&&env.EMAIL_FROM),access,selfId:null,inviteUrl,attendanceQrUrl,qrModes:raw?._attendanceQrMode||{},plan:raw?._account||null,qrRequired:hasFeature(raw?._account,'qr')};
   const filtered=personalTeam(state,self!.id);
   return {state:filtered,version:version+1,audit:[],outbox:[],actor,emailConnected:false,access,selfId:self!.id,plan:raw?._account?{plan:raw._account.plan}:null,qrRequired:hasFeature(raw?._account,'qr')};
  };

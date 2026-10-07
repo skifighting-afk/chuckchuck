@@ -6,7 +6,8 @@ import {trialNotice} from '../lib/plans';
 import {notifyUser} from './push-api';
 import {processDeletions} from './withdraw-api';
 import {alertsFor} from '../lib/alert-sweep';
-import {dailyBrief,weeklyBrief} from '../lib/briefing';
+import {dailyBrief,weeklyBrief,staleRequests} from '../lib/briefing';
+import {weekStartOf,plus as plusD} from '../lib/schedule-rules';
 import {upcomingDeadlines} from '../lib/tax-calendar';
 import {retentionDue} from '../lib/retention';
 import {applyDueRaises} from '../lib/wage-raise';
@@ -88,6 +89,14 @@ export async function alertSweep(env:any,now=Date.now(),notify=(uid:string,m:any
   {const k=new Date(now+9*3600000),today=k.toISOString().slice(0,10);
    if(k.getUTCHours()===8){const b=dailyBrief({...d,leavesPending:(d._operations?.leaves||[]).filter((l:any)=>l.status==='승인 대기').length},today);list.push({key:'brief:'+today,to:'owner',kind:'brief',title:'☀ '+b.title,body:b.body});
     if(k.getUTCDay()===1){const wk=await loadAttendance(env.DB,r.owner,new Date(Date.parse(today+'T00:00:00+09:00')-8*86400000).toISOString(),new Date(now).toISOString()).catch(()=>[]);const w=weeklyBrief({...d,attendance:wk},today);list.push({key:'weekly:'+today,to:'owner',kind:'brief',title:w.title,body:w.body});}}}
+  // 지시서 195: 3일 넘게 대기 중인 요청 — 하루 한 번(오전 9시 이후) 사장님께
+  {const k=new Date(now+9*3600000),today=k.toISOString().slice(0,10);if(k.getUTCHours()>=9){const st=staleRequests(d,now);if(st.total)list.push({key:'stale:'+today,to:'owner',kind:'leave',title:`3일 넘게 기다리는 요청 ${st.total}건`,body:st.text+' · 직원이 답을 기다리고 있어요.'})}}
+  // 지시서 199: 근무표 자동 게시 — 정해 둔 요일·시각에 다음 주 근무표를 공개하고 직원에게 알림
+  {const ap=d.settings?.autoPublish,k=new Date(now+9*3600000);if(ap&&k.getUTCDay()===ap.weekday&&k.getUTCHours()===ap.hour){const ws=d.settings?.weekStart==='sun'?'sun':'mon',today=k.toISOString().slice(0,10),next=plusD(weekStartOf(today,ws),7),pw={...(d.publishedWeeks||{})};const fresh:string[]=[];
+   for(const b of d.branches||[]){const key=b.id+':'+next,ids=new Set((d.employees||[]).filter((e:any)=>e.branchId===b.id&&e.status!=='퇴사').map((e:any)=>e.id));if(pw[key]||!(d.shifts||[]).some((x:any)=>ids.has(x.employeeId)&&x.date>=next&&x.date<=plusD(next,6)))continue;pw[key]={at:new Date(now).toISOString(),acks:{}};fresh.push(b.id)}
+   if(fresh.length){const cur=await env.DB.prepare('SELECT data,version FROM stores WHERE owner=?').bind(r.owner).first();if(cur){const dd=JSON.parse(cur.data);dd.publishedWeeks={...(dd.publishedWeeks||{}),...Object.fromEntries(fresh.map(b=>[b+':'+next,pw[b+':'+next]]))};dd._audit=[...(dd._audit||[]),{id:crypto.randomUUID(),at:new Date(now).toISOString(),actor:{id:'system',name:'자동'},action:'근무표 공개',target:next,before:null,after:{week:next,auto:true},reason:'자동 게시'}].slice(-1000);
+    const u=await env.DB.prepare('UPDATE stores SET data=?,version=version+1,updated_at=? WHERE owner=? AND version=?').bind(JSON.stringify(dd),new Date(now).toISOString(),r.owner,cur.version).run();
+    if(u.meta.changes){d._alertsSent=dd._alertsSent;for(const e of (d.employees||[]).filter((e:any)=>fresh.includes(e.branchId)&&e.status!=='퇴사')){const uid=(d._members||[]).find((m:any)=>m.employeeId===e.id)?.userId;if(uid)await notify(uid,{title:'다음 주 근무표가 공개됐어요',body:`${Number(next.slice(5,7))}월 ${Number(next.slice(8))}일부터 일주일 근무표를 확인하고 '확인했어요'를 눌러 주세요.`,url:'/app?screen=schedule',kind:'schedule'})}list.push({key:'autopub:'+next,to:'owner',kind:'schedule',title:'다음 주 근무표를 자동으로 공개했어요',body:'직원 확인 현황은 근무 스케줄 화면에서 볼 수 있어요.'})}}}}}
   // 지시서 130: 보존 기간(퇴사 후 3년)이 지난 퇴사자 개인정보 — 매달 1일 아침 알림
   {const k=new Date(now+9*3600000),today=k.toISOString().slice(0,10);if(k.getUTCDate()===1&&k.getUTCHours()>=9){const due=retentionDue(d.employees||[],today);if(due.length)list.push({key:'retention:'+today.slice(0,7),to:'owner',kind:'staff',title:`보존 기간이 지난 퇴사자 ${due.length}명이 있어요`,body:'설정 → 개인정보 보존 기간에서 연락처를 지워 주세요. 법정 보존 기간(3년)이 지났어요.'})}}
   // 지시서 115·116: 신고·납부 기한 3일 전·당일 아침 9시 이후 사장님께

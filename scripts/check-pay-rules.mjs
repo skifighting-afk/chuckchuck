@@ -1439,3 +1439,9 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('세무사 양식: 주휴 칸·차인지급액',csv.includes('"주휴수당"')&&csv.includes('"50000"')&&csv.includes('"991000"'));
  console.log('PASS: 소급·연간 내역·세무사 양식.');
 }
+{
+ const {staleRequests}=await import('../lib/briefing.ts');const now=Date.parse('2026-10-07T00:00:00Z'),old='2026-10-01T00:00:00Z',fresh='2026-10-06T00:00:00Z';
+ const r=staleRequests({requests:[{status:'승인 대기',at:old},{status:'승인 대기',at:fresh}],_operations:{leaves:[{status:'승인 대기',at:old}],swaps:[]},staffAsks:[{status:'확인 중',at:old}],_joinApplications:[{status:'pending',createdAt:fresh}]},now);
+ ok('3일 넘은 요청만',r.total===3&&r.text==='정정 1건, 휴가 1건, 직원 문의 1건');
+ console.log('PASS: 오래된 요청.');
+}

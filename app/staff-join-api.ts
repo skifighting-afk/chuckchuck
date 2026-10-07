@@ -2,6 +2,7 @@ import type {StoreData} from '../lib/store-data';
 import {newJoinCode,normalizeJoinCode} from '../lib/join-code';
 import {joinTermsSchema,joinProfileSchema,joinMember,joinContractText} from '../lib/join-terms';
 import {resolveStore} from './saas-api';
+import {notifyUser} from './push-api';
 import {newMember,teamSchema} from '../lib/team-model';
 import {capacityError,canWrite,hasFeature} from '../lib/plans';
 const reply=(data:any,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
@@ -61,6 +62,8 @@ export async function staffJoinApi(request:Request,env:{DB:D1Database}){
   if(terms)application.contractText=joinContractText(d,application);
   d._joinApplications=[...items.filter((x)=>x.userId!==uid),application];
   const r=await env.DB.prepare('UPDATE stores SET data=?,version=version+1,updated_at=? WHERE owner=? AND version=?').bind(JSON.stringify(d),new Date().toISOString(),row.owner,row.version).run();
+  // 지시서 193: 합류 신청이 오면 사장님(과 공동 관리자)께 바로 알림
+  if(r.meta.changes){for(const u of [row.owner,...((d as any)._coowners||[]).map((c:any)=>c.userId)])await notifyUser(env as any,u,{title:`${application.name}님이 합류를 신청했어요`,body:`${d.branches.find((x)=>x.id===code.branchId)?.name||'매장'} · 직원 관리에서 수락해 주세요.`,url:'/staff-requests',kind:'staff'}).catch(()=>null)}
   return r.meta.changes?reply({ok:true,status:'pending'}):reply({error:'다른 변경이 있어요. 다시 신청해 주세요.'},409);
  }
  if(linked?.access!=='owner')return reply({error:'신청 처리는 사장님만 할 수 있어요. 사장님께 확인을 요청해 주세요.'},403);

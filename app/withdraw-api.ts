@@ -5,6 +5,7 @@
 import {confirmSigner,deleteAuthUser,type AuthEnv} from './auth-api';
 import {serverError,reportError} from '../lib/errors';
 import {resolveStore} from './saas-api';
+import {notifyUser} from './push-api';
 
 export const WITHDRAW_GRACE_DAYS = 30;
 export const EXPORT_FRESH_DAYS = 7;
@@ -15,6 +16,8 @@ export async function withdrawAction(request:Request,env:AuthEnv,b:any,linked:an
  const id=request.headers.get('oai-authenticated-user-id')!;
  const user=await env.DB.prepare('SELECT id,auth_id,last_export_at FROM app_users WHERE id=?').bind(id).first<any>();
  if(!user)return json({error:'이 계정은 여기서 탈퇴할 수 없어요. 운영팀에 탈퇴를 요청해 주세요.'},400);
+ // 지시서 145: 공동 관리자로 보고 있는 가게는 '내 가게'가 아니다 — 탈퇴는 내가 대표인 가게(있으면) 기준으로, 공동 관리 가게에서는 빠지기만 한다
+ if(linked?.coowner){const own=await env.DB.prepare('SELECT owner,data,version,updated_at FROM stores WHERE owner=?').bind(id).first<any>();linked=own?{row:own,owner:id,access:'owner'}:null;}
  if(b.action==='cancelWithdraw'){
   if(linked?.access!=='owner')return json({error:'취소할 탈퇴 예약이 없어요. 지금처럼 이용하시면 돼요.'},404);
   const data=JSON.parse(linked.row.data);
@@ -50,7 +53,10 @@ export async function withdrawAction(request:Request,env:AuthEnv,b:any,linked:an
   data._members=(data._members||[]).filter((m:any)=>m.userId!==id);
   data._audit=[...(data._audit||[]),{id:crypto.randomUUID(),at:new Date().toISOString(),actor:{id,name:'직원',email:''},action:'직원 계정 탈퇴',target:member?.employeeId||'',before:null,after:null,reason:'직원 본인 탈퇴. 근무·급여 기록과 계약서는 사장님 보존 서류로 남음'}];
   await env.DB.prepare('UPDATE stores SET data=?,version=version+1,updated_at=? WHERE owner=?').bind(JSON.stringify(data),new Date().toISOString(),linked.owner).run();
+  // 지시서 200: 직원이 계정을 지우면 사장님께 알림(기록은 보존 서류로 남음)
+  const nm=(data.employees||[]).find((e:any)=>e.id===member?.employeeId)?.name||'직원';await notifyUser(env as any,linked.owner,{title:`${nm}님이 앱 계정을 지웠어요`,body:'근무·급여 기록과 계약서는 보존 서류로 남아요. 퇴사했다면 직원 관리에서 퇴사 처리해 주세요.',url:'/app?screen=employees',kind:'staff'}).catch(()=>null);
  }
+ {const co=(await env.DB.prepare("SELECT owner,data FROM stores WHERE try_jsonb(data)->'_coowners' @> jsonb_build_array(jsonb_build_object('userId',CAST(? AS text)))").bind(id).all<any>()).results||[];for(const r of co){const d=JSON.parse(r.data);d._coowners=(d._coowners||[]).filter((c:any)=>c.userId!==id);await env.DB.prepare('UPDATE stores SET data=?,version=version+1,updated_at=? WHERE owner=?').bind(JSON.stringify(d),new Date().toISOString(),r.owner).run()}}
  if(!await deleteAuthUser(env,user.auth_id))return json({error:'계정을 지우지 못했어요. 잠시 뒤 다시 시도해 주세요.'},502);
  await env.DB.prepare('DELETE FROM app_users WHERE id=?').bind(id).run();
  return json({ok:true,deleted:true});

@@ -24,6 +24,8 @@ ok('other owner accepts',(await call('cara','/api/account',{action:'acceptCoowne
 ok('token single use',(await call('dan','/api/account',{action:'acceptCoowner',token})).status,404);
 let acc=(await call('cara','/api/account')).body;ok('cara sees two stores, now on boss store',[acc.stores.length,acc.currentStore===id('boss'),acc.coowner],[2,true,true]);
 const st=(await call('cara','/api/store')).body;ok('coowner has owner access',st.access,'owner');
+await call('cara','/api/account');const own=JSON.parse((await q('SELECT data FROM stores WHERE owner=?',id('cara')).first()).data),bossD=JSON.parse((await q('SELECT data FROM stores WHERE owner=?',id('boss')).first()).data);
+ok('viewing coowned store never overwrites own store',[own.store.name,bossD.store.name],['카라네','매뉴얼 검수']);
 ok('coowner cannot change plan',(await call('cara','/api/account',{action:'coownerInvite'})).status,403);
 ok('switch back to own store',(await call('cara','/api/account',{action:'switchStore',owner:id('cara')})).status,200);
 ok('own store now',(await call('cara','/api/store')).body.state.store.name,'카라네');

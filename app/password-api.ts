@@ -35,8 +35,8 @@ export async function passwordApi(request:Request,env:any){
    if(!await authLimit(env,'pw-reset:'+uid,10,3600000))return json({error:'초기화가 많아요. 한 시간 뒤 다시 시도해 주세요.'},429);
    const pw=await setTempPassword(env,m.userId);if(!pw)return json({error:'직원 계정을 찾지 못했어요. 직원에게 다시 가입하도록 안내해 주세요.'},404);
    const e=(data.employees||[]).find((x:any)=>x.id===b.employeeId);
-   for(let t=0;t<3;t++){const row=await env.DB.prepare('SELECT data,version FROM stores WHERE owner=?').bind(uid).first();const d=JSON.parse(row.data);d._audit=[...(d._audit||[]),{id:crypto.randomUUID(),at:new Date().toISOString(),actor:{id:uid,name:'사장님'},action:'직원 비밀번호 초기화',target:e?.name||'',before:null,after:null,reason:''}];
-    if((await env.DB.prepare('UPDATE stores SET data=?,version=?,updated_at=? WHERE owner=? AND version=?').bind(JSON.stringify(d),row.version+1,new Date().toISOString(),uid,row.version).run()).meta.changes)break}
+   for(let t=0;t<3;t++){const row=await env.DB.prepare('SELECT data,version FROM stores WHERE owner=?').bind(linked.owner).first();const d=JSON.parse(row.data);d._audit=[...(d._audit||[]),{id:crypto.randomUUID(),at:new Date().toISOString(),actor:{id:uid,name:'사장님'},action:'직원 비밀번호 초기화',target:e?.name||'',before:null,after:null,reason:''}];
+    if((await env.DB.prepare('UPDATE stores SET data=?,version=?,updated_at=? WHERE owner=? AND version=?').bind(JSON.stringify(d),row.version+1,new Date().toISOString(),linked.owner,row.version).run()).meta.changes)break}
    return json({ok:true,tempPassword:pw,name:e?.name||''});
   }
   if(b.action==='resetByEmail'){

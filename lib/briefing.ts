@@ -40,3 +40,10 @@ export function todayLabor(emps: Emp[], att: Att[], today: string, now: number) 
   }
   return {cost: Math.round(cost), hours: Math.round(hours * 10) / 10, working};
 }
+/** 지시서 195: 3일 넘게 처리 안 한 요청(출퇴근 정정·휴가·대타·직원 문의·합류 신청) */
+export function staleRequests(d: any, now: number, days = 3) {
+  const cut = now - days * 86400000, old = (at?: string) => !!at && Date.parse(at) < cut;
+  const n = {정정: (d.requests || []).filter((r: any) => r.status === '승인 대기' && old(r.at)).length, 휴가: (d._operations?.leaves || []).filter((l: any) => l.status === '승인 대기' && old(l.at)).length, '대타·교대': (d._operations?.swaps || []).filter((x: any) => x.status === '승인 대기' && old(x.at || x.createdAt)).length, '직원 문의': (d.staffAsks || []).filter((x: any) => x.status === '확인 중' && old(x.at)).length, '합류 신청': (d._joinApplications || []).filter((x: any) => x.status === 'pending' && old(x.createdAt)).length};
+  const parts = Object.entries(n).filter(([, v]) => v > 0);
+  return {total: parts.reduce((a, [, v]) => a + v, 0), text: parts.map(([k, v]) => `${k} ${v}건`).join(', ')};
+}

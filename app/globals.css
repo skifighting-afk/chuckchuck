@@ -625,3 +625,6 @@ body.ms-dragging,body.ms-dragging *{user-select:none!important;-webkit-user-sele
 .sched-hist{padding:0 14px}.sched-hist summary{min-height:48px;display:flex;align-items:center;font-weight:700;cursor:pointer}.sched-hist ul{padding-left:18px;font-size:14px}.sched-hist li{padding:4px 0}
 .pay-memo{display:block;font-size:12px;color:#5a3a00}
 .slips-print section{break-after:page}
+.link-state{font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;border:1px solid}.link-state.ok{color:#17583f;border-color:#9cc7a9;background:#effaf2}.link-state.sent{color:#5a3a00;border-color:#c98a2b;background:#fff3dc}.link-state.none{color:#44564b;border-color:#dce7df}
+.doc-seal{display:flex;align-items:center;gap:8px;font-size:13px}
+.rq{display:grid;gap:10px}.rq-count{font-weight:700}.rq-card{padding:12px;border:1px solid #dce7df;border-radius:12px}.rq-card dl{margin:6px 0 0;display:grid;gap:6px}.rq-card dt{font-size:12px;color:#44564b}.rq-card dd{margin:0}.rq .actions button{min-height:48px}

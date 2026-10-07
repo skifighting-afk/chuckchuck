@@ -10,7 +10,10 @@ export async function managerApi(request:Request,env:{DB:D1Database}){
  const uid=request.headers.get('oai-authenticated-user-id');if(!uid)return json({error:'로그인한 뒤 다시 시도해 주세요.'},401);
  try{
  const link=await resolveStore(env.DB,uid);if(link?.access!=='manager')return json({error:'위임받은 매니저만 이용할 수 있어요.'},403);
- const d:StoreData=JSON.parse(link.row.data),self=d.employees.find((e)=>e.id===d._members?.find((m)=>m.userId===uid)?.employeeId)!,permissions:string[]=self.managerPermissions||[];
+ const d:StoreData=JSON.parse(link.row.data),self=d.employees.find((e)=>e.id===d._members?.find((m)=>m.userId===uid)?.employeeId)!;
+ // 지시서 194: 사장님 부재 기간의 대리 승인자는 근무표·출퇴근·휴가·공지 권한을 그 기간 동안 받는다
+ const dg=(d.settings as any)?.delegate,today=new Date(Date.now()+9*3600000).toISOString().slice(0,10),acting=!!dg&&dg.employeeId===self.id&&dg.until>=today;
+ const permissions:string[]=[...new Set([...(self.managerPermissions||[]),...(acting?['schedule','attendance','leave','notices']:[])])];
  const staff=d.employees.filter((e)=>e.branchId===self.branchId&&e.status!=='퇴사'),ids=new Set(staff.map((e)=>e.id));
  const ops:Operations=d._operations||{leaves:[],notices:[]};
  // 지시서 4주차 043: 매니저 권한 세분화 — 출퇴근 현황·연락처·인건비 합계·직원별 급여는 사장님이 켠 것만
@@ -23,7 +26,7 @@ export async function managerApi(request:Request,env:{DB:D1Database}){
   if(permissions.includes('laborCost')||permissions.includes('payroll'))try{const t=normalizeTeam({...d,attendance:mine});const rows=calculate(t,month).filter(r=>ids.has(r.employeeId));extra.month=month;extra.laborTotal={gross:rows.reduce((n,r)=>n+r.gross,0),hours:Math.round(rows.reduce((n,r)=>n+r.hours,0)*10)/10,people:rows.length};if(permissions.includes('payroll'))extra.payroll=rows.map(r=>({name:r.name,hours:r.hours,gross:r.gross,net:r.net}));}catch{}
  }
  if(permissions.includes('contacts'))extra.contacts=staff.map(e=>({name:e.name,phone:e.phone,role:e.role}));
- if(request.method==='GET')return json({...extra,version:link.row.version,permissions,branchId:self.branchId,branchName:d.branches.find((b)=>b.id===self.branchId)?.name,employees:staff.map((e)=>({id:e.id,name:e.name})),shifts:permissions.includes('schedule')?d.shifts.filter((s)=>ids.has(s.employeeId)):[],corrections:permissions.includes('attendance')?d.requests.filter((r)=>ids.has(r.before.employeeId)&&r.status==='승인 대기'&&r.actor.id!==uid&&r.before.employeeId!==self.id):[],leaves:permissions.includes('leave')?ops.leaves.filter((l)=>ids.has(l.employeeId)&&l.employeeId!==self.id&&l.status==='승인 대기'):[]});
+ if(request.method==='GET')return json({...extra,acting:acting?dg.until:null,version:link.row.version,permissions,branchId:self.branchId,branchName:d.branches.find((b)=>b.id===self.branchId)?.name,employees:staff.map((e)=>({id:e.id,name:e.name})),shifts:permissions.includes('schedule')?d.shifts.filter((s)=>ids.has(s.employeeId)):[],corrections:permissions.includes('attendance')?d.requests.filter((r)=>ids.has(r.before.employeeId)&&r.status==='승인 대기'&&r.actor.id!==uid&&r.before.employeeId!==self.id):[],leaves:permissions.includes('leave')?ops.leaves.filter((l)=>ids.has(l.employeeId)&&l.employeeId!==self.id&&l.status==='승인 대기'):[]});
  if(request.method!=='POST'||request.headers.get('origin')!==new URL(request.url).origin)return json({error:'요청을 읽지 못했어요. 새로고침한 뒤 다시 시도해 주세요.'},403);
  const raw=await request.text();if(raw.length>10000)return json({error:'입력 용량 초과'},413);const b=JSON.parse(raw);
  const permission=({saveShift:'schedule',reviewCorrection:'attendance',reviewLeave:'leave',postNotice:'notices'} as any)[b.action];

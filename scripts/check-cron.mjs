@@ -64,5 +64,16 @@ console.log('PASS: 서비스 상태(/api/status).');
  assert.equal(JSON.parse((await env.DB.prepare("SELECT data FROM stores WHERE owner='raise-owner'").first()).data).employees[0].wage,10320);
  await env.DB.prepare("DELETE FROM stores WHERE owner='raise-owner'").run();console.log('PASS: 예약 인상 자동 반영.');
 }
+// 지시서 199: 근무표 자동 게시(금요일 18시 → 다음 주)
+{
+ const mod=await import('../dist/server/cron.js');const fri=Date.parse('2026-10-09T18:05:00+09:00');
+ const data={store:{name:'자동'},branches:[{id:'b',name:'본점'}],employees:[{id:'e1',name:'가',status:'재직',branchId:'b',payDay:10}],shifts:[{id:'s',employeeId:'e1',date:'2026-10-13',start:'10:00',end:'15:00'}],settings:{autoPublish:{weekday:5,hour:18}},_members:[{userId:'u-e1',employeeId:'e1'}]};
+ await env.DB.prepare('INSERT INTO stores(owner,data,version,updated_at) VALUES(?,?,1,?)').bind('ap-owner',JSON.stringify(data),new Date().toISOString()).run();
+ const sent=[];await mod.alertSweep(env,fri,(u,m)=>sent.push(u+':'+m.title));
+ const saved=JSON.parse((await env.DB.prepare("SELECT data FROM stores WHERE owner='ap-owner'").first()).data);
+ assert.ok(saved.publishedWeeks['b:2026-10-12'],'다음 주 공개');assert.ok(sent.some(x=>x.startsWith('u-e1:다음 주 근무표')),'직원 알림');
+ const before=sent.length;await mod.alertSweep(env,fri+10*60000,(u,m)=>sent.push(u));assert.ok(!sent.slice(before).includes('u-e1'),'한 번만');
+ await env.DB.prepare("DELETE FROM stores WHERE owner='ap-owner'").run();console.log('PASS: 근무표 자동 게시.');
+}
 console.log('PASS: 매일 작업 (비밀값·체험 종료 알림 7일·1일 각 한 번).');
 await closeAll();
