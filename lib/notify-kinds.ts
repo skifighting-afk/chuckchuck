@@ -8,11 +8,13 @@ export const NOTIFY_KINDS = {
   notice: {label: '매장 공지', who: 'staff', desc: '새 공지·다시 알림'},
   manual: {label: '매뉴얼', who: 'staff', desc: '새 매뉴얼·바뀐 매뉴얼'},
   payroll: {label: '급여·명세서', who: 'both', desc: '명세서 도착, 급여일 전 미확정'},
+  staff: {label: '서류·계약 기한', who: 'both', desc: '보건증·계약·수습이 끝나기 전'},
   account: {label: '계정·요금', who: 'owner', desc: '체험 종료 안내 등'},
 } as const;
 export type NotifyKind = keyof typeof NOTIFY_KINDS;
 /** 제목으로 종류 짐작(예전 호출부 호환) */
 export function guessKind(title: string): NotifyKind {
+  if (/보건증|계약이 .*끝나|수습이/.test(title)) return 'staff';
   if (/공지/.test(title)) return 'notice';
   if (/매뉴얼/.test(title)) return 'manual';
   if (/휴가|대타|교대/.test(title)) return 'leave';

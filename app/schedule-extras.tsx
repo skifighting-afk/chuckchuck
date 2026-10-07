@@ -8,7 +8,11 @@ import {publishStatus,pendingAcks,pubKey,keyWeek} from '../lib/schedule-publish'
 const md=(d:string)=>`${Number(d.slice(5,7))}/${Number(d.slice(8))}`;
 
 /** 022: 일간 보기에서 그날 필요 인원과 비교(필요 인원은 '가능 시간으로 초안'에서 정해요) */
-export function StaffingGaps({s,es,date,branch,onSetup}:{s:Team,es:Team['employees'],date:string,branch:string,onSetup?:()=>void}){
+export function StaffingGaps(p:{s:Team,es:Team['employees'],date:string,branch:string,onSetup?:()=>void}){
+ const br:any=p.s.branches.find(b=>b.id===p.branch),closed=br?.closedDays?.includes(new Date(p.date+'T00:00:00Z').getUTCDay());
+ return <>{closed&&<p className="staff-gaps" role="note"><b>이날은 정기 휴무일이에요.</b> 근무를 넣으면 경고가 떠요. 영업하는 날이면 설정에서 휴무일을 바꿔 주세요.</p>}{br?.hours&&<p className="staff-hours">영업시간 {br.hours.open}–{br.hours.close}</p>}<GapsInner {...p}/></>;
+}
+function GapsInner({s,es,date,branch,onSetup}:{s:Team,es:Team['employees'],date:string,branch:string,onSetup?:()=>void}){
  const ids=new Set(es.map(e=>e.id)),needs=((s as any).staffingNeeds||[]).filter((n:any)=>!n.branchId||n.branchId===branch);
  if(!needs.length)return onSetup?<p className="staff-gaps-none">시간대별 필요 인원을 정해 두면 부족한 시간을 알려 드려요. <button type="button" className="link-btn" onClick={onSetup}>필요 인원 정하기</button></p>:null;
  const gaps=staffingGaps(date,s.shifts.filter(x=>ids.has(x.employeeId)),needs);
@@ -38,3 +42,14 @@ export function StaffPublishAck({state,selfId,branchId,today,busy,mutate}:{state
  return <div className="publish-ack" role="status">{keys.map(k=>{const w=keyWeek(k);return <div key={k}><p><b>{md(w)}~{md(datePlus(w,6))} 근무표가 공개됐어요</b> 내 근무 시간을 보고 확인을 눌러 주세요.</p><button type="button" className="btn primary" disabled={busy} onClick={()=>mutate({action:'ackWeek',key:k})}>확인했어요</button></div>})}</div>;
 }
 export {pubKey,weekStartOf};
+
+/** 지시서 5주차: 지점 영업시간·정기 휴무일·매장 전화(근무표에서 휴무일·영업시간 밖 근무를 알려 준다) */
+const DAYS=['일','월','화','수','목','금','토'];
+export function BranchHours({b,set}:{b:{hours?:{open:string,close:string},closedDays?:number[],phone?:string},set:(p:any)=>void}){
+ const h=b.hours,closed=b.closedDays||[];
+ return <div className="branch-hours">
+  <fieldset><legend>영업시간</legend><label className="t-check"><input type="checkbox" checked={!!h} onChange={e=>set({hours:e.target.checked?{open:'10:00',close:'22:00'}:undefined})}/> 영업시간 정하기</label>{h&&<span className="t-inline"><label>여는 시간 <input type="time" value={h.open} onChange={e=>set({hours:{...h,open:e.target.value}})}/></label><label>닫는 시간 <input type="time" value={h.close} onChange={e=>set({hours:{...h,close:e.target.value}})}/></label></span>}</fieldset>
+  <fieldset><legend>정기 휴무일</legend><span className="branch-days">{[1,2,3,4,5,6,0].map(d=><label key={d} className="t-check"><input type="checkbox" checked={closed.includes(d)} onChange={e=>set({closedDays:e.target.checked?[...closed,d].sort():closed.filter(x=>x!==d)})}/> {DAYS[d]}</label>)}</span></fieldset>
+  <label className="branch-phone">매장 전화 <input inputMode="tel" value={b.phone||''} onChange={e=>set({phone:e.target.value.replace(/[^\d-]/g,'').slice(0,20)||undefined})} placeholder="02-123-4567"/></label>
+ </div>;
+}

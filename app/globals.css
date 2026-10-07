@@ -529,3 +529,11 @@ body.ms-dragging,body.ms-dragging *{user-select:none!important;-webkit-user-sele
 .pc-bulk-who{border:1px solid #dce7df;border-radius:8px;display:flex;flex-wrap:wrap;gap:4px 14px;padding:8px 12px}.pc-bulk-who legend{font-weight:700;font-size:14px}
 .pc-history ol{margin:0 0 12px;padding-left:20px;font-size:14px}.pc-history li{padding:3px 0}
 .pay-paid-note{margin:8px 0;padding:10px 14px;border-radius:10px;background:#effaf2;border:1px solid #4d805d;color:#153e2d;font-weight:700}
+/* 지시서 5주차: 지점 영업시간·휴무일 */
+.branch-hours{grid-column:1/-1;display:grid;gap:10px;padding:10px 0;border-top:1px dashed #dce7df}
+.branch-hours fieldset{border:1px solid #dce7df;border-radius:8px;padding:8px 12px;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
+.branch-hours legend{font-weight:700;font-size:14px}.branch-hours label{display:inline-flex;align-items:center;gap:6px;font-size:14px;min-height:44px}
+.branch-hours input[type=time],.branch-phone input{min-height:44px;border:1px solid #b5c8ba;border-radius:8px;padding:0 8px}
+.branch-days{display:flex;flex-wrap:wrap;gap:4px 12px}.branch-phone{display:flex;flex-direction:column;gap:4px;font-size:14px}
+.staff-hours{margin:0 0 8px;font-size:14px;color:#344a3d}
+.staff-filter{display:flex;flex-wrap:wrap;gap:6px}.staff-filter button{min-height:44px;padding:0 14px;border:1px solid #b5c8ba;border-radius:999px;background:#fff;color:#173e30;font-weight:700;font-size:14px}.staff-filter button[aria-pressed=true]{background:#17583f;border-color:#17583f;color:#fff}

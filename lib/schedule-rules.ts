@@ -29,7 +29,7 @@ function touchesNight(s: {start: string; end: string}) {
 }
 
 /** 이 근무를 넣거나 바꾸면 생기는 문제 */
-export function checkShift(shift: Shift, all: Shift[], emp: Emp | undefined, ws: 'mon' | 'sun' = 'mon', fivePlus = false): Check[] {
+export function checkShift(shift: Shift, all: Shift[], emp: Emp | undefined, ws: 'mon' | 'sun' = 'mon', fivePlus = false, branch?: {hours?: {open: string; close: string}; closedDays?: number[]}): Check[] {
   const out: Check[] = [];
   if (!emp) return out;
   const before = weekHours(all, emp.id, shift.date, ws, shift.id), after = before + shiftHours(shift);
@@ -42,6 +42,10 @@ export function checkShift(shift: Shift, all: Shift[], emp: Emp | undefined, ws:
   }
   // 114 주 15시간을 처음 넘기는 순간: 주휴수당이 생김
   if (before < 15 && after >= 15) out.push({level: 'warn', text: `이 근무를 넣으면 ${emp.name}님이 그 주 ${r1(before)}시간에서 ${r1(after)}시간이 돼 주 15시간을 넘어요. 주휴수당이 생겨요.`});
+  // 지시서 5주차: 정기 휴무일·영업시간 밖(2시간 넘게 벗어날 때만, 준비·마감 시간은 괜찮다)
+  if (branch?.closedDays?.includes(new Date(shift.date + 'T00:00:00Z').getUTCDay())) out.push({level: 'warn', text: '그날은 매장 정기 휴무일이에요. 영업하는 날이 맞는지 확인해 주세요.'});
+  if (branch?.hours) { const o = mins(branch.hours.open), c0 = mins(branch.hours.close), c = c0 <= o ? c0 + 1440 : c0, a = mins(shift.start), b0 = mins(shift.end), b = b0 <= a ? b0 + 1440 : b0;
+    if (a < o - 120 || b > c + 120) out.push({level: 'warn', text: `영업시간(${branch.hours.open}–${branch.hours.close})보다 2시간 넘게 벗어난 근무예요.`}); }
   if (fivePlus && after > 52) out.push({level: 'warn', text: `${emp.name}님이 그 주 ${r1(after)}시간이 돼 주 52시간을 넘어요.`});
   return out;
 }

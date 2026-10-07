@@ -1172,3 +1172,23 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('일괄 수당 막힘',!!bulkAdjust({},'2026-10',[],'earnings',{name:'x',amount:1,formula:''}).error&&!!bulkAdjust({},'2026-10',['a'],'earnings',{name:'x',amount:0,formula:''}).error&&!!bulkAdjust({},'2026-10',['a'],'deductions',{name:'',amount:5,formula:''}).error);
  console.log('PASS: 지시서 4주차 (급여 마감 도우미).');
 }
+// 지시서 5주차: 직원·매장 — 서류 기한 알림, 휴무일·영업시간 경고, 명부
+{
+ const {alertsFor}=await import('../lib/alert-sweep.ts');const {checkShift}=await import('../lib/schedule-rules.ts');const {filterStaff,statusCounts,rosterCsv}=await import('../lib/staff-roster.ts');const {guessKind}=await import('../lib/notify-kinds.ts');
+ const T=(d,hm='09:30')=>Date.parse(`${d}T${hm}:00+09:00`);
+ const e={id:'a',name:'가',healthCertUntil:'2026-11-06',employment:'기간제',endDate:'2026-10-14',joined:'2026-08-08',probation:{months:2}};
+ const k=(now)=>alertsFor({employees:[e],shifts:[],attendance:[]},now).filter(x=>x.key.startsWith('doc:')).map(x=>x.key.split(':')[1]+'>'+x.to).sort().join();
+ ok('보건증 30일 전 사장님·직원 둘 다',k(T('2026-10-07')).includes('health>owner')&&k(T('2026-10-07')).includes('health-me>a'));
+ ok('기간제 계약 7일 전',k(T('2026-10-07')).includes('end>owner'));
+ ok('수습 끝 1일 전(8/8 입사 2개월 → 10/7까지)',k(T('2026-10-06')).includes('prob>owner'));
+ ok('아침 9시 전·기한 아닌 날은 없음',k(T('2026-10-07','08:50'))===''&&k(T('2026-10-08'))==='');
+ ok('서류 알림 종류',guessKind('가님 보건증이 30일 뒤 끝나요')==='staff');
+ const sh={id:'x',employeeId:'a',date:'2026-10-05',start:'06:00',end:'12:00'},emp={id:'a',name:'가'};
+ ok('정기 휴무일 경고',checkShift(sh,[],emp,'mon',false,{closedDays:[1]}).some(c=>c.text.includes('휴무일')));
+ ok('영업시간 2시간 넘게 벗어나면 경고, 준비 1시간은 괜찮음',checkShift(sh,[],emp,'mon',false,{hours:{open:'10:00',close:'22:00'}}).some(c=>c.text.includes('영업시간'))&&!checkShift({...sh,start:'09:00'},[],emp,'mon',false,{hours:{open:'10:00',close:'22:00'}}).length);
+ ok('자정 넘는 영업시간',!checkShift({...sh,start:'18:00',end:'02:00'},[],emp,'mon',false,{hours:{open:'17:00',close:'03:00'}}).length);
+ const L=[{id:'1',name:'김가',role:'홀',email:'a@x',phone:'010',joined:'2026-01-01',status:'재직',employment:'단시간'},{id:'2',name:'=HACK',role:'주방',email:'',phone:'',joined:'2026-01-01',status:'퇴사',employment:'단시간'}];
+ ok('명부 거르기·세기',filterStaff(L,'재직','').length===1&&filterStaff(L,'전체','주방').length===1&&statusCounts(L)['퇴사']===1);
+ ok('명부 CSV는 수식 막음',rosterCsv(L,'본점').includes(`"'=HACK"`)&&rosterCsv(L,'본점').startsWith('﻿"지점"'));
+ console.log('PASS: 지시서 5주차 (서류 기한·휴무일·명부).');
+}
