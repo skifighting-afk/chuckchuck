@@ -4,6 +4,7 @@ import {useState,useEffect} from 'react';
 import {type Team,today,calculate,won} from '../lib/team-model';
 import {weekProgress,myMonth} from '../lib/staff-home';
 import {dayRows} from '../lib/attendance-check';
+import {explainPay} from '../lib/pay-explain';
 
 export function StaffWeek({state,selfId}:{state:Team,selfId:string}){
  const p=weekProgress(state.attendance.filter(a=>a.employeeId===selfId) as any,state.shifts.filter(s=>s.employeeId===selfId),Date.now(),((state.settings as any).weekStart||'mon'));
@@ -90,4 +91,12 @@ export function KioskPinSetting({state,selfId,busy,mutate}:{state:Team,selfId:st
  const me:any=state.employees.find(e=>e.id===selfId),[pin,setPin]=useState(''),[ok,setOk]=useState('');
  return <details className="panel t-gap kiosk-pin-set"><summary>태블릿 출퇴근 비밀번호 {me?.kioskPin?'· 정해 둠':''}</summary><div className="t-panelbody"><p className="footnote">매장 태블릿에서 내 이름을 누르고 이 숫자를 넣으면 출퇴근돼요. 1111·1234처럼 쉬운 숫자는 안 돼요. 다른 사람에게 알려 주지 마세요.</p>
   <form className="t-inline" onSubmit={async e=>{e.preventDefault();if(await mutate({action:'setKioskPin',pin})){setPin('');setOk('비밀번호를 정했어요.')}}}><input type="password" inputMode="numeric" autoComplete="new-password" aria-label="태블릿 비밀번호" maxLength={6} value={pin} onChange={e=>setPin(e.target.value.replace(/\D/g,''))}/><button type="submit" className="secondary" disabled={busy||pin.length<4}>{me?.kioskPin?'바꾸기':'정하기'}</button></form>{ok&&<p role="status" className="saas-success">{ok}</p>}</div></details>;
+}
+
+/** 지시서 089: "내 급여 왜 이래요?" — 명세서를 쉬운 말로, 지난달과 비교 */
+export function PayExplain({state,selfId,month,row}:{state:Team,selfId:string,month:string,row:any}){
+ const [open,setOpen]=useState(false);if(!row)return null;
+ const y=Number(month.slice(0,4)),m=Number(month.slice(5,7)),pm=new Date(Date.UTC(y,m-2,1)).toISOString().slice(0,7);
+ const prevRun:any=Object.values(state.payrollRuns).find((r:any)=>r.locked&&r.month===pm&&r.rows.some((x:any)=>x.employeeId===selfId)),prev=prevRun?.rows.find((x:any)=>x.employeeId===selfId)||null;
+ return <section className="panel t-gap pay-explain"><button type="button" className="secondary" aria-expanded={open} onClick={()=>setOpen(!open)}>💬 내 급여 왜 이래요?</button>{open&&<ul>{explainPay(row,prev,month).map((t,i)=><li key={i}>{t}</li>)}</ul>}{open&&<p className="footnote">그래도 이상하면 아래 '명세서 문의'로 사장님께 물어보세요.</p>}</section>;
 }

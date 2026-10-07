@@ -90,5 +90,14 @@ console.log('PASS: 서비스 상태(/api/status).');
  const before=sent.length;await mod.alertSweep(env,now+10*60000,(u,m)=>sent.push(u+':'+m.title));assert.equal(sent.length,before,'한 번만');
  await env.DB.prepare("DELETE FROM stores WHERE owner='cc-owner'").run();await env.DB.prepare("DELETE FROM attendance_records WHERE owner='cc-owner'").run();console.log('PASS: 마감 체크 누락·공지 재알림.');
 }
+// 지시서 060: 생일·입사 기념일
+{
+ const mod=await import('../dist/server/cron.js');
+ const data={store:{name:'기념'},branches:[{id:'b',name:'본점'}],employees:[{id:'e1',name:'가',status:'재직',branchId:'b',birthMonth:'1999-11',joined:'2024-11-04'},{id:'e2',name:'나',status:'재직',branchId:'b',birthMonth:'2000-03',joined:'2026-01-01'}],shifts:[],_members:[]};
+ await env.DB.prepare('INSERT INTO stores(owner,data,version,updated_at) VALUES(?,?,1,?)').bind('care-owner',JSON.stringify(data),new Date().toISOString()).run();
+ const sent=[];await mod.alertSweep(env,Date.parse('2026-11-01T08:03:00+09:00'),(u,m)=>sent.push(u+':'+m.title));
+ assert.ok(sent.some(x=>x.startsWith('care-owner:🎂 11월 생일 1명')),'생일');assert.ok(sent.some(x=>x.includes('가님 입사 2주년이 3일 남았어요')),'기념일');
+ await env.DB.prepare("DELETE FROM stores WHERE owner='care-owner'").run();console.log('PASS: 생일·입사 기념일.');
+}
 console.log('PASS: 매일 작업 (비밀값·체험 종료 알림 7일·1일 각 한 번).');
 await closeAll();

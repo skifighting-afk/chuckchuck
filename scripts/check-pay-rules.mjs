@@ -1295,6 +1295,9 @@ console.log('PASS: 요율 연간 갱신 경고.');
  const r=parseSalesCsv('﻿일자,카드매출,결제건수\n2026.09.30,"1,200,000",31\n2026-10-01,500000,10\n2026/10/02,"250,000원",5\n합계,1950000,46');
  ok('POS 매출 파일 월별 합계(합계 줄 무시)',r.rows===3&&r.sums['2026-09']===1200000&&r.sums['2026-10']===750000);
  ok('제목 없는 파일도',parseSalesCsv('20261003,10000\n20261004,5000').sums['2026-10']===15000);
+ {const {explainPay}=await import('../lib/pay-explain.ts');const cur={hours:60,gross:700000,deduction:60000,net:640000,earnings:[{name:'기본급',amount:600000,formula:'60시간 × 10,000원'},{name:'주휴수당',amount:100000,formula:'x'}],deductions:[{name:'국민연금',amount:30000},{name:'근로소득세',amount:30000}]};
+  const ex=explainPay(cur,{hours:50,gross:500000,deduction:40000,net:460000,earnings:[{name:'기본급',amount:500000}],deductions:[]},'2026-09');
+  ok('급여 설명: 첫 줄 실수령',ex[0].startsWith('9월 실수령 640,000원'));ok('급여 설명: 지난달 비교',ex.at(-1).includes('180,000원 많아요')&&ex.at(-1).includes('+10시간')&&ex.at(-1).includes('주휴수당 +100,000원'));ok('급여 설명: 보험',ex.some(x=>x.startsWith('4대보험 30,000원')));}
  {const {staffingAdvice}=await import('../lib/report-view.ts');const h=parseSalesCsv('결제일시,금액\n2026-10-06 12:10,100000\n2026-10-06 12:40,80000\n2026-10-13 12:05,60000\n2026-10-06 15:00,20000');
   ok('시각 있는 매출: 시간대별',h.timed===4&&h.hourly['2026-10'].sum[1][12]===240000&&h.hourly['2026-10'].days[1]===2);
   const g=Array.from({length:7},()=>Array(24).fill(0));g[1][12]=1;const adv=staffingAdvice(h.hourly['2026-10'],g,60000);

@@ -13,7 +13,7 @@ import {retentionDue} from '../lib/retention';
 import {applyDueRaises} from '../lib/wage-raise';
 import {holidaysFor} from '../lib/holidays';
 import {loadAttendance} from './attendance-store';
-import {closingMissed,noticeReminders,absenceAlerts} from '../lib/ops-alerts';
+import {closingMissed,noticeReminders,absenceAlerts,careDays,leavePromotion} from '../lib/ops-alerts';
 import {sendAlimtalk} from '../lib/alimtalk-send';
 const json=(d:any,status=200)=>Response.json(d,{status,headers:{'Cache-Control':'no-store'}});
 function same(a:string,b:string){if(a.length!==b.length)return false;let r=0;for(let i=0;i<a.length;i++)r|=a.charCodeAt(i)^b.charCodeAt(i);return r===0}
@@ -91,7 +91,7 @@ export async function alertSweep(env:any,now=Date.now(),notify=(uid:string,m:any
    if(k.getUTCHours()===8){const b=dailyBrief({...d,leavesPending:(d._operations?.leaves||[]).filter((l:any)=>l.status==='승인 대기').length},today);list.push({key:'brief:'+today,to:'owner',kind:'brief',title:'☀ '+b.title,body:b.body});
     if(k.getUTCDay()===1){const wk=await loadAttendance(env.DB,r.owner,new Date(Date.parse(today+'T00:00:00+09:00')-8*86400000).toISOString(),new Date(now).toISOString()).catch(()=>[]);const w=weeklyBrief({...d,attendance:wk},today);list.push({key:'weekly:'+today,to:'owner',kind:'brief',title:w.title,body:w.body});}}}
   // 지시서 067·052: 마감 체크 없이 퇴근 · 24시간 지나도 안 읽은 공지
-  list.push(...closingMissed(d,now),...noticeReminders(d,now));
+  list.push(...closingMissed(d,now),...noticeReminders(d,now),...careDays(d,now),...leavePromotion(d,now));
   // 지시서 010: 결근·지각 누적 — 하루 한 번(오전 9시 첫 점검)만 이번 달 기록을 읽는다
   {const k=new Date(now+9*3600000);if(k.getUTCHours()===9&&k.getUTCMinutes()<10){const month=k.toISOString().slice(0,7),full=await loadAttendance(env.DB,r.owner,new Date(Date.parse(month+'-01T00:00:00+09:00')).toISOString(),new Date(now).toISOString()).catch(()=>null);if(full)list.push(...absenceAlerts({...d,attendance:full},month,now))}}
   // 지시서 195: 3일 넘게 대기 중인 요청 — 하루 한 번(오전 9시 이후) 사장님께

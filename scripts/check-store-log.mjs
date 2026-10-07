@@ -58,5 +58,24 @@ ok('logs survive PUT',(await call('boss','/api/store-log')).body.logs.length>=4,
  r=await call('amy','/api/manual',{action:'quiz',id:m.id,answers:[1,0],version:r.body.version});ok('all correct passes',r.body.quizResult.pass,true);
  am=(await call('amy','/api/manual')).body;ok('staff marked passed',am.manuals.find(x=>x.title==='위생').quizPassed,true);
  mv=(await call('boss','/api/manual')).body;ok('owner sees pass',mv.manuals.find(x=>x.title==='위생').quizPasses,['에이미']);}
+// 058·059·068·069
+ok('order needs item',(await L('amy',{action:'log',kind:'발주 요청',item:''})).status,400);
+ok('staff requests order',(await L('amy',{action:'log',kind:'발주 요청',item:'우유',qty:'2박스'})).status,200);
+ok('complaint',(await L('amy',{action:'log',kind:'고객 불만',text:'음식 늦음',handled:'음료 서비스'})).status,200);
+ok('owner cannot write anonymous',(await L('boss',{action:'log',kind:'건의',text:'x'})).status,400);
+ok('anonymous suggestion',(await L('amy',{action:'log',kind:'건의',text:'마감 인원 늘려 주세요'})).status,200);
+boss=(await call('boss','/api/store-log')).body;const sug=boss.logs.find(l=>l.kind==='건의');
+ok('suggestion has no author',[sug.by,'employeeId' in sug,sug.at.endsWith('T00:00:00.000Z')],['익명',false,true]);
+const st2=(await call('boss','/api/store')).body;ok('audit has no author for suggestion',st2.audit.filter(x=>x.action==='건의 기록').every(x=>x.actor.name==='익명'&&!x.target),true);
+ok('owner answers suggestion',(await L('boss',{action:'logStatus',id:sug.id,status:'해결',reply:'다음 주부터 늘릴게요'})).status,200);
+ok('other staff sees answered suggestion',(await call('far','/api/store-log')).body.logs.some(l=>l.kind==='건의'),false);
+amy=(await call('amy','/api/store-log')).body;ok('same-branch staff sees answered suggestion',amy.logs.some(l=>l.kind==='건의'&&l.reply),true);
+ok('order status by owner',(await L('boss',{action:'logStatus',id:boss.logs.find(l=>l.kind==='발주 요청').id,status:'처리 중'})).status,200);
+ok('staff messages owner',(await L('amy',{action:'msg',text:'내일 30분 늦어요'})).status,200);
+boss=(await call('boss','/api/store-log')).body;ok('owner sees message',boss.messages.some(m=>m.employeeId===A&&m.from==='staff'),true);
+ok('owner replies',(await L('boss',{action:'msg',employeeId:A,text:'알겠어요'})).status,200);
+ok('owner marks read',(await L('boss',{action:'msgRead',employeeId:A})).status,200);
+amy=(await call('amy','/api/store-log')).body;ok('staff sees thread with read mark',[amy.messages.length,!!amy.messages.find(m=>m.from==='staff').readAt],[2,true]);
+ok('other staff sees no messages',(await call('far','/api/store-log')).body.messages.length,0);
 console.log('PASS: 매장 일지·할 일·서명 서류.');
 await closeAll();
