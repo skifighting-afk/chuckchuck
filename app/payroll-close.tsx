@@ -2,6 +2,7 @@
 // 지시서 4주차: 급여 화면의 마감 도우미 — 지급 완료 기록, 재확정 때 바뀐 점, 지난달 대비, 확정 이력, 수당·공제 한꺼번에 넣기
 import {useState} from 'react';
 import {type Team,today} from '../lib/team-model';
+import {payAudit} from '../lib/pay-audit';
 import {compareMonths,revisionDiff,paidSummary,bulkAdjust,prevMonthOf,signed,won} from '../lib/payroll-close';
 
 const md=(d:string)=>`${Number(d.slice(5,7))}/${Number(d.slice(8,10))}`;
@@ -28,6 +29,8 @@ export function PayrollClose({s,month,branch,run,payRows,compare,busy,mutate,upd
  const gone=compare.filter(c=>c.flag==='이번 달 없음'),big=compare.filter(c=>c.flag==='크게 바뀜');
  const diff=run&&!run.locked?revisionDiff(run.prevRows,payRows):[];
  const sum=run?.locked?paidSummary(run):null;
+ // 지시서 7주차: 확정 전 급여 정확도 점검
+ const audit=run?.locked?[]:payAudit(s.employees.filter(e=>e.branchId===branch) as any,s.attendance as any,s.shifts,month,!!(s.settings as any).fivePlus);
  // 이력이 없던 예전 확정 건은 확정 정보로 한 줄 만든다
  const hist:any[]=run?.history?.length?run.history:run?.locked&&run.at?[{kind:'확정',revision:run.revision||1,at:run.at,by:run.actor?.name||'',total:run.rows.reduce((n:number,r:any)=>n+r.net,0)}]:[];
  return <div className="pay-close">
@@ -36,6 +39,7 @@ export function PayrollClose({s,month,branch,run,payRows,compare,busy,mutate,upd
     <div className="t-inline pc-paid-all"><label>지급한 날 <input type="date" value={date} onChange={e=>setDate(e.target.value)}/></label><button type="button" className="primary" disabled={busy} onClick={()=>mutate({action:'markPaid',key,ids:sum.left.map(r=>r.employeeId),date})}>남은 {sum.left.length}명 모두 지급 완료</button></div></>:<p className="pc-ok">✓ 모든 직원 지급 완료로 기록했어요.</p>}
     <ul className="pc-paid-list">{run.rows.map((r:any)=>{const d=run.paid?.[r.employeeId];return <li key={r.employeeId}><span><b>{r.name}</b> {won(r.net)}원</span>{d?<><span className="pc-ok">✓ {md(d)} 지급</span><button type="button" className="secondary" disabled={busy} onClick={()=>mutate({action:'markPaid',key,ids:[r.employeeId],undo:true})}>취소</button></>:<button type="button" className="secondary" disabled={busy} onClick={()=>mutate({action:'markPaid',key,ids:[r.employeeId],date})}>지급 완료</button>}</li>})}</ul>
     <p className="footnote">실제 이체는 은행 앱에서 해 주세요. 여기서는 지급했다는 기록만 남기고, 직원 명세서 화면에도 '지급 완료'로 보여요.</p></div></section>}
+  {!run?.locked&&<section className={'panel pc-audit'+(audit.length?'':' clean')} aria-label="급여 정확도 점검"><div className="panel-heading"><h2>급여 정확도 점검 {audit.length?`· ${audit.length}건`:''}</h2></div><div className="t-panelbody">{audit.length?<ul>{audit.map((f,i)=><li key={i}><span className={'pc-level '+(f.level==='확인 필요'?'need':'info')}>{f.level}</span> <b>{f.name}</b> {f.text}<small>{f.fix}</small></li>)}</ul>:<p className="pc-ok">✓ 확정 전에 확인할 기록·설정 문제가 없어요.</p>}</div></section>}
   {diff.length>0&&<section className="notice pc-rev" role="status"><b>지난 확정({run.revision||1}차)과 달라진 직원 {diff.length}명</b> 다시 확정하면 아래처럼 바뀌어요.<ul>{diff.map(d=><li key={d.employeeId}>{d.name}: {d.before===null?'새로 들어감':won(d.before)+'원'} → {d.after===null?'빠짐':won(d.after)+'원'} ({signed(d.diff)}{d.hours?`, 근무 ${d.hours>0?'+':''}${d.hours}시간`:''})</li>)}</ul></section>}
   {(gone.length>0||big.length>0)&&!run?.locked&&<section className="notice pc-cmp" role="note"><b>지난달과 비교해 확인할 직원</b><ul>{big.map(c=><li key={c.employeeId}>{c.name}: 실수령 {won(c.prevNet||0)}원 → {won(c.net||0)}원 ({signed(c.diff)}). 근무 기록과 수당·공제를 한 번 더 봐 주세요.</li>)}{gone.map(c=><li key={c.employeeId}>{c.name}: 지난달엔 있었는데 이번 달 급여가 없어요. 퇴사했거나 근무 기록이 빠졌는지 확인해 주세요.</li>)}</ul></section>}
   {!run?.locked&&<details className="pc-bulk" open={bulk} onToggle={e=>setBulk((e.target as HTMLDetailsElement).open)}><summary>여러 직원에게 같은 수당·공제 한꺼번에 넣기</summary>{bulk&&<BulkAdjust s={s} month={month} rows={payRows} busy={busy} update={update} demo={demo} done={()=>setBulk(false)}/>}</details>}

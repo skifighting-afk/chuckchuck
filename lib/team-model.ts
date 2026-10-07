@@ -89,6 +89,8 @@ export function calculate(s:Team,month:string){
   if(!hasRatesFor(year)&&(e.taxMode==='4대보험 자동'||e.payType==='시급'))warnings.push(year+'년 최저임금·4대보험 요율이 아직 앱에 등록되지 않아 이전 해 기준으로 계산했어요. 금액을 꼭 확인해 주세요.');
   const min=ratesFor(year).minimumWage;
   if(e.payType==='시급'&&e.wage<min)warnings.push(year+'년 최저시급('+won(min)+'원)보다 낮은 시급이에요.');
+  // 지시서 7주차: 월급제도 최저임금 환산(월 소정근로시간 = (주 소정 + 주휴) × 365 ÷ 7 ÷ 12)
+  if(e.payType==='월급'&&e.weeklyHours>0){const wk=Math.min(e.weeklyHours,40),mh=Math.round((wk+(wk>=15?wk/5:0))*365/7/12),need=Math.ceil(min*mh);if(e.wage*rate<need)warnings.push(`월급이 최저임금 환산액(${won(min)}원 × 월 ${mh}시간 = ${won(need)}원)보다 낮아요.`)}
   const nextMin=ratesFor(year+1).minimumWage;
   if(month.endsWith('-12')&&hasRatesFor(year+1)&&e.payType==='시급'&&e.wage>=min&&e.wage<nextMin)warnings.push((year+1)+'년 1월부터 최저시급이 '+won(nextMin)+'원이에요. 다음 달 전에 시급을 올려 주세요.');
   {const p=pendingRates(year);if(p.length&&e.taxMode==='4대보험 자동')warnings.push(year+'년 '+p.join('·')+' 요율이 아직 발표되지 않아 이전 해 비율로 계산했어요. 발표 후 다시 계산돼요.')}

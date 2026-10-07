@@ -548,3 +548,5 @@ body.ms-dragging,body.ms-dragging *{user-select:none!important;-webkit-user-sele
 .report-gap{color:#8a3b00;font-weight:700}
 .report-heat{border-collapse:collapse;font-size:12px;min-width:100%}.report-heat th,.report-heat td{border:1px solid #dce7df;padding:6px 4px;text-align:center;min-width:34px;color:#0f2a20}.report-heat thead th{background:#f5f8f4;white-space:nowrap}.report-heat tbody th{white-space:nowrap}
 @media print{.t-sidebar,.t-topbar,.assistant-fab,.demo-shell>header,.report-summary button,nav,.t-toolbar{display:none!important}.panel{break-inside:avoid}}
+.pc-audit ul{list-style:none;margin:0;padding:0}.pc-audit li{padding:10px 0;border-bottom:1px solid #dce7df;font-size:14px}.pc-audit li small{display:block;color:#344a3d;margin-top:3px;font-size:13px}
+.pc-level{display:inline-block;font-size:12px;font-weight:800;border-radius:6px;padding:1px 6px;border:1px solid}.pc-level.need{color:#8a2b00;border-color:#c96a2b;background:#fff1e6}.pc-level.info{color:#1f4e8a;border-color:#7da2d6;background:#eef4fc}

@@ -1206,3 +1206,22 @@ console.log('PASS: 요율 연간 갱신 경고.');
  ok('진행 중인 달은 증감 대신 안내',summaryLines({month:'2026-10',cost:1,hours:1},{cost:9,hours:9},[],true)[0].includes('진행 중'));
  console.log('PASS: 지시서 6주차 (리포트 추이·요일 시간대·근무표 대비·인건비율).');
 }
+// 지시서 7주차: 급여 정확도 — 월급 최저임금 환산, 정확도 점검
+{
+ const {payAudit}=await import('../lib/pay-audit.ts');const tm=await import('../dist/server/team-model.js');
+ const t=tm.normalizeTeam(null);const e=t.employees[0];
+ Object.assign(e,{payType:'월급',wage:1800000,weeklyHours:40,status:'재직'});
+ const rows=tm.calculate({...t,attendance:[],shifts:[]},'2026-10');const w=(rows.find(r=>r.employeeId===e.id)?.warnings||[]).join(' ');
+ ok('월급 최저임금 환산 미달 경고(209시간)',w.includes('최저임금 환산')&&w.includes('209시간'));
+ const E=(o)=>({id:'a',name:'가',payType:'시급',wage:10320,weeklyHours:20,income:'근로소득',taxMode:'직접 입력',status:'재직',...o});
+ const iso=(d,hm)=>new Date(Date.parse(`${d}T${hm}:00+09:00`)).toISOString();
+ const recs=[{employeeId:'a',start:iso('2026-10-01','06:00'),end:iso('2026-10-01','23:30'),breakMinutes:60},{employeeId:'a',start:iso('2026-10-02','10:00'),end:iso('2026-10-02','10:02'),breakMinutes:0}];
+ const f=payAudit([E()],recs,[],'2026-10',false).map(x=>x.text).join(' ');
+ ok('16시간 넘는 기록·짧은 기록',f.includes('16시간')&&f.includes('5분'));
+ const sh=['2026-10-05','2026-10-06','2026-10-07','2026-10-12','2026-10-13','2026-10-14'].map(d=>({employeeId:'a',date:d,start:'10:00',end:'16:00'}));
+ ok('3.3% 사업소득인데 매주 15시간 넘음',payAudit([E({income:'사업소득'})],[],sh,'2026-10',false).some(x=>x.text.includes('3.3%')));
+ ok('임금 0원·소득 미검토',payAudit([E({wage:0,income:'미검토'})],recs,[],'2026-10',false).length>=3);
+ const big=Array.from({length:6},(_,i)=>({employeeId:'a',start:iso('2026-10-'+String(5+i).padStart(2,'0'),'08:00'),end:iso('2026-10-'+String(5+i).padStart(2,'0'),'18:00'),breakMinutes:60}));
+ ok('5명 이상: 주 52시간 넘김',payAudit([E()],big,[],'2026-10',true).some(x=>x.text.includes('52시간'))&&!payAudit([E()],big,[],'2026-10',false).some(x=>x.text.includes('52시간')));
+ console.log('PASS: 지시서 7주차 (월급 최저임금 환산·급여 정확도 점검).');
+}
