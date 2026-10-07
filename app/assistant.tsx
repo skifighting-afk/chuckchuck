@@ -45,5 +45,5 @@ function VoiceButton({onText}:{onText:(t:string)=>void}){
  const [on,setOn]=useState(false),[err,setErr]=useState('');
  if(!SR)return null;
  const start=()=>{setErr('');try{const r=new SR();r.lang='ko-KR';r.interimResults=false;r.maxAlternatives=1;r.onresult=(e:any)=>{const t=e.results?.[0]?.[0]?.transcript||'';if(t.trim())onText(t.trim())};r.onerror=(e:any)=>setErr(e.error==='not-allowed'?'마이크 권한을 허용해 주세요.':'잘 못 들었어요. 다시 눌러 말해 주세요.');r.onend=()=>setOn(false);r.start();setOn(true)}catch{setErr('음성 인식을 시작하지 못했어요. 글로 적어 주세요.');setOn(false)}};
- return <><button type="button" className={'ast-mic'+(on?' on':'')} aria-pressed={on} aria-label={on?'듣는 중':'말로 시키기'} onClick={start} disabled={on}>{on?'듣는 중…':'🎤 말하기'}</button>{err&&<span role="status" className="ast-mic-err">{err}</span>}</>;
+ return <><button type="button" className={'ast-mic'+(on?' on':'')} aria-pressed={on} onClick={start} disabled={on}>{on?'듣는 중…':<><span aria-hidden="true">🎤 </span>말하기</>}</button>{err&&<span role="status" className="ast-mic-err">{err}</span>}</>;
 }
