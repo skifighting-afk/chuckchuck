@@ -23,6 +23,7 @@ import {accountApi,resolveStore} from './saas-api';
 import {plans,trialStatus,isPlan,canWrite,capacityError,hasFeature} from '../lib/plans';
 import {evidenceApi} from './evidence-api';
 import {manualApi} from './manual-api';
+import {storeLogApi} from './store-log-api';
 import {staffDocsApi} from './staff-docs-api';
 import {pushApi,notifyUser,notificationsApi} from './push-api';
 import {qrTokenOk} from '../lib/qr-live';
@@ -73,6 +74,7 @@ async function route(request:Request,env:Env){
  if(path==='/api/account')return accountApi(request,env);
  if(path==='/api/evidence')return evidenceApi(request,env);
  if(path==='/api/manual')return manualApi(request,env);
+ if(path==='/api/store-log')return storeLogApi(request,env as any);
  if(path==='/api/staff-docs')return staffDocsApi(request,env);
  if(path==='/api/push')return pushApi(request,env);
  if(path==='/api/notifications')return notificationsApi(request,env);
@@ -215,7 +217,7 @@ if(!m||!['발송 대기','발송 실패','결과 확인 필요'].includes(m.stat
  delete (state as any).approvedLeaves;const checked=teamSchema.safeParse(state);if(!checked.success)return json({error:checked.error.issues[0].message},400);
  // 지시서 3주차 127: 새로 넣거나 바꾼 근무가 연소자 제한(밤·하루 7시간·주 35시간)에 걸리면 저장하지 않는다
  {const prevById=new Map((raw?.shifts||[]).map((x:any)=>[x.id,JSON.stringify([x.employeeId,x.date,x.start,x.end,x.breakMinutes])]));for(const sh of checked.data.shifts){if(prevById.get(sh.id)===JSON.stringify([sh.employeeId,sh.date,sh.start,sh.end,sh.breakMinutes]))continue;const block=checkShift(sh,checked.data.shifts,checked.data.employees.find(e=>e.id===sh.employeeId) as any,(checked.data.settings as any).weekStart||'mon').find(c=>c.level==='block');if(block)return json({error:block.text},400)}}
- const data=JSON.stringify({...checked.data,_attendanceQr:raw?._attendanceQr,_attendanceQrMode:raw?._attendanceQrMode,_hq:raw?._hq,_joinTerms:raw?._joinTerms,_joinCodes:raw?._joinCodes,_joinApplications:raw?._joinApplications,_account:raw?._account,_operations:raw?._operations,_manuals:raw?._manuals,_attendanceFrom:raw?._attendanceFrom,_alertsSent:raw?._alertsSent,_coowners:raw?._coowners,_coownerInvites:raw?._coownerInvites,_checkRuns:raw?._checkRuns,_audit:audit,_outbox:outbox,_invitations:invitations,_members:members}),updatedAt=new Date().toISOString();
+ const data=JSON.stringify({...checked.data,_attendanceQr:raw?._attendanceQr,_attendanceQrMode:raw?._attendanceQrMode,_hq:raw?._hq,_joinTerms:raw?._joinTerms,_joinCodes:raw?._joinCodes,_joinApplications:raw?._joinApplications,_account:raw?._account,_operations:raw?._operations,_manuals:raw?._manuals,_attendanceFrom:raw?._attendanceFrom,_alertsSent:raw?._alertsSent,_coowners:raw?._coowners,_coownerInvites:raw?._coownerInvites,_checkRuns:raw?._checkRuns,_storeLog:raw?._storeLog,_tasks:raw?._tasks,_signDocs:raw?._signDocs,_audit:audit,_outbox:outbox,_invitations:invitations,_members:members}),updatedAt=new Date().toISOString();
  const q=version===0?env.DB.prepare('INSERT OR IGNORE INTO stores(owner,data,version,updated_at) VALUES(?,?,?,?)').bind(owner,data,1,updatedAt):env.DB.prepare('UPDATE stores SET data=?,version=?,updated_at=? WHERE owner=? AND version=?').bind(data,version+1,updatedAt,owner,version);
  if(!(await q.run()).meta.changes)return json({error:'동시에 변경된 내용이 있습니다. 새로고침해 주세요.'},409);
  // 지시서 2주차 024: 근무표가 바뀐 직원에게만 알림(오늘 이후 근무)

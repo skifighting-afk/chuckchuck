@@ -67,3 +67,25 @@ export const targetLabel = (t: NoticeTarget | undefined, emps: OpsEmp[]) =>
   !t || t.type === 'all' ? '전체' : t.type === 'role' ? t.roles.join('·') + ' 직원' : t.ids.map(id => emps.find(e => e.id === id)?.name || '').filter(Boolean).join(', ');
 
 export const REJECT_REASONS = ['그날 인원이 부족해요', '다른 날로 바꿔 줄 수 있을까요?', '조금 더 일찍 말해 주세요'];
+
+/** 지시서 055: 대타 추천 — 그날 근무가 겹치지 않고 휴가가 아닌 직원을, 근무 가능 시간·그 주 시간(주 15·40·52시간 영향) 순으로 */
+export function rankSubstitutes(shift: OpsShift, colleagues: OpsEmp[], shifts: OpsShift[], availability: Record<string, {slots?: {weekday: number; start: string; end: string}[]}>, leaves: {employeeId: string; start: string; end: string; status: string}[], weekStart: 'mon' | 'sun' = 'mon') {
+  const span = (x: {start: string; end: string}) => { const a = mins(x.start); let b = mins(x.end); if (b <= a) b += 1440; return [a, b]; };
+  const [sa, sb] = span(shift), wd = new Date(shift.date + 'T00:00:00Z').getUTCDay(), from = weekStartOf(shift.date, weekStart), to = new Date(Date.parse(from + 'T00:00:00Z') + 6 * 86400000).toISOString().slice(0, 10), h = shiftHours(shift);
+  return colleagues.filter(c => c.id !== shift.employeeId).map(c => {
+    const mine = shifts.filter(x => x.employeeId === c.id && x.id !== shift.id);
+    const clash = mine.some(x => x.date === shift.date && (([a, b]) => a < sb && b > sa)(span(x)));
+    const off = leaves.some(l => l.employeeId === c.id && l.status === '승인' && l.start <= shift.date && shift.date <= l.end);
+    const before = mine.filter(x => x.date >= from && x.date <= to).reduce((n, x) => n + shiftHours(x), 0), after = before + h;
+    const free = (availability[c.id]?.slots || []).some(sl => sl.weekday === wd && (([a, b]) => a <= sa && b >= sb)(span(sl)));
+    const sameDay = mine.some(x => x.date === shift.date);
+    const notes: string[] = [];
+    if (free) notes.push('근무 가능 시간 안');
+    if (sameDay && !clash) notes.push('그날 다른 시간 근무 있음');
+    if (before < 15 && after >= 15) notes.push(`주 ${Math.round(after * 10) / 10}시간이 돼 주휴수당 생김`);
+    if (after > 52) notes.push('주 52시간 넘음');
+    else if (after > 40) notes.push('주 40시간 넘어 연장');
+    const score = (clash || off ? -100 : 0) + (free ? 3 : 0) + (sameDay ? -1 : 1) + (before < 15 && after >= 15 ? -1 : 0) + (after > 40 ? -2 : 0) + (after > 52 ? -5 : 0);
+    return {id: c.id, name: c.name, ok: !clash && !off, reason: clash ? '그 시간에 근무 있음' : off ? '그날 휴가' : notes.join(' · ') || `그 주 ${Math.round(after * 10) / 10}시간`, weekHours: Math.round(after * 10) / 10, score};
+  }).sort((a, b) => b.score - a.score || a.weekHours - b.weekHours);
+}

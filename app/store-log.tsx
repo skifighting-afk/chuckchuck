@@ -1,0 +1,94 @@
+'use client';
+// 지시서 '다음' 매장 운영 묶음 화면: 054 인수인계 · 062 오늘 할 일 · 063 온도 · 064 시재 · 065 고장·사고 · 048·053 서명 서류
+// 사장님(매장 매뉴얼 화면)과 직원(매뉴얼 탭·내 근무) 모두 /api/store-log 하나를 쓴다. 체험 화면은 메모리에서만 똑같이 동작.
+import {useEffect,useState} from 'react';
+import {shrinkImage} from './manual';
+import {tempIssue,cashDiff,SIGN_TEMPLATES} from '../lib/store-log';
+
+type View={version:number,owner:boolean,selfId:string|null,templates:typeof SIGN_TEMPLATES,employees:{id:string,name:string,branchId:string}[],branches:{id:string,name:string}[],logs:any[],tasks:any[],signs:any[]};
+const kday=(iso:string)=>new Date(Date.parse(iso)+9*3600000).toISOString().slice(0,10);
+const when=(iso:string)=>new Date(iso).toLocaleString('ko-KR',{timeZone:'Asia/Seoul',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
+const won=(n:number)=>Math.round(n).toLocaleString('ko-KR');
+const TABS=['인수인계','오늘 할 일','온도','시재','고장·사고','서명 서류'] as const;type Tab=typeof TABS[number];
+
+function demoView(owner:boolean):View{const now=Date.now(),iso=(h:number)=>new Date(now-h*3600000).toISOString(),t=kday(new Date().toISOString());
+ return {version:0,owner,selfId:'demo-staff',templates:SIGN_TEMPLATES,employees:[{id:'demo-staff',name:'김하늘',branchId:'branch-main'},{id:'demo-2',name:'이도윤',branchId:'branch-main'}],branches:[{id:'branch-main',name:'본점'}],
+  logs:[{id:'l1',kind:'인수인계',by:'이도윤',at:iso(3),text:'우유 2팩 남았어요. 내일 오전 발주 필요해요.',branchId:'branch-main'},{id:'l2',kind:'온도',by:'김하늘',at:iso(5),text:'',temps:[{name:'냉장고 1',value:3.2,type:'냉장'},{name:'냉동고',value:-15,type:'냉동'}],branchId:'branch-main'},{id:'l3',kind:'시재',by:'이도윤',at:iso(20),text:'',cash:{expected:150000,counted:148000},branchId:'branch-main'},{id:'l4',kind:'고장·사고',by:'김하늘',at:iso(26),text:'제빙기에서 물이 새요.',status:'접수',branchId:'branch-main'}],
+  tasks:[{id:'t1',employeeId:'demo-staff',date:t,text:'창고 정리',doneAt:null,branchId:'branch-main'},{id:'t2',employeeId:'demo-2',date:t,text:'메뉴판 닦기',doneAt:iso(1),branchId:'branch-main'}],
+  signs:[{id:'s1',title:'위생·안전 교육 확인서',body:SIGN_TEMPLATES[2].body,kind:'위생교육 확인',employeeIds:['demo-staff','demo-2'],createdAt:iso(48),signs:{'demo-2':{at:iso(30),name:'이도윤'}}}]};}
+
+export function StoreLog({demo=false,staff=false,compact=false,branchId}:{demo?:boolean,staff?:boolean,compact?:boolean,branchId?:string}){
+ const [v,setV]=useState<View|null>(demo?demoView(!staff):null),[tab,setTab]=useState<Tab>(compact?'오늘 할 일':'인수인계'),[err,setErr]=useState(''),[msg,setMsg]=useState(''),[busy,setBusy]=useState(false);
+ useEffect(()=>{if(demo)return;let on=true;fetch('/api/store-log').then(async r=>{const d:any=await r.json();if(!on)return;if(r.ok)setV(d);else setErr(d.error||'불러오지 못했어요.')}).catch(()=>on&&setErr('인터넷 연결을 확인하고 새로고침해 주세요.'));return ()=>{on=false}},[demo]);
+ const post=async(b:any,ok:string)=>{setMsg('');setErr('');if(demo){setV(demoApply(v!,b));setMsg(ok+' (체험 화면에만 반영)');return true}setBusy(true);try{const r=await fetch('/api/store-log',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...b,branchId})});const d:any=await r.json();if(!r.ok){setErr(d.error||'저장하지 못했어요. 다시 시도해 주세요.');return false}setV(d);setMsg(ok);return true}catch{setErr('인터넷 연결을 확인하고 다시 시도해 주세요.');return false}finally{setBusy(false)}};
+ if(!v)return err?<p className="t-gap notice" role="alert">{err}</p>:null;
+ const today=kday(new Date().toISOString()),myTasks=v.tasks.filter(t=>t.employeeId===v.selfId&&t.date===today),mySigns=v.signs.filter(x=>!x.signs?.[v.selfId||'']);
+ // 직원 '내 근무' 화면: 오늘 할 일·서명할 서류·최근 인수인계만 짧게
+ if(compact){const hand=v.logs.filter(l=>l.kind==='인수인계'&&!l.mine).slice(0,2);if(!myTasks.length&&!mySigns.length&&!hand.length)return null;
+  return <section className="panel t-gap slog-compact" aria-label="오늘 매장 할 일">{hand.map(l=><p key={l.id} className="slog-hand"><b>인수인계</b> {l.text} <small>{l.by} · {when(l.at)}</small></p>)}
+   {myTasks.length>0&&<><h3>오늘 할 일 {myTasks.filter(t=>t.doneAt).length}/{myTasks.length}</h3><ul className="slog-tasks">{myTasks.map(t=><li key={t.id}><label className="t-check"><input type="checkbox" checked={!!t.doneAt} disabled={busy} onChange={e=>post({action:'taskDone',id:t.id,undo:!e.target.checked},e.target.checked?'완료로 표시했어요.':'되돌렸어요.')}/> {t.text}</label></li>)}</ul></>}
+   {mySigns.length>0&&<p className="notice">서명할 서류 {mySigns.length}건 · 매뉴얼 탭의 '서명 서류'에서 확인해 주세요.</p>}
+   {msg&&<p role="status" className="saas-success">{msg}</p>}{err&&<p role="alert" className="saas-error">{err}</p>}</section>}
+ const tabs=staff?TABS:TABS;
+ return <section className="panel t-gap slog" aria-labelledby="slog-title"><div className="panel-heading"><h2 id="slog-title">매장 일지</h2></div>
+  <div className="slog-tabs" role="tablist" aria-label="매장 일지 종류">{tabs.map(t=><button key={t} type="button" role="tab" aria-selected={tab===t} onClick={()=>{setTab(t);setMsg('');setErr('')}}>{t}{t==='서명 서류'&&staff&&mySigns.length?` ${mySigns.length}`:t==='고장·사고'&&v.owner&&v.logs.some(l=>l.kind==='고장·사고'&&l.status!=='해결')?' •':''}</button>)}</div>
+  <div className="t-panelbody" role="tabpanel">
+   {msg&&<p role="status" className="saas-success">{msg}</p>}{err&&<p role="alert" className="saas-error">{err}</p>}
+   {tab==='인수인계'&&<Handover v={v} busy={busy} post={post}/>}
+   {tab==='오늘 할 일'&&<Tasks v={v} busy={busy} post={post} today={today}/>}
+   {tab==='온도'&&<Temps v={v} busy={busy} post={post}/>}
+   {tab==='시재'&&<Cash v={v} busy={busy} post={post}/>}
+   {tab==='고장·사고'&&<Incidents v={v} busy={busy} post={post} demo={demo}/>}
+   {tab==='서명 서류'&&<Signs v={v} busy={busy} post={post}/>}
+  </div></section>;
+}
+type P={v:View,busy:boolean,post:(b:any,ok:string)=>Promise<boolean>};
+function Handover({v,busy,post}:P){const [t,setT]=useState('');const list=v.logs.filter(l=>l.kind==='인수인계');
+ return <><form onSubmit={async e=>{e.preventDefault();if(await post({action:'log',kind:'인수인계',text:t},'다음 근무자에게 남겼어요. 오늘·내일 근무자에게 알림이 가요.'))setT('')}}><label className="slog-field">다음 근무자에게 남길 말<textarea maxLength={1000} rows={3} value={t} onChange={e=>setT(e.target.value)} placeholder="예: 우유 2팩 남음, 3번 테이블 의자 흔들림"/></label><button type="submit" className="primary" disabled={busy||!t.trim()}>남기기</button></form>
+  <ul className="slog-list">{list.slice(0,30).map(l=><li key={l.id}><p>{l.text}</p><small>{l.by} · {when(l.at)}</small></li>)}{!list.length&&<li className="footnote">아직 남긴 메모가 없어요.</li>}</ul></>}
+function Tasks({v,busy,post,today}:P&{today:string}){const [f,setF]=useState({employeeId:v.employees[0]?.id||'',text:'',date:today});const name=(id:string)=>v.employees.find(e=>e.id===id)?.name||'나';
+ const list=v.tasks.filter(t=>v.owner?t.date>=today:t.employeeId===v.selfId).sort((a,b)=>(a.date+a.employeeId).localeCompare(b.date+b.employeeId));
+ return <>{v.owner&&<form className="t-inline slog-taskform" onSubmit={async e=>{e.preventDefault();if(await post({action:'task',...f},`${name(f.employeeId)}님에게 할 일을 줬어요.`))setF({...f,text:''})}}><label>직원 <select value={f.employeeId} onChange={e=>setF({...f,employeeId:e.target.value})}>{v.employees.map(e=><option key={e.id} value={e.id}>{e.name}</option>)}</select></label><label>날짜 <input type="date" value={f.date} min={today} onChange={e=>setF({...f,date:e.target.value})}/></label><label className="t-grow">할 일 <input maxLength={200} value={f.text} onChange={e=>setF({...f,text:e.target.value})} placeholder="예: 창고 정리"/></label><button type="submit" className="primary" disabled={busy||!f.text.trim()||!f.employeeId}>주기</button></form>}
+  <ul className="slog-tasks">{list.map(t=><li key={t.id}><label className="t-check"><input type="checkbox" checked={!!t.doneAt} disabled={busy} onChange={e=>post({action:'taskDone',id:t.id,undo:!e.target.checked},e.target.checked?'완료로 표시했어요.':'되돌렸어요.')}/> {v.owner&&<b>{name(t.employeeId)}</b>} {t.date!==today&&<small>{Number(t.date.slice(5,7))}/{Number(t.date.slice(8))}</small>} {t.text}{t.doneAt&&<small> · ✓ {when(t.doneAt)}</small>}</label>{v.owner&&<button type="button" className="link-btn" disabled={busy} onClick={()=>post({action:'taskDelete',id:t.id},'지웠어요.')}>지우기</button>}</li>)}{!list.length&&<li className="footnote">{v.owner?'직원에게 오늘 할 일을 정해 주면 직원 화면 맨 위에 보여요.':'오늘 받은 할 일이 없어요.'}</li>}</ul></>}
+function Temps({v,busy,post}:P){const [rows,setRows]=useState([{name:'냉장고 1',value:'',type:'냉장'},{name:'냉동고 1',value:'',type:'냉동'}]);const list=v.logs.filter(l=>l.kind==='온도');
+ return <><form onSubmit={async e=>{e.preventDefault();if(await post({action:'log',kind:'온도',temps:rows.filter(r=>r.value!=='').map(r=>({...r,value:Number(r.value)}))},'온도를 기록했어요.'))setRows(rows.map(r=>({...r,value:''})))}}>
+  {rows.map((r,i)=><div key={i} className="t-inline slog-temp"><label>기기 <input maxLength={30} value={r.name} onChange={e=>setRows(rows.map((x,j)=>j===i?{...x,name:e.target.value}:x))}/></label><label>종류 <select value={r.type} onChange={e=>setRows(rows.map((x,j)=>j===i?{...x,type:e.target.value}:x))}><option>냉장</option><option>냉동</option><option>기타</option></select></label><label>온도(℃) <input inputMode="decimal" value={r.value} onChange={e=>setRows(rows.map((x,j)=>j===i?{...x,value:e.target.value.replace(/[^\d.-]/g,'')}:x))} placeholder="3.5"/></label></div>)}
+  <div className="actions"><button type="button" className="secondary" onClick={()=>setRows([...rows,{name:'',value:'',type:'냉장'}])}>+ 기기 추가</button><button type="submit" className="primary" disabled={busy||!rows.some(r=>r.value!=='')}>기록하기</button></div>
+  <p className="footnote">냉장 0~5℃, 냉동 -18℃ 이하를 벗어나면 '기준 밖'으로 표시하고 사장님께 알려요. 기록은 60일 보관돼요.</p></form>
+  <ul className="slog-list">{list.slice(0,40).map(l=><li key={l.id}><p>{l.temps.map((t:any)=>{const bad=tempIssue(t);return <span key={t.name} className={bad?'slog-bad':''}>{t.name} {t.value}℃{bad?' ⚠ 기준 밖':''} </span>})}</p><small>{l.by} · {when(l.at)}</small></li>)}</ul></>}
+function Cash({v,busy,post}:P){const [f,setF]=useState({expected:'',counted:'',text:''});const list=v.logs.filter(l=>l.kind==='시재');const d=f.expected!==''&&f.counted!==''?Number(f.counted)-Number(f.expected):null;
+ return <><form onSubmit={async e=>{e.preventDefault();if(await post({action:'log',kind:'시재',expected:Number(f.expected),counted:Number(f.counted),text:f.text},'시재 마감을 기록했어요.'))setF({expected:'',counted:'',text:''})}}><div className="t-inline slog-cash"><label>장부(포스) 현금 <input inputMode="numeric" value={f.expected} onChange={e=>setF({...f,expected:e.target.value.replace(/[^\d]/g,'')})}/></label><label>실제 센 현금 <input inputMode="numeric" value={f.counted} onChange={e=>setF({...f,counted:e.target.value.replace(/[^\d]/g,'')})}/></label><label className="t-grow">메모 <input maxLength={300} value={f.text} onChange={e=>setF({...f,text:e.target.value})} placeholder="예: 거스름돈 1만 원 더 받음"/></label></div>
+  {d!==null&&<p className={d===0?'pc-ok':'slog-bad'}>{d===0?'✓ 차액 없음':`차액 ${d>0?'+':''}${won(d)}원 (${d>0?'남음':'모자람'})`}</p>}<button type="submit" className="primary" disabled={busy||f.expected===''||f.counted===''}>마감 기록</button></form>
+  <ul className="slog-list">{list.slice(0,40).map(l=>{const x=cashDiff(l.cash);return <li key={l.id}><p>장부 {won(l.cash.expected)}원 · 센 금액 {won(l.cash.counted)}원 · <b className={x?'slog-bad':''}>{x===0?'차액 없음':`차액 ${x>0?'+':''}${won(x)}원`}</b>{l.text&&` · ${l.text}`}</p><small>{l.by} · {when(l.at)}</small></li>})}</ul></>}
+function Incidents({v,busy,post,demo}:P&{demo:boolean}){const [t,setT]=useState(''),[photo,setPhoto]=useState<{mime:string,body:string}|null>(null),[pe,setPe]=useState('');const list=v.logs.filter(l=>l.kind==='고장·사고');
+ return <><form onSubmit={async e=>{e.preventDefault();if(await post({action:'log',kind:'고장·사고',text:t,photo},'사장님께 알렸어요.')){setT('');setPhoto(null)}}}><label className="slog-field">무슨 일이 있었나요?<textarea maxLength={1000} rows={3} value={t} onChange={e=>setT(e.target.value)} placeholder="예: 제빙기에서 물이 새요 / 손님이 넘어졌어요(다친 곳 없음)"/></label>
+  <label className="sd-file">사진 한 장(선택) <input type="file" accept="image/jpeg,image/png" onChange={async e=>{const f=e.target.files?.[0];e.target.value='';setPe('');if(!f)return;try{setPhoto(await shrinkImage(f))}catch{setPe('사진을 읽지 못했어요. 다른 사진을 골라 주세요.')}}}/></label>{photo&&<p className="footnote">사진 1장 첨부됨 <button type="button" className="link-btn" onClick={()=>setPhoto(null)}>빼기</button></p>}{pe&&<p role="alert" className="saas-error">{pe}</p>}
+  <button type="submit" className="primary" disabled={busy||!t.trim()}>신고하기</button></form>
+  <ul className="slog-list">{list.slice(0,40).map(l=><li key={l.id}><p><b className={'slog-st '+(l.status==='해결'?'ok':'')}>{l.status==='해결'?'✓ ':'● '}{l.status}</b> {l.text}</p>{l.photoId&&!demo&&<a href={`/api/store-log?image=${encodeURIComponent(l.photoId)}`} target="_blank" rel="noreferrer">사진 보기</a>}{l.reply&&<p className="footnote">사장님: {l.reply}</p>}<small>{l.by} · {when(l.at)}</small>
+   {v.owner&&l.status!=='해결'&&<div className="actions">{l.status==='접수'&&<button type="button" className="secondary" disabled={busy} onClick={()=>post({action:'logStatus',id:l.id,status:'처리 중'},'처리 중으로 바꿨어요.')}>처리 중</button>}<button type="button" className="secondary" disabled={busy} onClick={()=>{const reply=prompt('직원에게 남길 말(선택)')||'';void post({action:'logStatus',id:l.id,status:'해결',reply},'해결로 바꿨어요. 신고한 직원에게 알려요.')}}>해결</button></div>}</li>)}{!list.length&&<li className="footnote">신고가 없어요.</li>}</ul></>}
+function Signs({v,busy,post}:P){const [f,setF]=useState<any>(null),[open,setOpen]=useState(''),[name,setName]=useState(''),[agree,setAgree]=useState(false);const nm=(id:string)=>v.employees.find(e=>e.id===id)?.name||'직원';
+ if(!v.owner)return <ul className="slog-list">{v.signs.map(x=>{const done=x.signs?.[v.selfId||''];return <li key={x.id}><p><b>{x.title}</b> {done?<span className="os-done">✓ {when(done.at)} 서명</span>:<span className="os-wait">서명 전</span>}{x.due&&!done&&<small> · {x.due}까지</small>}</p>
+  {!done&&(open===x.id?<form onSubmit={async e=>{e.preventDefault();if(await post({action:'sign',id:x.id,name,agree},'서명했어요. 사장님께 알렸어요.')){setOpen('');setName('');setAgree(false)}}}><pre className="slog-doc">{x.body}</pre><label className="t-check"><input type="checkbox" checked={agree} onChange={e=>setAgree(e.target.checked)}/> 내용을 읽고 확인했어요</label><label className="slog-field">내 이름 <input value={name} onChange={e=>setName(e.target.value)} autoComplete="name"/></label><div className="actions"><button type="button" className="secondary" onClick={()=>setOpen('')}>닫기</button><button type="submit" className="primary" disabled={busy||!agree||!name.trim()}>서명하기</button></div></form>:<button type="button" className="secondary" onClick={()=>setOpen(x.id)}>읽고 서명하기</button>)}</li>})}{!v.signs.length&&<li className="footnote">받은 서류가 없어요.</li>}</ul>;
+ return <>{f?<form onSubmit={async e=>{e.preventDefault();if(await post({action:'signRequest',...f},'서명 요청을 보냈어요. 받는 직원에게 알림이 가요.'))setF(null)}}>
+   <label className="slog-field">양식 <select value={f.kind} onChange={e=>{const t=v.templates.find(t=>t.kind===e.target.value);setF({...f,kind:e.target.value,title:t?.title||f.title,body:t?.body||f.body})}}>{v.templates.map(t=><option key={t.kind} value={t.kind}>{t.title}</option>)}<option value="기타">직접 쓰기</option></select></label>
+   <label className="slog-field">제목 <input maxLength={80} value={f.title} onChange={e=>setF({...f,title:e.target.value})}/></label><label className="slog-field">내용 <textarea rows={8} maxLength={8000} value={f.body} onChange={e=>setF({...f,body:e.target.value})}/></label>
+   <label className="slog-field">언제까지(선택) <input type="date" value={f.due} onChange={e=>setF({...f,due:e.target.value})}/></label>
+   <fieldset className="slog-who"><legend>받을 직원</legend><label className="t-check"><input type="checkbox" checked={f.employeeIds.length===v.employees.length} onChange={e=>setF({...f,employeeIds:e.target.checked?v.employees.map(x=>x.id):[]})}/> 모두</label>{v.employees.map(x=><label key={x.id} className="t-check"><input type="checkbox" checked={f.employeeIds.includes(x.id)} onChange={e=>setF({...f,employeeIds:e.target.checked?[...f.employeeIds,x.id]:f.employeeIds.filter((y:string)=>y!==x.id)})}/> {x.name}</label>)}</fieldset>
+   <p className="footnote">양식은 초안이에요. 매장에 맞게 고치고, 중요한 서류는 노무사 검토를 받아 주세요. 직원은 내용을 읽고 이름을 똑같이 적어 서명해요(서명 시각이 남아요).</p>
+   <div className="actions"><button type="button" className="secondary" onClick={()=>setF(null)}>취소</button><button type="submit" className="primary" disabled={busy||!f.employeeIds.length||!f.title.trim()}>보내기</button></div></form>
+  :<button type="button" className="primary" onClick={()=>{const t=v.templates[0];setF({kind:t.kind,title:t.title,body:t.body,due:'',employeeIds:v.employees.map(x=>x.id)})}}>+ 서명 요청 보내기</button>}
+  <ul className="slog-list">{v.signs.map(x=>{const n=Object.keys(x.signs).length,left=x.employeeIds.filter((id:string)=>!x.signs[id]);return <li key={x.id}><p><b>{x.title}</b> · 서명 {n}/{x.employeeIds.length}명{x.due&&` · ${x.due}까지`}</p>
+   <small>서명: {Object.entries(x.signs).map(([id,s]:any)=>`${nm(id)}(${when(s.at)})`).join(', ')||'아직 없음'}{left.length?` · 안 함: ${left.map(nm).join(', ')}`:''}</small>
+   <div className="actions">{left.length>0&&<button type="button" className="secondary" disabled={busy} onClick={()=>post({action:'signRemind',id:x.id},`${left.length}명에게 다시 알렸어요.`)}>안 한 사람에게 다시 알리기</button>}{!n&&<button type="button" className="link-btn" disabled={busy} onClick={()=>post({action:'signDelete',id:x.id},'지웠어요.')}>지우기</button>}</div></li>})}</ul></>}
+
+/** 체험 화면: 서버와 같은 규칙을 메모리에서 */
+function demoApply(v:View,b:any):View{const n=structuredClone(v),now=new Date().toISOString(),me=n.owner?'사장님':'김하늘';
+ if(b.action==='log')n.logs.unshift({id:crypto.randomUUID(),kind:b.kind,by:me,at:now,text:b.text||'',...(b.temps?{temps:b.temps}:{}),...(b.kind==='시재'?{cash:{expected:b.expected,counted:b.counted}}:{}),...(b.kind==='고장·사고'?{status:'접수'}:{}),mine:true});
+ if(b.action==='logStatus'){const l=n.logs.find(x=>x.id===b.id);if(l){l.status=b.status;if(b.reply)l.reply=b.reply}}
+ if(b.action==='task')n.tasks.push({id:crypto.randomUUID(),employeeId:b.employeeId,date:b.date,text:b.text,doneAt:null});
+ if(b.action==='taskDone'){const t=n.tasks.find(x=>x.id===b.id);if(t)t.doneAt=b.undo?null:now}
+ if(b.action==='taskDelete')n.tasks=n.tasks.filter(x=>x.id!==b.id);
+ if(b.action==='signRequest')n.signs.unshift({id:crypto.randomUUID(),title:b.title,body:b.body,kind:b.kind,employeeIds:b.employeeIds,createdAt:now,due:b.due||undefined,signs:{}});
+ if(b.action==='sign'){const x=n.signs.find(s=>s.id===b.id);if(x)x.signs[n.selfId!]={at:now,name:b.name}}
+ if(b.action==='signDelete')n.signs=n.signs.filter(s=>s.id!==b.id);
+ return n;}

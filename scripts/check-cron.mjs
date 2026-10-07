@@ -75,5 +75,20 @@ console.log('PASS: 서비스 상태(/api/status).');
  const before=sent.length;await mod.alertSweep(env,fri+10*60000,(u,m)=>sent.push(u));assert.ok(!sent.slice(before).includes('u-e1'),'한 번만');
  await env.DB.prepare("DELETE FROM stores WHERE owner='ap-owner'").run();console.log('PASS: 근무표 자동 게시.');
 }
+// 지시서 067·052: 마감 체크 없이 퇴근 · 안 읽은 공지 재알림
+{
+ const mod=await import('../dist/server/cron.js');const now=Date.parse('2026-10-14T22:10:00+09:00');
+ const data={store:{name:'마감'},branches:[{id:'b',name:'본점'}],employees:[{id:'e1',name:'가',status:'재직',branchId:'b'},{id:'e2',name:'나',status:'재직',branchId:'b'}],shifts:[],
+  attendance:[{id:'a1',employeeId:'e1',start:'2026-10-14T08:00:00.000Z',end:'2026-10-14T13:00:00.000Z',breakMinutes:0,breakStart:null}],
+  _manuals:[{id:'m',title:'마감',branchId:'all',category:'마감',steps:[{text:'불 끄기'}],updatedAt:'2026-10-01'}],_checkRuns:[],
+  _operations:{notices:[{id:'n1',title:'위생 점검',branchId:'all',target:{type:'all'},createdAt:'2026-10-13T12:00:00.000Z',reads:['u-e2']}],leaves:[]},
+  _members:[{userId:'u-e1',employeeId:'e1'},{userId:'u-e2',employeeId:'e2'}]};
+ await env.DB.prepare('INSERT INTO stores(owner,data,version,updated_at) VALUES(?,?,1,?)').bind('cc-owner',JSON.stringify(data),new Date().toISOString()).run();
+ const sent=[];await mod.alertSweep(env,now,(u,m)=>sent.push(u+':'+m.title));
+ assert.ok(sent.some(x=>x.startsWith('cc-owner:가님이 마감 체크 없이')),'마감 체크 없이 퇴근 알림');
+ assert.ok(sent.includes('u-e1:아직 안 읽은 공지가 있어요')&&!sent.includes('u-e2:아직 안 읽은 공지가 있어요'),'안 읽은 사람에게만');
+ const before=sent.length;await mod.alertSweep(env,now+10*60000,(u,m)=>sent.push(u+':'+m.title));assert.equal(sent.length,before,'한 번만');
+ await env.DB.prepare("DELETE FROM stores WHERE owner='cc-owner'").run();await env.DB.prepare("DELETE FROM attendance_records WHERE owner='cc-owner'").run();console.log('PASS: 마감 체크 누락·공지 재알림.');
+}
 console.log('PASS: 매일 작업 (비밀값·체험 종료 알림 7일·1일 각 한 번).');
 await closeAll();

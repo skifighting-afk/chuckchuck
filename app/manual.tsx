@@ -6,7 +6,7 @@ import {useEffect,useMemo,useRef,useState} from 'react';
 import {Btn,Badge,Field} from './team-ui';
 import {MANUAL_CATEGORIES,filterManuals,categoryCounts,audienceLabel,audienceLine,staffState,wasEdited,manualVisibleTo} from '../lib/manual-view';
 type Step={text:string,imageId?:string|null};
-type Manual={id:string,title:string,branchId:string,steps:Step[],createdAt?:string,updatedAt:string,read:boolean,readCount?:number,audience?:number,unread?:string[],category?:string,roles?:string[],note?:string};
+type Manual={id:string,title:string,branchId:string,steps:Step[],createdAt?:string,updatedAt:string,read:boolean,readCount?:number,audience?:number,unread?:string[],category?:string,roles?:string[],note?:string,quiz?:{q:string,options:string[],answer?:number}[],quizPassed?:boolean,quizPasses?:string[],quizPending?:string[]};
 export type ManualSource={load:()=>Promise<any>,call:(body:any)=>Promise<any>,imageUrl?:(id:string)=>string|null};
 const api:ManualSource={load:()=>req(),call:b=>req(b)};
 async function req(body?:any){const r=await fetch('/api/manual',body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:undefined),d:any=await r.json();if(!r.ok)throw Error(d.error||'처리하지 못했어요. 다시 시도해 주세요.');return d}
@@ -66,10 +66,11 @@ export function StoreManual({branchId,source=api,demoNote}:{branchId?:string,sou
     <button type="button" className="manual-back" onClick={()=>setDetail(false)}>← 목록</button>
     <header><Badge>{cur.category||'기타'}</Badge><h2 id="manual-title">{cur.title}</h2><p className="md-who">{audienceLine(cur)}{data.branches?.length>1&&owner?` · ${branchName(cur.branchId)}`:''}</p>
      {cur.note&&wasEdited(cur as any)&&<p className="md-note"><b>최근 수정</b> {day(cur.updatedAt)} · {cur.note}</p>}
-     {owner&&!preview&&<div className="actions"><Btn onClick={()=>{setPreview((cur.roles||[])[0]||'전체');setDetail(false)}}>직원 화면으로 보기</Btn><Btn primary onClick={()=>setEdit({id:cur.id,title:cur.title,branchId:cur.branchId,category:cur.category||'기타',roles:cur.roles||[],note:'',steps:cur.steps.map(s=>({...s}))})}>고치기</Btn></div>}
+     {owner&&!preview&&<div className="actions"><Btn onClick={()=>{setPreview((cur.roles||[])[0]||'전체');setDetail(false)}}>직원 화면으로 보기</Btn><Btn primary onClick={()=>setEdit({id:cur.id,title:cur.title,branchId:cur.branchId,category:cur.category||'기타',roles:cur.roles||[],note:'',steps:cur.steps.map(s=>({...s})),quiz:(cur.quiz||[]).map(x=>({...x,options:[...x.options]}))})}>고치기</Btn></div>}
      {owner&&!preview&&cur.unread&&cur.unread.length>0&&<p className="footnote">아직 안 읽은 직원: {cur.unread.join(', ')}</p>}
     </header>
     <ol className="manual-steps2">{cur.steps.map((s,i)=><li key={i}><span className="ms-num" aria-hidden="true">{i+1}</span><div className="ms-body"><span className="sr-only">{i+1}단계. </span>{s.imageId&&<ManualImage source={source} id={s.imageId} alt={`${cur.title} ${i+1}단계 사진`}/>}{s.text&&<p>{s.text}</p>}</div></li>)}</ol>
+    {cur.quiz?.length?<QuizBox key={'q'+cur.id} m={cur} owner={owner&&!preview} busy={busy} run={run}/>:null}
     {!preview&&<CheckRunner key={cur.id} m={cur} runs={(data.checkRuns||[]).filter((r:any)=>r.manualId===cur.id)} owner={owner} busy={busy} source={source} run={run}/>}
     {owner&&!preview&&<div className="actions"><Btn disabled={busy} onClick={()=>{if(confirm(`'${cur.title}' 매뉴얼을 지울까요? 사진도 함께 지워져요.`))void run({action:'delete',id:cur.id},'매뉴얼을 지웠어요.')}}>삭제</Btn></div>}
    </article>}
@@ -101,7 +102,8 @@ function ManualEditor({edit,setEdit,data,busy,setBusy,error,setError,source,onSa
    {s.imageId&&<ManualImage source={source} id={s.imageId} alt={`${i+1}단계 사진`}/>}
    <div className="t-wrapactions"><label className="saas-secondary manual-upload">사진 찍기<input type="file" accept="image/*" capture="environment" hidden disabled={busy} onChange={e=>upload(i,e.target.files?.[0])}/></label><label className="saas-secondary manual-upload">{s.imageId?'사진 바꾸기':'사진 고르기'}<input type="file" accept="image/*" hidden disabled={busy} onChange={e=>upload(i,e.target.files?.[0])}/></label>{s.imageId&&<Btn onClick={()=>{const st=steps.slice();st[i]={...s,imageId:null};set(st)}}>사진 빼기</Btn>}</div>
   </li>)}</ol>
-  <div className="actions"><Btn disabled={steps.length>=30} onClick={()=>set([...steps,{text:'',imageId:null}])}>+ 단계 추가</Btn><Btn onClick={()=>{setEdit(null);setError('')}}>취소</Btn><Btn primary disabled={busy||!edit.title.trim()||steps.every((s:Step)=>!s.text.trim()&&!s.imageId)} onClick={()=>onSave({id:edit.id,title:edit.title,branchId:edit.branchId,category:edit.category,roles:edit.roles,note:edit.note,steps:steps.filter((s:Step)=>s.text.trim()||s.imageId)})}>{busy?'저장 중…':'저장하고 직원에게 보이기'}</Btn></div>
+  <QuizEditor quiz={edit.quiz||[]} set={(quiz:any[])=>setEdit({...edit,quiz})}/>
+  <div className="actions"><Btn disabled={steps.length>=30} onClick={()=>set([...steps,{text:'',imageId:null}])}>+ 단계 추가</Btn><Btn onClick={()=>{setEdit(null);setError('')}}>취소</Btn><Btn primary disabled={busy||!edit.title.trim()||steps.every((s:Step)=>!s.text.trim()&&!s.imageId)} onClick={()=>onSave({id:edit.id,title:edit.title,branchId:edit.branchId,category:edit.category,roles:edit.roles,note:edit.note,steps:steps.filter((s:Step)=>s.text.trim()||s.imageId),quiz:(edit.quiz||[]).filter((x:any)=>x.q.trim())})}>{busy?'저장 중…':'저장하고 직원에게 보이기'}</Btn></div>
   <p className="footnote">손잡이(⠿)를 끌거나 ↑↓로 순서를 바꿔요. 사진은 자동으로 줄여서 올려요(장당 400KB 이하). 고치면 직원 화면에 '바뀜'이 붙고 확인 표시가 처음부터 다시 시작돼요.</p>
  </section>;
 }
@@ -120,4 +122,24 @@ function CheckRunner({m,runs,owner,busy,source,run}:{m:Manual,runs:any[],owner:b
   </div>}
   {runs.length>0&&<div className="cr-log"><b>{owner?'최근 체크 기록':'오늘 내 체크'}</b><ul>{runs.slice(0,7).map(r=><li key={r.id}><span>{t(r.at)} · {r.by} · {r.done.length===r.total?'✓ 모두 체크':`${r.done.length}/${r.total}단계`}</span>{r.photoId&&<details><summary>인증 사진</summary><ManualImage source={source} id={r.photoId} alt={`${r.title} 인증 사진`}/></details>}</li>)}</ul></div>}
  </section>;
+}
+
+/** 지시서 066: 신입 교육 퀴즈 만들기(질문·보기 2~4개·정답) */
+function QuizEditor({quiz,set}:{quiz:{q:string,options:string[],answer:number}[],set:(q:any[])=>void}){
+ const up=(i:number,x:any)=>set(quiz.map((y,j)=>j===i?x:y));
+ return <fieldset className="quiz-edit"><legend>교육 퀴즈 (선택) · 직원이 다 맞히면 '교육 이수'로 남아요</legend>
+  {quiz.map((x,i)=><div key={i} className="quiz-q"><Field label={`${i+1}번 질문`}><input maxLength={200} value={x.q} onChange={e=>up(i,{...x,q:e.target.value})} placeholder="예: 냉장 보관 온도는?"/></Field>
+   {x.options.map((o,k)=><div key={k} className="t-inline quiz-opt"><label className="t-check"><input type="radio" name={'ans'+i} checked={x.answer===k} onChange={()=>up(i,{...x,answer:k})}/> 정답</label><input aria-label={`${i+1}번 보기 ${k+1}`} maxLength={100} value={o} onChange={e=>up(i,{...x,options:x.options.map((y,j)=>j===k?e.target.value:y)})}/>{x.options.length>2&&<button type="button" className="link-btn" onClick={()=>up(i,{...x,options:x.options.filter((_,j)=>j!==k),answer:x.answer===k?0:x.answer>k?x.answer-1:x.answer})}>빼기</button>}</div>)}
+   <div className="actions">{x.options.length<4&&<button type="button" className="secondary" onClick={()=>up(i,{...x,options:[...x.options,'']})}>+ 보기</button>}<button type="button" className="link-btn" onClick={()=>set(quiz.filter((_,j)=>j!==i))}>이 문제 지우기</button></div></div>)}
+  {quiz.length<10&&<button type="button" className="secondary" onClick={()=>set([...quiz,{q:'',options:['',''],answer:0}])}>+ 퀴즈 문제 추가</button>}
+ </fieldset>;
+}
+/** 066: 직원은 풀고, 사장님은 누가 이수했는지 본다 */
+function QuizBox({m,owner,busy,run}:{m:Manual,owner:boolean,busy:boolean,run:(b:any,done?:string)=>Promise<any>}){
+ const [ans,setAns]=useState<number[]>([]),[res,setRes]=useState<any>(null);
+ if(owner)return <section className="quiz-box"><h3>교육 퀴즈 {m.quiz!.length}문제</h3><p>이수 {m.quizPasses?.length||0}명{m.quizPasses?.length?`: ${m.quizPasses.join(', ')}`:''}</p>{m.quizPending?.length?<p className="footnote">아직 안 함: {m.quizPending.join(', ')}</p>:null}</section>;
+ if(m.quizPassed)return <section className="quiz-box"><p className="pc-ok">✓ 교육 퀴즈를 통과했어요.</p></section>;
+ return <section className="quiz-box"><h3>교육 퀴즈 · 다 맞히면 이수</h3><ol>{m.quiz!.map((x,i)=><li key={i}><fieldset><legend>{x.q}</legend>{x.options.map((o,k)=><label key={k} className="t-check"><input type="radio" name={'qz'+m.id+i} checked={ans[i]===k} onChange={()=>{const a=ans.slice();a[i]=k;setAns(a);setRes(null)}}/> {o}</label>)}</fieldset>{res?.wrong?.includes(i+1)&&<p className="slog-bad">다시 생각해 보세요.</p>}</li>)}</ol>
+  {res&&!res.pass&&<p role="status" className="slog-bad">{res.total}문제 중 {res.correct}개 맞았어요. 매뉴얼을 다시 보고 틀린 문제를 고쳐 주세요.</p>}
+  <button type="button" className="primary" disabled={busy||m.quiz!.some((_,i)=>ans[i]===undefined)} onClick={async()=>{const d=await run({action:'quiz',id:m.id,answers:ans});if(d?.quizResult)setRes(d.quizResult)}}>답 내기</button></section>;
 }
