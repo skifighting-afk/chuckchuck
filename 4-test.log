@@ -1327,6 +1327,8 @@ PASS 599. 소급: 다음 해 1월에 넣음
 PASS 600. 연간 지급 내역
 PASS 601. 세무사 양식: 주휴 칸·차인지급액
 PASS: 소급·연간 내역·세무사 양식.
+PASS 602. 3일 넘은 요청만
+PASS: 오래된 요청.
 
 ── check-claims
 PASS: 과장·허위 문구 검사 (화면·홈페이지).
@@ -1570,6 +1572,7 @@ PASS: 10분 알림 검사(한 번만 보내기).
 PASS: 서명 대기 계약서 다시 알림.
 PASS: 매주 자동 백업.
 PASS: 예약 인상 자동 반영.
+PASS: 근무표 자동 게시.
 PASS: 매일 작업 (비밀값·체험 종료 알림 7일·1일 각 한 번).
 
 ── check-support
@@ -1620,13 +1623,14 @@ PASS: 직원 요청(명세서 문의·정보 변경·증명서).
 6. PASS token single use
 7. PASS cara sees two stores, now on boss store
 8. PASS coowner has owner access
-9. PASS coowner cannot change plan
-10. PASS switch back to own store
-11. PASS own store now
-12. PASS cannot switch to foreign store
-13. PASS owner lists coowners
-14. PASS owner removes coowner
-15. PASS removed coowner sees only own store
+9. PASS viewing coowned store never overwrites own store
+10. PASS coowner cannot change plan
+11. PASS switch back to own store
+12. PASS own store now
+13. PASS cannot switch to foreign store
+14. PASS owner lists coowners
+15. PASS owner removes coowner
+16. PASS removed coowner sees only own store
 PASS: 공동 관리자·가게 전환.
 
 ── check-share

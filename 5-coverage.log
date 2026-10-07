@@ -10,5 +10,5 @@ PASS 100.0%  lib/pay-rules.ts
 PASS 100.0%  lib/payslip.ts
 PASS  94.3%  lib/pdf.ts
 PASS 100.0%  lib/signature-image.ts
-PASS  93.8%  lib/team-model.ts
+PASS  93.9%  lib/team-model.ts
 PASS  93.3%  lib/wage-ledger.ts
