@@ -2,5 +2,6 @@
   "_설명": "공개해도 되는 배포 설정. Supabase 공개 키(anon)와 주소, 화면 도메인. 비밀값은 넣지 않는다.",
   "SUPABASE_URL": "https://mklluxpngagiechnfaxe.supabase.co",
   "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1rbGx1eHBuZ2FnaWVjaG5mYXhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTExMTA3MTMsImV4cCI6MjEwNjY4NjcxM30.8x_iJAt2TW_SrXPU2A5iP7cSVSOt3HIRLkHdhwJAtXM",
-  "APP_DOMAIN": "chukchukapp.kr"
+  "APP_DOMAIN": "chukchukapp.kr",
+  "META_PIXEL_ID": ""
 }
