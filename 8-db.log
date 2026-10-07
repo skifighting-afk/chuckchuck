@@ -1,8 +1,2 @@
 Connecting to remote database...
-Do you want to push these migrations to the remote database?
- • 20261008130000_store_pref.sql
- • 20261008140000_store_backups.sql
- [Y/n] 
-Applying migration 20261008130000_store_pref.sql...
-Applying migration 20261008140000_store_backups.sql...
-Finished supabase db push.
+Remote database is up to date.
