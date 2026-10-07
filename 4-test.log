@@ -1673,6 +1673,23 @@ PASS: 공동 관리자·가게 전환.
 37. PASS approval removed
 PASS: 출퇴근 위치·기기·연장 승인·휴게 구간.
 
+── check-schedule-more
+1. PASS 7th consecutive day warns
+2. PASS 6 days no consecutive warn
+3. PASS short rest warns
+4. PASS enough rest no warn
+5. PASS 8h+ warns only fivePlus
+6. PASS PUT with open shift ok
+7. PASS audit open shift
+8. PASS staff sees open shift
+9. PASS far branch staff does not see
+10. PASS far branch staff cannot take
+11. PASS amy takes open shift
+12. PASS shift added to amy
+13. PASS owner sees assigned
+14. PASS second take refused
+PASS: 근무표 경고·빈 근무 선착순.
+
 ── check-share
 PASS: 세무사 공유 링크 (확정 급여만·끄기·만료·열람 기록·토큰 해시만 저장).
 
