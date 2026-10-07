@@ -63,5 +63,19 @@ state=await get();await call('owner','/api/store',{action:'attendanceQr',branchI
 test('back to printed QR',(await attendance('out',rotated)).status===200);
 await attendance('in',rotated);
 test('owner manual correction path retained',(await attendance('out',undefined,'owner')).status===200);
+// 지시서 2라운드 011·004: 사장님 직접 기록 추가, 퇴근 때 인정 시각 저장
+{
+ const iso=(m)=>new RealDate(clock-m*60000).toISOString();
+ let st=await get();
+ test('사유 없이는 저장 안 됨',(await call('owner','/api/store',{action:'manualAttendance',employeeId:eid,start:iso(600),end:iso(540),breakMinutes:0,reason:' ',version:st.version})).status===400);
+ st=await get();test('직원은 직접 기록 추가 불가',(await call('staff','/api/store',{action:'manualAttendance',employeeId:eid,start:iso(600),end:iso(540),breakMinutes:0,reason:'x',version:(await call('staff','/api/store')).data.version})).status===403);
+ st=await get();let r=await call('owner','/api/store',{action:'manualAttendance',employeeId:eid,start:iso(600),end:iso(540),breakMinutes:10,reason:'QR 고장',version:st.version});
+ test('사장님 직접 기록은 바로 반영',r.status===200);
+ st=await get();const added=st.state.attendance.find(a=>a.source==='owner');test('기록표에 사장님 입력 표시',!!added&&added.breakMinutes===10);
+ test('변경 이력에 사장님 직접 입력과 사유',st.audit.some(a=>a.action==='사장님 직접 입력'&&a.reason==='QR 고장'));
+ test('직원 화면에도 보임',(await call('staff','/api/store')).data.state.attendance.some(a=>a.id===added.id&&a.source==='owner'));
+ test('인정 시각이 함께 저장됨',!!added.credit&&!!added.credit.rule);
+ st=await get();test('겹치는 시간은 저장 안 됨',(await call('owner','/api/store',{action:'manualAttendance',employeeId:eid,start:iso(590),end:iso(560),breakMinutes:0,reason:'중복',version:st.version})).status===400);
+}
 console.log(`${n-failures}/${n} passed`);if(failures)process.exitCode=1;
 globalThis.Date=RealDate;await closeAll();

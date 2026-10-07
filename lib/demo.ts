@@ -47,7 +47,9 @@ export function demoTeam(now = today(), clock = Date.now()): Team {
       s.attendance.push({id: `demo-attendance-${i}-${d}`, employeeId: `e${i}a1b2c3-demo`, start: iso(d, p.start), end: iso(d, p.end), breakMinutes: p.brk, breakStart: null});
     });
   }
-  s.shifts = s.employees.flatMap((e, i) => Array.from({length: 7}, (_, j) => datePlus(now, j)).filter(d => PEOPLE[i].days.includes(dow(d))).map((d, j) => ({id: `demo-shift-${i}-${j}`, employeeId: e.id, date: d, start: PEOPLE[i].start, end: PEOPLE[i].end, breakMinutes: PEOPLE[i].brk})));
+  // 근무표: 지난달 1일부터 다음 7일까지(지난 날짜도 근무표가 있어야 출퇴근 상태를 비교할 수 있다)
+  const span: string[] = [];for (let d = from; d <= datePlus(now, 6); d = datePlus(d, 1)) span.push(d);
+  s.shifts = s.employees.flatMap((e, i) => span.filter(d => PEOPLE[i].days.includes(dow(d))).map(d => ({id: `demo-shift-${i}-${d}`, employeeId: e.id, date: d, start: PEOPLE[i].start, end: PEOPLE[i].end, breakMinutes: PEOPLE[i].brk})));
   s.requests = []; s.adjustments = {};
   s.settings = {...s.settings, employerName: '예시 사장님', autoPayslip: false, autoContract: false, fivePlus: false};
   // 지난달 급여는 확정해 둔다(화면이 다시 계산한 값과 같아야 한다).

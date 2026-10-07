@@ -17,7 +17,7 @@ export function assistantBrief(s:Team,branch:string,page:string,date:string,now=
  const es=s.employees.filter(e=>e.branchId===branch&&e.status!=='퇴사'),ids=new Set(es.map(e=>e.id));
  if(!es.length)return [{text:'등록된 직원이 없어요. 직원에게 가입 링크를 보내면 신청이 홈 승인함에 바로 떠요.',tone:'amber',target:'employees'}];
  const tol=((s.settings as any).attendanceTolerance||'normal');
- const findings=checkDay(date,s.shifts.filter(x=>ids.has(x.employeeId)),s.attendance.filter(a=>ids.has(a.employeeId)),tol,now);
+ const findings=checkDay(date,s.shifts.filter(x=>ids.has(x.employeeId)),s.attendance.filter(a=>ids.has(a.employeeId)),tol,now,((s as any).approvedLeaves||[]));
  const board=todayBoard(s,branch,date,findings,now,tol==='lenient'?10:tol==='strict'?0:5),alerts=homeAlerts(s,branch,date,board);
  const out:Brief[]=[];
  const pendingFix=s.requests.filter(r=>r.status==='승인 대기'&&ids.has(r.before?.employeeId)).length;

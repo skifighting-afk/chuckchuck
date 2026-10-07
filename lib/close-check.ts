@@ -76,11 +76,11 @@ export function todayBoard(s:Team,branch:string,date:string,findings:{kind:strin
  const rows:BoardRow[]=s.shifts.filter(x=>ids.has(x.employeeId)&&x.date===date).sort((a,b)=>a.start.localeCompare(b.start)).map(x=>{
   const from=hourOf(x.start),to=hourOf(x.end)+(x.end<=x.start?24:0),f=findings.filter(f=>f.shiftId===x.id);
   const late=f.find(f=>f.kind==='지각'),mine=recs.filter(a=>a.employeeId===x.employeeId).sort((a,b)=>a.start.localeCompare(b.start)),att=mine.find(a=>!a.end||Date.parse(a.end)>now)||mine[mine.length-1];
-  const open=att&&(!att.end||Date.parse(att.end)>now),status:BoardStatus=f.some(f=>f.kind==='미출근')?'missed':open?(late?'late':'working'):att?'done':late?'late':'planned';
+  const open=att&&(!att.end||Date.parse(att.end)>now),status:BoardStatus=f.some(f=>f.kind==='결근')?'missed':open?(late?'late':'working'):att?'done':late?'late':'planned';
   // 출근 시각이 지났는데 아직 기록이 없으면(근무가 끝나기 전) '출근 기록 없음'
   const startMs=Date.parse(x.date+'T'+x.start+':00+09:00'),waited=Math.floor((now-startMs)/60000);
   if(status==='planned'&&waited>tolMinutes){const label=waited>=60?Math.floor(waited/60)+'시간 '+(waited%60)+'분째 출근 기록 없음':waited+'분째 출근 기록 없음';return {id:x.id,employeeId:x.employeeId,name:name(x.employeeId),start:x.start,end:x.end,from,to,status:'noshow' as BoardStatus,label};}
-  const label=status==='missed'?'미출근':status==='late'?(late?.minutes||0)+'분 늦음':status==='working'?kTime(att!.start)+' 출근 · 근무 중':status==='done'?'퇴근 '+kTime(att!.end!):x.start+' 출근 예정';
+  const label=status==='missed'?'결근(기록 없음)':status==='late'?(late?.minutes||0)+'분 늦음':status==='working'?kTime(att!.start)+' 출근 · 근무 중':status==='done'?'퇴근 '+kTime(att!.end!):x.start+' 출근 예정';
   return {id:x.id,employeeId:x.employeeId,name:name(x.employeeId),start:x.start,end:x.end,from,to,status,label};
  });
  // 근무표에 없던 출근도 막대로 보여 준다

@@ -26,7 +26,7 @@ export function HomeOverview({state,branch,onPayroll,onAttendance,onSchedule,onE
  const employees=state.employees.filter(e=>e.branchId===branch),ids=new Set(employees.map(e=>e.id)),month=today().slice(0,7),run=state.payrollRuns[month+':'+branch];
  const rows=run?.locked?run.rows:calculate(state,month).filter(e=>e.branchId===branch),total=rows.reduce((sum:number,row:any)=>sum+row.net,0);
  const here=state.attendance.filter(a=>ids.has(a.employeeId));
- const findings=checkDay(today(),state.shifts.filter(x=>ids.has(x.employeeId)),here,((state.settings as any).attendanceTolerance||'normal'));
+ const findings=checkDay(today(),state.shifts.filter(x=>ids.has(x.employeeId)),here,((state.settings as any).attendanceTolerance||'normal'),Date.now(),((state as any).approvedLeaves||[]));
  const go={staff:onJoin||(()=>location.assign('/staff-requests')),shift:onSchedule,clock:onAttendance,pay:onPayroll};
  const checklist=<StartChecklist state={state} branch={branch} go={go}/>;
  if(!employees.length)return <>{!demo&&<JoinInbox onChanged={onChanged||(()=>location.reload())}/>}{checklist}<section className="home-start"><img src="/cheokcheoki-welcome.png" alt="" width="88" height="88"/><h2>직원이 직접 신청하면, 사장님은 수락만</h2><p>직원에게 가입 주소를 알려 주세요. 합류 신청을 확인하고 수락하면 우리 가게에 연결돼요.</p><button className="home-main-action" onClick={onJoin||(()=>location.assign('/staff-requests'))}>직원 가입 안내·신청 확인 →</button><p><button onClick={onRegister}>사장님이 직접 직원 입력하기</button></p></section></>;
