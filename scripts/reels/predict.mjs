@@ -4,12 +4,13 @@
 export function predict({q,cards,secs,audio=false,voice=false}){
  const total=secs.reduce((a,b)=>a+b,0);
  const clamp=v=>Math.max(0,Math.min(100,Math.round(v)));
- // 1) 훅: 첫 화면 질문. 짧을수록, 물음표·숫자·"사장님/알바/돈" 같은 말이 있을수록 높게
+ // 1) 훅: 첫 3초 문장. 짧고, 숫자·돈 말·반전 말이 있으면 높게. 뻔한 질문형('~아시나요?', '헷갈리시죠?')은 깎는다
  const qLen=q.replace(/\s/g,'').length;
- let hook=100-Math.max(0,qLen-10)*5;
- if(!/\?$/.test(q))hook-=15;
+ let hook=100-Math.max(0,qLen-14)*4;
+ if(/아시나요|헷갈리시죠|궁금하시죠|알고 계셨나요|일까요\?$/.test(q))hook-=25;
  if(/\d/.test(q))hook+=5;
- if(/주휴|최저|월급|돈|벌금|퇴직금|알바|사장|해고|공휴일|수당/.test(q))hook+=10;
+ if(/주휴|최저|월급|돈|벌금|퇴직금|알바|사장|해고|공휴일|수당|체불|과태료|손해|날려/.test(q))hook+=10;
+ if(/아냐|아니야|땡|폭탄|큰일|안 돼|\?/.test(q))hook+=5;
  hook=clamp(hook);
  // 2) 끝까지 보기: 릴스는 짧을수록 끝까지 본다. 7~15초 최고, 30초 넘으면 크게 깎음
  const sustain=clamp(total<=7?85:total<=15?100:total<=20?100-(total-15)*4:total<=30?80-(total-20)*3:50-(total-30)*2);
