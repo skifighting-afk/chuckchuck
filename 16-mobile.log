@@ -1,18 +1,18 @@
-PASS public-home · 이전과 3.06% 다름
-PASS public-start · 이전과 6.34% 다름
-PASS public-login · 이전과 13.35% 다름
-PASS public-signup · 이전과 19.06% 다름
-PASS public-calculator · 이전과 5.35% 다름
-PASS public-help · 이전과 21.34% 다름
-PASS public-refund · 이전과 29.84% 다름
-PASS public-terms · 이전과 28.74% 다름
-PASS public-pricing · 이전과 3.36% 다름
-PASS public-status · 이전과 10.34% 다름
-PASS public-privacy · 이전과 20.85% 다름
-PASS public-policy
-PASS public-news
-PASS public-privacy-request
-PASS public-accessibility
+PASS public-home · 이전과 0% 다름
+PASS public-start · 이전과 0% 다름
+PASS public-login · 이전과 0% 다름
+PASS public-signup · 이전과 0% 다름
+PASS public-calculator · 이전과 0% 다름
+PASS public-help · 이전과 0% 다름
+PASS public-refund · 이전과 0% 다름
+PASS public-terms · 이전과 0% 다름
+PASS public-pricing · 이전과 0% 다름
+PASS public-status · 이전과 0.07% 다름
+PASS public-privacy · 이전과 0% 다름
+PASS public-policy · 이전과 0% 다름
+PASS public-news · 이전과 0% 다름
+PASS public-privacy-request · 이전과 0% 다름
+PASS public-accessibility · 이전과 0% 다름
 PASS demo-home · 이전과 0% 다름
 PASS demo-employees · 이전과 0% 다름
 PASS demo-attendance · 이전과 0% 다름
@@ -58,5 +58,4 @@ PASS demo-stores (큰 글씨)
 PASS demo-settings (큰 글씨)
 PASS demo-guide (큰 글씨)
 PASS demo-staff (큰 글씨)
-이전 실행과 2% 넘게 달라진 화면: public-home 3.06%, public-start 6.34%, public-login 13.35%, public-signup 19.06%, public-calculator 5.35%, public-help 21.34%, public-refund 29.84%, public-terms 28.74%, public-pricing 3.36%, public-status 10.34%, public-privacy 20.85%
 390px 화면 30개(보통·큰 글씨): 가로 넘침 없음

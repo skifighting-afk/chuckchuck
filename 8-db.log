@@ -1,6 +1,0 @@
-Connecting to remote database...
-Do you want to push these migrations to the remote database?
- • 20261009160000_marketing_consent.sql
- [Y/n] 
-Applying migration 20261009160000_marketing_consent.sql...
-Finished supabase db push.

@@ -1,2 +1,0 @@
-GET /api/auth → 200
-{"authenticated":false,"email":null,"verified":false,"mailReady":false,"native":false}
