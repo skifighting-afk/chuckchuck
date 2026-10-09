@@ -1,2 +1,6 @@
 Connecting to remote database...
-Remote database is up to date.
+Do you want to push these migrations to the remote database?
+ • 20261009150000_totp.sql
+ [Y/n] 
+Applying migration 20261009150000_totp.sql...
+Finished supabase db push.

@@ -4,15 +4,17 @@
 
 [33m[INEFFECTIVE_DYNAMIC_IMPORT] [0mapp/public-pages.tsx is dynamically imported by app/platform.tsx but also statically imported by app/platform.tsx, dynamic import will not move module into another chunk.
 
+[33m[INEFFECTIVE_DYNAMIC_IMPORT] [0mapp/totp-ui.tsx is dynamically imported by app/platform.tsx but also statically imported by app/auth-form.tsx, dynamic import will not move module into another chunk.
+
 [33m[INEFFECTIVE_DYNAMIC_IMPORT] [0mapp/att-device.ts is dynamically imported by app/schedule-extras.tsx but also statically imported by app/team.tsx, dynamic import will not move module into another chunk.
 
-화면 묶음: app.js 330KB, 필요할 때 받는 조각 25개 1212KB
-  team-CeZiu963.js 723KB
-  capacity-dialog-CpHe4o6f.js 170KB
-  attendance-scan-CXp_u5V4.js 133KB
-  legal-page-DA-vHN54.js 26KB
-  live-qr-DLPYLayU.js 25KB
-  admin-desk-CUe8jrHN.js 24KB
-  staff-join-_gcTVkBu.js 20KB
-  document-delivery-GXfPmZs4.js 14KB
+화면 묶음: app.js 358KB, 필요할 때 받는 조각 25개 1203KB
+  team-C9Taw3Z6.js 737KB
+  capacity-dialog-C-z_--1x.js 170KB
+  attendance-scan-ZiXwHumT.js 133KB
+  legal-page-D23f2cUX.js 26KB
+  admin-desk-BHABujjh.js 24KB
+  staff-join-D9MTX1ff.js 20KB
+  document-delivery-DqxvoGYC.js 14KB
+  contracts-desk-Bi7cMOfF.js 12KB
 척척사장 화면·서버 함수 빌드 완료
