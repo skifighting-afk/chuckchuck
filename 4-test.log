@@ -1416,7 +1416,7 @@ PASS 36. 2026-03-31: no clock-in or clock-out in the future (A1·A3)
 PASS: 체험 화면 숫자(급여·명세서·임금대장 합계).
 
 ── check-error-messages
-PASS: 오류 문구 565개 모두 다음 행동 안내 포함.
+PASS: 오류 문구 567개 모두 다음 행동 안내 포함.
 PASS: 오류 번호·로그 개인정보 제거.
 
 ── check-attendance-table
@@ -1586,6 +1586,7 @@ PASS: 매주 자동 백업.
 PASS: 예약 인상 자동 반영.
 PASS: 근무표 자동 게시.
 PASS: 마감 체크 누락·공지 재알림.
+PASS: 광고성 정보 동의 재확인.
 PASS: 생일·입사 기념일.
 PASS: 매일 작업 (비밀값·체험 종료 알림 7일·1일 각 한 번).
 
@@ -1898,6 +1899,11 @@ PASS: 오픈 API·웹훅·개인정보 열람 기록·매뉴얼 동영상.
 21. PASS disable from unverified session refused
 22. PASS disable from verified session
 23. PASS after disable password login works
+24. PASS register with marketing
+25. PASS marketing on at signup
+26. PASS turn off shows time
+27. PASS default off
+28. PASS under-14/consent required
 PASS: 2단계 인증.
 
 ── check-share
