@@ -11,12 +11,16 @@ const pick=k=>process.env[k]||fileConfig[k]||'';
 const supabaseUrl=pick('SUPABASE_URL')||'http://localhost:54321';
 const anonKey=pick('SUPABASE_ANON_KEY')||'local-anon-key';
 const appDomain=pick('APP_DOMAIN');
+// 메타 광고 픽셀(공개 값). 비어 있으면 광고 추적 코드는 전혀 실리지 않는다.
+const metaPixelId=pick('META_PIXEL_ID').trim();
+if(metaPixelId&&!/^\d{15,16}$/.test(metaPixelId))throw Error('META_PIXEL_ID는 15~16자리 숫자여야 해요: '+metaPixelId);
+if(metaPixelId&&readFileSync('lib/legal-docs.ts','utf8').includes('광고·행동 분석용 추적 도구는 쓰지 않습니다'))throw Error('메타 픽셀을 켜기 전에 개인정보 처리방침(lib/legal-docs.ts 10항·국외 이전)을 고쳐야 해요.');
 if(process.env.CI&&process.env.REQUIRE_SUPABASE_CONFIG&&(!pick('SUPABASE_URL')||!pick('SUPABASE_ANON_KEY')))throw Error('SUPABASE_URL과 SUPABASE_ANON_KEY(저장소 Variables)가 필요해요.');
 
 await mkdir('dist/client',{recursive:true});
 await copyFile('lib/vendor/noble-hashes/LICENSE','dist/client/noble-hashes-LICENSE.txt');
 await copyFile('lib/vendor/jsQR.LICENSE','dist/client/jsQR-LICENSE.txt');
-await build({input:'app/client.tsx',resolve:{alias:{'@':path.resolve('.')}},transform:{define:{'process.env.NODE_ENV':JSON.stringify('production'),__SUPABASE_URL__:JSON.stringify(supabaseUrl),__SUPABASE_ANON_KEY__:JSON.stringify(anonKey),__KAKAO_LOGIN__:JSON.stringify(fileConfig.KAKAO_LOGIN===true),__KAKAO_CHANNEL__:JSON.stringify(typeof fileConfig.KAKAO_CHANNEL_URL==='string'?fileConfig.KAKAO_CHANNEL_URL:'')},jsx:{runtime:'automatic'}},output:{dir:'dist/client',entryFileNames:'app.js',chunkFileNames:'chunks/[name]-[hash].js',format:'esm',minify:true}});
+await build({input:'app/client.tsx',resolve:{alias:{'@':path.resolve('.')}},transform:{define:{'process.env.NODE_ENV':JSON.stringify('production'),__SUPABASE_URL__:JSON.stringify(supabaseUrl),__SUPABASE_ANON_KEY__:JSON.stringify(anonKey),__META_PIXEL_ID__:JSON.stringify(metaPixelId),__KAKAO_LOGIN__:JSON.stringify(fileConfig.KAKAO_LOGIN===true),__KAKAO_CHANNEL__:JSON.stringify(typeof fileConfig.KAKAO_CHANNEL_URL==='string'?fileConfig.KAKAO_CHANNEL_URL:'')},jsx:{runtime:'automatic'}},output:{dir:'dist/client',entryFileNames:'app.js',chunkFileNames:'chunks/[name]-[hash].js',format:'esm',minify:true}});
 // 작업 010: 묶음 크기 기록(처음 받는 app.js와 필요할 때 받는 조각)
 {const {readdirSync,statSync}=await import('node:fs');const kb=f=>Math.round(statSync(f).size/1024);const chunks=existsSync('dist/client/chunks')?readdirSync('dist/client/chunks').map(f=>[f,kb('dist/client/chunks/'+f)]).sort((a,b)=>b[1]-a[1]):[];console.log(`화면 묶음: app.js ${kb('dist/client/app.js')}KB, 필요할 때 받는 조각 ${chunks.length}개 ${chunks.reduce((n,c)=>n+c[1],0)}KB`);for(const [f,k] of chunks.slice(0,8))console.log(`  ${f} ${k}KB`)}
 const css=await compile(await readFile('app/globals.css','utf8'),{base:path.resolve('app'),onDependency:()=>{}});
@@ -26,7 +30,8 @@ for(const f of ['cheokcheoki-guide.png','favicon.svg','cheokcheoki-welcome.png',
 // 작업 074: GitHub Pages는 응답 헤더를 못 바꾸므로 보안 정책을 HTML meta로 넣는다.
 // 화면은 자기 파일만 불러오고, 서버(Supabase)에만 연결한다. 카메라(QR) 영상과 QR·명세서 이미지(data:, blob:)는 허용.
 const supabaseOrigin=new URL(supabaseUrl).origin;
-const csp=["default-src 'self'","script-src 'self'","style-src 'self' 'unsafe-inline'","img-src 'self' data: blob:","media-src 'self' blob: mediastream:","font-src 'self' data:",`connect-src 'self' ${supabaseOrigin}`,"object-src 'none'","base-uri 'self'","form-action 'self'","worker-src 'self' blob:","manifest-src 'self'","upgrade-insecure-requests"].join('; ');
+const fb=metaPixelId?{script:' https://connect.facebook.net',img:' https://www.facebook.com',connect:' https://www.facebook.com https://connect.facebook.net'}:{script:'',img:'',connect:''};
+const csp=["default-src 'self'",`script-src 'self'${fb.script}`,"style-src 'self' 'unsafe-inline'",`img-src 'self' data: blob:${fb.img}`,"media-src 'self' blob: mediastream:","font-src 'self' data:",`connect-src 'self' ${supabaseOrigin}${fb.connect}`,"object-src 'none'","base-uri 'self'","form-action 'self'","worker-src 'self' blob:","manifest-src 'self'","upgrade-insecure-requests"].join('; ');
 const html='<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="'+csp+'"><meta name="referrer" content="strict-origin-when-cross-origin"><title>척척사장 · 직원 관리</title><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#185b45"><meta name="description" content="입사부터 출퇴근, 급여와 계약까지. 함께 일하는 사람을 위한 매장 관리."><link rel="icon" href="/favicon.svg"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/icon-192.png"><meta name="apple-mobile-web-app-title" content="척척사장"><link rel="stylesheet" href="/app.css"></head><body><div id="root"></div><script type="module" src="/app.js"></script></body></html>';
 await writeFile('dist/client/404.html',html); // GitHub Pages: 모든 주소를 화면 앱으로(로그인 화면은 검색에 안 나오게 noindex)
 // 가이드 23: 로그인 없이 보는 공개 화면은 검색에 나오게 각자 제목·설명을 가진 HTML로 따로 둔다(GitHub Pages는 /pricing → pricing.html).
