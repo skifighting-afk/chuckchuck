@@ -1,14 +1,14 @@
 // 작업 013·014·015: 이용약관·개인정보 처리방침 화면과 화면 아래 운영자 정보
 import {ArrowLeft} from 'lucide-react';
-import {TERMS,PRIVACY,type LegalDoc} from '../lib/legal-docs';
+import {TERMS,PRIVACY,POLICY,ACCESSIBILITY,type LegalDoc} from '../lib/legal-docs';
 import {OperatorInfo} from './operator-footer';
 
 const REPO='https://github.com/skifighting-afk/chuckchuck';
-export function LegalPage({privacy}:{privacy:boolean}){
- const d:LegalDoc=privacy?PRIVACY:TERMS;
+export function LegalPage({privacy,doc}:{privacy?:boolean,doc?:'policy'|'accessibility'}){
+ const d:LegalDoc=doc==='policy'?POLICY:doc==='accessibility'?ACCESSIBILITY:privacy?PRIVACY:TERMS;
  return <main className="saas-policy legal-doc">
-  <span className="saas-kicker">{privacy?'개인정보':'이용약관'}</span><h1>{d.title}</h1>
-  <p className="legal-meta">판 {d.version} · 시행일 {d.effective} · <a href={privacy?'/terms':'/privacy'}>{privacy?'이용약관 보기':'개인정보 처리방침 보기'}</a></p>
+  <span className="saas-kicker">{doc==='policy'?'운영정책':doc==='accessibility'?'접근성':privacy?'개인정보':'이용약관'}</span><h1>{d.title}</h1>
+  <p className="legal-meta">판 {d.version} · 시행일 {d.effective} · <a href={privacy?'/terms':'/privacy'}>{privacy?'이용약관 보기':'개인정보 처리방침 보기'}</a>{' · '}<a href="/policy">운영정책</a>{' · '}<a href="/refund">환불 규정</a></p>
   {!d.reviewed&&<p className="auth-note" role="note">법률 검토 전 초안이에요. 운영자 정보와 결제 서비스를 확정하고 검토를 마치면 정식판으로 바꾸고, 바뀐 내용은 다음 로그인 때 다시 동의받아요.</p>}
   <nav className="legal-toc" aria-label="목차"><ol>{d.sections.map(s=><li key={s.id}><a href={'#'+s.id}>{s.title}</a></li>)}</ol></nav>
   {d.sections.map(s=><section key={s.id} id={s.id}><h2>{s.title}</h2>{s.body.map((b,i)=>typeof b==='string'

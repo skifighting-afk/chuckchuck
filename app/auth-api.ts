@@ -70,6 +70,14 @@ export async function nativeAuth(request:Request,env:Env){
    const token=bearer(request);if(token&&token!==env.SUPABASE_ANON_KEY)await gotrue(env,'/logout?scope='+(b.everywhere===true?'global':'local'),{method:'POST',token}).catch(()=>null);
    return json({ok:true,session:null});
   }
+  if(b.action==='marketing'){// 출시 준비: 광고성 정보 수신 동의(선택) 켜기·끄기 — 바꾼 시각을 남기고 결과를 알린다(정보통신망법 제50조)
+   const token=bearer(request);if(!token||token===env.SUPABASE_ANON_KEY)return json({error:'로그인한 뒤 다시 시도해 주세요.'},401);
+   const me=await gotrue(env,'/user',{token}).catch(()=>null);if(!(me as any)?.ok||!(me as any).data?.id)return json({error:'다시 로그인해 주세요.'},401);
+   const u=await appUser(env,(me as any).data);const now=new Date().toISOString();
+   if(b.on===true||b.on===false)await env.DB.prepare('UPDATE app_users SET marketing_at=?,marketing_checked_at=? WHERE id=?').bind(b.on?now:'',now,u.id).run();
+   const r=await env.DB.prepare('SELECT marketing_at FROM app_users WHERE id=?').bind(u.id).first<any>();
+   return json({on:!!r?.marketing_at,since:r?.marketing_at||null,changedAt:b.on===true||b.on===false?now:null});
+  }
   if(['totpStatus','totpSetup','totpEnable','totpVerify','totpDisable'].includes(b.action)){// 지시서 098: 2단계 인증
    const token=bearer(request);if(!token||token===env.SUPABASE_ANON_KEY)return json({error:'로그인한 뒤 다시 시도해 주세요.'},401);
    const me=await gotrue(env,'/user',{token}).catch(()=>null);if(!(me as any)?.ok||!(me as any).data?.id)return json({error:'다시 로그인해 주세요.'},401);
@@ -162,6 +170,7 @@ export async function nativeAuth(request:Request,env:Env){
    if(!created.ok||!created.data?.id)return created.status===422?json({error:'이 이메일로 가입할 수 없어요. 기존 회원이라면 로그인해 주세요.'},409):json({error:'가입을 완료하지 못했어요. 잠시 뒤 다시 시도해 주세요.'},502);
    const made=await appUser(env,created.data);
    await env.DB.prepare('UPDATE app_users SET terms_version=?,privacy_version=?,consented_at=? WHERE id=?').bind(LEGAL.terms.version,LEGAL.privacy.version,new Date().toISOString(),made.id).run();
+   if(b.marketing===true)await env.DB.prepare('UPDATE app_users SET marketing_at=?,marketing_checked_at=? WHERE id=?').bind(new Date().toISOString(),new Date().toISOString(),made.id).run();
    const login=await gotrue(env,'/token?grant_type=password',{method:'POST',body:{email,password:b.password}});
    if(!login.ok)return json({error:'가입은 됐어요. 로그인해 주세요.'},409);
    return json({ok:true,role:b.role,emailVerified:false,session:session(login.data)});

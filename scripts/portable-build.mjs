@@ -46,6 +46,10 @@ const PUBLIC_PAGES=[
  ['/terms','terms.html','이용약관 · 척척사장','척척사장 이용약관'],
  ['/privacy','privacy.html','개인정보 처리방침 · 척척사장','척척사장 개인정보 처리방침'],
  ['/refund','refund.html','해지·환불 규정 · 척척사장','척척사장 해지·환불 규정'],
+ ['/policy','policy.html','운영정책 · 척척사장','하지 말아야 할 일, 이용 제한 단계, 신고·이의 제기, 문의 처리 기한'],
+ ['/accessibility','accessibility.html','접근성 안내 · 척척사장','누구나 쓸 수 있게 지키는 기준과 불편 신고 방법'],
+ ['/news','news.html','서비스 소식 · 척척사장','척척사장에 새로 나온 기능과 바뀐 점'],
+ ['/privacy-request','privacy-request.html','개인정보 요청 · 척척사장','내 개인정보 열람·정정·삭제·처리정지 요청 방법'],
  ['/status','status.html','서비스 상태 · 척척사장','척척사장 서버와 데이터베이스가 정상인지, 최근 서비스 안내를 확인해요.'],
 ];
 for(const [path,file,title,desc] of PUBLIC_PAGES){
@@ -57,6 +61,8 @@ for(const [path,file,title,desc] of PUBLIC_PAGES){
 await writeFile('dist/client/sitemap.xml','<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'+PUBLIC_PAGES.map(([p])=>'  <url><loc>'+site+p+'</loc></url>').join('\n')+'\n</urlset>\n');
 await writeFile('dist/client/robots.txt','User-agent: *\nAllow: /\nDisallow: /app\nDisallow: /admin\nDisallow: /account\nDisallow: /contracts\nDisallow: /manager\nSitemap: '+site+'/sitemap.xml\n');
 await writeFile('dist/client/.nojekyll','');
+// 출시 준비: 보안 취약점 신고 창구(RFC 9116)
+await mkdir('dist/client/.well-known',{recursive:true});await writeFile('dist/client/.well-known/security.txt','Contact: '+site+'/support?category=%EC%8B%A0%EA%B3%A0\nExpires: '+new Date(Date.now()+330*86400000).toISOString().slice(0,19)+'Z\nPreferred-Languages: ko, en\nPolicy: '+site+'/policy\nCanonical: '+site+'/.well-known/security.txt\n');
 if(appDomain)await writeFile('dist/client/CNAME',appDomain.trim()+'\n');
 await writeFile('dist/client/version.json',JSON.stringify({sha:process.env.GITHUB_SHA||'local',builtAt:new Date().toISOString()})+'\n'); // 작업 004: 배포 후 점검이 새 화면이 올라왔는지 확인
 

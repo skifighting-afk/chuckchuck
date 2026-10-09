@@ -7,7 +7,7 @@ import {parseThread,type ThreadItem} from '../lib/faq-suggest';
 const json=(d:any,status=200)=>Response.json(d,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 // 예전 문의(대화 기록 전)는 마지막 답변을 대화 첫 줄로 넣는다
 const seed=(r:any):ThreadItem[]=>{const th=parseThread(r?.thread);return th.length||!r?.reply?th:[{from:'본사',body:r.reply,at:r.replied_at||''}]};
-export const SUPPORT_CATEGORIES=['사용 방법','오류·문제','요금·결제','계정·개인정보','제안','기타'] as const;
+export const SUPPORT_CATEGORIES=['사용 방법','오류·문제','요금·결제','환불 신청','계정·개인정보','개인정보 요청','신고','제안','기타'] as const;
 export async function supportApi(request:Request,env:AdminEnv&{VAPID_PUBLIC_KEY?:string,VAPID_PRIVATE_KEY?:string,VAPID_SUBJECT?:string}){
  const uid=request.headers.get('oai-authenticated-user-id');if(!uid)return json({error:'로그인한 뒤 다시 시도해 주세요.'},401);
  const hq=isHQ(request,env),url=new URL(request.url);

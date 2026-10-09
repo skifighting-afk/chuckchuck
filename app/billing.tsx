@@ -66,7 +66,17 @@ export function RefundPolicy(){
   <h2>요금제·지점 수 변경</h2><p>기간 중에 올리면 남은 기간만큼 차액을 더 내고, 내리면 다음 결제에서 빼요.</p>
   <h2>환불 방법과 기간</h2><p>결제한 수단으로 돌려드려요. 신청 확인 후 3영업일 안에 처리하고, 카드사 사정에 따라 실제 반영까지 더 걸릴 수 있어요.</p>
   <h2>탈퇴하면</h2><p>탈퇴 전에 가게 데이터를 내려받아 두세요. 근로계약서·임금 서류는 근로기준법에 따라 3년 보관해야 해요. 결제 기록은 전자상거래법에 따라 5년 보관해요.</p>
+  <RefundCalc/>
+  <h2>환불 신청</h2><p>로그인한 뒤 <a href="/support?category=환불 신청">문의하기 → 환불 신청</a>으로 남겨 주세요. 결제일·금액·사유를 적으면 3영업일 안에 처리 결과를 알려 드려요. 계정·요금제 화면의 '해지 예약'도 함께 할 수 있어요.</p>
   <p className="saas-fine"><a href="/account">← 계정·요금제로</a></p></main>
+}
+/** 출시 준비: 환불 금액 미리 계산(규정의 공식 그대로) */
+function RefundCalc(){
+ const [paid,setPaid]=useState('29800'),[days,setDays]=useState('30'),[used,setUsed]=useState('10'),[fresh,setFresh]=useState(false);
+ const p=Number(paid)||0,d=Math.max(1,Number(days)||1),u=Math.min(d,Math.max(0,Number(used)||0)),refund=fresh?p:Math.max(0,Math.floor((p-u/d*p)/10)*10);
+ return <section className="refund-calc" aria-labelledby="rc-title"><h2 id="rc-title">환불 금액 미리 계산</h2><div className="t-inline"><label>낸 금액(원) <input inputMode="numeric" value={paid} onChange={e=>setPaid(e.target.value.replace(/\D/g,''))}/></label><label>이용 기간(일) <input inputMode="numeric" value={days} onChange={e=>setDays(e.target.value.replace(/\D/g,''))}/></label><label>쓴 날(일) <input inputMode="numeric" value={used} disabled={fresh} onChange={e=>setUsed(e.target.value.replace(/\D/g,''))}/></label></div>
+  <label className="t-check"><input type="checkbox" checked={fresh} onChange={e=>setFresh(e.target.checked)}/> 결제 후 7일 안이고 기록을 저장하지 않았어요</label>
+  <p className="refund-result" role="status">돌려받는 금액 약 <b>{refund.toLocaleString('ko-KR')}원</b>{fresh?' (전액)':` = ${p.toLocaleString('ko-KR')} − (${u} ÷ ${d} × ${p.toLocaleString('ko-KR')}), 10원 미만 버림`}</p><p className="saas-fine">참고용 계산이에요. 실제 금액은 결제 기록으로 다시 확인해요.</p></section>;
 }
 /** 작업 011: 사업자 상태(국세청 조회) */
 export function BizStatus({a,reload}:{a:any,reload:()=>Promise<void>}){
@@ -86,6 +96,7 @@ export function Checkout({a}:{a:any}){
   <dl className="checkout-sum"><div><dt>요금제</dt><dd>{plans[plan].name}</dd></div><div><dt>지점</dt><dd>{slots}곳</dd></div><div><dt>이용 기간</dt><dd>{months}개월</dd></div><div><dt>정가</dt><dd>{won(list)}원</dd></div>{off>0&&<div><dt>{months}개월 할인</dt><dd className="off">−{won(off)}원</dd></div>}<div className="total"><dt>결제 금액 (VAT 포함)</dt><dd>{won(pay)}원</dd></div></dl>
   <fieldset className="checkout-methods"><legend>결제 수단</legend>{METHODS.map(([v,l])=><label key={v} className={method===v?'on':''}><input type="radio" name="pay-method" value={v} checked={method===v} onChange={()=>setMethod(v)}/>{l}</label>)}</fieldset>
   <label className="checkout-agree"><input type="checkbox" checked={agree} onChange={e=>setAgree(e.target.checked)}/><span><a href="/terms">이용약관</a>과 <a href="/refund">해지·환불 규정</a>을 확인했어요. 자동 갱신 없이 {months}개월만 결제돼요.</span></label>
+  <ul className="checkout-notes"><li>결제 후 7일 안이고 결제 뒤 저장한 기록이 없으면 전액 환불돼요.</li><li>기록을 저장하기 시작하면 쓴 날만큼 빼고 남은 기간을 날짜로 나눠 환불해요(전자상거래법 제17조 제2항).</li><li>자동 갱신·자동 결제는 없어요. 기간이 끝나면 다시 결제할 때까지 조회·내려받기만 돼요.</li></ul>
   <button type="button" className="saas-primary" disabled={!ready||!agree}>{won(pay)}원 결제하기</button>
   {!ready&&<p className="checkout-wait" role="note">결제 연결을 준비하고 있어요. 사업자 등록과 결제대행사 계약이 끝나면 이 버튼이 열려요. 그 전까지는 결제 없이 체험을 그대로 쓸 수 있어요. 요금제·지점 수·기간은 아래에서 미리 바꿔 둘 수 있어요.</p>}
  </section>;

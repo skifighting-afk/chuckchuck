@@ -30,5 +30,11 @@ ok('status shows 9 left',(await A({action:'totpStatus'},t2)).body.backupLeft,9);
 ok('disable from unverified session refused',(await A({action:'totpDisable',otp:backups[1]},t3)).status,400);
 ok('disable from verified session',(await A({action:'totpDisable',otp:backups[1]},t2)).body.enabled,false);
 ok('after disable password login works',(await acct(t3)).status,200);
+// 출시 준비: 광고성 정보 수신 동의(선택)
+{const r=await A({action:'register',email:'mk@example.invalid',password:TEST_PASSWORD,name:'마케팅',role:'owner',agree:true,marketing:true});ok('register with marketing',r.status,200);
+ const tk=r.body.session.access_token;let m=await A({action:'marketing'},tk);ok('marketing on at signup',m.body.on,true);
+ m=await A({action:'marketing',on:false},tk);ok('turn off shows time',[m.body.on,!!m.body.changedAt],[false,true]);
+ const r2=await A({action:'register',email:'mk2@example.invalid',password:TEST_PASSWORD,name:'안받음',role:'owner',agree:true});ok('default off',(await A({action:'marketing'},r2.body.session.access_token)).body.on,false);
+ ok('under-14/consent required',(await A({action:'register',email:'mk3@example.invalid',password:TEST_PASSWORD,name:'x',role:'owner'})).status,400);}
 console.log('PASS: 2단계 인증.');
 await closeAll();

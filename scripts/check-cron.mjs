@@ -90,6 +90,15 @@ console.log('PASS: 서비스 상태(/api/status).');
  const before=sent.length;await mod.alertSweep(env,now+10*60000,(u,m)=>sent.push(u+':'+m.title));assert.equal(sent.length,before,'한 번만');
  await env.DB.prepare("DELETE FROM stores WHERE owner='cc-owner'").run();await env.DB.prepare("DELETE FROM attendance_records WHERE owner='cc-owner'").run();console.log('PASS: 마감 체크 누락·공지 재알림.');
 }
+// 출시 준비: 광고성 정보 수신 동의 2년 재확인
+{
+ const mod=await import('../dist/server/cron.js');
+ await env.DB.prepare("INSERT INTO app_users(id,auth_id,email,name,role,email_verified,created_at,marketing_at,marketing_checked_at) VALUES('native:mk-old','6f1d2c3a-0000-4000-8000-00000000abcd','mko@example.invalid','오래됨','owner',1,0,'2024-09-01T00:00:00.000Z','2024-09-01T00:00:00.000Z')").run();
+ const sent=[];await mod.alertSweep(env,Date.parse('2026-10-09T09:03:00+09:00'),(u,m)=>sent.push(u+':'+m.title));
+ assert.ok(sent.includes('native:mk-old:광고성 정보 수신 동의를 확인해 주세요'),'2년 재확인 알림');
+ const n=sent.length;await mod.alertSweep(env,Date.parse('2026-10-10T09:03:00+09:00'),(u,m)=>sent.push(u+':'+m.title));assert.ok(!sent.slice(n).some(x=>x.startsWith('native:mk-old:광고성')),'한 번만');
+ await env.DB.prepare("DELETE FROM app_users WHERE id='native:mk-old'").run();console.log('PASS: 광고성 정보 동의 재확인.');
+}
 // 지시서 060: 생일·입사 기념일
 {
  const mod=await import('../dist/server/cron.js');

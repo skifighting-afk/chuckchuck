@@ -101,3 +101,4 @@ export function PayExplain({state,selfId,month,row}:{state:Team,selfId:string,mo
  const prevRun:any=Object.values(state.payrollRuns).find((r:any)=>r.locked&&r.month===pm&&r.rows.some((x:any)=>x.employeeId===selfId)),prev=prevRun?.rows.find((x:any)=>x.employeeId===selfId)||null;
  return <section className="panel t-gap pay-explain"><button type="button" className="secondary" aria-expanded={open} onClick={()=>setOpen(!open)}><span aria-hidden="true">💬 </span>{L('내 급여 왜 이래요?')}</button>{open&&<ul>{explainPay(row,prev,month).map((t,i)=><li key={i}>{t}</li>)}</ul>}{open&&<p className="footnote">{L("그래도 이상하면 아래 '명세서 문의'로 사장님께 물어보세요.")}</p>}</section>;
 }
+

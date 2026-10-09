@@ -79,6 +79,10 @@ export async function contractReminders(env:any,now=Date.now(),notify=(uid:strin
 /** 매장마다 지금 보낼 출퇴근 알림을 보내고, 보낸 key를 _alertsSent에 남겨 한 번만 보낸다(3일 지나면 정리). */
 export async function alertSweep(env:any,now=Date.now(),notify=(uid:string,m:any)=>notifyUser(env,uid,m)){
  const rows=(await env.DB.prepare('SELECT owner,data FROM stores').all()).results as any[];let sent=0;
+ // 출시 준비: 광고성 정보 수신 동의 2년마다 다시 확인(정보통신망법 시행령 제62조의3) — 오전 9시 첫 점검에 한 번
+ {const k=new Date(now+9*3600000);if(k.getUTCHours()===9&&k.getUTCMinutes()<10){const two=new Date(now-730*86400000).toISOString(),month=new Date(now-30*86400000).toISOString();
+  const due=((await env.DB.prepare("SELECT id,marketing_at FROM app_users WHERE marketing_at<>'' AND marketing_at<? AND marketing_checked_at<? LIMIT 500").bind(two,month).all().catch(()=>({results:[]}))).results||[]) as any[];
+  for(const u of due){await notify(u.id,{title:'광고성 정보 수신 동의를 확인해 주세요',body:`${String(u.marketing_at).slice(0,10)}에 소식 받기에 동의하셨어요. 계속 받으려면 그대로 두고, 그만 받으려면 내 계정에서 끄세요.`,url:'/withdraw',kind:'account'});await env.DB.prepare('UPDATE app_users SET marketing_checked_at=?,marketing_at=? WHERE id=?').bind(new Date(now).toISOString(),new Date(now).toISOString(),u.id).run();sent++}}}
  for(const r of rows){
   let d:any;try{d=JSON.parse(r.data)}catch{continue}
   if(!d?.employees||!d?.shifts)continue;

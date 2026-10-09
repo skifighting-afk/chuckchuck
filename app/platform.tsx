@@ -33,6 +33,10 @@ const PricingPage=lazy(()=>import('./public-pages').then(x=>({default:x.PricingP
 const StatusPage=lazy(()=>import('./status-page').then(x=>({default:x.StatusPage})));
 const Support=lazy(()=>import('./support').then(x=>({default:x.Support})));
 const SharePage=lazy(()=>import('./accountant-share').then(x=>({default:x.SharePage})));
+const LaunchPages=()=>import('./launch-pages');
+const PrivacyRequest=lazy(()=>LaunchPages().then(x=>({default:x.PrivacyRequest})));
+const NewsPage=lazy(()=>LaunchPages().then(x=>({default:x.NewsPage})));
+const MarketingToggle=lazy(()=>LaunchPages().then(x=>({default:x.MarketingToggle})));
 const TotpPanel=lazy(()=>import('./totp-ui').then(x=>({default:x.TotpPanel})));
 const MfaPrompt=lazy(()=>import('./totp-ui').then(x=>({default:x.MfaPrompt})));
 const KioskPage=lazy(()=>import('./kiosk').then(x=>({default:x.KioskPage})));
@@ -54,11 +58,11 @@ export default function Platform(){
  const [account,setAccount]=useState<any>(null),[status,setStatus]=useState('loading'),[error,setError]=useState('');
  const path=location.pathname,query=new URLSearchParams(location.search),invite=query.get('invite'),qrEntry=attendanceQrEntry(path,location.search);
  const reload=async()=>{setError('');setStatus('loading');try{const r=await fetch('/api/account');const d:any=await r.json();if(r.status===401){setStatus(d.code==='MFA_REQUIRED'?'mfa':'anonymous');return}if(!r.ok)throw Error(d.error);setAccount(d);setStatus('ready')}catch(e){setError(e instanceof Error?e.message:'연결할 수 없습니다.');setStatus('error')}};
- useEffect(()=>{if(!['/demo','/try','/start','/calculator','/help','/refund','/admin','/admin/login','/kiosk'].includes(path))reload()},[]);
+ useEffect(()=>{if(!['/demo','/try','/start','/calculator','/help','/refund','/admin','/admin/login','/kiosk','/policy','/accessibility','/news','/privacy-request'].includes(path))reload()},[]);
  if(path==='/admin/login')return <Shell><main className="native-auth-wrap"><AuthForm role="owner" next="/admin" account={null} admin/></main></Shell>;
  if(path==='/admin')return <Shell><AdminDesk/><SupportDesk/><PasswordDesk/><section className="saas-account" aria-label="본사 알림"><p className="saas-fine">서버 오류가 10분 안에 3번 넘게 나면 이 기기로 알림을 보내요.</p><PushToggle/></section></Shell>;
  if(path==='/verify-email')return <Shell><VerifyEmail/></Shell>;
- if(path==='/withdraw')return <Shell><DeviceSessions/><TotpPanel/><PushToggle/><Withdraw/></Shell>;
+ if(path==='/withdraw')return <Shell><DeviceSessions/><TotpPanel/><MarketingToggle/><PushToggle/><Withdraw/></Shell>;
  if(path==='/calculator')return <Shell><Calculator/></Shell>;
  if(path==='/help')return <Shell><Help/></Shell>;
  if(path==='/refund')return <Shell><RefundPolicy/></Shell>;
@@ -70,6 +74,9 @@ export default function Platform(){
  if(path==='/start')return <Start/>;
  if(path==='/demo'||path==='/try')return <TeamApp demo/>;
  if(path==='/terms'||path==='/privacy')return <Shell><LegalPage privacy={path==='/privacy'}/></Shell>;
+ if(path==='/privacy-request')return <Shell><PrivacyRequest/></Shell>;
+ if(path==='/news')return <Shell><NewsPage/></Shell>;
+ if(path==='/policy'||path==='/accessibility')return <Shell><LegalPage doc={path==='/policy'?'policy':'accessibility'}/></Shell>;
  if(status==='loading')return <Shell><div className="auth-card"><Clock3 className="auth-icon"/><h1>척척사장을 준비하고 있어요.</h1><p>계정과 매장 연결을 확인합니다.</p></div></Shell>;
  if(status==='error')return <Shell><div className="auth-card"><h1>잠시 연결이 어렵습니다.</h1><p role="alert">{error}</p><Button onClick={reload}>다시 연결</Button><a href="/login">로그인 화면</a><a href="/contracts">내 서류 보기</a><a href="/withdraw">회원 탈퇴</a></div></Shell>;
  if(status==='mfa')return <Shell><MfaPrompt onDone={()=>location.reload()}/></Shell>;
@@ -95,7 +102,7 @@ function ConsentGate({onDone}:{onDone:()=>Promise<void>}){
  const [agree,setAgree]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState('');
  const submit=async()=>{if(busy||!agree)return;setBusy(true);setError('');try{const r=await fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'consent',agree:true})});const d:any=await r.json();if(!r.ok)throw Error(d.error);await onDone()}catch(e){setError(e instanceof Error?e.message:'동의를 저장하지 못했어요.')}finally{setBusy(false)}};
  return <Shell><main className="auth-card"><h1>안내 내용이 바뀌었어요</h1><p>계속 이용하려면 바뀐 이용약관과 개인정보 처리방침을 확인해 주세요.</p><label className="saas-check"><Checkbox checked={agree} onCheckedChange={v=>setAgree(v===true)} aria-label="이용약관과 개인정보 처리방침 동의"/><span><a href="/terms" target="_blank" rel="noopener">이용약관</a>과 <a href="/privacy" target="_blank" rel="noopener">개인정보 처리방침</a>을 읽고 동의해요.</span></label>{error&&<p role="alert" className="saas-error">{error}</p>}<Button className="saas-primary" disabled={busy||!agree} onClick={submit}>{busy?'저장하고 있어요…':'동의하고 계속하기'}</Button><a href="/logout">로그아웃</a></main></Shell>}
-function Shell({children}:{children:ReactNode}){return <div className="saas-shell"><header className="saas-nav"><a className="saas-brand" href="/start"><span><Store size={22}/></span>척척사장<small>매장 일을 척척</small></a><a href="/app">내 매장 <ArrowRight size={16}/></a></header>{children}<footer className="saas-footer"><span>함께 일하는 사람을 위한 매장 관리</span><a href="/calculator">주휴수당 계산기</a><a href="/pricing">요금</a><a href="/status">서비스 상태</a><a href="/support">문의하기</a><a href="/refund">해지·환불</a><a href="/terms">이용약관</a><a href="/privacy"><b>개인정보 처리방침</b></a><OperatorFooter/></footer></div>}
+function Shell({children}:{children:ReactNode}){return <div className="saas-shell"><header className="saas-nav"><a className="saas-brand" href="/start"><span><Store size={22}/></span>척척사장<small>매장 일을 척척</small></a><a href="/app">내 매장 <ArrowRight size={16}/></a></header>{children}<footer className="saas-footer"><span>함께 일하는 사람을 위한 매장 관리</span><a href="/calculator">주휴수당 계산기</a><a href="/pricing">요금</a><a href="/status">서비스 상태</a><a href="/support">문의하기</a><a href="/news">서비스 소식</a><a href="/refund">해지·환불</a><a href="/terms">이용약관</a><a href="/policy">운영정책</a><a href="/privacy"><b>개인정보 처리방침</b></a><a href="/privacy-request">개인정보 요청</a><a href="/accessibility">접근성</a><OperatorFooter/></footer></div>}
 function Login({account,next,role}:{account:any,next:string,role?:'owner'|'employee'}){
  if(!role)return <Shell><main className="auth-card" style={{maxWidth:600,margin:'40px auto'}}><h1>어떤 일을 하시나요?</h1><p>내 역할을 고르면 바로 시작할 수 있어요.</p><a className="saas-primary" href="/login?role=owner">사장님으로 시작</a><a className="saas-secondary" href="/login?role=employee">직원으로 시작</a><a href="/demo">가입 없이 먼저 체험하기</a></main></Shell>;
  return <Shell><main className="native-auth-wrap"><AuthForm role={role} next={next} account={account}/></main></Shell>;

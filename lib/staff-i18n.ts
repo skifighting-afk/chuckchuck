@@ -13,6 +13,7 @@ const D: Record<string, [string, string, string]> = {
   '대타·교대 구하기': ['Find a cover / swap', '找人代班·换班', 'Tìm người thay ca'], '명세서 내려받기': ['Download payslip', '下载工资单', 'Tải phiếu lương'], '로그아웃': ['Log out', '退出', 'Đăng xuất'], '도움말': ['Help', '帮助', 'Trợ giúp'],
   '근무 중': ['Working', '工作中', 'Đang làm'], '승인 대기': ['Waiting approval', '等待批准', 'Chờ duyệt'], '확인했어요': ['Got it', '已确认', 'Đã xem'], '맡을게요': ["I'll take it", '我来做', 'Tôi nhận'],
   '내 급여 왜 이래요?': ['Why is my pay like this?', '我的工资为什么是这样?', 'Sao lương tôi như vậy?'], '보내기': ['Send', '发送', 'Gửi'], '취소': ['Cancel', '取消', 'Hủy'],
+  '내 자료 내려받기': ['Download my data', '下载我的资料', 'Tải dữ liệu của tôi'],
   // 직원 화면 문구(지시서 050 확장)
   "QR 읽기를 준비하고 있어요…": ["Getting the QR reader ready…", "正在准备扫码…", "Đang chuẩn bị quét QR…"],
   "✓ 사장님께 요청을 보냈어요. 사장님이 발급하면 받아 볼 수 있어요.": ["✓ Request sent to the owner. You'll get it once issued.", "✓ 已发送给老板。签发后即可查看。", "✓ Đã gửi yêu cầu. Bạn sẽ nhận được khi chủ cửa hàng cấp."],
