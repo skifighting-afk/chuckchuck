@@ -1295,6 +1295,14 @@ console.log('PASS: 요율 연간 갱신 경고.');
  const r=parseSalesCsv('﻿일자,카드매출,결제건수\n2026.09.30,"1,200,000",31\n2026-10-01,500000,10\n2026/10/02,"250,000원",5\n합계,1950000,46');
  ok('POS 매출 파일 월별 합계(합계 줄 무시)',r.rows===3&&r.sums['2026-09']===1200000&&r.sums['2026-10']===750000);
  ok('제목 없는 파일도',parseSalesCsv('20261003,10000\n20261004,5000').sums['2026-10']===15000);
+ {const {L,setLang}=await import('../lib/staff-i18n.ts');setLang('vi');const vi=L('출근');setLang('en');const en=[L('퇴근'),L('없는 글자')];setLang('ko');ok('직원 화면 다국어',[vi,en[0],en[1],L('출근')].join('|'),'Vào ca|Clock out|없는 글자|출근');}
+ {const {parseRange,parsePastedSchedule}=await import('../lib/schedule-paste.ts');
+  ok('시간 읽기',[parseRange('9-18'),parseRange('09:00~18:00'),parseRange('9시-6시'),parseRange('오후6-오전2'),parseRange('18-2'),parseRange('휴')].map(x=>x&&x.start+'-'+x.end).join(),'09:00-18:00,09:00-18:00,09:00-18:00,18:00-02:00,18:00-02:00,');
+  const es=[{id:'a',name:'김민지'},{id:'b',name:'박서준'}];
+  let r=parsePastedSchedule('이름\t월\t화\t수\n김민지\t9-18\t휴\t10-15\n박서준\t\t12-21\t\n없는사람\t9-18',es,'2026-10-12');
+  ok('표 붙여넣기',r.shifts.map(x=>x.employeeId+x.date+x.start).join(),'a2026-10-1209:00,a2026-10-1410:00,b2026-10-1312:00');ok('표: 없는 직원 안내',r.problems.length,1);
+  r=parsePastedSchedule('김민지 월 9-18, 금 17-22\n박서준 토 10-16',es,'2026-10-12');ok('한 줄씩',r.shifts.map(x=>x.date+x.start).join(),'2026-10-1209:00,2026-10-1617:00,2026-10-1710:00');
+  r=parsePastedSchedule('이름,10/12,10/13\n김민지,9-18,9-18',es,'2026-10-12');ok('날짜 제목',r.shifts.length,2);}
  {const {explainPay}=await import('../lib/pay-explain.ts');const cur={hours:60,gross:700000,deduction:60000,net:640000,earnings:[{name:'기본급',amount:600000,formula:'60시간 × 10,000원'},{name:'주휴수당',amount:100000,formula:'x'}],deductions:[{name:'국민연금',amount:30000},{name:'근로소득세',amount:30000}]};
   const ex=explainPay(cur,{hours:50,gross:500000,deduction:40000,net:460000,earnings:[{name:'기본급',amount:500000}],deductions:[]},'2026-09');
   ok('급여 설명: 첫 줄 실수령',ex[0].startsWith('9월 실수령 640,000원'));ok('급여 설명: 지난달 비교',ex.at(-1).includes('180,000원 많아요')&&ex.at(-1).includes('+10시간')&&ex.at(-1).includes('주휴수당 +100,000원'));ok('급여 설명: 보험',ex.some(x=>x.startsWith('4대보험 30,000원')));}

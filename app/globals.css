@@ -695,3 +695,5 @@ body.ms-dragging,body.ms-dragging *{user-select:none!important;-webkit-user-sele
 .ms-video{display:inline-flex;align-items:center;min-height:44px;font-weight:600;color:#17583f}
 .open-api summary{min-height:44px;display:flex;align-items:center;padding:0 16px;cursor:pointer;font-weight:600}.open-api code{word-break:break-all;font-size:12px}.open-api h3{font-size:15px;margin:12px 0 4px}.open-api input[aria-label="웹훅 주소"]{min-height:48px;flex:1;min-width:0}
 .lang-pick select{min-height:44px;border:1px solid #b5c8ba;border-radius:999px;padding:0 10px;background:#fff;font-size:14px}
+.mfa-card{max-width:420px;margin:40px auto;padding:24px;display:grid;gap:12px}.mfa-input{min-height:52px;font-size:24px;letter-spacing:.3em;width:12em;max-width:100%;text-align:center}.mfa-codes{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;padding:0;list-style:none;margin:8px 0}.mfa-setup img{display:block;margin:8px 0}.totp-panel form{flex-wrap:wrap;gap:8px}
+.sp-grid{display:grid;gap:12px}@media(min-width:760px){.sp-grid{grid-template-columns:1fr 1fr}}.sp-img{max-width:100%;max-height:60vh;object-fit:contain;border:1px solid #d7e4dc;border-radius:8px}

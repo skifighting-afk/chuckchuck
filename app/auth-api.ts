@@ -1,6 +1,7 @@
 // 로그인·가입·비밀번호는 Supabase Auth가 맡는다. 이 파일은
 // 1) 요청의 Supabase 토큰을 확인해 기존 코드가 쓰던 oai-authenticated-user-* 헤더로 바꿔 주고
 // 2) 화면의 /api/auth 요청(가입·로그인·비밀번호 찾기·이메일 확인)을 Supabase Auth로 중계한다.
+import {verifyTotp,newSecret,otpauthUri,backupCodes,sessionKeyOf} from '../lib/totp';
 import {digest,randomToken,validPassword} from '../lib/password';
 import {serverError,reportError} from '../lib/errors';
 import {mailReady,sendMail} from '../lib/mail';
@@ -39,14 +40,18 @@ async function appUser(env:Env,user:any){
 }
 
 /** 요청의 Supabase 토큰을 확인해 신원 헤더를 붙인다. 브라우저가 보낸 신원 헤더는 항상 지운다. */
+const sessionHash=async(token:string)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode('mfa:'+sessionKeyOf(token))))).map(n=>n.toString(16).padStart(2,'0')).join('');
+const codeHash=async(c:string)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode('backup:'+c.toUpperCase().replace(/[\s-]/g,''))))).map(n=>n.toString(16).padStart(2,'0')).join('');
 export async function withNativeIdentity(request:Request,env:Env){
  const headers=new Headers(request.headers);
- for(const name of [...headers.keys()])if(name.startsWith('oai-authenticated-user-'))headers.delete(name);
+ for(const name of [...headers.keys()])if(name.startsWith('oai-authenticated-user-'))headers.delete(name);headers.delete('x-cc-mfa-required');
  const token=bearer(request);
  if(token&&token!==env.SUPABASE_ANON_KEY&&token.length<4096){
   const r=await gotrue(env,'/user',{token}).catch(()=>null);
   const user=r?.ok&&r.data?.id&&r.data?.email?await appUser(env,r.data):null;
-  if(user){headers.set('oai-authenticated-user-id',user.id);headers.set('oai-authenticated-user-email',user.email);headers.set('oai-authenticated-user-full-name',encodeURIComponent(user.name));headers.set('oai-authenticated-user-full-name-encoding','percent-encoded-utf-8');headers.set('oai-authenticated-user-native-role',user.role);headers.set('oai-authenticated-user-email-verified',String(!!user.email_verified));}
+  // 지시서 098: 2단계 인증을 켠 사람은 인증 코드를 넣은 세션만 들어온다(비밀번호만으로 받은 토큰은 막음)
+  if(user&&user.totp_enabled&&!await env.DB.prepare('SELECT 1 FROM mfa_sessions WHERE session_key=?').bind(await sessionHash(token)).first().catch(()=>null)){headers.set('x-cc-mfa-required','1')}
+  else if(user){headers.set('oai-authenticated-user-id',user.id);headers.set('oai-authenticated-user-email',user.email);headers.set('oai-authenticated-user-full-name',encodeURIComponent(user.name));headers.set('oai-authenticated-user-full-name-encoding','percent-encoded-utf-8');headers.set('oai-authenticated-user-native-role',user.role);headers.set('oai-authenticated-user-email-verified',String(!!user.email_verified));}
  }
  return new Request(request,{headers});
 }
@@ -64,6 +69,22 @@ export async function nativeAuth(request:Request,env:Env){
    // 작업 060: 기본은 이 기기만, everywhere=true면 모든 기기에서 로그아웃
    const token=bearer(request);if(token&&token!==env.SUPABASE_ANON_KEY)await gotrue(env,'/logout?scope='+(b.everywhere===true?'global':'local'),{method:'POST',token}).catch(()=>null);
    return json({ok:true,session:null});
+  }
+  if(['totpStatus','totpSetup','totpEnable','totpVerify','totpDisable'].includes(b.action)){// 지시서 098: 2단계 인증
+   const token=bearer(request);if(!token||token===env.SUPABASE_ANON_KEY)return json({error:'로그인한 뒤 다시 시도해 주세요.'},401);
+   const me=await gotrue(env,'/user',{token}).catch(()=>null);if(!(me as any)?.ok||!(me as any).data?.id)return json({error:'다시 로그인해 주세요.'},401);
+   const u=await appUser(env,(me as any).data);if(!u)return json({error:'계정을 찾을 수 없어요. 다시 로그인해 주세요.'},401);
+   const sk=await sessionHash(token),verified=!u.totp_enabled||!!await env.DB.prepare('SELECT 1 FROM mfa_sessions WHERE session_key=?').bind(sk).first();
+   if(b.action==='totpStatus')return json({enabled:!!u.totp_enabled,verified,backupLeft:JSON.parse(u.totp_backup||'[]').length});
+   if(!await authLimit(env,'totp:'+u.id,8,15*60000))return json({error:'코드를 여러 번 틀렸어요. 15분 뒤 다시 해 주세요.'},429);
+   const check=async(code:string)=>{const c=String(code||'').trim();const step=u.totp_secret?await verifyTotp(u.totp_secret,c.replace(/\s/g,''),Date.now(),Number(u.totp_step??-1)):-1;if(step>=0){await env.DB.prepare('UPDATE app_users SET totp_step=? WHERE id=?').bind(step,u.id).run();return true}
+    if(u.totp_enabled&&/^[0-9A-Za-z-]{8,12}$/.test(c)){const list:string[]=JSON.parse(u.totp_backup||'[]'),h=await codeHash(c);if(list.includes(h)){await env.DB.prepare('UPDATE app_users SET totp_backup=? WHERE id=?').bind(JSON.stringify(list.filter(x=>x!==h)),u.id).run();return true}}return false};
+   if(b.action==='totpSetup'){if(u.totp_enabled)return json({error:'이미 켜져 있어요. 끄려면 먼저 끄기를 눌러 주세요.'},400);const secret=newSecret();await env.DB.prepare('UPDATE app_users SET totp_secret=?,totp_step=-1 WHERE id=?').bind(secret,u.id).run();return json({secret,uri:otpauthUri(secret,u.email)})}
+   if(b.action==='totpEnable'){if(u.totp_enabled)return json({error:'이미 켜져 있어요.'},400);if(!u.totp_secret)return json({error:'먼저 인증 앱 등록을 시작해 주세요.'},400);if(!await check(b.otp))return json({error:'코드가 맞지 않아요. 인증 앱의 지금 6자리를 넣어 주세요.'},400);
+    const codes=backupCodes();await env.DB.prepare('UPDATE app_users SET totp_enabled=?,totp_backup=? WHERE id=?').bind(true,JSON.stringify(await Promise.all(codes.map(codeHash))),u.id).run();await env.DB.prepare('INSERT INTO mfa_sessions(session_key,user_id,created_at) VALUES(?,?,?) ON CONFLICT (session_key) DO NOTHING').bind(sk,u.id,new Date().toISOString()).run();
+    return json({ok:true,enabled:true,backupCodes:codes})}
+   if(b.action==='totpVerify'){if(!u.totp_enabled)return json({ok:true});if(!await check(b.otp))return json({error:'코드가 맞지 않아요. 인증 앱의 지금 6자리나 비상 코드를 넣어 주세요.'},400);await env.DB.prepare('INSERT INTO mfa_sessions(session_key,user_id,created_at) VALUES(?,?,?) ON CONFLICT (session_key) DO NOTHING').bind(sk,u.id,new Date().toISOString()).run();await env.DB.prepare('DELETE FROM mfa_sessions WHERE user_id=? AND created_at<?').bind(u.id,new Date(Date.now()-90*86400000).toISOString()).run();return json({ok:true})}
+   if(b.action==='totpDisable'){if(!u.totp_enabled)return json({ok:true,enabled:false});if(!verified||!await check(b.otp))return json({error:'코드가 맞지 않아요. 인증 앱의 지금 6자리나 비상 코드를 넣어 주세요.'},400);await env.DB.prepare("UPDATE app_users SET totp_enabled=?,totp_secret='',totp_backup='[]',totp_step=-1 WHERE id=?").bind(false,u.id).run();await env.DB.prepare('DELETE FROM mfa_sessions WHERE user_id=?').bind(u.id).run();return json({ok:true,enabled:false})}
   }
   if(b.action==='loginHistory'){// 지시서 098: 내 최근 로그인 기록(성공·실패)
    const token=bearer(request);if(!token||token===env.SUPABASE_ANON_KEY)return json({error:'로그인한 뒤 다시 시도해 주세요.'},401);
@@ -152,6 +173,7 @@ export async function nativeAuth(request:Request,env:Env){
    const note=async(uid:string|undefined,ok:boolean)=>{if(!uid)return;const ipShort=ip.includes(':')?ip.split(':').slice(0,3).join(':')+':…':ip.split('.').slice(0,2).join('.')+'.*.*';await env.DB.prepare('INSERT INTO login_events(id,user_id,at,ok,device,ip) VALUES(?,?,?,?,?,?)').bind(crypto.randomUUID(),uid,new Date().toISOString(),ok,deviceName(request.headers.get('user-agent')||''),ipShort).run().catch(()=>null);await env.DB.prepare("DELETE FROM login_events WHERE user_id=? AND at<?").bind(uid,new Date(Date.now()-90*86400000).toISOString()).run().catch(()=>null)};
    if(!login.ok||!login.data?.user){const u=await env.DB.prepare('SELECT id FROM app_users WHERE lower(email)=?').bind(email).first<any>().catch(()=>null);await note(u?.id,false);return json({error:'이메일 또는 비밀번호를 확인해 주세요.'},401);}
    const user=await appUser(env,login.data.user);await note(user.id,true);
+   if(user.totp_enabled)return json({ok:true,mfaRequired:true,role:user.role,emailVerified:!!user.email_verified,session:session(login.data)});
    return json({ok:true,role:user.role,emailVerified:!!user.email_verified,session:session(login.data)});
   }
   return json({error:'이 방법으로는 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},400);

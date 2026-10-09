@@ -52,7 +52,7 @@ export function accountView(a:any,contractsThisMonth=0){
 }
 export async function accountApi(request:Request,env:Env){
  const id=request.headers.get('oai-authenticated-user-id');
- if(!id)return json({error:'로그인 후 이용해 주세요.',code:'SIGN_IN_REQUIRED'},401);
+ if(!id)return request.headers.get('x-cc-mfa-required')?json({error:'인증 앱의 6자리 코드를 넣어 주세요.',code:'MFA_REQUIRED'},401):json({error:'로그인 후 이용해 주세요.',code:'SIGN_IN_REQUIRED'},401);
  try{
   const email=request.headers.get('oai-authenticated-user-email')||'';
   const linked=await resolveStore(env.DB,id);

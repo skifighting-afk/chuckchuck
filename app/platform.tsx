@@ -33,6 +33,8 @@ const PricingPage=lazy(()=>import('./public-pages').then(x=>({default:x.PricingP
 const StatusPage=lazy(()=>import('./status-page').then(x=>({default:x.StatusPage})));
 const Support=lazy(()=>import('./support').then(x=>({default:x.Support})));
 const SharePage=lazy(()=>import('./accountant-share').then(x=>({default:x.SharePage})));
+const TotpPanel=lazy(()=>import('./totp-ui').then(x=>({default:x.TotpPanel})));
+const MfaPrompt=lazy(()=>import('./totp-ui').then(x=>({default:x.MfaPrompt})));
 const KioskPage=lazy(()=>import('./kiosk').then(x=>({default:x.KioskPage})));
 const SupportDesk=lazy(()=>import('./support').then(x=>({default:x.SupportDesk})));
 const PasswordDesk=lazy(()=>import('./support').then(x=>({default:x.PasswordDesk})));
@@ -51,12 +53,12 @@ const signOut='/signout-with-chatgpt?return_to=%2Flogin';
 export default function Platform(){
  const [account,setAccount]=useState<any>(null),[status,setStatus]=useState('loading'),[error,setError]=useState('');
  const path=location.pathname,query=new URLSearchParams(location.search),invite=query.get('invite'),qrEntry=attendanceQrEntry(path,location.search);
- const reload=async()=>{setError('');setStatus('loading');try{const r=await fetch('/api/account');const d:any=await r.json();if(r.status===401){setStatus('anonymous');return}if(!r.ok)throw Error(d.error);setAccount(d);setStatus('ready')}catch(e){setError(e instanceof Error?e.message:'연결할 수 없습니다.');setStatus('error')}};
+ const reload=async()=>{setError('');setStatus('loading');try{const r=await fetch('/api/account');const d:any=await r.json();if(r.status===401){setStatus(d.code==='MFA_REQUIRED'?'mfa':'anonymous');return}if(!r.ok)throw Error(d.error);setAccount(d);setStatus('ready')}catch(e){setError(e instanceof Error?e.message:'연결할 수 없습니다.');setStatus('error')}};
  useEffect(()=>{if(!['/demo','/try','/start','/calculator','/help','/refund','/admin','/admin/login','/kiosk'].includes(path))reload()},[]);
  if(path==='/admin/login')return <Shell><main className="native-auth-wrap"><AuthForm role="owner" next="/admin" account={null} admin/></main></Shell>;
  if(path==='/admin')return <Shell><AdminDesk/><SupportDesk/><PasswordDesk/><section className="saas-account" aria-label="본사 알림"><p className="saas-fine">서버 오류가 10분 안에 3번 넘게 나면 이 기기로 알림을 보내요.</p><PushToggle/></section></Shell>;
  if(path==='/verify-email')return <Shell><VerifyEmail/></Shell>;
- if(path==='/withdraw')return <Shell><DeviceSessions/><PushToggle/><Withdraw/></Shell>;
+ if(path==='/withdraw')return <Shell><DeviceSessions/><TotpPanel/><PushToggle/><Withdraw/></Shell>;
  if(path==='/calculator')return <Shell><Calculator/></Shell>;
  if(path==='/help')return <Shell><Help/></Shell>;
  if(path==='/refund')return <Shell><RefundPolicy/></Shell>;
@@ -70,6 +72,7 @@ export default function Platform(){
  if(path==='/terms'||path==='/privacy')return <Shell><LegalPage privacy={path==='/privacy'}/></Shell>;
  if(status==='loading')return <Shell><div className="auth-card"><Clock3 className="auth-icon"/><h1>척척사장을 준비하고 있어요.</h1><p>계정과 매장 연결을 확인합니다.</p></div></Shell>;
  if(status==='error')return <Shell><div className="auth-card"><h1>잠시 연결이 어렵습니다.</h1><p role="alert">{error}</p><Button onClick={reload}>다시 연결</Button><a href="/login">로그인 화면</a><a href="/contracts">내 서류 보기</a><a href="/withdraw">회원 탈퇴</a></div></Shell>;
+ if(status==='mfa')return <Shell><MfaPrompt onDone={()=>location.reload()}/></Shell>;
  if(status==='anonymous'&&path==='/')return <Shell><Landing/></Shell>;
  if(status==='anonymous'||path==='/login')return <Login account={account} role={(query.has('reset')||query.get('mode')==='reset')?'owner':qrEntry?'employee':path==='/employee'?'employee':query.get('role')==='employee'?'employee':path==='/signup'?'owner':query.get('role')==='owner'?'owner':undefined} next={qrEntry|| (query.get('role')==='employee'?'/employee':path==='/employee'?'/employee'+location.search:invite?'/?invite='+encodeURIComponent(invite):query.get('next')==='/account'?'/account':path==='/signup'?'/signup?plan='+(planId(query.get('plan'))?query.get('plan'):'free'):'/app')}/>;
  if(account?.mustChangePassword)return <Shell><ChangePasswordGate onDone={reload}/></Shell>;
