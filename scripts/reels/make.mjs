@@ -114,7 +114,7 @@ h1{position:absolute;left:96px;right:96px;top:450px;margin:0;font-size:${choice[
 const pages=[cover,core,...(phone?[phone]:[]),end];
 const labels=['훅(썸네일)','핵심',...(phone?['앱 화면']:[]),'댓글 질문'];
 const pick=(arr,k=0)=>arr[(index+k)%arr.length];
-const lines=[hookLine,coreLine,...(phone?[pick(['앱에선 이렇게 바로 보여!','버튼 한 번이면 끝!','척척사장이면 진짜 쉬워!'])]:[]),`${choice[1]}면 1, ${choice[2]}면 2! 댓글로!`].map(speak);
+const lines=[hookLine,coreLine,...(phone?[pick(['앱에선 이렇게 바로 보여!','버튼 한 번이면 끝!','척척사장이면 진짜 쉬워!'])]:[]),`${choice[1]}? 아니면 ${choice[2]}? 댓글로 숫자만!`].map(speak);
 // 글만 보여 줄 때 시간(초)
 const secs=[Math.min(3,Math.max(2.2,hookLine.replace(/\s/g,'').length/7)),Math.min(5,Math.max(3,coreLine.replace(/\s/g,'').length/8)),...(phone?[2.6]:[]),3];
 
