@@ -1,8 +1,8 @@
 // 인스타 릴스 자동 만들기: topics.json의 질문 하나 → 세로 영상(1080×1920, 15초 안쪽) + 글 + 표지.
-// 구성: 썸네일 겸 질문 → 핵심 한 줄 → 실제 앱 화면("척척사장에선 이렇게") → 마무리.
+// 구성: 썸네일 겸 첫 3초 훅(hooks.json 5종 중 하나) → 핵심 한 줄 → 실제 앱 화면("척척사장에선 이렇게") → 저장·댓글 부르는 양자택일 마무리.
 // 카드마다 무료 AI 목소리(MeloTTS 한국어) 나레이션. 대본은 say.json(말하듯 쓴 짧은 대본), 자세한 답은 캡션에.
 // 화면 카드는 Chromium으로 찍고, ffmpeg로 이어 붙인다(H.264·30fps·AAC 48kHz, 인스타 릴스 규격).
-// 사용: node scripts/reels/make.mjs [--index N] [--out 폴더] [--site 주소] [--no-voice] [--no-screens] [--mute]
+// 사용: node scripts/reels/make.mjs [--index N] [--hook break|loss|number|empathy|flip] [--out 폴더] [--site 주소] [--no-voice] [--no-screens] [--mute]
 //   --index 없으면 2026-10-05부터 하루에 하나씩 차례로 고른다.
 //   목소리 모델이 없거나 실패하면 배경음만, 앱 화면을 못 찍으면 화면 카드 없이 만든다.
 import {chromium} from 'playwright';
@@ -29,7 +29,16 @@ const LIMIT=15;// 영상 길이 상한(초)
 
 // 대본: [첫 말, 핵심 한 줄, 썸네일 큰 글씨]. 없으면 질문·답 첫 문장으로 대신
 const SAY=JSON.parse(readFileSync(new URL('./say.json',import.meta.url),'utf8'))[t.id]||[t.q,t.a.split(/(?<=[.!?])\s+/)[0],t.q.split(' ')[0]];
-const [hookLine,coreLine,kw]=SAY;
+// 3단계 대본(hooks.json): 첫 3초 훅 5종 중 고른 하나 → 핵심 한 줄 → 저장·댓글 부르는 양자택일 마무리
+const HOOKS=JSON.parse(readFileSync(new URL('./hooks.json',import.meta.url),'utf8'));
+const H=HOOKS[t.id];
+const hookType=arg('--hook',H?.pick);
+const hookLine=H?.hooks?.[hookType]||SAY[0];
+const coreLine=SAY[1];
+const kw=H?.kw||SAY[2];
+const choice=H?.choice||['우리 가게는?','해당된다','아니다'];
+const next=topics[(index+1)%topics.length];
+const nextKw=HOOKS[next.id]?.kw||next.q;
 
 const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const FONT="'Noto Sans CJK KR','Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif";
@@ -43,7 +52,7 @@ const cover=shell(`
 <div class="ring r1"></div><div class="ring r2"></div>
 <div class="top"><div class="brand"><i>척</i>척척사장</div><span class="sticker">${law?'사장님 필수 상식':'척척사장 꿀팁'}</span></div>
 <div class="kw"><span>${esc(kw)}</span></div>
-<h1>${esc(t.q)}</h1>
+<h1>${esc(hookLine)}</h1>
 <div class="bubble">10초면 끝!</div>
 ${wave?`<img class="pal" src="${wave}" alt="">`:''}`,'#c8f169','#10251b',`
 .ring{position:absolute;border-radius:50%;border:56px solid rgba(255,255,255,.35)}.r1{width:900px;height:900px;right:-260px;bottom:120px}.r2{width:420px;height:420px;left:-160px;top:300px;border-width:40px}
@@ -86,21 +95,28 @@ h2{position:absolute;left:96px;top:330px;margin:0;font-size:84px;font-weight:900
 // 3) 마무리
 const end=shell(`
 <div class="brand" style="position:absolute;left:96px;top:240px"><i>척</i>척척사장</div>
-<h1>${law?'이런 계산,<br>앱이 대신 해요':'사장님 일,<br>이제 척척.'}</h1>
-<div class="cta">30일 무료 · 프로필 링크</div>
-<div class="url">chukchukapp.kr${law?' · 상담 1350':''}</div>
+<div class="save">저장해 두고 필요할 때 꺼내 봐</div>
+<h1>${esc(choice[0])}</h1>
+<div class="opt"><b>1</b>${esc(choice[1])}</div>
+<div class="opt o2"><b>2</b>${esc(choice[2])}</div>
+<div class="say">댓글에 숫자만 남겨 줘!</div>
+<div class="url">30일 무료 · chukchukapp.kr${law?' · 상담 1350':''}</div>
 ${wave?`<img class="pal" src="${wave}" alt="">`:''}`,'#10251b','#ffffff',`
-h1{position:absolute;left:96px;top:420px;margin:0;font-size:120px;line-height:1.2;font-weight:900;letter-spacing:-4px}
-.cta{position:absolute;left:96px;top:780px;background:#c8f169;color:#10251b;font-size:60px;font-weight:900;padding:24px 44px;border-radius:999px}
-.url{position:absolute;left:100px;top:940px;font-size:44px;color:#d9eadf;font-weight:700}
-.pal{position:absolute;right:20px;bottom:180px;width:600px;height:600px;object-fit:contain}`);
+.save{position:absolute;left:96px;top:360px;font-size:42px;font-weight:800;color:#c8f169}
+h1{position:absolute;left:96px;right:96px;top:450px;margin:0;font-size:${choice[0].length>12?92:108}px;line-height:1.18;font-weight:900;letter-spacing:-4px}
+.opt{position:absolute;left:96px;top:760px;display:flex;align-items:center;gap:24px;background:#ffffff;color:#10251b;font-size:60px;font-weight:900;padding:22px 40px 22px 22px;border-radius:999px}
+.opt.o2{top:900px;background:#c8f169}
+.opt b{width:84px;height:84px;border-radius:50%;background:#10251b;color:#c8f169;display:flex;align-items:center;justify-content:center;font-size:52px}
+.say{position:absolute;left:100px;top:1060px;font-size:48px;font-weight:800;color:#d9eadf}
+.url{position:absolute;left:100px;top:1150px;font-size:36px;color:#9fbcaa;font-weight:700}
+.pal{position:absolute;right:0;bottom:120px;width:520px;height:520px;object-fit:contain}`);
 
 const pages=[cover,core,...(phone?[phone]:[]),end];
-const labels=['질문(썸네일)','핵심',...(phone?['앱 화면']:[]),'마무리'];
+const labels=['훅(썸네일)','핵심',...(phone?['앱 화면']:[]),'댓글 질문'];
 const pick=(arr,k=0)=>arr[(index+k)%arr.length];
-const lines=[hookLine,coreLine,...(phone?[pick(['앱에선 이렇게 바로 보여요!','버튼 한 번이면 끝!','척척사장이면 진짜 쉬워요!'])]:[]),pick(law?['이제 척척사장한테 맡기세요!','계산은 척척사장이 할게요!','삼십 일 무료로 써 보세요!']:['삼십 일 무료로 써 보세요!','사장님 일, 이제 척척!','프로필 링크로 오세요!'],1)].map(speak);
+const lines=[hookLine,coreLine,...(phone?[pick(['앱에선 이렇게 바로 보여!','버튼 한 번이면 끝!','척척사장이면 진짜 쉬워!'])]:[]),`${choice[1]}? 아니면 ${choice[2]}? 댓글로 숫자만!`].map(speak);
 // 글만 보여 줄 때 시간(초)
-const secs=[2.2,Math.min(5,Math.max(3,coreLine.replace(/\s/g,'').length/8)),...(phone?[2.6]:[]),2.4];
+const secs=[Math.min(3,Math.max(2.2,hookLine.replace(/\s/g,'').length/7)),Math.min(5,Math.max(3,coreLine.replace(/\s/g,'').length/8)),...(phone?[2.6]:[]),3];
 
 const page=await browser.newPage({viewport:{width:1080,height:1920},deviceScaleFactor:1});
 const pngs=[];
@@ -155,8 +171,8 @@ execFileSync('ffmpeg',['-y','-loglevel','error',...inputs,'-filter_complex',filt
 execFileSync('ffmpeg',['-y','-loglevel','error','-i',pngs[0],'-q:v','3',join(out,'cover.jpg')]);
 
 const tags='#자영업 #자영업자 #사장님 #소상공인 #알바관리 #직원관리 #노무상식 #주휴수당 #최저시급 #근로계약서 #급여명세서 #척척사장';
-const caption=`${t.q}\n\n${t.a}\n\n${law?'※ 일반적인 기준이에요. 사정마다 다를 수 있으니 애매하면 고용노동부 상담센터(1350)에 확인하세요.\n\n':''}이런 계산과 서류, 척척사장이 대신 해요. 30일 무료 · 카드 등록 없이 👉 프로필 링크\n\n${tags}`;
+const caption=`${hookLine}\n\n${t.q}\n${t.a}\n\n${law?'※ 일반적인 기준이에요. 사정마다 다를 수 있으니 애매하면 고용노동부 상담센터(1350)에 확인하세요.\n\n':''}📌 급할 때 꺼내 보게 저장해 둬요.\n\n${choice[0]}\n1️⃣ ${choice[1]}  2️⃣ ${choice[2]}\n댓글에 숫자만 남겨 주세요!\n\n내일은 '${nextKw}' 편이에요. 놓치기 싫으면 팔로우 👉 @chukchukbot_official\n\n이런 계산과 서류, 척척사장이 대신 해요. 30일 무료 · 카드 등록 없이 👉 프로필 링크\n\n${tags}`;
 writeFileSync(join(out,'caption.txt'),caption);
-const pred=predict({q:t.q,cards:[coreLine],secs,audio:!mute,voice:!!voice});
-writeFileSync(join(out,'meta.json'),JSON.stringify({index,id:t.id,q:t.q,kw,group:t.group,seconds:Number(total.toFixed(1)),cover:join(out,'cover.jpg'),predict:pred,music,voice,screens:{site:site.replace(/^https?:\/\//,''),screen:scr.screen||null,count:phone?1:0},timeline:secs.map((sec,i)=>({label:labels[i],sec:Math.round(sec*10)/10,voice:!!voices[i],cps:i===1?Math.round(coreLine.replace(/\s/g,'').length/sec*10)/10:null}))},null,1));
+const pred=predict({q:hookLine,cards:[coreLine],secs,audio:!mute,voice:!!voice});
+writeFileSync(join(out,'meta.json'),JSON.stringify({index,id:t.id,q:t.q,hook:hookLine,hookType,choice,kw,group:t.group,seconds:Number(total.toFixed(1)),cover:join(out,'cover.jpg'),predict:pred,music,voice,screens:{site:site.replace(/^https?:\/\//,''),screen:scr.screen||null,count:phone?1:0},timeline:secs.map((sec,i)=>({label:labels[i],sec:Math.round(sec*10)/10,voice:!!voices[i],cps:i===1?Math.round(coreLine.replace(/\s/g,'').length/sec*10)/10:null}))},null,1));
 console.log(`릴스 만듦: ${index}번 "${t.q}" · ${total.toFixed(1)}초 · 예상 점수 ${pred.score} → ${mp4}`);
