@@ -6,7 +6,7 @@ declare const __META_PIXEL_ID__: string;
 const ID = typeof __META_PIXEL_ID__ !== 'undefined' && /^\d{15,16}$/.test(__META_PIXEL_ID__) ? __META_PIXEL_ID__ : '';
 const PUBLIC_PATH = /^\/(pricing|calculator|help|start|signup|login|demo)?\/?$/;
 
-type Fbq = ((...args: unknown[]) => void) & {queue?: unknown[][]; callMethod?: (...a: unknown[]) => void; loaded?: boolean; version?: string; push?: unknown};
+type Fbq = ((...args: unknown[]) => void) & {queue?: unknown[][]; callMethod?: (...a: unknown[]) => void; loaded?: boolean; version?: string; push?: unknown; disablePushState?: boolean; allowDuplicatePageViews?: boolean};
 let started = false;
 
 function start() {
@@ -16,11 +16,15 @@ function start() {
     // 메타 안내 코드와 같은 대기열. 인라인 스크립트를 못 쓰는 보안 정책(CSP) 때문에 여기서 만든다.
     const q: Fbq = (...args: unknown[]) => { q.callMethod ? q.callMethod(...args) : q.queue!.push(args); };
     q.queue = []; q.loaded = true; q.version = '2.0'; q.push = q;
+    // 화면 안에서 주소만 바뀔 때(가게 화면으로 넘어갈 때) 메타가 저절로 방문을 보내지 않게 막는다.
+    q.disablePushState = true; q.allowDuplicatePageViews = false;
     w.fbq = q; w._fbq = q;
     const s = document.createElement('script');
     s.async = true; s.src = 'https://connect.facebook.net/en_US/fbevents.js';
     document.head.appendChild(s);
   }
+  // 버튼 클릭 같은 자동 수집을 끄고, 우리가 고른 두 가지(방문·가입 완료)만 보낸다.
+  w.fbq!('set', 'autoConfig', false, ID);
   w.fbq!('init', ID);
   started = true;
   return true;
