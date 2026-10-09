@@ -27,6 +27,12 @@ const api=async(path,params,method='POST')=>{
  if(!r.ok||d.error)throw Error(`인스타 API 오류 (${path.split('/').pop()}): ${d.error?.message||r.status}`);
  return d;
 };
+// 0) 두 번 올리기 막기: 예약 실행이 늦게 돌거나 손으로 한 번 더 돌려도, 최근 12시간 안에 올린 릴스가 있으면 건너뛴다(FORCE_POST=1이면 무시)
+if(process.env.FORCE_POST!=='1'){
+ const recent=await api(`${user}/media`,{fields:'timestamp,media_product_type',limit:'3'},'GET').catch(()=>null);
+ const last=(recent?.data||[]).find(m=>m.media_product_type==='REELS');
+ if(last&&Date.now()-new Date(last.timestamp).getTime()<12*3600000){console.log(`최근 12시간 안에 올린 릴스가 있어 건너뛰었어요 (${last.timestamp}).`);process.exit(0)}
+}
 // 1) 릴스 상자 만들기
 //   인스타 로그인 방식 계정은 영상 직접 올리기를 받지 않아(video_url 필요), 워크플로가 공개 주소(REEL_VIDEO_URL)를 만들어 준다.
 //   표지는 REEL_COVER_URL(첫 화면 썸네일)로 지정한다. 주소가 없으면 직접 올리기를 시도한다.
