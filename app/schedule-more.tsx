@@ -45,7 +45,7 @@ export function OpenShiftsOwner({s,es,branch,date,busy,save}:{s:Team,es:Team['em
  const list:Open[]=((s as any).openShifts||[]).filter((o:Open)=>o.branchId===branch&&o.status!=='취소'&&o.date>=datePlus(date,-7)).sort((a:Open,b:Open)=>(a.date+a.start).localeCompare(b.date+b.start));
  const [f,setF]=useState<any>(null),[msg,setMsg]=useState('');
  const name=(id?:string)=>es.find(e=>e.id===id)?.name||'직원';
- const post=async()=>{const o:Open={id:crypto.randomUUID(),branchId:branch,date:f.date,start:f.start,end:f.end,breakMinutes:Number(f.breakMinutes)||0,...(f.position?{position:f.position}:{}),...(f.note?{note:f.note}:{}),status:'모집 중',createdAt:new Date().toISOString()};
+ const post=async()=>{const o:Open={id:crypto.randomUUID(),branchId:branch,date:f.date,start:f.start,end:f.end,breakMinutes:Number(f.breakMinutes)||0,...(f.position?{position:f.position}:{}),...(f.note?{note:f.note}:{}),...(f.anyBranch?{anyBranch:true}:{}),status:'모집 중',createdAt:new Date().toISOString()};
   if(o.start===o.end){setMsg('시작과 끝 시간을 다르게 정해 주세요.');return}
   if(await save({...s,openShifts:[...((s as any).openShifts||[]),o].slice(-500)} as any)){setF(null);setMsg(`${md(o.date)} ${o.start}–${o.end} 빈 근무를 올렸어요. 매장 직원에게 알림이 가요.`)}};
  const cancel=async(o:Open)=>{if(await save({...s,openShifts:((s as any).openShifts||[]).map((x:Open)=>x.id===o.id?{...x,status:'취소'}:x)} as any))setMsg('모집을 내렸어요.')};
@@ -57,11 +57,11 @@ export function OpenShiftsOwner({s,es,branch,date,busy,save}:{s:Team,es:Team['em
     <label>끝 <input type="time" required value={f.end} onChange={e=>setF({...f,end:e.target.value})}/></label>
     <label>휴게(분) <input type="number" min={0} max={480} value={f.breakMinutes} onChange={e=>setF({...f,breakMinutes:e.target.value})}/></label>
     <label>포지션(선택) <input maxLength={20} value={f.position} onChange={e=>setF({...f,position:e.target.value})} placeholder="예: 주방"/></label>
-    <label>메모(선택) <input maxLength={200} value={f.note} onChange={e=>setF({...f,note:e.target.value})} placeholder="예: 마감 청소 포함"/></label></div>
+    <label>메모(선택) <input maxLength={200} value={f.note} onChange={e=>setF({...f,note:e.target.value})} placeholder="예: 마감 청소 포함"/></label></div>{s.branches.length>1&&<label className="t-check"><input type="checkbox" checked={!!f.anyBranch} onChange={e=>setF({...f,anyBranch:e.target.checked})}/> 다른 지점 직원에게도 알리기(지원 근무로 들어가요)</label>}
     <p className="footnote">먼저 '맡을게요'를 누른 직원에게 바로 들어가요. 그 직원 근무와 겹치거나 연소자 제한에 걸리면 맡을 수 없어요.</p>
     <div className="actions"><button type="button" className="secondary" onClick={()=>setF(null)}>취소</button><button type="submit" className="primary" disabled={busy}>올리고 알리기</button></div></form>}
    {msg&&<p role="status" className="saas-success">{msg}</p>}
-   {list.length?<ul className="os-list">{list.map(o=><li key={o.id}><b>{md(o.date)}({W[new Date(o.date+'T00:00:00Z').getUTCDay()]}) {o.start}–{o.end}</b>{o.position&&<span> · {o.position}</span>}{o.note&&<small> · {o.note}</small>} {o.status==='배정됨'?<span className="os-done">✓ {name(o.assignedTo)}님이 맡음</span>:<><span className="os-wait">모집 중</span> <button type="button" className="link-btn" disabled={busy} onClick={()=>cancel(o)}>모집 내리기</button></>}</li>)}</ul>:!f&&<p className="footnote">대타가 필요한 시간을 사람 없이 올려 두면, 같은 매장 직원이 보고 먼저 맡을 수 있어요.</p>}
+   {list.length?<ul className="os-list">{list.map(o=><li key={o.id}><b>{md(o.date)}({W[new Date(o.date+'T00:00:00Z').getUTCDay()]}) {o.start}–{o.end}</b>{o.position&&<span> · {o.position}</span>}{o.note&&<small> · {o.note}</small>}{o.anyBranch&&<small> · 전 지점 모집</small>} {o.status==='배정됨'?<span className="os-done">✓ {name(o.assignedTo)}님이 맡음</span>:<><span className="os-wait">모집 중</span> <button type="button" className="link-btn" disabled={busy} onClick={()=>cancel(o)}>모집 내리기</button></>}</li>)}</ul>:!f&&<p className="footnote">대타가 필요한 시간을 사람 없이 올려 두면, 같은 매장 직원이 보고 먼저 맡을 수 있어요.</p>}
   </div></section>;
 }
 
@@ -71,7 +71,7 @@ export function OpenShiftsStaff({state,selfId,busy,mutate,today}:{state:Team,sel
  const mine:Open[]=((state as any).openShifts||[]).filter((o:Open)=>o.assignedTo===selfId&&o.date>=today);
  if(!list.length&&!mine.length)return null;
  return <section className="panel t-gap open-shifts" aria-labelledby="oss-title"><div className="panel-heading"><h2 id="oss-title">빈 근무 모집 {list.length}건</h2></div><div className="t-panelbody">
-  <ul className="os-list">{list.map(o=><li key={o.id}><b>{md(o.date)}({W[new Date(o.date+'T00:00:00Z').getUTCDay()]}) {o.start}–{o.end}</b> · {duration(o.start,o.end,o.breakMinutes).toFixed(1)}시간{o.position&&<span> · {o.position}</span>}{o.note&&<small> · {o.note}</small>} <button type="button" className="primary" disabled={busy} onClick={()=>mutate({action:'takeOpenShift',id:o.id})}>{L('맡을게요')}</button></li>)}
+  <ul className="os-list">{list.map(o=><li key={o.id}><b>{md(o.date)}({W[new Date(o.date+'T00:00:00Z').getUTCDay()]}) {o.start}–{o.end}</b> · {duration(o.start,o.end,o.breakMinutes).toFixed(1)}시간{o.position&&<span> · {o.position}</span>}{o.branchId!==state.branches[0]?.id&&<span className="badge-soft"> 다른 지점 지원</span>}{o.note&&<small> · {o.note}</small>} <button type="button" className="primary" disabled={busy} onClick={()=>mutate({action:'takeOpenShift',id:o.id})}>{L('맡을게요')}</button></li>)}
    {mine.map(o=><li key={o.id}><span className="os-done">✓ 내가 맡음</span> {md(o.date)} {o.start}–{o.end}</li>)}</ul>
   <p className="footnote">먼저 누른 사람이 맡아요. 누르면 바로 내 근무표에 들어가요.</p></div></section>;
 }

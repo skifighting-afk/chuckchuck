@@ -4,7 +4,7 @@ import {useEffect,useState} from 'react';
 import {type Team,datePlus,won} from '../lib/team-model';
 import {toXls} from '../lib/xls';
 import {PUBLIC_HOLIDAYS} from '../lib/holidays';
-import {juhuShare,payCalendar,accountChangedSince,transferCheck,leavePayout,durunuri,dailyWorkerReport,holidayPremium,copyMonth,weekLoad,weekendCount,fillCandidates,scheduleGrid,readiness,missingInfo,tenureBadge,workHistory,punctuality,habitText,weekdayCost,ratioState,lateHotspots,swapTrend,riskFlags,yearOverYear,shiftKind,repeatsDue,payDayLeft,usageSummary,type Extra,type Repeat} from '../lib/improve2';
+import {changedCells,juhuShare,payCalendar,accountChangedSince,transferCheck,leavePayout,durunuri,dailyWorkerReport,holidayPremium,copyMonth,weekLoad,weekendCount,fillCandidates,scheduleGrid,readiness,missingInfo,tenureBadge,workHistory,punctuality,habitText,weekdayCost,ratioState,lateHotspots,swapTrend,riskFlags,yearOverYear,shiftKind,repeatsDue,payDayLeft,usageSummary,type Extra,type Repeat} from '../lib/improve2';
 
 type Save=(n:Team)=>Promise<any>;
 /** B028 근무표를 바꿀 때 직원 알림에 함께 보낼 사유(다음 저장 한 번에 쓰고 지움) */
@@ -96,6 +96,8 @@ export function ScheduleMore2({s,es,branch,week,busy,save,avail}:{s:Team,es:Team
    <p className="footnote">그 시간에 다른 근무가 없고, 주 최대 시간을 넘지 않는 직원이에요. 가능 시간을 낸 사람이 먼저 나와요.</p></details>
   {clash.length>0&&<p className="notice" role="alert">⚠ 두 지점 근무가 겹쳐요: {clash.map(x=>`${es.find(e=>e.id===x.employeeId)?.name} ${md(x.date)}`).join(', ')}</p>}
   {hol.length>0&&<p className="notice">공휴일 근무 가산(5명 이상 매장, 예상): {hol.map(({x,name})=>{const e:any=es.find(e=>e.id===x.employeeId);return `${e?.name} ${md(x.date)} ${name} +${won(holidayPremium(x as any,e?.payType==='시급'?e.wage:0,true))}원`}).join(' · ')}</p>}
+  {(()=>{const prev=s.shifts.filter(x=>ids.has(x.employeeId)&&x.date>=datePlus(week,-7)&&x.date<=datePlus(week,-1)).map(x=>({...x,date:datePlus(x.date,7)})),cur=others,df=changedCells(prev as any,cur as any);if(!prev.length||(!df.added.length&&!df.removed.length))return null;const nm=(id:string)=>es.find(e=>e.id===id)?.name;
+   return <details><summary>지난주와 달라진 칸 {df.added.length+df.removed.length}개</summary><ul>{cur.filter(x=>df.added.includes(x.id)).map(x=><li key={x.id}>＋ {nm(x.employeeId)} {md(x.date)}({W[new Date(x.date+'T00:00:00Z').getUTCDay()]}) {x.start}–{x.end}</li>)}{df.removed.map((x:any,i:number)=><li key={'r'+i}>－ {nm(x.employeeId)} {md(x.date)}({W[new Date(x.date+'T00:00:00Z').getUTCDay()]}) {x.start}–{x.end} <small>(지난주엔 있었음)</small></li>)}</ul></details>})()}
   {wishes.length>0&&<><h3>쉬고 싶은 날 {wishes.length}건</h3><ul>{wishes.sort((a:any,b:any)=>a.date.localeCompare(b.date)).map((w:any)=><li key={w.id}>{md(w.date)}({W[new Date(w.date+'T00:00:00Z').getUTCDay()]}) {es.find(e=>e.id===w.employeeId)?.name}{w.note&&<small> · {w.note}</small>}{s.shifts.some(x=>x.employeeId===w.employeeId&&x.date===w.date)&&<span className="badge-warn"> 근무 있음</span>}</li>)}</ul></>}
   {msg&&<p role="status" className="saas-success">{msg}</p>}
  </div></section>;
@@ -121,10 +123,11 @@ export function AttendanceMore2({s,es,day,busy,mutate}:{s:Team,es:Team['employee
 /** B132 인건비율 목표 · B133 요일별 · B135 지각 많은 때 · B136 대타 추이 · B137·B138 주의 직원 · B140 작년 같은 달 · B194 이번 달 쓴 기능 */
 export function ReportMore2({s,es,month,swaps,sales,rows=[]}:{s:Team,es:Team['employees'],month:string,swaps?:any[],sales?:number,rows?:any[]}){
  const [rg,setRg]=useState({from:month+'-01',to:todayK()});
+ const [sw,setSw]=useState<any[]>(swaps||[]);useEffect(()=>{if(swaps||/^\/(demo|try)/.test(location.pathname))return;fetch('/api/operations').then(r=>r.ok?r.json():null).then((d:any)=>setSw(d?.swaps||[])).catch(()=>{})},[]);// B136 대타 기록
  const ids=new Set(es.map(e=>e.id)),att=s.attendance.filter(a=>ids.has(a.employeeId)),sh=s.shifts.filter(x=>ids.has(x.employeeId));
  const wd=weekdayCost(att as any,es as any,month),maxC=Math.max(1,...wd.map(x=>x.cost)),hot=lateHotspots(sh as any,att as any,month,tol(s)),risk=riskFlags(sh as any,att as any,es as any,month,prevMonth(month));
  const target=(s.settings as any).more?.laborRatioTarget,total=wd.reduce((t,x)=>t+x.cost,0),sale=sales??(s.settings as any).monthlySales?.[month],rs=ratioState(total,sale||0,target);
- const months=[3,2,1,0].map(n=>{const [y,m]=month.split('-').map(Number);return new Date(Date.UTC(y,m-1-n,1)).toISOString().slice(0,7)}),tr=swapTrend(swaps||[],months),yoy=yearOverYear(s.payrollRuns,month);
+ const months=[3,2,1,0].map(n=>{const [y,m]=month.split('-').map(Number);return new Date(Date.UTC(y,m-1-n,1)).toISOString().slice(0,7)}),tr=swapTrend(sw,months),yoy=yearOverYear(s.payrollRuns,month);
  return <section className="panel t-gap" aria-labelledby="rep2-title"><div className="panel-heading"><h2 id="rep2-title">더 보는 리포트</h2><button type="button" className="secondary" onClick={()=>xls(`리포트-${month}.xls`,[{name:'요일별 인건비',rows:[['요일','인건비(시급 직원)','근무 시간','하루 평균'],...wd.map(x=>[W[x.wd],x.cost,x.hours,x.perDay])]},{name:'지각 많은 때',rows:[['요일','지각'],...hot.weekday.map((n,i)=>[W[i],n])]}])}>엑셀</button></div><div className="t-panelbody">
   {rs&&<p className={rs.over?'notice':'footnote'}>매출 대비 인건비 <b>{rs.pct}%</b>{target?` · 목표 ${target}%${rs.over?' — 목표를 넘었어요':' 안'}`:' · 설정에서 목표 비율을 정할 수 있어요'}</p>}
   <h3>요일별 인건비 <small>(시급 직원 · 출퇴근 기준)</small></h3>
@@ -150,6 +153,7 @@ export function SettingsMore2({s,busy,save}:{s:Team,busy:boolean,save:Save}){
   <label>근무 전 직원 알림 <select value={f.beforeMinutes??60} onChange={e=>setF({...f,beforeMinutes:Number(e.target.value)})}><option value={0}>보내지 않기</option><option value={30}>30분 전</option><option value={60}>1시간 전</option><option value={120}>2시간 전</option><option value={180}>3시간 전</option></select></label>
   <label>아침 브리핑 시각 <select value={f.briefHour??8} onChange={e=>setF({...f,briefHour:Number(e.target.value)})}>{[5,6,7,8,9,10,11].map(h=><option key={h} value={h}>오전 {h}시</option>)}</select></label>
   <label>근무표 나오는 요일(직원 안내) <select value={f.scheduleDue??''} onChange={e=>setF({...f,scheduleDue:e.target.value===''?undefined:Number(e.target.value)})}><option value="">안내 안 함</option>{[...W].map((d,i)=><option key={i} value={i}>{d}요일</option>)}</select></label>
+  <label>지각 몇 번이면 직원 메모에 자동 기록 <select value={f.lateMemo??0} onChange={e=>setF({...f,lateMemo:Number(e.target.value)})}><option value={0}>안 함</option>{[2,3,4,5].map(n=><option key={n} value={n}>이번 달 {n}번</option>)}</select></label>
   <label>매출 대비 인건비 목표(%) <input type="number" min={0} max={100} step={0.5} value={f.laborRatioTarget??''} onChange={e=>setF({...f,laborRatioTarget:e.target.value?Number(e.target.value):undefined})} placeholder="예: 25"/></label>
  </div>
   <label className="t-check"><input type="checkbox" checked={!!f.digest} onChange={e=>setF({...f,digest:e.target.checked})}/> 미출근·퇴근 누락 알림을 낱개 대신 저녁 9시에 하루 요약으로 받기</label>
@@ -225,17 +229,18 @@ export function PayMore2({s,es,month,branch,rows,busy,save}:{s:Team,es:Team['emp
 /* ───────── 지점 ───────── */
 /** B139 지점별 인건비 순위 · B169 전 지점 합계 · B162 비교 표 엑셀 · B134 시간당 매출(매출을 넣은 달) */
 export function BranchCompare2({s,month}:{s:Team,month:string}){
- const [sort,setSort]=useState<'cost'|'hours'|'ratio'>('cost');
+ const [sort,setSort]=useState<'cost'|'hours'|'ratio'>('cost'),[runs,setRuns]=useState<any[]>([]);
+ useEffect(()=>{if(s.branches.length<2||/^\/(demo|try)/.test(location.pathname))return;fetch('/api/manual').then(r=>r.ok?r.json():null).then((d:any)=>setRuns(d?.checkRuns||[])).catch(()=>{})},[s.branches.length]);// B170 최근 7일 체크
  if(s.branches.length<2)return null;
  const sales=(s.settings as any).monthlySales?.[month];
  const rows=s.branches.map(b=>{const es=s.employees.filter(e=>e.branchId===b.id),ids=new Set(es.map(e=>e.id));let hours=0,cost=0;
   for(const a of s.attendance){if(!ids.has(a.employeeId)||!a.end||!new Date(Date.parse(a.start)+9*3600000).toISOString().startsWith(month))continue;const e=es.find(x=>x.id===a.employeeId)!;const h=Math.max(0,(Date.parse(a.end)-Date.parse(a.start))/3600000-a.breakMinutes/60);hours+=h;if(e.payType==='시급')cost+=h*e.wage}
   cost+=es.filter(e=>e.payType==='월급'&&e.status!=='퇴사').reduce((n,e)=>n+e.wage,0);
-  return {id:b.id,name:b.name,staff:es.filter(e=>e.status!=='퇴사').length,hours:Math.round(hours),cost:Math.round(cost),perHour:hours?Math.round(cost/hours):0,status:(b as any).info?.status||'운영'}}).sort((a,b)=>sort==='hours'?b.hours-a.hours:sort==='ratio'?b.perHour-a.perHour:b.cost-a.cost);
+  return {id:b.id,name:b.name,staff:es.filter(e=>e.status!=='퇴사').length,hours:Math.round(hours),cost:Math.round(cost),perHour:hours?Math.round(cost/hours):0,status:(b as any).info?.status||'운영',checks:(()=>{const r=runs.filter((x:any)=>x.branchId===b.id);return r.length?`${Math.round(r.filter((x:any)=>x.done.length===x.total).length/r.length*100)}% (${r.length}번)`:'-'})()}}).sort((a,b)=>sort==='hours'?b.hours-a.hours:sort==='ratio'?b.perHour-a.perHour:b.cost-a.cost);
  const tot={staff:rows.reduce((n,r)=>n+r.staff,0),hours:rows.reduce((n,r)=>n+r.hours,0),cost:rows.reduce((n,r)=>n+r.cost,0)};
- const head=['순위','지점','상태','직원','일한 시간','인건비(어림)','시간당 인건비'];
- return <section className="panel t-gap" aria-labelledby="bc2-title"><div className="panel-heading"><h2 id="bc2-title">{Number(month.slice(5))}월 지점 순위</h2><div className="t-inline"><select aria-label="정렬" value={sort} onChange={e=>setSort(e.target.value as any)}><option value="cost">인건비 많은 순</option><option value="hours">일한 시간 많은 순</option><option value="ratio">시간당 인건비 높은 순</option></select><button type="button" className="secondary" onClick={()=>xls(`지점비교-${month}.xls`,[{name:'지점 비교',rows:[head,...rows.map((r,i)=>[i+1,r.name,r.status,r.staff,r.hours,r.cost,r.perHour]),['','합계','',tot.staff,tot.hours,tot.cost,tot.hours?Math.round(tot.cost/tot.hours):0]]}])}>엑셀</button></div></div>
-  <div className="t-tablewrap"><table className="t-table"><thead><tr>{head.map(h=><th key={h}>{h}</th>)}</tr></thead><tbody>{rows.map((r,i)=><tr key={r.id}><td>{i+1}</td><td>{r.name}</td><td>{r.status}</td><td>{r.staff}명</td><td>{r.hours}시간</td><td>{won(r.cost)}원</td><td>{won(r.perHour)}원</td></tr>)}</tbody><tfoot><tr><th></th><th>전 지점 합계</th><td></td><td>{tot.staff}명</td><td>{tot.hours}시간</td><td><b>{won(tot.cost)}원</b></td><td>{tot.hours?won(Math.round(tot.cost/tot.hours)):0}원</td></tr></tfoot></table></div>
+ const head=['순위','지점','상태','직원','일한 시간','인건비(어림)','시간당 인건비','점검 완료율(7일)'];
+ return <section className="panel t-gap" aria-labelledby="bc2-title"><div className="panel-heading"><h2 id="bc2-title">{Number(month.slice(5))}월 지점 순위</h2><div className="t-inline"><select aria-label="정렬" value={sort} onChange={e=>setSort(e.target.value as any)}><option value="cost">인건비 많은 순</option><option value="hours">일한 시간 많은 순</option><option value="ratio">시간당 인건비 높은 순</option></select><button type="button" className="secondary" onClick={()=>xls(`지점비교-${month}.xls`,[{name:'지점 비교',rows:[head,...rows.map((r,i)=>[i+1,r.name,r.status,r.staff,r.hours,r.cost,r.perHour,r.checks]),['','합계','',tot.staff,tot.hours,tot.cost,tot.hours?Math.round(tot.cost/tot.hours):0]]}])}>엑셀</button></div></div>
+  <div className="t-tablewrap"><table className="t-table"><thead><tr>{head.map(h=><th key={h}>{h}</th>)}</tr></thead><tbody>{rows.map((r,i)=><tr key={r.id}><td>{i+1}</td><td>{r.name}</td><td>{r.status}</td><td>{r.staff}명</td><td>{r.hours}시간</td><td>{won(r.cost)}원</td><td>{won(r.perHour)}원</td><td>{r.checks}</td></tr>)}</tbody><tfoot><tr><th></th><th>전 지점 합계</th><td></td><td>{tot.staff}명</td><td>{tot.hours}시간</td><td><b>{won(tot.cost)}원</b></td><td>{tot.hours?won(Math.round(tot.cost/tot.hours)):0}원</td><td></td></tr></tfoot></table></div>
   {sales?<p className="footnote">이달 매출 {won(sales)}원 · 일한 시간당 매출 약 {won(Math.round(sales/Math.max(1,tot.hours)))}원 · 매출 대비 인건비 {Math.round(tot.cost/sales*1000)/10}%</p>:<p className="footnote">인건비는 출퇴근 기록 × 시급 + 월급으로 어림했어요(주휴·가산·보험 제외). 리포트에서 매출을 넣으면 시간당 매출도 보여요.</p>}
  </section>;
 }

@@ -6,7 +6,7 @@ import {trialNotice} from '../lib/plans';
 import {notifyUser} from './push-api';
 import {processDeletions} from './withdraw-api';
 import {alertsFor} from '../lib/alert-sweep';
-import {nextWeekReminder,budgetAlert,workAlerts,scheduleAckReminders,visaAlerts,minWageNotice,digestFilter,dailyDigest} from '../lib/improve2';
+import {punctuality,lateMemoRule,nextWeekReminder,budgetAlert,workAlerts,scheduleAckReminders,visaAlerts,minWageNotice,digestFilter,dailyDigest} from '../lib/improve2';
 import {dailyBrief,weeklyBrief,staleRequests} from '../lib/briefing';
 import {weekStartOf,plus as plusD} from '../lib/schedule-rules';
 import {upcomingDeadlines} from '../lib/tax-calendar';
@@ -107,7 +107,11 @@ export async function alertSweep(env:any,now=Date.now(),notify=(uid:string,m:any
   {const rows2=((await env.DB.prepare("SELECT p.id,p.employee_id FROM payslip_documents p LEFT JOIN document_activity a ON a.kind='payslip' AND a.document_id=p.id WHERE p.owner_id=? AND p.created_at<? AND p.created_at>? AND a.viewed_at IS NULL LIMIT 200").bind(r.owner,new Date(now-24*3600000).toISOString(),new Date(now-72*3600000).toISOString()).all().catch(()=>({results:[]}))).results||[]) as any[];
    for(const p of rows2)list.push({key:'slipremind:'+p.id,to:p.employee_id,kind:'payroll',title:'아직 열어 보지 않은 급여명세서가 있어요',body:'급여명세서를 열어 금액을 확인해 주세요. 이상한 항목은 명세서에서 바로 물어볼 수 있어요.',url:'/app?screen=documents'})}
   // 지시서 010: 결근·지각 누적 — 하루 한 번(오전 9시 첫 점검)만 이번 달 기록을 읽는다
-  {const k=new Date(now+9*3600000);if(k.getUTCHours()===9&&k.getUTCMinutes()<10){const month=k.toISOString().slice(0,7),full=await loadAttendance(env.DB,r.owner,new Date(Date.parse(month+'-01T00:00:00+09:00')).toISOString(),new Date(now).toISOString()).catch(()=>null);if(full)list.push(...absenceAlerts({...d,attendance:full},month,now))}}
+  {const k=new Date(now+9*3600000);if(k.getUTCHours()===9&&k.getUTCMinutes()<10){const month=k.toISOString().slice(0,7),full=await loadAttendance(env.DB,r.owner,new Date(Date.parse(month+'-01T00:00:00+09:00')).toISOString(),new Date(now).toISOString()).catch(()=>null);if(full)list.push(...absenceAlerts({...d,attendance:full},month,now));
+    // 개선 2차 B151 자동 규칙: 이번 달 지각이 정한 횟수가 되면 직원 메모에 한 줄(한 달에 한 번)
+    const lm=Number(d.settings?.more?.lateMemo)||0;if(lm&&full){const tol=({lenient:10,normal:5,strict:0} as any)[d.settings?.attendanceTolerance||'normal']??5,adds:[string,string][]=[];for(const e of (d.employees||[]).filter((e:any)=>e.status!=='퇴사')){const p=punctuality(d.shifts,full as any,e.id,month,tol,now),line=lateMemoRule(e,p.late,month,lm);if(line)adds.push([e.id,line])}
+     if(adds.length){const cur=await env.DB.prepare('SELECT data,version FROM stores WHERE owner=?').bind(r.owner).first();if(cur){const dd=JSON.parse(cur.data);for(const [id,line] of adds){const e=dd.employees.find((x:any)=>x.id===id);if(e){const memo=e.extra?.memo||'';if(!memo.includes(`${month} 지각`))e.extra={...(e.extra||{}),memo:((memo?memo+'\n':'')+line).slice(-2000)}}}
+      await env.DB.prepare('UPDATE stores SET data=?,version=version+1,updated_at=? WHERE owner=? AND version=?').bind(JSON.stringify(dd),new Date(now).toISOString(),r.owner,cur.version).run();d.employees=dd.employees}}}}}
   // 지시서 195: 3일 넘게 대기 중인 요청 — 하루 한 번(오전 9시 이후) 사장님께
   {const k=new Date(now+9*3600000),today=k.toISOString().slice(0,10);if(k.getUTCHours()>=9){const st=staleRequests(d,now);if(st.total)list.push({key:'stale:'+today,to:'owner',kind:'leave',title:`3일 넘게 기다리는 요청 ${st.total}건`,body:st.text+' · 직원이 답을 기다리고 있어요.'})}}
   // 지시서 199: 근무표 자동 게시 — 정해 둔 요일·시각에 다음 주 근무표를 공개하고 직원에게 알림
