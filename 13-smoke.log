@@ -1,5 +1,5 @@
-04:29:05 새 화면 확인 83a8f99
-04:29:46 점검 계정 삭제 완료
+04:32:58 새 화면 확인 83a8f99
+04:33:40 점검 계정 삭제 완료
 배포 후 점검 실패: page.goto: Timeout 20000ms exceeded.
 Call log:
   - navigating to "https://chukchukapp.kr/signup?role=owner&plan=basic", waiting until "networkidle"
