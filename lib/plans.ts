@@ -1,17 +1,17 @@
 // 요금제 (2026-10-05 대표님 결정: 매니지와 같은 구조, 가격은 VAT 포함)
-// 베이직·프로 2가지, 지점 수 구간별 월 요금, 6지점부터 지점당 3,900원 추가. 직원 수 제한 없음.
-// 30일 무료 체험(카드 등록 없음, 자동 결제 없음, 체험 중에는 프로 기능 전부). 6개월 10%·12개월 20% 할인.
+// 베이직·프로 2가지. 직원 1명당 월 요금(베이직 2,900원·프로 3,900원, VAT 포함), 결제일 재직 직원 수 × 단가. 지점·기간 할인 없음.
+// 30일 무료 체험(카드 등록 없음, 자동 결제 없음, 체험 중에는 프로 기능 전부).
 // 전자근로계약서는 무료 제공 없이 체결(양측 서명 완료)된 계약서 1건마다 3,000원(VAT 포함) — 2026-10-10 대표님 결정. 결제 연결 전에는 사용량·청구 예정액만 표시.
 export const plans = {
- basic:{id:'basic',name:'베이직',tiers:[[1,9900],[3,14900],[5,18900]] as [number,number][],extraPerBranch:3900,qr:false,description:'근무표 · 급여 자동 계산 · 명세서 · 전자계약 · 대장'},
- pro:{id:'pro',name:'프로',tiers:[[1,14900],[3,19900],[5,23900]] as [number,number][],extraPerBranch:3900,qr:true,description:'베이직 전부 + 매장 QR 출퇴근'},
+ basic:{id:'basic',name:'베이직',qr:false,description:'근무표 · 급여 자동 계산 · 명세서 · 전자계약 · 대장'},
+ pro:{id:'pro',name:'프로',qr:true,description:'베이직 전부 + 매장 QR 출퇴근'},
 } as const;
 export type PlanId=keyof typeof plans;
 export const TRIAL_DAYS=30;
 export const MAX_BRANCHES=50;
 export const CONTRACTS_FREE_PER_MONTH=0;
 export const CONTRACT_EXTRA_PRICE=3000;
-export const PERIODS=[{months:1,discount:0},{months:6,discount:0.1},{months:12,discount:0.2}] as const;
+export const PERIODS=[{months:1,discount:0},{months:6,discount:0},{months:12,discount:0}] as const;
 export const money=(n:number)=>n.toLocaleString('ko-KR');
 /** 요금 안내 한 줄 */
 export const contractFeeText=()=>CONTRACTS_FREE_PER_MONTH?`월 ${CONTRACTS_FREE_PER_MONTH}건 무료 · 추가 1건 ${money(CONTRACT_EXTRA_PRICE)}원`:`체결 1건당 ${money(CONTRACT_EXTRA_PRICE)}원(VAT 포함)`;
@@ -38,21 +38,15 @@ export function planLimits(a:any){
  if(!a||!planId(a.plan))return {employees:100000,branches:MAX_BRANCHES};
  return {employees:100000,branches:branchCount(a)};
 }
-/** 월 요금(VAT 포함): 지점 수 구간 요금, 6지점부터 지점당 추가 */
-export function monthlyPrice(plan:PlanId,branches=1){
- const p=plans[plan],n=Math.max(1,Math.min(MAX_BRANCHES,Math.floor(branches)||1));
- for(const [upTo,price] of p.tiers)if(n<=upTo)return price;
- const [lastUpTo,lastPrice]=p.tiers[p.tiers.length-1];return lastPrice+(n-lastUpTo)*p.extraPerBranch;
-}
-/** 구독 기간 전체 금액(VAT 포함, 10원 단위 내림) */
-export function periodPrice(plan:PlanId,branches:number,months:1|6|12){
- const d=PERIODS.find(x=>x.months===months)?.discount??0;
- return Math.floor(monthlyPrice(plan,branches)*months*(1-d)/10)*10;
-}
-// 2026-10-10 대표님 결정: 직원 1명당 월 요금(VAT 포함), 지점 칸·결제 기간 할인 없음, 기존 가입자 없음.
-// 홈페이지 요금 카드가 이 값을 쓴다. 앱 결제(toss·saas-api)는 아직 지점 구간 함수를 쓰고 있어서 연결 전까지 따로 둔다.
+// 2026-10-10 대표님 결정: 직원 1명당 월 요금(VAT 포함). 결제일 재직 직원 수 × 단가.
 export const EMPLOYEE_PRICE={basic:2900,pro:3900} as const;
 export function employeeMonthlyPrice(plan:PlanId,employees=1){return EMPLOYEE_PRICE[plan]*Math.max(1,Math.floor(employees)||1)}
+/** 월 요금(VAT 포함) = 직원 1명당 단가 × 결제 인원(결제일 재직 직원 수). 할인 없음. */
+export function monthlyPrice(plan:PlanId,employees=1){return employeeMonthlyPrice(plan,employees)}
+/** 구독 기간 전체 금액(VAT 포함, 10원 단위 내림). 6·12개월도 할인 없이 월 요금 × 개월 수. */
+export function periodPrice(plan:PlanId,employees:number,months:1|6|12){
+ return Math.floor(monthlyPrice(plan,employees)*months/10)*10;
+}
 export function capacityError(state:any,a:any){
  const limits=planLimits(a);
  if(state.branches.length>limits.branches)return `지금 요금은 지점 ${limits.branches}곳 기준이에요. 계정·요금제에서 지점 수를 바꿔 주세요.`;

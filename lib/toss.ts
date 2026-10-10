@@ -16,10 +16,10 @@ export function nextPeriod(account: {paidUntil?: string} | null | undefined, mon
 }
 
 /** 결제 완료를 이용 상태에 반영(체험·유예·만료 모두 'active'로, 해지 예약은 풀림) */
-export function applyPlanPaid(account: any, p: {plan: string; storeSlots: number; months: number; amount: number; orderId: string}, now = Date.now()) {
+export function applyPlanPaid(account: any, p: {plan: string; storeSlots: number; months: number; amount: number; orderId: string; billedEmployees?: number}, now = Date.now()) {
   const per = nextPeriod(account, p.months, now);
   const {cancelAt, cancelRequestedAt, cancelReason, paymentFailedAt, ...rest} = account || {};
-  return {...rest, status: 'active', plan: p.plan, storeSlots: p.storeSlots, months: p.months, periodStart: per.start, paidUntil: per.end, periodPrice: p.amount, lastOrderId: p.orderId};
+  return {...rest, status: 'active', plan: p.plan, storeSlots: p.storeSlots, months: p.months, periodStart: per.start, paidUntil: per.end, periodPrice: p.amount, lastOrderId: p.orderId, ...(p.billedEmployees ? {billedEmployees: p.billedEmployees} : {})};
 }
 
 /** 전자근로계약서 요금: 그 달 체결 건수 − 이미 결제한 건수 */

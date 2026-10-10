@@ -7,7 +7,8 @@
 import {resolveStore} from './saas-api';
 import {isHQ} from './admin-api';
 import {serverError} from '../lib/errors';
-import {planId,periodPrice,MAX_BRANCHES,CONTRACT_EXTRA_PRICE,plans,type PlanId} from '../lib/plans';
+import {planId,periodPrice,monthlyPrice,MAX_BRANCHES,CONTRACT_EXTRA_PRICE,plans,type PlanId} from '../lib/plans';
+import {billableStaffCount} from '../lib/billing-staff';
 import {TOSS_API,tossAuth,newOrderId,validOrderId,validPaymentKey,applyPlanPaid,contractsDue,tossErrorText} from '../lib/toss';
 
 type Env={DB:D1Database,TOSS_CLIENT_KEY?:string,TOSS_SECRET_KEY?:string,TOSS_FETCH?:typeof fetch,HQ_ADMIN_EMAIL?:string,HQ_NATIVE_USER_ID?:string};
@@ -55,20 +56,24 @@ export async function tossApi(request:Request,env:Env){
   const owner=linked.owner,nowIso=new Date().toISOString();
 
   if(b.action==='prepare'){
-   let kind:'plan'|'contracts',amount:number,orderName:string,plan='contracts',slots=0,months=0,periodStart:string|null=null;
+   let kind:'plan'|'contracts',amount:number,orderName:string,plan='contracts',slots=0,months=0,periodStart:string|null=null,billed=0;
    if(b.kind==='contracts'){
     if(!/^\d{4}-\d{2}$/.test(String(b.month||'')))return json({error:'결제할 달을 골라 주세요.'},400);
     const [due]=await contractsByMonth(env,owner,[b.month]);if(!due?.due)return json({error:'이 달에는 낼 전자계약 요금이 없어요. 계정·요금제 화면을 새로고침해 낼 달을 다시 확인해 주세요.'},400);
     kind='contracts';amount=due.amount;slots=due.due;periodStart=b.month;orderName=`전자근로계약서 ${due.due}건 (${Number(b.month.slice(5))}월)`;
    }else{
-    const p=planId(b.plan) as PlanId|null,n=Math.floor(Number(b.storeSlots)),m=Number(b.months);
-    if(!p)return json({error:'요금제를 골라 주세요.'},400);if(!Number.isInteger(n)||n<1||n>MAX_BRANCHES)return json({error:`지점 수를 1~${MAX_BRANCHES} 사이로 골라 주세요.`},400);if(![1,6,12].includes(m))return json({error:'이용 기간을 1·6·12개월 중에서 골라 주세요.'},400);
-    kind='plan';plan=p;slots=n;months=m;amount=periodPrice(p,n,m as 1|6|12);orderName=`척척사장 ${plans[p].name} ${n}지점 ${m}개월`;
+    // 결제 인원은 서버가 지금 재직 직원 수로 다시 센다(화면 값은 믿지 않는다)
+    const p=planId(b.plan) as PlanId|null,m=Number(b.months);
+    if(!p)return json({error:'요금제를 골라 주세요.'},400);if(![1,6,12].includes(m))return json({error:'이용 기간을 1·6·12개월 중에서 골라 주세요.'},400);
+    const row=await env.DB.prepare('SELECT data FROM stores WHERE owner=?').bind(owner).first<any>();if(!row)return json({error:'가게 정보를 찾지 못했어요. 새로고침한 뒤 다시 시도해 주세요.'},404);
+    billed=billableStaffCount(JSON.parse(row.data));
+    kind='plan';plan=p;slots=billed;months=m;amount=periodPrice(p,billed,m as 1|6|12);orderName=`척척사장 ${plans[p].name} 직원 ${billed}명 ${m}개월`;
    }
    if(b.agreed!==true)return json({error:'이용약관과 해지·환불 규정에 동의해 주세요.'},400);
    const orderId=newOrderId(kind);
-   await env.DB.prepare("INSERT INTO payments(id,owner,order_id,plan,store_slots,months,amount,status,provider,period_start,created_at,kind) VALUES(?,?,?,?,?,?,?,'ready','toss',?,?,?)").bind(crypto.randomUUID(),owner,orderId,plan,slots,months,amount,periodStart,nowIso,kind).run();
-   return json({orderId,amount,orderName,clientKey:env.TOSS_CLIENT_KEY,customerKey:'cc_'+(await hash(owner)).slice(0,40)});
+   // 스냅샷: 결제일 인원·단가. 금액은 이 값으로만 승인한다.
+   await env.DB.prepare("INSERT INTO payments(id,owner,order_id,plan,store_slots,months,amount,status,provider,period_start,created_at,kind,billed_employees,unit_price) VALUES(?,?,?,?,?,?,?,'ready','toss',?,?,?,?,?)").bind(crypto.randomUUID(),owner,orderId,plan,slots,months,amount,periodStart,nowIso,kind,kind==='plan'?billed:null,kind==='plan'?monthlyPrice(plan as PlanId,billed):null).run();
+   return json({orderId,amount,orderName,billedEmployees:kind==='plan'?billed:null,clientKey:env.TOSS_CLIENT_KEY,customerKey:'cc_'+(await hash(owner)).slice(0,40)});
   }
 
   if(b.action==='confirm'){
@@ -88,8 +93,8 @@ export async function tossApi(request:Request,env:Env){
    let end:string|null=null;
    if(p.kind!=='contracts'){// 이용 상태 반영(동시 변경이면 다시)
     for(let i=0;i<3;i++){const row=await env.DB.prepare('SELECT data,version FROM stores WHERE owner=?').bind(owner).first<any>();if(!row)break;const data=JSON.parse(row.data);
-     const acc=applyPlanPaid(data._account,{plan:p.plan,storeSlots:p.store_slots,months:p.months,amount:p.amount,orderId:p.order_id});data._account=acc;end=acc.paidUntil;
-     data._audit=[...(data._audit||[]),{id:crypto.randomUUID(),at:nowIso,actor:{id:user,name:'사장님'},action:'요금 결제',target:p.order_id,before:null,after:{plan:p.plan,slots:p.store_slots,months:p.months,amount:p.amount},reason:''}].slice(-1000);
+     const acc=applyPlanPaid(data._account,{plan:p.plan,storeSlots:p.store_slots,months:p.months,amount:p.amount,orderId:p.order_id,billedEmployees:p.billed_employees??undefined});data._account=acc;end=acc.paidUntil;
+     data._audit=[...(data._audit||[]),{id:crypto.randomUUID(),at:nowIso,actor:{id:user,name:'사장님'},action:'요금 결제',target:p.order_id,before:null,after:{plan:p.plan,employees:p.billed_employees,unitPrice:p.unit_price,months:p.months,amount:p.amount},reason:''}].slice(-1000);
      const u=await env.DB.prepare('UPDATE stores SET data=?,version=version+1,updated_at=? WHERE owner=? AND version=?').bind(JSON.stringify(data),nowIso,owner,row.version).run();if(u.meta.changes)break;
      if(i===2)console.error('billing: store update retry exhausted');}
    }

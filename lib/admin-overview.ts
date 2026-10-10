@@ -1,4 +1,4 @@
-import {planId,monthlyPrice,planLimits,plans,trialStatus,branchCount} from './plans';
+import {planId,monthlyPrice,planLimits,plans,trialStatus} from './plans';
 import {industryName,industries} from './industries';
 
 // Project aggregate counts in SQL; never load employee profiles or contracts into the HQ response.
@@ -37,7 +37,7 @@ export function summarizeStore(row:any,now=Date.now()){
   trialEndsAt:status==='trialing'||status==='expired'?a?.trialEndsAt||null:null,
   daysLeft:status==='trialing'&&remaining!==null?Math.max(0,Math.ceil(remaining)):null,
   trialEnding:status==='trialing'&&remaining!==null&&remaining<=7,
-  monthlyQuote:plan!=='legacy'?monthlyPrice(plan,branchCount(a)):null,
+  monthlyQuote:plan!=="legacy"?monthlyPrice(plan,Number(a?.billedEmployees)||1):null,
   branchLimit:limits.branches,branches,employees:branches.reduce((n,b)=>n+b.employees,0),
   atCapacity:branches.length>=limits.branches||branches.some(b=>b.employees>=b.limit),
   employeeCapacity:branches.some(b=>b.employees>=b.limit),

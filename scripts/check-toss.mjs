@@ -23,8 +23,8 @@ ok('no keys → not ready',(await call('tossBoss','/api/billing',undefined,envOf
 ok('no keys → prepare locked',(await call('tossBoss','/api/billing',{action:'prepare',plan:'pro',storeSlots:2,months:6,agreed:true},envOff)).status,503);
 const g=(await call('tossBoss','/api/billing')).body;ok('keys → ready + client key only',[g.ready,g.clientKey,JSON.stringify(g).includes('test_sk')],[true,'test_ck_x',false]);
 ok('needs agreement',(await call('tossBoss','/api/billing',{action:'prepare',plan:'pro',storeSlots:2,months:6})).status,400);
-const pre=(await call('tossBoss','/api/billing',{action:'prepare',plan:'pro',storeSlots:2,months:6,agreed:true,amount:1})).body;
-const {periodPrice}=await import('../lib/plans.ts');ok('server sets amount (ignores client amount)',pre.amount,periodPrice('pro',2,6));
+const pre=(await call('tossBoss','/api/billing',{action:'prepare',plan:'pro',months:6,agreed:true,amount:1})).body;
+const {periodPrice}=await import('../lib/plans.ts');const staffN=(await call('tossBoss','/api/account')).body?.account?.staffCount;ok('server sets amount from staff count (ignores client amount)',pre.amount,periodPrice('pro',staffN,6));ok('snapshot: billed employees returned',pre.billedEmployees,staffN);
 ok('wrong amount rejected',(await call('tossBoss','/api/billing',{action:'confirm',paymentKey:'pk_test_1234567890',orderId:pre.orderId,amount:pre.amount-10})).status,400);
 ok('rejected order cannot be reused',(await call('tossBoss','/api/billing',{action:'confirm',paymentKey:'pk_test_1234567890',orderId:pre.orderId,amount:pre.amount})).status,409);
 const pre2=(await call('tossBoss','/api/billing',{action:'prepare',plan:'pro',storeSlots:2,months:6,agreed:true})).body;

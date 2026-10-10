@@ -8,7 +8,7 @@ const account=(u,b)=>call(u,'/api/account',b),store=(u,b,m)=>call(u,'/api/store'
 const setup=(plan,storeSlots)=>({action:'onboard',storeName:'테스트 매장',branchName:'본점',ownerName:'테스트 사장',plan,storeSlots,acknowledged:true,dpaAgreed:true});
 // 요금제(2026-10-05): 베이직·프로, 지점 구간 요금(VAT 포함), 직원 수 제한 없음, 30일 체험, 6/12개월 할인
 assert.equal((await account('')).status,401);assert.equal((await account('free',setup('basic'))).status,201);
-let a=(await account('free')).data;assert.equal(a.account.status,'trialing');assert.equal(a.account.plan,'basic');assert.equal(a.account.monthlyPrice,9900);assert.equal(a.account.vatIncluded,true);assert.equal(a.account.qr,true,'trial includes QR');
+let a=(await account('free')).data;assert.equal(a.account.status,'trialing');assert.equal(a.account.plan,'basic');assert.equal(a.account.monthlyPrice,2900);assert.equal(a.account.vatIncluded,true);assert.equal(a.account.qr,true,'trial includes QR');
 assert.ok(Math.abs(Date.parse(a.account.trialEndsAt)-Date.now()-30*86400000)<60000,'30-day trial');
 let st=(await store('free')).data;assert.equal(st.state.employees.length,0);assert.equal(st.state.legacy,undefined);assert.equal(st.qrRequired,true);
 await q('INSERT INTO stores VALUES(?,?,?,?)',id('legacy'),JSON.stringify(seed()),1,new Date().toISOString()).run();const fixture=(await store('legacy')).data.state;
@@ -16,12 +16,12 @@ const employee=(i,branchId='branch-main')=>({...structuredClone(fixture.employee
 st.state.employees=Array.from({length:12},(_,i)=>employee(i));let r=await store('free',{state:st.state,version:st.version},'PUT');assert.equal(r.status,200,'no employee limit: '+JSON.stringify(r).slice(0,200));st=r.data;
 r=await ops('free',{action:'postNotice',version:st.version,title:'공지',body:'내일도 반갑게',branchId:'all'});assert.equal(r.status,200,JSON.stringify(r));
 assert.equal((await account('free',{action:'checkout'})).status,503);
-// 가격표: 베이직 9,900/14,900/18,900, 프로 14,900/19,900/23,900, 6지점부터 지점당 3,900
-const price=async(plan,storeSlots,months)=>{const r=await account('free',{action:'changePlan',plan,storeSlots,months});assert.equal(r.status,200,JSON.stringify(r.data));return r.data.account};
+// 가격표(2026-10-10): 직원 1명당 베이직 2,900·프로 3,900, 결제 인원 = 재직 직원 수(서버가 계산), 기간 할인 없음
+const {billableStaffCount}=await import('../lib/billing-staff.ts');const staff=billableStaffCount(st.state);
+const price=async(plan,months)=>{const r=await account('free',{action:'changePlan',plan,months});assert.equal(r.status,200,JSON.stringify(r.data));return r.data.account};
 const trialEnd=a.account.trialEndsAt;
-assert.equal((await price('pro',1)).monthlyPrice,14900);assert.equal((await price('basic',3)).monthlyPrice,14900);assert.equal((await price('pro',3)).monthlyPrice,19900);
-assert.equal((await price('basic',5)).monthlyPrice,18900);assert.equal((await price('pro',5)).monthlyPrice,23900);assert.equal((await price('pro',7)).monthlyPrice,23900+2*3900);
-a=await price('pro',1,12);assert.equal(a.periodPrice,Math.floor(14900*12*0.8/10)*10);a=await price('basic',1,6);assert.equal(a.periodPrice,Math.floor(9900*6*0.9/10)*10);assert.equal(a.trialEndsAt,trialEnd,'changing plan never extends trial');
+assert.equal((await price('pro',1)).monthlyPrice,3900*staff);assert.equal((await price('basic',1)).monthlyPrice,2900*staff);assert.equal((await price('basic',1)).staffCount,staff);
+a=await price('pro',12);assert.equal(a.periodPrice,3900*staff*12,'12개월 할인 없음');a=await price('basic',6);assert.equal(a.periodPrice,2900*staff*6,'6개월 할인 없음');assert.equal(a.trialEndsAt,trialEnd,'changing plan never extends trial');
 assert.equal((await account('free',{action:'changePlan',plan:'gold'})).status,400);assert.equal((await account('free',{action:'changePlan',plan:'pro',storeSlots:0})).status,400);
 // 지점 수: 고른 수보다 많이 만들 수 없고, 지점이 남아 있으면 줄일 수 없다
 await price('pro',2);st=(await store('free')).data;st.state.branches.push({id:'branch-2',name:'2호점',address:''});st.state.employees.push(employee(20,'branch-2'));r=await store('free',{state:st.state,version:st.version},'PUT');assert.equal(r.status,200,JSON.stringify(r).slice(0,200));st=r.data;

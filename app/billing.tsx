@@ -2,7 +2,7 @@
 import {CANCEL_REASONS} from '../lib/improve2';
 // 작업 065·067·068·069: 체험 종료 안내, 환불·차액 안내, 세금계산서 정보와 발행 요청
 import {useEffect,useState} from 'react';
-import {changeQuote,refundQuote,validBizNo,monthlyPrice,periodPrice,plans,planId,type PlanId} from '../lib/plans';
+import {refundQuote,validBizNo,monthlyPrice,periodPrice,plans,planId,type PlanId} from '../lib/plans';
 const won=(n:number)=>n.toLocaleString('ko-KR');
 const post=async(body:any)=>{const r=await fetch('/api/account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}),d:any=await r.json();if(!r.ok)throw Error(d.error||'저장하지 못했어요.');return d};
 export function TrialBanner({account}:{account:any}){
@@ -12,10 +12,9 @@ export function TrialBanner({account}:{account:any}){
  const text=n.level==='ended'?'무료 체험이 끝났어요. 기록 조회와 내려받기는 계속 돼요.':n.level==='1d'?'무료 체험이 내일 끝나요.':`무료 체험이 ${n.daysLeft}일 남았어요.`;
  return <div className={'trial-banner '+n.level} role="status">{text} 자동으로 결제되지 않아요. <a href="/account#checkout-title">결제하기 →</a></div>
 }
-export function PlanChangeQuote({a,plan,branches,months}:{a:any,plan:PlanId,branches:number,months:1|6|12}){
- if(a.status!=='active'||!a.periodStart)return <p className="saas-fine">{a.status==='trialing'?'체험 중에는 차액 없이 바로 바뀌어요.':'결제를 연결하기 전이라 차액이 청구되지 않아요.'}</p>;
- const q=changeQuote({plan:a.plan,slots:a.storeSlots,months:a.months},{plan,slots:branches,months},a.periodStart);
- return <p className="saas-fine">이번 이용 기간({q.periodEnd}까지) 남은 {q.daysLeft}일 기준 {q.diff>0?`추가 ${won(q.diff)}원`:q.diff<0?`다음 결제에서 ${won(-q.diff)}원 차감`:'차액 없음'} (예상 · VAT 포함)</p>
+/** 요금제 변경: 바뀐 요금은 다음 결제부터 적용. 이번 기간 차액은 청구하지 않는다(기간 중 추가 청구 없음). */
+export function PlanChangeQuote(_p:{a:any,plan:PlanId,months:1|6|12}){
+ return <p className="saas-fine">바꾼 요금제는 다음 결제부터 적용돼요. 이번 이용 기간의 차액은 청구하지 않아요.</p>;
 }
 export function RefundEstimate({a}:{a:any}){
  if(a.status!=='active'||!a.periodStart)return null;const q=refundQuote(a.periodPrice,a.months,a.periodStart);
@@ -90,14 +89,14 @@ export function BizStatus({a,reload}:{a:any,reload:()=>Promise<void>}){
 /** 결제하기: 지금 고른 요금제로 결제할 금액과 수단. 결제대행사를 연결하기 전이라 버튼은 잠겨 있다. */
 const METHODS=[['card','신용·체크카드'],['kakaopay','카카오페이'],['naverpay','네이버페이'],['tosspay','토스페이'],['transfer','계좌이체']] as const;
 export function Checkout({a}:{a:any}){
- const plan=(planId(a?.plan)||'pro') as PlanId,slots=Math.max(1,Number(a?.storeSlots)||1),months=([1,6,12].includes(Number(a?.months))?Number(a?.months):1) as 1|6|12;
+ const plan=(planId(a?.plan)||'pro') as PlanId,staff=Math.max(1,Number(a?.staffCount)||1),months=([1,6,12].includes(Number(a?.months))?Number(a?.months):1) as 1|6|12;
  const [method,setMethod]=useState('card'),[agree,setAgree]=useState(false),[bill,setBill]=useState<any>(null),[busy,setBusy]=useState(false),[err,setErr]=useState('');
  useEffect(()=>{fetch('/api/billing').then(r=>r.ok?r.json():null).then(setBill).catch(()=>{})},[]);
- const list=monthlyPrice(plan,slots)*months,pay=periodPrice(plan,slots,months),off=list-pay;
+ const list=monthlyPrice(plan,staff)*months,pay=periodPrice(plan,staff,months),off=list-pay;
  const ready=!!bill?.ready;
- const pay2=async()=>{setBusy(true);setErr('');try{await tossPay({kind:'plan',plan,storeSlots:slots,months,agreed:true},method,bill)}catch(e){setErr((e as Error).message)}finally{setBusy(false)}};
+ const pay2=async()=>{setBusy(true);setErr('');try{await tossPay({kind:'plan',plan,months,agreed:true},method,bill)}catch(e){setErr((e as Error).message)}finally{setBusy(false)}};
  return <section className="checkout" aria-labelledby="checkout-title"><h2 id="checkout-title">결제하기</h2>
-  <dl className="checkout-sum"><div><dt>요금제</dt><dd>{plans[plan].name}</dd></div><div><dt>지점</dt><dd>{slots}곳</dd></div><div><dt>이용 기간</dt><dd>{months}개월</dd></div><div><dt>정가</dt><dd>{won(list)}원</dd></div>{off>0&&<div><dt>{months}개월 할인</dt><dd className="off">−{won(off)}원</dd></div>}<div className="total"><dt>결제 금액 (VAT 포함)</dt><dd>{won(pay)}원</dd></div></dl>
+  <dl className="checkout-sum"><div><dt>요금제</dt><dd>{plans[plan].name}</dd></div><div><dt>결제 인원</dt><dd>재직 직원 {staff}명</dd></div><div><dt>이용 기간</dt><dd>{months}개월</dd></div><div><dt>정가</dt><dd>{won(list)}원</dd></div>{off>0&&<div><dt>{months}개월 할인</dt><dd className="off">−{won(off)}원</dd></div>}<div className="total"><dt>결제 금액 (VAT 포함)</dt><dd>{won(pay)}원</dd></div></dl>
   <fieldset className="checkout-methods"><legend>결제 수단</legend>{METHODS.map(([v,l])=><label key={v} className={method===v?'on':''}><input type="radio" name="pay-method" value={v} checked={method===v} onChange={()=>setMethod(v)}/>{l}</label>)}</fieldset>
   <label className="checkout-agree"><input type="checkbox" checked={agree} onChange={e=>setAgree(e.target.checked)}/><span><a href="/terms">이용약관</a>과 <a href="/refund">해지·환불 규정</a>을 확인했어요. 자동 갱신 없이 {months}개월만 결제돼요.</span></label>
   <ul className="checkout-notes"><li>결제 후 7일 안이고 결제 뒤 저장한 기록이 없으면 전액 환불돼요.</li><li>기록을 저장하기 시작하면 쓴 날만큼 빼고 남은 기간을 날짜로 나눠 환불해요(전자상거래법 제17조 제2항).</li><li>자동 갱신·자동 결제는 없어요. 기간이 끝나면 다시 결제할 때까지 조회·내려받기만 돼요.</li></ul>

@@ -7,9 +7,10 @@ import {starterManuals} from '../lib/industry-starter';
 import {serverError} from '../lib/errors';
 import {isHQ} from './admin-api';
 import {normalizeTeam} from '../lib/team-model';
+import {billableStaffCount} from '../lib/billing-staff';
 import {hydrateAttendance} from './attendance-store';
 import {LEGAL,consentCurrent} from '../lib/legal';
-import {plans,planId,TRIAL_DAYS,trialStatus,planLimits,monthlyPrice,periodPrice,capacityError,branchCount,MAX_BRANCHES,CONTRACTS_FREE_PER_MONTH,CONTRACT_EXTRA_PRICE,trialNotice,validBizNo,graceLeft} from '../lib/plans';
+import {plans,planId,TRIAL_DAYS,trialStatus,planLimits,monthlyPrice,periodPrice,employeeMonthlyPrice,capacityError,branchCount,MAX_BRANCHES,CONTRACTS_FREE_PER_MONTH,CONTRACT_EXTRA_PRICE,trialNotice,validBizNo,graceLeft} from '../lib/plans';
 type Env={DB:D1Database,HQ_ADMIN_EMAIL?:string,HQ_NATIVE_USER_ID?:string,NTS_API_KEY?:string};
 const json=(v:unknown,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 /** 지시서 108·145: 이 계정이 들어갈 수 있는 가게 — 내 가게, 공동 관리자로 초대받은 가게, 직원으로 일하는 가게 */
@@ -43,10 +44,10 @@ export async function resolveStore(db:D1Database,userId:string){
   return tryOwner(linked.owner);
 }
 /** 계정 화면에 보여 줄 요금 정보(VAT 포함) */
-export function accountView(a:any,contractsThisMonth=0){
+export function accountView(a:any,contractsThisMonth=0,staffCount=1){
  const plan=planId(a?.plan),branches=branchCount(a),months=[1,6,12].includes(Number(a?.months))?Number(a.months):1;
  return {plan,planName:plan?plans[plan].name:null,deletion:a?.deletion||null,status:trialStatus(a),trialEndsAt:a?.trialEndsAt||null,createdAt:a?.createdAt||null,autoRenew:false,
-  storeSlots:branches,limits:planLimits(a),months,monthlyPrice:plan?monthlyPrice(plan,branches):0,periodPrice:plan?periodPrice(plan,branches,months as 1|6|12):0,vatIncluded:true,qr:plan==='pro'||trialStatus(a)==='trialing',
+  storeSlots:branches,limits:planLimits(a),months,staffCount,unitPrice:plan?employeeMonthlyPrice(plan,1):0,monthlyPrice:plan?monthlyPrice(plan,staffCount):0,periodPrice:plan?periodPrice(plan,staffCount,months as 1|6|12):0,billedEmployees:a?.billedEmployees??null,vatIncluded:true,qr:plan==='pro'||trialStatus(a)==='trialing',
   notice:trialNotice(a),graceLeft:graceLeft(a),cancelAt:a?.cancelAt||null,bizCheck:a?.bizCheck||null,transfer:a?.transfer&&Date.parse(a.transfer.expiresAt)>Date.now()?{toEmail:a.transfer.toEmail,expiresAt:a.transfer.expiresAt}:null,periodStart:a?.periodStart||null,billing:a?.billing||null,invoiceRequests:(a?.invoiceRequests||[]).slice(-24),
   contracts:{thisMonth:contractsThisMonth,free:CONTRACTS_FREE_PER_MONTH,extra:Math.max(0,contractsThisMonth-CONTRACTS_FREE_PER_MONTH),extraPrice:CONTRACT_EXTRA_PRICE}};
 }
@@ -64,7 +65,7 @@ export async function accountApi(request:Request,env:Env){
   // 이번 달(한국 시간) 체결된(양측 서명 완료) 전자계약서 수 × 건당 요금(결제 연결 전에는 청구 예정액만 안내)
   const monthStart=new Date(Date.parse(new Date(Date.now()+9*3600000).toISOString().slice(0,7)+'-01T00:00:00+09:00')).toISOString();
   const contractsThisMonth=linked?.access==='owner'?Number((await env.DB.prepare("SELECT count(*)::int AS n FROM contract_envelopes WHERE owner_id=? AND status='signed' AND completed_at>=?").bind(id,monthStart).first<any>())?.n||0):0;
-  const view=(d:any)=>({hq:isHQ(request,env),consentRequired,mustChangePassword:!!Number(consentRow?.must_change_password||0),legal:{terms:LEGAL.terms.version,privacy:LEGAL.privacy.version},user:{email,authMethod:id.startsWith('native:')?'email':'chatgpt',role:request.headers.get('oai-authenticated-user-native-role')||'owner',emailVerified:!id.startsWith('native:')||request.headers.get('oai-authenticated-user-email-verified')==='true'},onboarded:!!d,access:linked?.access||'owner',storeName:d?.store?.name||'',industry:d?._account?.industry||null,industryName:industryName(d?._account?.industry),storeClosingAt:d?._account?.deletion?.purgeAt||null,account:linked&&linked.access!=='owner'?null:d?accountView(d._account,contractsThisMonth):null,usage:linked&&linked.access!=='owner'?null:d?{employees:d.employees.filter((e:any)=>e.status!=='퇴사').length,branches:d.branches?.length||1,perBranch:d.branches.map((b:any)=>({id:b.id,name:b.name,employees:d.employees.filter((e:any)=>e.branchId===b.id&&e.status!=='퇴사').length}))}:null,billing:{enabled:false,reason:'사업자 정보와 결제 서비스 연결을 준비하고 있어요. 지금은 결제되지 않아요.'}});
+  const view=(d:any)=>({hq:isHQ(request,env),consentRequired,mustChangePassword:!!Number(consentRow?.must_change_password||0),legal:{terms:LEGAL.terms.version,privacy:LEGAL.privacy.version},user:{email,authMethod:id.startsWith('native:')?'email':'chatgpt',role:request.headers.get('oai-authenticated-user-native-role')||'owner',emailVerified:!id.startsWith('native:')||request.headers.get('oai-authenticated-user-email-verified')==='true'},onboarded:!!d,access:linked?.access||'owner',storeName:d?.store?.name||'',industry:d?._account?.industry||null,industryName:industryName(d?._account?.industry),storeClosingAt:d?._account?.deletion?.purgeAt||null,account:linked&&linked.access!=='owner'?null:d?accountView(d._account,contractsThisMonth,billableStaffCount(d)):null,usage:linked&&linked.access!=='owner'?null:d?{employees:d.employees.filter((e:any)=>e.status!=='퇴사').length,branches:d.branches?.length||1,perBranch:d.branches.map((b:any)=>({id:b.id,name:b.name,employees:d.employees.filter((e:any)=>e.branchId===b.id&&e.status!=='퇴사').length}))}:null,billing:{enabled:false,reason:'사업자 정보와 결제 서비스 연결을 준비하고 있어요. 지금은 결제되지 않아요.'}});
   if(request.method==='GET'){
    // 작업 041: 기간제 계약 만료 30일 전 — 사장님 이메일로 보낼 안내를 전송함에 한 번 준비(실제 발송은 메일 서비스 연결 후 전송함에서)
    if(linked?.access==='owner'&&data&&email){const today=new Date(Date.now()+9*3600000).toISOString().slice(0,10),until=new Date(Date.now()+9*3600000+30*86400000).toISOString().slice(0,10);
