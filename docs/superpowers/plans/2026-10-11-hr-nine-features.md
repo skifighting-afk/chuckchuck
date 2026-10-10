@@ -10,7 +10,7 @@
 
 **Spec:** `docs/superpowers/specs/2026-10-11-hr-nine-features-design.md` — 2026-10-11 사용자 승인.
 
-**상태:** 사용자 계획 승인 · 직접 구현 진행 중. 추가 HR 기능 개발 3/9 · 개발 검증 완료 3/9 · 배포 확인 0/9. 기존 100개 개선안과 별도로 추적한다.
+**상태:** 사용자 계획 승인 · 직접 구현 진행 중. 추가 HR 기능 개발 5/9 · 개발 검증 완료 5/9 · 배포 확인 0/9. 기존 100개 개선안과 별도로 추적한다.
 
 ## Global Constraints
 
@@ -128,11 +128,11 @@ type HrPanelProps = {client:HrClient;branchId:string;selfId:string|null};
 
 **Interfaces:** `WorkPreference = HrMeta & {employeeId:string;period:'week'|'month';periodKey:string;unit:'hours'|'days';min:number;max:number;reviewedAt:string|null;reviewedBy:string|null;reviewNote:string}`. `StaffingRow = {employeeId:string;plannedHours:number;shiftDays:number;weekendStarts:number;closingShifts:number;longestRun:number;closingConfigured:boolean;preferenceGap:number|null;evidenceShiftIds:string[]}`. `staffingSummary(store:StoreData,prefs:WorkPreference[],branchId:string,from:string,to:string):StaffingRow[]`. POST actions savePreference/reviewPreference. `StaffingPanel(props:HrPanelProps)`.
 
-- [ ] **1. 실패 시험:** 금22시→토06시·휴게60분은 7시간, 금요일 시작 1근무. 같은 토요일 2근무는 근무일1·근거2. 9/30→10/1은 9월 시작 근무. 미입력 차이 null, 희망60~70/배정48은 -12, 일수 희망은 시간과 비교하지 않음을 assert한다.
-- [ ] **2. 실패 확인:** `node scripts/check-hr-staffing.mjs`에서 순수 집계 실패, build 후 API 실패를 확인한다.
-- [ ] **3. 구현:** hr_work_preferences의 owner+employee+period+periodKey를 유일하게 둔다. 주 키는 weekStartOf, 월 키는 YYYY-MM. 시간 최대 주168/월744, 일수 최대 주7/월 실제 일수, min<=max, 명시 입력0은 유효하다. shiftHours의 휴게·자정 규칙을 재사용한다.
-- [ ] **4. 집계:** 기간·주말은 시작일, 연속 근무는 중복 제거한 시작일 집합으로 계산한다. 기간 밖 인접 근무도 연속일 계산에 포함하고 근거를 표시한다. 지원 근무는 shift.branchId 또는 소속 지점으로 분류하고 본인 전체 지점 시간은 별도 표시한다. 매장 영업시간의 마감 기준이 없으면 closingConfigured=false.
-- [ ] **5. 화면·통과·커밋:** 희망 변경·반영 상태·지표별 근거를 제공한다. 기존 일정 편집·공개만 연결하고 자동 수정하지 않는다. core/staffing, `check-schedule-more.mjs`, `check-improve2.mjs`, 타입 검사. 직원 간 조회·변경 거부와 월 경계를 확인한다.
+- [x] **1. 실패 시험:** 금22시→토06시·휴게60분은 7시간, 금요일 시작 1근무. 같은 토요일 2근무는 근무일1·근거2. 9/30→10/1은 9월 시작 근무. 미입력 차이 null, 희망60~70/배정48은 -12, 일수 희망은 시간과 비교하지 않음을 assert한다.
+- [x] **2. 실패 확인:** `node scripts/check-hr-staffing.mjs`에서 순수 집계 실패, build 후 API 실패를 확인한다.
+- [x] **3. 구현:** hr_work_preferences의 owner+employee+period+periodKey를 유일하게 둔다. 주 키는 weekStartOf, 월 키는 YYYY-MM. 시간 최대 주168/월744, 일수 최대 주7/월 실제 일수, min<=max, 명시 입력0은 유효하다. shiftHours의 휴게·자정 규칙을 재사용한다.
+- [x] **4. 집계:** 기간·주말은 시작일, 연속 근무는 중복 제거한 시작일 집합으로 계산한다. 기간 밖 인접 근무도 연속일 계산에 포함하고 근거를 표시한다. 지원 근무는 shift.branchId 또는 소속 지점으로 분류하고 본인 전체 지점 시간은 별도 표시한다. 매장 영업시간의 마감 기준이 없으면 closingConfigured=false.
+- [x] **5. 화면·통과·커밋:** 희망 변경·반영 상태·지표별 근거를 제공한다. 기존 일정 편집·공개만 연결하고 자동 수정하지 않는다. core/staffing, `check-schedule-more.mjs`, `check-improve2.mjs`, 타입 검사. 직원 간 조회·변경 거부와 월 경계를 확인한다.
 
 ## Task 5: HR-07 면담·약속
 
