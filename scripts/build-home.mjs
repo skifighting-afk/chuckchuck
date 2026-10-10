@@ -31,7 +31,7 @@ export async function buildHome({out, site = HOME_ORIGIN, app = APP_ORIGIN, pixe
     await writeFile(dest, code);
   }
   // 2) 파일
-  await copyFile('site/home.css', path.join(dir, 'home.css'));
+  await copyFile('site/home.css', path.join(dir, 'home-'+version+'.css'));
   for (const sub of ['fonts', 'img']) {
     await mkdir(path.join(dir, sub), {recursive: true});
     for (const f of await readdir('site/' + sub)) if (/\.(woff2|webp|txt|gif|jpg|mp4)$/.test(f) && f !== 'charset.txt') await copyFile(`site/${sub}/${f}`, path.join(dir, sub, f));
@@ -60,7 +60,7 @@ export async function buildHome({out, site = HOME_ORIGIN, app = APP_ORIGIN, pixe
     ? cut('title') + '\n' + css + '\n' + cut('body').replace(/^\s*<body>|<\/body>\s*$/g, '')
     : '<!doctype html>\n<html lang="ko">\n' + cut('head').replace('</head>', css + '\n</head>') + cut('body') + '\n</html>\n';
   if (!preview && html.includes('noindex')) throw Error('홈페이지에 noindex가 있어요');
-  const versioned=html.replace(/home\/site\/home\.js/g,'home/v-'+version+'/site/home.js').replace(/home\/home\.css/g,'home/home.css?v='+version);
+  const versioned=html.replace(/home\/site\/home\.js/g,'home/v-'+version+'/site/home.js').replace(/home\/home\.css/g,'home/home-'+version+'.css');
   await writeFile(path.join(out, 'index.html'), versioned);
   return {html:versioned, pay};
 }
