@@ -179,7 +179,8 @@ function renderQuote() {
   $('#q-month').textContent = money(perMonth);
   $('#q-sub').textContent = months === 1 ? `매달 ${money(full)}원 · 부가세 포함` : `${months}개월 ${money(total)}원 한 번에 · 매달 내면 ${money(full * months)}원 · 부가세 포함`;
   const cta = $<HTMLAnchorElement>('#q-cta');
-  cta.textContent = `${plans[plan].name}로 ${TRIAL_DAYS}일 무료 시작`;
+  const nm = plans[plan].name, last = nm.charCodeAt(nm.length - 1);
+  cta.textContent = `${nm}${(last - 0xAC00) % 28 ? '으로' : '로'} ${TRIAL_DAYS}일 무료 시작`;
   cta.href = cta.href.replace(/plan=\w+/, 'plan=' + plan);
 }
 
