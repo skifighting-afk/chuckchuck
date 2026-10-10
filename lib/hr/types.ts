@@ -33,3 +33,7 @@ export type HrCase=HrMeta&{employeeId:string;assigneeId:string|null;subject:stri
 export type CaseMessage=HrMeta&{caseId:string;fromEmployeeId:string|null;fromOwner:boolean;body:string};
 export type CaseView={record:HrCase;messages:CaseMessage[]};
 export type CasesView={context:HrContextView;cases:CaseView[]};
+export type PulseCampaign=HrMeta&{title:string;questions:{id:string;text:string}[];employeeIds:string[];opensAt:string;closesAt:string;status:'draft'|'open'|'closed'};
+export type PulseAnswer=HrMeta&{campaignId:string;employeeId:string;values:Record<string,1|2|3|4|5>;comment:string;submittedAt:string};
+export type PulseSummary={responded:number;targeted:number;distributions:Record<string,[number,number,number,number,number]>};
+export type PulseView={context:HrContextView;manage:boolean;campaigns:{campaign:PulseCampaign;answers:PulseAnswer[];summary:PulseSummary|null}[]};

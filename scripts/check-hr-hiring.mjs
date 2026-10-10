@@ -8,6 +8,7 @@ try{
  const draft={name:'가상지원',phone:'01000000000',role:'홀',availability:'수요일 저녁',source:'수기 등록',questions:'가능 시간 확인'};
  let out=await write('save',draft);eq(out.status,201,'owner registers an applicant');let c=out.body.record;
  eq(c.stage,'지원 접수','new applicant begins at intake');
+ eq((await F.q('SELECT jsonb_typeof(data) AS kind FROM hr_candidates WHERE id=?',c.id).first()).kind,'object','SQL data is a JSON object for integrity constraints');
  eq((await write('stage',{id:c.id,version:c.version,stage:'면접 예정',interviewAt:'2026-02-30T09:00:00.000Z'})).status,400,'impossible interview date is rejected');
  out=await write('stage',{id:c.id,version:c.version,stage:'면접 예정',interviewAt:'2026-11-01T09:00:00.000Z'});eq(out.status,200,'interview schedule is saved');c=out.body.record;
  out=await write('stage',{id:c.id,version:c.version,stage:'면접 완료',interviewAt:c.interviewAt});c=out.body.record;

@@ -10,7 +10,7 @@
 
 **Spec:** `docs/superpowers/specs/2026-10-11-hr-nine-features-design.md` — 2026-10-11 사용자 승인.
 
-**상태:** 사용자 계획 승인 · 직접 구현 진행 중. 추가 HR 기능 개발 7/9 · 개발 검증 완료 7/9 · 배포 확인 0/9. 기존 100개 개선안과 별도로 추적한다.
+**상태:** 사용자 계획 승인 · 직접 구현 진행 중. 추가 HR 기능 개발 8/9 · 개발 검증 완료 8/9 · 배포 확인 0/9. 기존 100개 개선안과 별도로 추적한다.
 
 ## Global Constraints
 
@@ -163,10 +163,10 @@ type HrPanelProps = {client:HrClient;branchId:string;selfId:string|null};
 
 **Interfaces:** `PulseCampaign = HrMeta & {title:string;questions:{id:string;text:string}[];employeeIds:string[];opensAt:string;closesAt:string;status:'draft'|'open'|'closed'}`. `PulseAnswer = HrMeta & {campaignId:string;employeeId:string;values:Record<string,1|2|3|4|5>;comment:string;submittedAt:string}`. `pulseSummary(campaign:PulseCampaign,answers:PulseAnswer[]):{responded:number;targeted:number;distributions:Record<string,[number,number,number,number,number]>}`. POST actions saveCampaign/publish/answer/close. `PulsePanel(props:HrPanelProps)`.
 
-- [ ] **1. 실패 시험:** 대상8·응답6이면 responded6/targeted8, 미응답2는 분포에 0명 추가. 한 직원 한 응답, 마감과 동시에 제출409, 종료 전 수정 허용, 대상 외403, 타인 응답404, 공개 범위 미확인400을 assert한다.
-- [ ] **2. 실패 확인:** `node scripts/check-hr-pulse.mjs` 순수 집계, build 후 API 시험.
-- [ ] **3. 구현:** hr_pulse_campaigns/hr_pulse_answers 추가. 제목100/질문1~5개·각100/의견1000자 제한. 공개 시 대상자를 고정하고 응답은 owner·pulse 위임자만 전체 열람한다. 직원은 본인 응답만 조회한다. 응답0의 분포는 전부0.
-- [ ] **4. 화면·통과·커밋:** 자발적 응답·실명 공개 범위·마감·수정을 안내한다. 건너뛰기를 불이익이나 불만 점수로 처리하지 않는다. 인원수와 분포·의견만 보여 주며 익명 건의와 결합하지 않는다. core/pulse·타입 검사.
+- [x] **1. 실패 시험:** 대상8·응답6이면 responded6/targeted8, 미응답2는 분포에 0명 추가. 한 직원 한 응답, 마감과 동시에 제출409, 종료 전 수정 허용, 대상 외403, 타인 응답404, 공개 범위 미확인400을 assert한다.
+- [x] **2. 실패 확인:** `node scripts/check-hr-pulse.mjs` 순수 집계, build 후 API 시험.
+- [x] **3. 구현:** hr_pulse_campaigns/hr_pulse_answers 추가. 제목100/질문1~5개·각100/의견1000자 제한. 공개 시 대상자를 고정하고 응답은 owner·pulse 위임자만 전체 열람한다. 직원은 본인 응답만 조회한다. 응답0의 분포는 전부0.
+- [x] **4. 화면·통과·커밋:** 자발적 응답·실명 공개 범위·마감·수정을 안내한다. 건너뛰기를 불이익이나 불만 점수로 처리하지 않는다. 인원수와 분포·의견만 보여 주며 익명 건의와 결합하지 않는다. core/pulse·타입 검사.
 
 ## Task 8: HR-10 지급품·부분 반납
 
