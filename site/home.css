@@ -506,3 +506,40 @@ html.reduce *{animation:none!important;transition:none!important}
 @keyframes frame-cycle{0%{opacity:0}4%,21%{opacity:1}25%,100%{opacity:0}}
 .demo4 .stack .mock{border:0;padding:0}
 @media (prefers-reduced-motion:reduce){.demo4 .frame{animation:none;opacity:0}.demo4 .frame.f1{opacity:1}}
+
+/* 가상 시연 · 인건비 설정 · 매장 QR 예시 (2026-10-10) */
+.demo4-note{margin:-20px 0 30px;color:var(--muted);font-size:15px;line-height:1.6}
+.demo4-note b{color:var(--ink)}
+@media(min-width:601px){.demo4-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.demo4-grid .mock{min-height:150px}
+.rec{margin:4px 0 0;font-size:14px;line-height:1.6;color:var(--ink);display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.rec .btn-ghost{padding:6px 14px}
+.qr-scene{margin:26px 0 0;max-width:440px}
+.qr-scene svg{display:block;width:100%;height:auto}
+.qr-scene figcaption{margin-top:10px;font-size:14px;color:var(--muted)}
+
+.demo4-gif{display:block;width:100%;height:auto;border-radius:14px;border:1px solid var(--line);background:var(--sheet)}
+.calc-gif{margin:40px 0 0;max-width:640px}
+.calc-gif img{display:block;width:100%;height:auto;border-radius:14px;border:1px solid var(--line)}
+.calc-gif figcaption{margin-top:10px;font-size:14px;color:var(--muted)}
+
+/* 시연 패널: 데스크톱 2열 큰 패널, 모바일 1열. 클릭하면 크게 보기 */
+.demo4-card{padding:24px}
+.gif-box{margin:0;position:relative}
+.gif-zoom{position:absolute;right:10px;top:10px;font:inherit;font-size:13px;font-weight:800;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--white);color:var(--ink);cursor:zoom-in}
+.demo4-steps{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;font-size:15px;color:var(--ink)}
+.demo4-steps b{color:var(--green);margin-right:4px}
+@media(max-width:600px){.demo4-steps{grid-template-columns:1fr}}
+.gif-box.big{position:fixed;inset:0;z-index:60;background:rgba(6,35,26,.9);display:grid;place-items:center;padding:16px;margin:0}
+.gif-box.big .demo4-gif{width:min(96vw,1100px);max-height:88vh;height:auto;border:0}
+.gif-box.big .gif-zoom{cursor:zoom-out;top:auto;bottom:-44px;right:50%;transform:translateX(50%)}
+
+/* 실제 제품 캡처: 전체 화면 비율 유지, 확대 시 화면 안에 맞춤. */
+#hero-title{font-size:clamp(40px,4.7vw,74px);line-height:1.16;letter-spacing:-.055em}
+.hero-price-note{font-size:15px;margin-top:18px;color:var(--muted)}
+.actual-tour{width:100%;max-width:620px;justify-self:center}
+.actual-tour figcaption{font-size:13px;color:var(--muted);margin-top:10px}
+.gif-box.big .demo4-gif{width:auto;height:auto;max-width:96vw;max-height:84vh;object-fit:contain}
+.gif-box.big .gif-zoom{position:fixed;top:18px;bottom:auto;right:18px;transform:none}
+.actual-limit{margin-top:28px}.demo4-feel{min-height:0}
+@media(max-width:600px){html.anim #hero-title,#hero-title{font-size:clamp(32px,8.6vw,48px)}.actual-tour{max-width:100%}}

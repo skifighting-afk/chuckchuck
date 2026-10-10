@@ -2,6 +2,7 @@
 // 체험 화면의 휴가·공지: 실제 화면(OpsView)과 같은 구성. 버튼을 누르면 체험 안에서만 상태가 바뀐다(저장 없음).
 // 휴가·대타를 승인하면 체험 근무표도 바로 바뀐다.
 import {useMemo,useState} from 'react';
+import {applyDemoSwap} from '../lib/demo-swaps';
 import {toast} from 'sonner';
 import {OpsView,StatusBadge} from './ops-board';
 import {Swaps} from './operations';
@@ -10,9 +11,9 @@ import {noticeAudience,md,plusDays} from '../lib/ops-view';
 
 const dow=(d:string)=>new Date(d+'T00:00:00Z').getUTCDay();
 const nextDow=(from:string,w:number,skip=0):string=>{let d=plusDays(from,1);while(dow(d)!==w)d=plusDays(d,1);return plusDays(d,skip*7)};
-export function DemoOperations({team,onTeam,branchId}:{team:Team,onTeam:(s:Team)=>void,branchId:string}){
+export function DemoOperations({team,onTeam,branchId,selfId=null,sharedOps,onOps,initial}:{team:Team,onTeam:(s:Team)=>void,branchId:string,selfId?:string|null,sharedOps?:any,onOps?:(s:any)=>void,initial?:string}){
  const t0=today(),es=team.employees.filter(e=>e.branchId===branchId&&e.status!=='퇴사'),by=(n:string)=>es.find(e=>e.name===n)||es[0];
- const [ops,setOps]=useState(()=>{
+ const [localOps,setLocalOps]=useState<any>(()=>{
   const tue=nextDow(t0,2,1),sh=team.shifts.filter(s=>s.date>t0).sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start)),kim=sh.find(s=>s.employeeId===by('김예시').id)||sh[0],first=(n:string)=>sh.find(s=>s.employeeId===by(n).id)?.date||plusDays(t0,3),sat=first('정가상'),wed=sh.filter(s=>s.employeeId===by('박샘플').id)[1]?.date||first('박샘플');
   const at=new Date(Date.now()-3600000).toISOString(),read=(names:string[])=>names;
   return {
@@ -28,35 +29,34 @@ export function DemoOperations({team,onTeam,branchId}:{team:Team,onTeam:(s:Team)
    ] as any[],
   };
  });
+ const ops=sharedOps||localOps,owner=!selfId;
+ const setOps=(fn:any)=>{const next=typeof fn==='function'?fn(ops):fn;setLocalOps(next);onOps?.(next)};
  const emps=es.map(e=>({id:e.id,name:e.name,role:e.role,branchId:e.branchId}));
  const data=useMemo(()=>{
   const aud=(n:any)=>noticeAudience(n.target,emps,n.branchId).map(id=>emps.find(e=>e.id===id)!.name);
-  return {access:'owner',selfId:null,fivePlus:false,today:t0,weekStart:(team.settings as any).weekStart||'mon',branches:team.branches,
+  return {access:owner?'owner':'employee',selfId,fivePlus:false,today:t0,weekStart:(team.settings as any).weekStart||'mon',branches:team.branches,
    employees:es.map(e=>({id:e.id,name:e.name,branchId:e.branchId,role:e.role,leaveBalance:e.leaveBalance,accrual:{eligible:false,reason:'체험 매장은 5명 미만이라 연차를 자동 계산하지 않아요.'}})),
    colleagues:emps,availability:{},
    shifts:team.shifts.filter(s=>s.date>=plusDays(t0,-7)).map(s=>({id:s.id,employeeId:s.employeeId,date:s.date,start:s.start,end:s.end,breakMinutes:s.breakMinutes})),
-   myShifts:team.shifts.filter(s=>s.date>=t0).sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start)).map(s=>({id:s.id,employeeId:s.employeeId,date:s.date,start:s.start,end:s.end})),
+   myShifts:team.shifts.filter(s=>s.date>=t0&&(owner||s.employeeId===selfId)).sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start)).map(s=>({id:s.id,employeeId:s.employeeId,date:s.date,start:s.start,end:s.end})),
    leaves:ops.leaves,swaps:ops.swaps,
-   notices:ops.notices.map(n=>{const a=aud(n),scheduled=!!n.publishAt&&Date.parse(n.publishAt)>Date.now();return {...n,scheduled,audience:a.length,readCount:a.filter(x=>n.readers.includes(x)).length,readers:a.filter(x=>n.readers.includes(x)),unread:a.filter(x=>!n.readers.includes(x))}})};
- },[ops,team]);
+   notices:ops.notices.map((n:any)=>{const a=aud(n),scheduled=!!n.publishAt&&Date.parse(n.publishAt)>Date.now();return {...n,scheduled,audience:a.length,readCount:a.filter(x=>n.readers.includes(x)).length,readers:a.filter(x=>n.readers.includes(x)),unread:a.filter(x=>!n.readers.includes(x))}})};
+ },[ops,team,selfId]);
  function action(b:any){
   const now=new Date().toISOString();
-  if(b.action==='reviewLeave'){const l=ops.leaves.find(x=>x.id===b.id)!;let removed:any[]=[];
+  if(b.action==='reviewLeave'){const l=ops.leaves.find((x:any)=>x.id===b.id)!;let removed:any[]=[];
    if(b.approve){removed=team.shifts.filter(s=>s.employeeId===l.employeeId&&s.date>=l.start&&s.date<=l.end);if(removed.length){const ids=new Set(removed.map(s=>s.id));onTeam({...team,shifts:team.shifts.filter(s=>!ids.has(s.id))})}}
-   setOps(o=>({...o,leaves:o.leaves.map(x=>x.id===b.id?{...x,status:b.approve?'승인':'반려',comment:b.comment,reviewedAt:now,reviewer:'예시 사장님',removedShifts:removed.map(s=>({id:s.id,date:s.date,start:s.start,end:s.end}))}:x)}));
+   setOps((o:any)=>({...o,leaves:o.leaves.map((x:any)=>x.id===b.id?{...x,status:b.approve?'승인':'반려',comment:b.comment,reviewedAt:now,reviewer:'예시 사장님',removedShifts:removed.map(s=>({id:s.id,date:s.date,start:s.start,end:s.end}))}:x)}));
    toast.success(b.approve?(removed.length?`승인했어요. ${l.name}님 ${removed.map(s=>md(s.date)).join(', ')} 근무를 근무표에서 뺐어요.`:'승인했어요.'):`반려했어요. ${l.name}님에게 사유를 알렸어요(체험).`);return}
-  if(b.action==='reviewSwap'){const w=ops.swaps.find(x=>x.id===b.id)!;
-   if(b.approve)onTeam({...team,shifts:team.shifts.map(s=>s.id===w.shift.id?{...s,employeeId:w.taker!.id}:s)});
-   setOps(o=>({...o,swaps:o.swaps.map(x=>x.id===b.id?{...x,status:b.approve?'승인':'반려',comment:b.comment,reviewedAt:now,reviewer:'예시 사장님'}:x)}));
-   toast.success(b.approve?`승인했어요. ${md(w.shift.date)} 근무자를 ${w.taker!.name}님으로 바꿨어요.`:'반려했어요. 직원에게 사유를 알렸어요(체험).');return}
-  if(b.action==='postNotice'){setOps(o=>({...o,notices:[...o.notices,{id:crypto.randomUUID(),title:b.title,body:b.body,branchId:b.branchId,author:'예시 사장님',createdAt:now,target:b.target,publishAt:b.publishAt,photo:b.photo,readers:[],remindedAt:null}]}));toast.success(b.publishAt?'공지를 예약했어요(체험).':'공지를 보냈어요(체험). 실제 매장에서는 직원 휴대폰에 알림이 가요.');return}
-  if(b.action==='pinNotice'){setOps(o=>({...o,notices:o.notices.map(x=>x.id===b.id?{...x,pinned:!!b.pinned}:x)}));toast.success(b.pinned?'맨 위에 고정했어요(체험). 직원 첫 화면에도 맨 위에 보여요.':'고정을 풀었어요(체험).');return}
-  if(b.action==='remindNotice'){const n=data.notices.find((x:any)=>x.id===b.id);setOps(o=>({...o,notices:o.notices.map(x=>x.id===b.id?{...x,remindedAt:now}:x)}));toast.success(`${n?.unread.join(', ')}님에게 다시 알렸어요(체험).`);return}
-  if(b.action==='requestLeave'){const e=es.find(x=>x.id===b.employeeId)!;setOps(o=>({...o,leaves:[...o.leaves,{id:crypto.randomUUID(),employeeId:e.id,name:e.name,start:b.start,end:b.end,kind:b.kind,days:b.days,reason:b.reason,status:'승인 대기',at:now}]}));toast.success('휴가 신청을 넣었어요(체험).');return}
-  if(b.action==='cancelLeave'){setOps(o=>({...o,leaves:o.leaves.map(x=>x.id===b.id?{...x,status:'취소'}:x)}));return}
+  if(['requestSwap','acceptSwap','reviewSwap','cancelSwap'].includes(b.action)){try{const n=applyDemoSwap(team,ops,b,{selfId,today:t0,now});onTeam(n.team);setOps(n.ops);toast.success(b.action==='reviewSwap'&&b.approve?'승인했어요. 체험 근무표에 반영했습니다.':'체험 요청 상태를 반영했어요. 실제 매장에는 저장되지 않아요.')}catch(e){toast.error(e instanceof Error?e.message:'요청을 처리하지 못했어요.')}return}
+  if(b.action==='postNotice'){setOps((o:any)=>({...o,notices:[...o.notices,{id:crypto.randomUUID(),title:b.title,body:b.body,branchId:b.branchId,author:'예시 사장님',createdAt:now,target:b.target,publishAt:b.publishAt,photo:b.photo,readers:[],remindedAt:null}]}));toast.success(b.publishAt?'공지를 예약했어요(체험).':'공지를 보냈어요(체험). 실제 매장에서는 직원 휴대폰에 알림이 가요.');return}
+  if(b.action==='pinNotice'){setOps((o:any)=>({...o,notices:o.notices.map((x:any)=>x.id===b.id?{...x,pinned:!!b.pinned}:x)}));toast.success(b.pinned?'맨 위에 고정했어요(체험). 직원 첫 화면에도 맨 위에 보여요.':'고정을 풀었어요(체험).');return}
+  if(b.action==='remindNotice'){const n=data.notices.find((x:any)=>x.id===b.id);setOps((o:any)=>({...o,notices:o.notices.map((x:any)=>x.id===b.id?{...x,remindedAt:now}:x)}));toast.success(`${n?.unread.join(', ')}님에게 다시 알렸어요(체험).`);return}
+  if(b.action==='requestLeave'){const e=es.find((x:any)=>x.id===b.employeeId)!;setOps((o:any)=>({...o,leaves:[...o.leaves,{id:crypto.randomUUID(),employeeId:e.id,name:e.name,start:b.start,end:b.end,kind:b.kind,days:b.days,reason:b.reason,status:'승인 대기',at:now}]}));toast.success('휴가 신청을 넣었어요(체험).');return}
+  if(b.action==='cancelLeave'){setOps((o:any)=>({...o,leaves:o.leaves.map((x:any)=>x.id===b.id?{...x,status:'취소'}:x)}));return}
   toast.info('체험에서는 사장님 승인·반려와 공지만 해 볼 수 있어요.');
  }
- const leaveTab=<section className="panel t-gap"><div className="panel-heading"><h2>휴가 신청 내역</h2></div>{ops.leaves.slice().reverse().map(l=><article className="t-panelbody ops-request" key={l.id}><div className="t-inline"><b>{l.name}</b><StatusBadge s={l.status}/><span>{l.kind} · {l.days}일</span></div><p>{l.start} ~ {l.end}</p><p className="ops-reason">{l.reason}</p>{l.comment&&<p className="footnote">처리: {l.comment}</p>}{l.status==='승인 대기'&&<small className="footnote">'처리할 것'에서 승인·반려해요.</small>}</article>)}</section>;
- return <><p className="notice">체험용 예시예요. 승인·반려·공지를 눌러 보세요. 승인하면 체험 근무표가 바로 바뀌어요(새로고침하면 처음으로).</p>
-  <OpsView demo data={data} action={action} busy={false} branchId={branchId} swaps={<Swaps data={data} owner busy={false} action={action} branchId={branchId}/>} leaveTab={leaveTab}/></>;
+ const leaveTab=<section className="panel t-gap"><div className="panel-heading"><h2>휴가 신청 내역</h2></div>{ops.leaves.slice().reverse().map((l:any)=><article className="t-panelbody ops-request" key={l.id}><div className="t-inline"><b>{l.name}</b><StatusBadge s={l.status}/><span>{l.kind} · {l.days}일</span></div><p>{l.start} ~ {l.end}</p><p className="ops-reason">{l.reason}</p>{l.comment&&<p className="footnote">처리: {l.comment}</p>}{l.status==='승인 대기'&&<small className="footnote">'처리할 것'에서 승인·반려해요.</small>}</article>)}</section>;
+ return <><p className="notice">실제 앱과 같은 요청 화면입니다. 직원 요청·동료 수락·사장님 승인을 차례로 체험하세요. 승인하면 체험 근무표가 바로 바뀌어요(새로고침하면 처음으로).</p>
+  <OpsView demo data={data} initial={initial} action={action} busy={false} branchId={branchId} swaps={<Swaps data={data} owner={owner} busy={false} action={action} branchId={branchId}/>} leaveTab={leaveTab}/></>;
 }

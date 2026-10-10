@@ -15,7 +15,7 @@ export default function PricingPreview() {
             가게 규모에 맞춰 고르세요
           </h2>
           <p className="mt-4 text-[18px] leading-relaxed text-foreground-700">
-            베이직과 프로 두 가지예요. 직원 수 제한 없이 지점 수로만 요금이 정해지고, 가입 후 30일은 무료예요.
+            베이직과 프로 두 가지예요. 직원 1명당 월 요금이고 지점 수로는 달라지지 않아요. 가입 후 30일은 무료예요.
           </p>
         </Reveal>
 

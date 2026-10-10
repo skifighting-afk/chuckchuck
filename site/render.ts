@@ -1,15 +1,15 @@
 // 홈페이지(site/)에서 화면과 빌드가 같이 쓰는 내용. 숫자는 lib/에서만 가져온다(요금·계산식·사업자 정보를 따로 적지 않는다).
-import {plans,monthlyPrice,periodPrice,money,TRIAL_DAYS,CONTRACTS_FREE_PER_MONTH,CONTRACT_EXTRA_PRICE,contractFeeText,type PlanId} from '../lib/plans';
+import {plans,employeeMonthlyPrice,money,TRIAL_DAYS,CONTRACTS_FREE_PER_MONTH,CONTRACT_EXTRA_PRICE,contractFeeText,type PlanId} from '../lib/plans';
 import {estimateLabor} from '../lib/labor-estimate';
 import {operatorLines} from '../lib/operator';
 
 export const esc = (s: string) => s.replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'} as Record<string, string>)[c]);
-export {plans, monthlyPrice, periodPrice, money, TRIAL_DAYS, CONTRACTS_FREE_PER_MONTH, CONTRACT_EXTRA_PRICE, contractFeeText};
+export {plans, employeeMonthlyPrice, money, TRIAL_DAYS, CONTRACTS_FREE_PER_MONTH, CONTRACT_EXTRA_PRICE, contractFeeText};
 export type {PlanId};
 
 /** 요금제 카드 기능 목록 — app/public-pages.tsx PLAN_FEATURES와 같은 내용 */
 export const PLAN_FEATURES: Record<PlanId, string[]> = {
-  basic: ['직원 수 제한 없음', '근무표 · 대타·교대 요청', '앱 버튼 출퇴근 · 정정 승인', '급여 자동 계산 · 명세서 · 임금대장', `전자근로계약서 ${contractFeeText()}`, '휴가 · 공지 · 매장 매뉴얼', '인건비 리포트 · 지점 비교(2지점 이상)'],
+  basic: ['직원 수 제한 없음', '근무표 · 대타·교대 요청', '앱 버튼 출퇴근 · 정정 승인', '급여 자동 계산 · 명세서 · 임금대장', `전자근로계약서 ${contractFeeText()}`, '휴가 · 공지 · 매장 매뉴얼', '인건비 리포트'],
   pro: ['베이직 기능 전부', '매장 QR을 찍어야 출퇴근 기록', '30초마다 바뀌는 QR(대리 출근 막기)'],
 };
 
@@ -75,7 +75,7 @@ export function footerHtml() {
 export function planCardsHtml(app: string) {
   return (['basic', 'pro'] as PlanId[]).map(id => {
     const p = plans[id];
-    return `<label class="plan${id === 'pro' ? ' pro' : ''}"><input type="radio" name="plan" id="plan-${id}" value="${id}"${id === 'basic' ? ' checked' : ''}><span class="plan-head"><b>${p.name}</b>${id === 'pro' ? '<span class="flag">매장 QR 출퇴근</span>' : ''}</span><span class="plan-from">1지점 월 <b>${money(monthlyPrice(id, 1))}</b>원부터</span><ul>${PLAN_FEATURES[id].map(f => `<li>${esc(f)}</li>`).join('')}</ul></label>`;
+    return `<label class="plan${id === 'pro' ? ' pro' : ''}"><input type="radio" name="plan" id="plan-${id}" value="${id}"${id === 'basic' ? ' checked' : ''}><span class="plan-head"><b>${p.name}</b>${id === 'pro' ? '<span class="flag">매장 QR 출퇴근</span>' : ''}</span><span class="plan-from">직원 1명당 월 <b>${money(employeeMonthlyPrice(id, 1))}</b>원</span><ul>${PLAN_FEATURES[id].map(f => `<li>${esc(f)}</li>`).join('')}</ul></label>`;
   }).join('');
 }
 
@@ -83,7 +83,7 @@ export function jsonLd(site: string) {
   const app = {
     '@context': 'https://schema.org', '@type': 'SoftwareApplication', name: '척척사장', url: site, applicationCategory: 'BusinessApplication', operatingSystem: 'Web',
     description: '작은 가게 사장님을 위한 직원 근무표·출퇴근·급여 계산·임금명세서·전자근로계약서 관리. 앱 설치 없이 휴대폰으로.',
-    offers: (['basic', 'pro'] as PlanId[]).map(id => ({'@type': 'Offer', name: plans[id].name + ' (1지점, 월)', price: monthlyPrice(id, 1), priceCurrency: 'KRW'})),
+    offers: (['basic', 'pro'] as PlanId[]).map(id => ({'@type': 'Offer', name: plans[id].name + ' (직원 1명당, 월)', price: employeeMonthlyPrice(id, 1), priceCurrency: 'KRW'})),
   };
   const faq = {'@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: WORRIES.map(w => ({'@type': 'Question', name: w.q, acceptedAnswer: {'@type': 'Answer', text: w.a}}))};
   return [app, faq].map(o => `<script type="application/ld+json">${JSON.stringify(o).replace(/</g, '\\u003c')}</script>`).join('');
