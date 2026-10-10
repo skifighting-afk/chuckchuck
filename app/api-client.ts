@@ -65,8 +65,13 @@ export const hasSession = () => !!current;
 /** 개선 2차 B196·B198: 화면 오류·느린 요청 보고(한 화면에 10번까지, 개인정보는 서버에서 한 번 더 지움) */
 let reported = 0;
 export function reportClient(kind: 'error' | 'slow', message: string) {
-  if (reported++ >= 10 || /^\/(demo|try)/.test(location.pathname)) return;
-  try { void window.fetch('/api/client-error', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({kind, message: String(message).slice(0, 600), path: location.pathname})}).catch(() => null); } catch {}
+  const m = String(message || '');
+  // 정보가 없는 외부 스크립트 오류("Script error.")는 보내지 않는다
+  if (reported >= 10 || /^\/(demo|try)/.test(location.pathname) || /^Script error\.?\s*@/.test(m)) return;
+  reported++;
+  // 화면 사용을 방해하지 않게: 화면이 조용해진 뒤(최대 5초 뒤) 보내고, 3초 안에 끝나지 않으면 끊는다
+  const send = () => { try { const c = new AbortController(); const t = setTimeout(() => c.abort(), 3000); void window.fetch('/api/client-error', {method: 'POST', keepalive: true, signal: c.signal, headers: {'Content-Type': 'application/json'}, body: JSON.stringify({kind, message: m.slice(0, 600), path: location.pathname})}).catch(() => null).finally(() => clearTimeout(t)); } catch {} };
+  try { const ric = (window as any).requestIdleCallback; if (ric) ric(send, {timeout: 5000}); else setTimeout(send, 3000); } catch { setTimeout(send, 3000); }
 }
 try {
   addEventListener('error', (e: Event) => { if ((e as ErrorEvent).message) reportClient('error', `${(e as ErrorEvent).message} @${String((e as ErrorEvent).filename || '').split('/').pop()}:${(e as ErrorEvent).lineno}`); });

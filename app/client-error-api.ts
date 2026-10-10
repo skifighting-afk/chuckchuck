@@ -11,8 +11,10 @@ export async function clientErrorApi(request:Request,env:AdminEnv){
  const message=scrubError(String(b.message||'')).slice(0,600),path=String(b.path||'').replace(/[?#].*$/,'').slice(0,120);if(!message)return json({ok:true});
  // 같은 기기에서 쏟아지지 않게: 최근 1분 안 같은 메시지는 버린다, 전체는 하루 2,000건까지만 남긴다
  const now=new Date(),minute=new Date(Date.now()-60000).toISOString();
- const dup=await env.DB.prepare('SELECT 1 FROM client_errors WHERE message=? AND at>? LIMIT 1').bind(message,minute).first().catch(()=>null);if(dup)return json({ok:true});
- await env.DB.prepare('INSERT INTO client_errors(kind,message,path,at) VALUES(?,?,?,?)').bind(kind,message,path,now.toISOString()).run().catch(()=>null);
- await env.DB.prepare('DELETE FROM client_errors WHERE at<?').bind(new Date(Date.now()-14*86400000).toISOString()).run().catch(()=>null);
+ // 기록은 최선만: 2초 안에 못 끝내면 그냥 받았다고 답한다(화면을 붙잡지 않게)
+ const work=(async()=>{const dup=await env.DB.prepare('SELECT 1 AS x FROM client_errors WHERE message=? AND at>? LIMIT 1').bind(message,minute).first().catch(()=>null);if(dup)return;
+  await env.DB.prepare('INSERT INTO client_errors(kind,message,path,at) VALUES(?,?,?,?)').bind(kind,message,path,now.toISOString()).run().catch(()=>null);
+  if(Math.random()<0.05)await env.DB.prepare('DELETE FROM client_errors WHERE at<?').bind(new Date(Date.now()-14*86400000).toISOString()).run().catch(()=>null)})();
+ await Promise.race([work,new Promise(r=>setTimeout(r,2000))]);
  return json({ok:true});
 }
