@@ -2,21 +2,3 @@
 > chuckchuck@0.1.0 check
 > tsc --noEmit
 
-site/home.ts(155,10): error TS2345: Argument of type 'HTMLElement' is not assignable to parameter of type 'ParentNode'.
-  Types of property 'append' are incompatible.
-    Type '(content: string | Response | ReadableStream<any>, options?: ContentOptions | undefined) => Element' is not assignable to type '(...nodes: (string | Node)[]) => void'.
-      Types of parameters 'content' and 'nodes' are incompatible.
-        Type 'string | Node' is not assignable to type 'string | Response | ReadableStream<any>'.
-          Type 'Node' is not assignable to type 'string | Response | ReadableStream<any>'.
-site/home.ts(156,10): error TS2345: Argument of type 'HTMLElement' is not assignable to parameter of type 'ParentNode'.
-  Types of property 'append' are incompatible.
-    Type '(content: string | Response | ReadableStream<any>, options?: ContentOptions | undefined) => Element' is not assignable to type '(...nodes: (string | Node)[]) => void'.
-      Types of parameters 'content' and 'nodes' are incompatible.
-        Type 'string | Node' is not assignable to type 'string | Response | ReadableStream<any>'.
-          Type 'Node' is not assignable to type 'string | Response | ReadableStream<any>'.
-site/home.ts(190,10): error TS2345: Argument of type 'HTMLElement' is not assignable to parameter of type 'ParentNode'.
-  Types of property 'append' are incompatible.
-    Type '(content: string | Response | ReadableStream<any>, options?: ContentOptions | undefined) => Element' is not assignable to type '(...nodes: (string | Node)[]) => void'.
-      Types of parameters 'content' and 'nodes' are incompatible.
-        Type 'string | Node' is not assignable to type 'string | Response | ReadableStream<any>'.
-          Type 'Node' is not assignable to type 'string | Response | ReadableStream<any>'.
