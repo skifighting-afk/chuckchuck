@@ -5,6 +5,7 @@
 //   node scripts/build-home.mjs --preview <폴더>   Claude 미리보기용(문서 껍데기·보안 정책 meta 없이)
 // 도메인은 deploy.config.json의 HOME_DOMAIN(홈페이지)·APP_DOMAIN(앱)에서 읽는다.
 import {stripTypeScriptTypes} from 'node:module';
+import {createHash} from 'node:crypto';
 import {readFile, writeFile, mkdir, copyFile, readdir} from 'node:fs/promises';
 import {existsSync, readFileSync} from 'node:fs';
 import path from 'node:path';
@@ -18,12 +19,14 @@ export const APP_ORIGIN = origin(process.env.APP_DOMAIN || config.APP_DOMAIN || 
 
 export async function buildHome({out, site = HOME_ORIGIN, app = APP_ORIGIN, pixelId = '', preview = false} = {}) {
   const dir = path.join(out, 'home');
+  const version=createHash('sha256').update((await Promise.all([...MODULES,'site/home.css'].map(f=>readFile(f,'utf8')))).join('\n')+pixelId).digest('hex').slice(0,16);
+  const moduleDir=path.join(dir,'v-'+version);
   // 1) 모듈
   for (const file of MODULES) {
     let code = stripTypeScriptTypes(await readFile(file, 'utf8'), {mode: 'strip'});
     code = code.replace(/(from\s+['"])(\.{1,2}\/[^'"]+?)(['"])/g, (_, a, p, b) => a + (p.endsWith('.js') ? p : p + '.js') + b);
     if (file === 'app/meta-pixel.ts') code = code.replace(/__META_PIXEL_ID__/g, JSON.stringify(pixelId));
-    const dest = path.join(dir, file.replace(/\.ts$/, '.js'));
+    const dest = path.join(moduleDir, file.replace(/\.ts$/, '.js'));
     await mkdir(path.dirname(dest), {recursive: true});
     await writeFile(dest, code);
   }
@@ -34,8 +37,8 @@ export async function buildHome({out, site = HOME_ORIGIN, app = APP_ORIGIN, pixe
     for (const f of await readdir('site/' + sub)) if (/\.(woff2|webp|txt|gif|jpg|mp4)$/.test(f) && f !== 'charset.txt') await copyFile(`site/${sub}/${f}`, path.join(dir, sub, f));
   }
   // 3) HTML 채우기
-  const R = await import(pathToFileURL(path.resolve(dir, 'site/render.js')).href + '?t=' + Date.now());
-  const PR = await import(pathToFileURL(path.resolve(dir, 'lib/pay-rules.js')).href + '?t=' + Date.now());
+  const R = await import(pathToFileURL(path.resolve(moduleDir, 'site/render.js')).href + '?t=' + Date.now());
+  const PR = await import(pathToFileURL(path.resolve(moduleDir, 'lib/pay-rules.js')).href + '?t=' + Date.now());
   const base = preview ? '' : '/';
   const pay = R.crewTotal();
   const desc = `앱 설치 없이 휴대폰으로 쓰는 작은 가게 직원 관리. 근무표, 출퇴근, 급여 계산과 명세서, 전자근로계약서까지. 직원 1명당 월 ${R.money(R.employeeMonthlyPrice('basic', 1))}원부터, ${R.TRIAL_DAYS}일 무료, 카드 등록 없음.`;
@@ -57,8 +60,9 @@ export async function buildHome({out, site = HOME_ORIGIN, app = APP_ORIGIN, pixe
     ? cut('title') + '\n' + css + '\n' + cut('body').replace(/^\s*<body>|<\/body>\s*$/g, '')
     : '<!doctype html>\n<html lang="ko">\n' + cut('head').replace('</head>', css + '\n</head>') + cut('body') + '\n</html>\n';
   if (!preview && html.includes('noindex')) throw Error('홈페이지에 noindex가 있어요');
-  await writeFile(path.join(out, 'index.html'), html);
-  return {html, pay};
+  const versioned=html.replace(/home\/site\/home\.js/g,'home/v-'+version+'/site/home.js').replace(/home\/home\.css/g,'home/home.css?v='+version);
+  await writeFile(path.join(out, 'index.html'), versioned);
+  return {html:versioned, pay};
 }
 
 /** 홈페이지 배포 폴더 전체: index.html + 아이콘 + CNAME + robots + sitemap + 404(앱의 같은 주소로 넘김) */
