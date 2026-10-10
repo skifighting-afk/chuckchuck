@@ -1,7 +1,8 @@
 import {DeviceSessions} from './devices';
 import {PushToggle} from './push';
-import {TextSizeToggle,applyTextSize} from './text-size';
-applyTextSize();
+import {CachedShifts} from './improve2-staff';
+import {TextSizeToggle,applyTextSize,ThemeToggle,applyTheme} from './text-size';
+applyTextSize();applyTheme();
 import {InstallButton,registerSW} from './install';
 import {TransferOwner,TransferOffers} from './transfer';
 import {OperatorFooter} from './operator-footer';
@@ -79,7 +80,7 @@ export default function Platform(){
  if(path==='/news')return <Shell><NewsPage/></Shell>;
  if(path==='/policy'||path==='/accessibility')return <Shell><LegalPage doc={path==='/policy'?'policy':'accessibility'}/></Shell>;
  if(status==='loading')return <Shell><div className="auth-card"><Clock3 className="auth-icon"/><h1>척척사장을 준비하고 있어요.</h1><p>계정과 매장 연결을 확인합니다.</p></div></Shell>;
- if(status==='error')return <Shell><div className="auth-card"><h1>잠시 연결이 어렵습니다.</h1><p role="alert">{error}</p><Button onClick={reload}>다시 연결</Button><a href="/login">로그인 화면</a><a href="/contracts">내 서류 보기</a><a href="/withdraw">회원 탈퇴</a></div></Shell>;
+ if(status==='error')return <Shell><div className="auth-card"><h1>잠시 연결이 어렵습니다.</h1><p role="alert">{error}</p><Button onClick={reload}>다시 연결</Button><CachedShifts/><a href="/login">로그인 화면</a><a href="/contracts">내 서류 보기</a><a href="/withdraw">회원 탈퇴</a></div></Shell>;
  if(status==='mfa')return <Shell><MfaPrompt onDone={()=>location.reload()}/></Shell>;
  if(status==='anonymous'&&path==='/')return <Shell><Landing/></Shell>;
  if(status==='anonymous'||path==='/login')return <Login account={account} role={(query.has('reset')||query.get('mode')==='reset')?'owner':qrEntry?'employee':path==='/employee'?'employee':query.get('role')==='employee'?'employee':path==='/signup'?'owner':query.get('role')==='owner'?'owner':undefined} next={qrEntry|| (query.get('role')==='employee'?'/employee':path==='/employee'?'/employee'+location.search:invite?'/?invite='+encodeURIComponent(invite):query.get('next')==='/account'?'/account':path==='/signup'?'/signup?plan='+(planId(query.get('plan'))?query.get('plan'):'free'):'/app')}/>;
@@ -96,7 +97,7 @@ export default function Platform(){
  if(!account.onboarded&&(qrEntry||account.user.role==='employee'))return <Shell><StaffJoin returnTo={qrEntry||"/app"}/></Shell>;
  if(!account.onboarded)return <Onboarding offers={account.transferOffers} onDone={()=>location.assign('/app')} email={account.user.email} initial={planId(query.get('plan'))||'pro'}/>;
  if(path==='/signup'||path==='/account')return <Account data={account} reload={reload}/>;
- return <><IncidentBanner staff={account.access!=='owner'}/><StoreSwitcher stores={account.stores} current={account.currentStore}/>{account.access==='owner'&&<><ServiceNotices notices={account.serviceNotices}/><TrialBanner account={account.account}/></>}{account.storeClosingAt&&<div className="closing-banner" role="status">{account.access==='owner'?<>탈퇴를 예약해 {new Date(account.storeClosingAt).toLocaleDateString('ko-KR')}에 가게 데이터가 삭제돼요. 지금은 읽기 전용이에요. <a href="/withdraw">예약 취소</a></>:<>이 가게는 {new Date(account.storeClosingAt).toLocaleDateString('ko-KR')}에 서비스에서 삭제될 예정이에요. 그 전에 <a href="/contracts">내 근로계약서와 임금명세서</a>를 내려받아 두세요.</>}</div>}<div className="account-strip"><a href="/account"><Store size={15}/>{account.storeName}<span>{account.access==='owner'?'계정·요금제':'내 계정'}</span></a>{account.hq&&<a href="/admin">본사 관리</a>}<span>{account.access==='employee'?'직원 계정':account.access==='manager'?'매니저 계정':account.account?.status==='active'?'이용 중':account.account?.status==='trialing'?`무료 체험 · ${Math.max(0,Math.ceil((+new Date(account.account.trialEndsAt)-Date.now())/86400000))}일 남음`:account.account?.status==='expired'||account.account?.status==='cancelled'?'체험 종료 · 조회 가능':'사전 운영'}</span><a href="/help">도움말</a><InstallButton/><TextSizeToggle/><a href={account.user.authMethod==='email'?'/logout':signOut} target="_top"><LogOut size={14}/>로그아웃</a></div><TeamApp/></>;
+ return <><IncidentBanner staff={account.access!=='owner'}/><StoreSwitcher stores={account.stores} current={account.currentStore}/>{account.access==='owner'&&<><ServiceNotices notices={account.serviceNotices}/><TrialBanner account={account.account}/></>}{account.storeClosingAt&&<div className="closing-banner" role="status">{account.access==='owner'?<>탈퇴를 예약해 {new Date(account.storeClosingAt).toLocaleDateString('ko-KR')}에 가게 데이터가 삭제돼요. 지금은 읽기 전용이에요. <a href="/withdraw">예약 취소</a></>:<>이 가게는 {new Date(account.storeClosingAt).toLocaleDateString('ko-KR')}에 서비스에서 삭제될 예정이에요. 그 전에 <a href="/contracts">내 근로계약서와 임금명세서</a>를 내려받아 두세요.</>}</div>}<div className="account-strip"><a href="/account"><Store size={15}/>{account.storeName}<span>{account.access==='owner'?'계정·요금제':'내 계정'}</span></a>{account.hq&&<a href="/admin">본사 관리</a>}<span>{account.access==='employee'?'직원 계정':account.access==='manager'?'매니저 계정':account.account?.status==='active'?'이용 중':account.account?.status==='trialing'?`무료 체험 · ${Math.max(0,Math.ceil((+new Date(account.account.trialEndsAt)-Date.now())/86400000))}일 남음`:account.account?.status==='expired'||account.account?.status==='cancelled'?'체험 종료 · 조회 가능':'사전 운영'}</span><a href="/help">도움말</a><InstallButton/><TextSizeToggle/><ThemeToggle/><a href={account.user.authMethod==='email'?'/logout':signOut} target="_top"><LogOut size={14}/>로그아웃</a></div><TeamApp/></>;
 }
 function ConsentGate({onDone}:{onDone:()=>Promise<void>}){
  // 작업 016: 약관·처리방침이 바뀌었거나 동의 기록이 없는 계정은 다시 동의해야 계속 쓸 수 있다.

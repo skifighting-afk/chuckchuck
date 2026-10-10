@@ -33,7 +33,7 @@ export function MultiStorePanel({demo}:{demo:boolean}){
  if(demo||stores.length<2)return null;
  const send=async()=>{setBusy(true);setMsg('');setErr('');try{const r=await fetch('/api/multi-store',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(mode==='notice'?{action:'notice',targets:pick,title:f.title,body:f.body}:{action:'copy',targets:pick,from:f.from,kinds:f.kinds})});const d:any=await r.json();if(!r.ok)throw Error(d.error||'보내지 못했어요.');setMsg(`${d.done.join(', ')||'없음'}에 ${mode==='notice'?'공지를 올렸어요':'복사했어요'}.${d.failed.length?` ${d.failed.join(', ')}은 실패했어요. 다시 해 주세요.`:''}`);if(mode==='notice')setF({...f,title:'',body:''})}catch(e){setErr((e as Error).message)}finally{setBusy(false)}};
  const K=[['needs','시간대별 필요 인원'],['rules','출퇴근 인정 규칙·허용 오차·주 시작 요일·자동 게시'],['manuals','매장 매뉴얼(같은 제목은 건너뜀)']];
- return <section className="panel t-gap multi-store" aria-labelledby="ms-title"><div className="panel-heading"><h2 id="ms-title">여러 가게 한 번에 ({stores.length}곳)</h2></div><div className="t-panelbody">
+ return <section className="panel t-gap multi-store" aria-labelledby="ms-title"><div className="panel-heading"><h2 id="ms-title">여러 가게 한 번에 ({stores.length}곳)</h2></div><HqReads demo={demo}/><div className="t-panelbody">
   <div className="att-views" role="group" aria-label="할 일"><button type="button" aria-pressed={mode==='notice'} onClick={()=>setMode('notice')}>본사 공지 보내기</button><button type="button" aria-pressed={mode==='copy'} onClick={()=>setMode('copy')}>표준 템플릿 복사</button></div>
   <fieldset className="slog-who"><legend>받을 가게</legend>{stores.map(x=><label key={x.owner} className="t-check"><input type="checkbox" checked={pick.includes(x.owner)} onChange={e=>setPick(e.target.checked?[...pick,x.owner]:pick.filter(o=>o!==x.owner))}/> {x.name}{x.access==='coowner'?' (공동 관리)':''}</label>)}</fieldset>
   {mode==='notice'?<><label className="slog-field">제목 <input maxLength={80} value={f.title} onChange={e=>setF({...f,title:e.target.value})}/></label><label className="slog-field">내용 <textarea rows={4} maxLength={2000} value={f.body} onChange={e=>setF({...f,body:e.target.value})}/></label><p className="footnote">고른 가게의 '휴가·공지'에 '본사' 이름으로 올라가고, 그 가게 직원에게 알림이 가요.</p></>
@@ -41,3 +41,7 @@ export function MultiStorePanel({demo}:{demo:boolean}){
   <button type="button" className="primary" disabled={busy||!pick.length||(mode==='notice'?!f.title.trim()||!f.body.trim():!f.kinds.length||!f.from)} onClick={send}>{busy?'보내는 중…':mode==='notice'?`${pick.length}곳에 공지 올리기`:`${pick.filter(o=>o!==f.from).length}곳에 복사`}</button>
   {msg&&<p role="status" className="saas-success">{msg}</p>}{err&&<p role="alert" className="saas-error">{err}</p>}</div></section>;
 }
+
+/** 개선 2차 B163 본사 공지 가게별 읽음 */
+function HqReads({demo}:{demo?:boolean}){const [rows,setRows]=useState<any[]|null>(null);if(demo)return null;
+ return <details className="t-panelbody" onToggle={e=>{if((e.target as HTMLDetailsElement).open&&!rows)fetch('/api/multi-store?reads=1').then(r=>r.json()).then((d:any)=>setRows(d.reads||[])).catch(()=>setRows([]))}}><summary>본사 공지 가게별 읽음</summary>{!rows?<p className="footnote">불러오는 중…</p>:rows.length?<ul>{rows.map((r,i)=><li key={i}>{r.store} · {r.title} · <b>{r.read}/{r.total}명</b> 읽음</li>)}</ul>:<p className="footnote">아직 본사 공지가 없어요.</p>}</details>}

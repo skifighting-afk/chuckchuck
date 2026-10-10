@@ -2,7 +2,7 @@
 // 노무 답은 많이 쓰는 일반 기준만 짧게 적고, 사정마다 다를 수 있는 건 고용노동부 상담(국번 없이 1350)이나 세무사 확인을 권한다.
 // m: 모두 맞아야 하는 말 묶음(정규식). 여러 항목이 맞으면 묶음이 많은(더 구체적인) 항목이 이긴다.
 import {type Team,type Member,calculate,kdate,missing,duration} from './team-model';
-import {type Target,todayBoard,homeAlerts,budgetStatus,plannedLabor} from './close-check';
+import {type Target,todayBoard,homeAlerts,budgetStatus,plannedLabor,todayTasks} from './close-check';
 import {checkDay,monthPatterns} from './attendance-check';
 import {ratesFor} from './pay-rules';
 import {ageAt} from './labor-checks';
@@ -27,7 +27,10 @@ const link=(href:string,label:string):Action=>({type:'link',href,label});
 const minWage=(c:Ctx)=>ratesFor(Number(c.date.slice(0,4))).minimumWage;
 const ask='사정마다 다를 수 있어요. 애매하면 고용노동부 상담센터(국번 없이 1350)에 물어보세요.';
 
+// 개선 2차 B155: 노무 상식 답 아래 근거 법 조항(조문 번호까지만, 최신 내용은 법제처 law.go.kr에서 확인)
+const LAW:Record<string,string>={'juhu-rule':'근로기준법 제55조, 시행령 제30조','juhu-calc':'근로기준법 제55조, 시행령 제30조','min-wage':'최저임금법 제6조·제10조','overtime':'근로기준법 제53조·제56조','night':'근로기준법 제56조 제3항','holiday-work':'근로기준법 제56조 제2항','public-holiday':'근로기준법 제55조 제2항, 시행령 제30조','mayday':'근로자의날 제정에 관한 법률','under5':'근로기준법 제11조, 시행령 제7조 별표1','headcount-rule':'근로기준법 시행령 제7조의2','break-rule':'근로기준법 제54조','annual-leave':'근로기준법 제60조','severance':'근로자퇴직급여 보장법 제4조·제8조','severance-calc':'근로자퇴직급여 보장법 제8조, 근로기준법 제2조(평균임금)','dismiss':'근로기준법 제23조·제26조·제27조','resign':'민법 제660조','contract-penalty':'근로기준법 제20조','payslip-law':'근로기준법 제48조 제2항, 시행령 제27조의2','pay-day':'근로기준법 제43조','insurance-rule':'국민연금법·국민건강보험법·고용보험법·산재보험법','durunuri':'고용보험 및 산업재해보상보험의 보험료징수 등에 관한 법률 제21조','three-three':'소득세법 제127조·제129조','probation':'최저임금법 제5조 제2항, 시행령 제3조','minor-rule':'근로기준법 제66조~제70조','late-deduct':'근로기준법 제43조(전액 지급)','absence-juhu':'근로기준법 시행령 제30조','week-52':'근로기준법 제50조·제53조','shutdown':'근로기준법 제46조','maternity':'근로기준법 제74조, 남녀고용평등법 제18조의2','rules-10':'근로기준법 제93조','harassment':'근로기준법 제76조의2·제76조의3, 남녀고용평등법 제13조','records-keep':'근로기준법 제42조, 시행령 제22조','withholding':'소득세법 제127조','daily-worker':'소득세법 제14조 제3항, 고용보험법 시행령','cctv':'개인정보 보호법 제25조, 근로자참여법 제20조','wage-down':'근로기준법 제17조·제94조','retire-paper':'근로기준법 제39조'};
 export const KB:Item[]=[
+ {id:'today-order',group:'오늘',q:'오늘 뭐부터 하면 돼?',m:[/오늘/,/(뭐부터|무엇부터|순서|먼저 할)/],a:c=>{const t=todayTasks(c.s,c.branch,c.date);if(!t.length)return {lines:['오늘 급하게 처리할 일은 없어요. 근무표와 공지를 한 번 훑어보면 좋아요.']};const order=['attendance','operations','schedule','payroll','contracts','employees','reports'];const list=t.slice().sort((a:any,b:any)=>order.indexOf(a.target)-order.indexOf(b.target)||b.count-a.count);return {lines:['이 순서로 하면 좋아요(직원이 기다리는 것 먼저):',...list.map((x:any,i:number)=>`${i+1}. ${x.label} ${x.count}건`)],actions:[go(list[0].target,'1번부터 하기')]}}},
  // ── 가게 기록으로 답해요 ──
  {id:'now-count',group:'오늘 가게',q:'지금 몇 명 일하고 있어?',m:[/지금|현재/,/몇\s*명|인원/],a:c=>{const b=board(c);return {lines:[`지금 ${b.working}명이 일하고 있어요.${b.left?` ${b.left}명은 아직 출근 전이에요.`:''}`],actions:[go('attendance','출퇴근 기록 보기')]}}},
  {id:'tomorrow',group:'오늘 가게',q:'내일 누가 일해?',m:[/내일/,/누가|근무자|일해|출근/],a:c=>{const d=addDays(c.date,1),l=c.s.shifts.filter(x=>c.ids.has(x.employeeId)&&x.date===d).sort((a,b)=>a.start.localeCompare(b.start));return {lines:[l.length?`${md(d)} 근무: `+l.map(x=>`${c.es.find(e=>e.id===x.employeeId)?.name} ${x.start}–${x.end}`).join(', '):`${md(d)}에는 잡힌 근무가 없어요.`],actions:[go('schedule','근무표 열기')]}}},
@@ -152,5 +155,5 @@ export function answerKB(it:Item,c:Ctx):{lines:string[],actions:Action[]}{
  const actions=[...(out.actions||[])];
  if(it.go&&!actions.length)actions.push(go(it.go,({attendance:'출퇴근 기록',employees:'직원 관리',operations:'휴가·공지',contracts:'근로계약서',payroll:'급여·명세서',schedule:'근무 스케줄',reports:'인건비 리포트'} as Record<Target,string>)[it.go]+' 열기'));
  if(it.href&&!actions.length)actions.push(link(it.href,'바로 가기'));
- return {lines:out.lines,actions};
+ const law=LAW[it.id];return {lines:law?[...out.lines,`근거: ${law} (법제처 law.go.kr에서 최신 조문 확인)`]:out.lines,actions};
 }

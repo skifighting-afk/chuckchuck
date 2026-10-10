@@ -56,6 +56,17 @@ ok('B158 slash',[I.expandSlash('/급여'),I.expandSlash('그냥 질문')],['이�
 ok('B188 referral code stable',I.referralCode('owner-1')===I.referralCode('owner-1')&&/^[A-Z2-9]{8}$/.test(I.referralCode('owner-1')),true);
 ok('B196 scrub',I.scrubError('fail a@b.co 010-1234-5678 900101-1234567 token=abc'),'fail [이메일] [전화] [번호] token=[숨김]');
 ok('B200 secret patterns',I.findSecrets('ghp_'+'a'.repeat(36)+' AKIA'+'A'.repeat(16)),['GitHub 토큰','AWS 키']);ok('B200 clean text',I.findSecrets('const x=1'),[]);
+// ── 2묶음 순수 계산
+ok('B065 budget 90%',I.budgetAlert({employees:emp,shifts:[{id:'1',employeeId:'a',date:'2026-09-08',start:'09:00',end:'19:00'}],settings:{laborBudget:105000}},K('2026-09-10','10:00')).map(a=>a.key),['budget:2026-09:90']);
+ok('B065 no budget',I.budgetAlert({employees:emp,shifts:[],settings:{}},K(day,'10:00')).length,0);
+ok('B050 daily worker rows',I.dailyWorkerReport([{...emp[0],employment:'일용'}],[{id:'r',employeeId:'a',start:iso(day,'09:00'),end:iso(day,'13:00'),breakMinutes:0}],'2026-09')[1],['에이미','','7',1,4,40000]);
+ok('B044 pay calendar',I.payCalendar([{...emp[0],payDay:10},{...emp[1],payDay:10}],'2026-09-07',1),[{date:'2026-09-10',names:['에이미','찰리']}]);
+ok('B054 account changed after last pay',I.accountChangedSince([{employeeId:'a',type:'profile',status:'반영함',changes:{bankAccount:'1'},answeredAt:'2026-09-05T00:00:00Z',at:'x'}],{'r':{locked:true,at:'2026-09-01T00:00:00Z',rows:[{employeeId:'a'}]}},'a'),true);
+ok('B054 paid since',I.accountChangedSince([{employeeId:'a',type:'profile',status:'반영함',changes:{bankAccount:'1'},answeredAt:'2026-09-05T00:00:00Z',at:'x'}],{'r':{locked:true,at:'2026-09-10T00:00:00Z',rows:[{employeeId:'a'}]}},'a'),false);
+ok('B052 progress',I.progressOf([{ok:true},{ok:false}]),{done:1,total:2,pct:50});
+ok('B152 friday reminder',I.nextWeekReminder({branches:[{id:'b',name:'본점'}],employees:emp,shifts:[],publishedWeeks:{}},K('2026-09-11','16:00')).map(a=>a.key),['nextweek:b:2026-09-14']);
+ok('B152 published → none',I.nextWeekReminder({branches:[{id:'b',name:'본점'}],employees:emp,shifts:[],publishedWeeks:{'b:2026-09-14':{at:'x',acks:{}}}},K('2026-09-11','16:00')).length,0);
+ok('B152 not friday',I.nextWeekReminder({branches:[{id:'b',name:'본점'}],employees:emp,shifts:[]},K('2026-09-10','16:00')).length,0);
 // ── 서버
 const T=await authedTest({domain:'example.invalid'}),{q,headersFor,id}=T,env=T.env;
 async function raw(user,path,body,method){return api(new Request('https://qa.local'+path,{method:method||(body?'POST':'GET'),headers:{origin:'https://qa.local',...(await headersFor(user))},...(body?{body:JSON.stringify(body)}:{})}),env)}
@@ -90,6 +101,23 @@ st=(await call('i2boss','/api/store')).body;let rec=st.state.attendance.find(a=>
 ok('attMemo ok',(await call('i2boss','/api/store',{action:'attMemo',id:'att-open',memo:'재고 정리',version:st.version})).status,200);
 st=(await call('i2boss','/api/store')).body;ok('memo saved',st.state.attendance.find(a=>a.id==='att-open').memo,'재고 정리');
 me=(await call('i2amy','/api/store')).body;ok('staff record hides memo','memo' in me.state.attendance.find(a=>a.id==='att-open'),false);
+// 공지 댓글·반응·투표·첨부(B112·B113·B130·B114)
+{const ops=async(user,b)=>{const v=(await call(user,'/api/operations')).body.version;return call(user,'/api/operations',{...b,version:v})};
+ const pdf='data:application/pdf;base64,'+Buffer.from('%PDF-1.4 test').toString('base64');
+ ok('post notice with poll+pdf',(await ops('i2boss',{action:'postNotice',title:'회식',body:'날짜 골라 주세요',branchId:'all',poll:['금','토'],file:{name:'안내.pdf',data:pdf}})).status,200);
+ let n=(await call('i2amy','/api/operations')).body.notices.find(x=>x.title==='회식');ok('staff sees poll + file',[n.poll,n.file.name],[['금','토'],'안내.pdf']);
+ ok('vote',(await ops('i2amy',{action:'voteNotice',id:n.id,option:1})).status,200);ok('bad vote',(await ops('i2amy',{action:'voteNotice',id:n.id,option:5})).status,400);
+ ok('react',(await ops('i2amy',{action:'reactNotice',id:n.id,emoji:'👍'})).status,200);ok('bad emoji',(await ops('i2amy',{action:'reactNotice',id:n.id,emoji:'💩'})).status,400);
+ ok('comment',(await ops('i2amy',{action:'commentNotice',id:n.id,text:'토요일 좋아요'})).status,200);
+ n=(await call('i2boss','/api/operations')).body.notices.find(x=>x.title==='회식');ok('owner sees counts',[n.pollCounts,n.reactions['👍'].n,n.comments[0].name,n.comments[0].mine],[[0,1],1,'에이미',false]);
+ ok('owner can delete comment',(await ops('i2boss',{action:'deleteComment',id:n.id,commentId:n.comments[0].id})).status,200);
+ ok('bad pdf rejected',(await ops('i2boss',{action:'postNotice',title:'x',body:'y',branchId:'all',file:{name:'a.pdf',data:'data:text/html;base64,AAAA'}})).status,400);}
+// 매뉴얼 사진 필수(B116) · 못 한 단계 인수인계(B117)
+{const v=(await call('i2boss','/api/manual')).body.version;const r=await call('i2boss','/api/manual',{action:'save',title:'마감',category:'마감',branchId:'all',roles:[],steps:[{text:'바닥 청소'},{text:'전원 끄기'}],needPhoto:true,version:v});ok('save manual needPhoto',r.status,200);
+ const m=(await call('i2amy','/api/manual')).body;const mm=m.manuals.find(x=>x.title==='마감');ok('photo required',(await call('i2amy','/api/manual',{action:'checkRun',id:mm.id,done:[0],version:m.version})).status,400);
+ const png='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';const m2=(await call('i2amy','/api/manual')).body;
+ ok('check with photo',(await call('i2amy','/api/manual',{action:'checkRun',id:mm.id,done:[0],photo:{mime:'image/png',body:png},version:m2.version})).status,200);
+ const d=JSON.parse((await q('SELECT data FROM stores WHERE owner=?',id('i2boss')).first()).data);ok('left steps handed over',d._storeLog.some(l=>l.kind==='인수인계'&&l.text.includes('2. 전원 끄기')),true);}
 // 화면 오류 보고: 개인정보 지움, 1분 안 같은 글 하나만, 본사만 읽기
 ok('client error needs origin',(await api(new Request('https://qa.local/api/client-error',{method:'POST',body:'{}'}),env)).status,403);
 for(let i=0;i<2;i++)await raw('i2boss','/api/client-error',{kind:'error',message:'boom a@b.co',path:'/app?x=1'});

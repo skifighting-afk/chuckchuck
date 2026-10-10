@@ -1,23 +1,46 @@
 'use client';
 // 개선 2차 직원 화면 묶음: 오늘 한 장(B091·B092·B095·B010·B094·B124·B115), 칭찬 카드(B078), 매장 정보(B109·B123·B110),
 // 근무 전 알림 시간(B101), 쉬고 싶은 날(B036), 근무표 나오는 날(B026), 직원 도움말(B100)
-import {useState} from 'react';
+import {useEffect,useState} from 'react';
 import {L} from '../lib/staff-i18n';
 import {type Team} from '../lib/team-model';
-import {untilNext,payDayLeft,punctuality} from '../lib/improve2';
+import {untilNext,payDayLeft,punctuality,changedCells} from '../lib/improve2';
+const CACHE='cc-my-shifts';
+/** B104 인터넷이 끊겨 화면을 못 불러올 때: 이 기기에 마지막으로 저장한 내 근무표 */
+export function CachedShifts(){
+ const [c,setC]=useState<any>(null);useEffect(()=>{try{setC(JSON.parse(localStorage.getItem(CACHE)||'null'))}catch{}},[]);
+ if(!c?.shifts?.length)return null;const t=todayK(),list=c.shifts.filter((x:any)=>x.date>=t).slice(0,10);if(!list.length)return null;
+ return <section className="panel t-gap" aria-label="저장된 내 근무표"><div className="t-panelbody"><h2>저장된 내 근무표</h2><p className="footnote">{String(c.at).slice(5,16).replace('T',' ')}에 이 기기에 저장한 근무표예요. 연결되면 최신으로 바뀌어요.</p><ul>{list.map((x:any,i:number)=><li key={i}>{md(x.date)}({W[new Date(x.date+'T00:00:00Z').getUTCDay()]}) {x.start}–{x.end}</li>)}</ul></div></section>;
+}
 
 const W='일월화수목금토';
 const todayK=()=>new Date(Date.now()+9*3600000).toISOString().slice(0,10);
 const md=(d:string)=>`${Number(d.slice(5,7))}/${Number(d.slice(8))}`;
 
-export function StaffToday2({state,selfId}:{state:Team,selfId:string}){
- const me:any=state.employees.find(e=>e.id===selfId);if(!me)return null;
+export function StaffToday2({state,selfId}:{state:Team,selfId:string}){return state.employees.some(e=>e.id===selfId)?<StaffTodayInner state={state} selfId={selfId}/>:null}
+function StaffTodayInner({state,selfId}:{state:Team,selfId:string}){
+ const me:any=state.employees.find(e=>e.id===selfId)!;
  const t=todayK(),now=Date.now(),nx=untilNext(state.shifts as any,selfId,now),pd=payDayLeft(t,me.payDay||10),p=punctuality(state.shifts as any,state.attendance as any,selfId,t.slice(0,7),5,now);
  const note=(state.settings as any).more?.todayNote,evs=((state as any).events||[]).filter((x:any)=>x.date>=t&&x.date<=new Date(Date.parse(t)+6*86400000).toISOString().slice(0,10));
  const praise=(me.extra?.praise||[]).slice(-3).reverse(),b:any=state.branches[0],due=(state.settings as any).more?.scheduleDue;
  const first=!state.attendance.some(a=>a.employeeId===selfId)&&b?.info?.firstDay;
+ useEffect(()=>{try{localStorage.setItem(CACHE,JSON.stringify({at:new Date().toISOString(),shifts:state.shifts.filter(x=>x.employeeId===selfId&&x.date>=t).sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start)).slice(0,30).map(x=>({date:x.date,start:x.start,end:x.end}))}))}catch{}},[state.shifts]);
+ // B001 출근 직후 · B002 퇴근 직후 요약(30분 동안) · B108 퇴근하면 인수인계 바로 쓰기
+ const mine=state.attendance.filter(a=>a.employeeId===selfId).sort((a,b)=>b.start.localeCompare(a.start))[0];
+ const justIn=mine&&!mine.end&&now-Date.parse(mine.start)<30*60000,justOut=mine?.end&&now-Date.parse(mine.end)<30*60000;
+ const worked=justOut?Math.max(0,(Date.parse(mine!.end!)-Date.parse(mine!.start))/3600000-mine!.breakMinutes/60):0;
+ const todayShift=state.shifts.find(x=>x.employeeId===selfId&&x.date===t);
+ // B096 지난번 본 근무표와 달라진 칸(이 기기 기준)
+ const future=state.shifts.filter(x=>x.employeeId===selfId&&x.date>=t) as any[];
+ const [seen,setSeen]=useState<any[]|null>(()=>{try{return JSON.parse(localStorage.getItem('cc-seen-shifts')||'null')}catch{return null}});
+ const diff=seen?changedCells(seen.filter((x:any)=>x.date>=t),future):{added:[],removed:[]};
+ const markSeen=()=>{const v=future.map(x=>({id:x.id,employeeId:x.employeeId,date:x.date,start:x.start,end:x.end,breakMinutes:x.breakMinutes}));try{localStorage.setItem('cc-seen-shifts',JSON.stringify(v))}catch{}setSeen(v)};
+ useEffect(()=>{if(!seen)markSeen()},[]);
  return <section className="panel t-gap staff-today2" aria-labelledby="st2-title"><div className="panel-heading"><h2 id="st2-title">{L('오늘 한눈에')}</h2></div><div className="t-panelbody">
   {note?.date===t&&<p className="notice" role="note">📌 <b>{L('오늘 사장님 지시')}</b> {note.text}</p>}
+  {justIn&&<p className="notice clock-summary" role="status">✅ <b>{L('출근했어요')}</b> {todayShift?`· ${L('오늘')} ${todayShift.start}–${todayShift.end}${todayShift.breakMinutes?` (${L('휴게')} ${todayShift.breakMinutes}${L('분')})`:''}`:''} · {L('오늘 할 일과 공지는 아래에서 확인해 주세요.')}</p>}
+  {justOut&&<p className="notice clock-summary" role="status">👋 <b>{L('수고하셨어요')}</b> · {L('오늘')} {Math.round(worked*10)/10}{L('시간')}{me.payType==='시급'&&(state.settings as any).staffPayEstimate!==false?` · ${L('약')} ${Math.round(worked*me.wage).toLocaleString('ko-KR')}${L('원(세전)')}`:''} · <a href="#store-log">{L('인수인계 남기기')}</a></p>}
+  {(diff.added.length>0||diff.removed.length>0)&&<div className="notice changed-shifts" role="status"><b>🔔 {L('근무표가 바뀌었어요')}</b><ul>{future.filter(x=>diff.added.includes(x.id)).map(x=><li key={x.id}><mark>{md(x.date)} {x.start}–{x.end}</mark> {L('새로 들어옴·바뀜')}</li>)}{diff.removed.map((x:any,i:number)=><li key={'r'+i}><s>{md(x.date)} {x.start}–{x.end}</s> {L('빠짐')}</li>)}</ul><button type="button" className="secondary" onClick={markSeen}>{L('바뀐 것 봤어요')}</button></div>}
   {first&&<p className="notice">👋 <b>{L('첫 출근 안내')}</b> {b.info.firstDay}</p>}
   <div className="staff-stats">
    <div><span>{L('다음 근무까지')}</span><b>{nx?nx.text:L('없음')}</b>{nx&&<small>{md(nx.shift.date)} {nx.shift.start}–{nx.shift.end}</small>}</div>
@@ -26,6 +49,8 @@ export function StaffToday2({state,selfId}:{state:Team,selfId:string}){
    <div><span>{L('남은 연차')}</span><b>{me.leaveBalance??0}<small>{L('일')}</small></b></div>
   </div>
   {evs.length>0&&<p>📅 {evs.map((x:any)=>`${md(x.date)} ${x.title}`).join(' · ')}</p>}
+  <ShareMyWeek state={state} selfId={selfId}/>
+  {typeof (state.settings as any).availabilityDue==='number'&&(()=>{const ad=(state.settings as any).availabilityDue,wd=new Date(Date.parse(t+'T00:00:00Z')).getUTCDay(),left=(ad-wd+7)%7;return <p className="footnote">⏳ {L('근무 가능 시간 마감')}: {left?`D-${left} (${W[ad]}${L('요일')})`:L('오늘까지')}</p>})()}
   {typeof due==='number'&&<p className="footnote">{L('다음 주 근무표는 매주')} {W[due]}{L('요일에 나와요.')}</p>}
   {praise.length>0&&<div className="praise-cards">{praise.map((x:any,i:number)=><p key={i} className="praise-card">💛 {x.text}<small> · {x.at.slice(5,10).replace('-','/')}</small></p>)}</div>}
  </div></section>;
@@ -71,4 +96,16 @@ const FAQ:[string,string][]=[
 ];
 export function StaffFaq(){
  return <section className="panel t-gap" aria-labelledby="sfaq-title"><div className="panel-heading"><h2 id="sfaq-title">{L('자주 묻는 질문')}</h2></div><div className="t-panelbody">{FAQ.map(([q,a])=><details key={q}><summary>{L(q)}</summary><p>{L(a)}</p></details>)}</div></section>;
+}
+
+/** B099 내 근무표 한 장 — 사진으로 저장하거나 가족에게 보내기 */
+export function ShareMyWeek({state,selfId}:{state:Team,selfId:string}){
+ const t=todayK(),list=state.shifts.filter(x=>x.employeeId===selfId&&x.date>=t).sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start)).slice(0,14);
+ if(!list.length)return null;
+ const go=async()=>{const c=document.createElement('canvas'),W2=640,H=110+list.length*44;c.width=W2;c.height=H;const g=c.getContext('2d')!;g.fillStyle='#fff';g.fillRect(0,0,W2,H);g.fillStyle='#0f172a';g.font='bold 28px sans-serif';g.fillText(`${state.store.name} 내 근무`,28,52);g.font='18px sans-serif';g.fillStyle='#475569';g.fillText(`${t} 기준`,28,82);
+  list.forEach((x,i)=>{const y=126+i*44;g.fillStyle=i%2?'#f8fafc':'#eef2ff';g.fillRect(20,y-28,W2-40,40);g.fillStyle='#0f172a';g.font='22px sans-serif';g.fillText(`${md(x.date)}(${W[new Date(x.date+'T00:00:00Z').getUTCDay()]})`,32,y);g.fillText(`${x.start} – ${x.end}`,220,y)});
+  const blob:Blob|null=await new Promise(r=>c.toBlob(r,'image/png'));if(!blob)return;const file=new File([blob],'내근무.png',{type:'image/png'});
+  try{if((navigator as any).canShare?.({files:[file]})){await navigator.share({files:[file],title:'내 근무'});return}}catch{return}
+  const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='내근무.png';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)};
+ return <button type="button" className="secondary" onClick={go}>{L('내 근무표 사진으로 보내기')}</button>;
 }

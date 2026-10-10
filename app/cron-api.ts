@@ -6,7 +6,7 @@ import {trialNotice} from '../lib/plans';
 import {notifyUser} from './push-api';
 import {processDeletions} from './withdraw-api';
 import {alertsFor} from '../lib/alert-sweep';
-import {workAlerts,scheduleAckReminders,visaAlerts,minWageNotice,digestFilter,dailyDigest} from '../lib/improve2';
+import {nextWeekReminder,budgetAlert,workAlerts,scheduleAckReminders,visaAlerts,minWageNotice,digestFilter,dailyDigest} from '../lib/improve2';
 import {dailyBrief,weeklyBrief,staleRequests} from '../lib/briefing';
 import {weekStartOf,plus as plusD} from '../lib/schedule-rules';
 import {upcomingDeadlines} from '../lib/tax-calendar';
@@ -99,7 +99,7 @@ export async function alertSweep(env:any,now=Date.now(),notify=(uid:string,m:any
   // 지시서 067·052: 마감 체크 없이 퇴근 · 24시간 지나도 안 읽은 공지
   list.push(...closingMissed(d,now),...noticeReminders(d,now),...careDays(d,now),...leavePromotion(d,now));
   // 개선 2차: B005 휴게 끝·B006 휴게 없이 4시간·B014 16시간 열린 기록 · B035 근무표 미확인 · B090 체류 기간 · B058 12월 내년 최저임금
-  list.push(...workAlerts(d,now),...scheduleAckReminders(d,now),...(new Date(now+9*3600000).getUTCHours()>=9?visaAlerts(d,now):[]));
+  list.push(...nextWeekReminder(d,now),...budgetAlert(d,now),...workAlerts(d,now),...scheduleAckReminders(d,now),...(new Date(now+9*3600000).getUTCHours()>=9?visaAlerts(d,now):[]));
   {const k=new Date(now+9*3600000);if(k.getUTCHours()>=9){const ny=k.getUTCFullYear()+1,nm=hasRatesFor(ny)?ratesFor(ny).minimumWage:undefined;list.push(...minWageNotice(d,now,nm))}}
   // B015 하루 요약: 켜 두면 사장님 낱개 미출근·퇴근 누락 알림을 빼고 저녁 9시에 한 번
   {const on=!!d.settings?.more?.digest;if(on){const kept=digestFilter(list,true);list.length=0;list.push(...kept);const k=new Date(now+9*3600000);if(k.getUTCHours()===21){const tol=({lenient:10,normal:5,strict:0} as any)[d.settings?.attendanceTolerance||'normal'];const g=dailyDigest(d,now,tol);if(g)list.push(g)}}}

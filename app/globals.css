@@ -712,3 +712,17 @@ body.ms-dragging,body.ms-dragging *{user-select:none!important;-webkit-user-sele
 .praise-cards{display:grid;gap:6px}.praise-card{margin:0;padding:8px 12px;border-radius:10px;background:#fef9c3;color:#422006}
 .ast-copy{font-size:.8rem}
 @media print{.home-more2,.ast-tools{display:none}}
+/* 개선 2차 B098·B173 어둡게 보기: 화면 전체를 뒤집고 사진·QR은 원래 색으로 */
+html.force-dark{filter:invert(.9) hue-rotate(180deg);background:#fff}
+html.force-dark img,html.force-dark video,html.force-dark canvas,html.force-dark .avatar-photo,html.force-dark [data-keep-color]{filter:invert(1) hue-rotate(180deg)}
+@media print{html.force-dark{filter:none}}
+.t-shift.k-open{border-top:3px solid #f59e0b}.t-shift.k-close{border-top:3px solid #6366f1}.t-shift.k-mid{border-top:3px solid #10b981}
+.t-kind{display:inline-block;margin-top:2px;padding:0 6px;border-radius:6px;background:#e0e7ff;color:#1e1b4b}
+.recent-pages{display:inline-flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:.85rem}
+.notice-react button{min-width:44px;min-height:44px}.notice-poll{display:grid;gap:6px;border:0;padding:0;margin:8px 0}.notice-comments{padding-left:16px}
+.changed-shifts ul{margin:6px 0;padding-left:18px}.change-note{display:block;margin:6px 0}.change-note input{width:100%}
+.num-hint{position:absolute;z-index:60;font-size:.8rem;padding:1px 6px;border-radius:6px;background:#0f172a;color:#fff;pointer-events:none}
+html.lite *{animation:none!important;transition:none!important}html.lite img[src*="cheokcheoki"]{display:none}
+.t-skel{display:grid;gap:12px;width:min(640px,92vw);margin:24px auto}.t-skel i{display:block;height:18px;border-radius:8px;background:linear-gradient(90deg,#e5e7eb,#f3f4f6,#e5e7eb);background-size:200% 100%;animation:skel 1.2s infinite}.t-skel i:nth-child(1){height:28px;width:50%}.t-skel i:nth-child(3){width:80%}
+@keyframes skel{to{background-position:-200% 0}}@media (prefers-reduced-motion:reduce){.t-skel i{animation:none}}
+.demo-reset{margin-left:8px}

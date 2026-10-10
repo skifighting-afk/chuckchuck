@@ -35,11 +35,14 @@ export async function manualApi(request:Request,env:{DB:D1Database}&PushEnv){
   const m=manuals.find(m=>m.id===b.id&&visible(m));if(!m)return json({error:'매뉴얼을 찾을 수 없어요. 목록을 새로고침해 주세요.'},404);
   const done=Array.isArray(b.done)?[...new Set(b.done.filter((i:any)=>Number.isInteger(i)&&i>=0&&i<m.steps.length))].sort((x:any,y:any)=>x-y) as number[]:[];
   if(!done.length)return json({error:'한 단계 이상 체크해 주세요.'},400);
+  if((m as any).needPhoto&&!b.photo)return json({error:'이 체크는 사진이 꼭 필요해요. 사진을 한 장 찍어 함께 보내 주세요.'},400);// 개선 2차 B116
   let photoId:string|null=null;
   if(b.photo){const p=b.photo;if(!['image/jpeg','image/png'].includes(p.mime)||typeof p.body!=='string'||!/^[A-Za-z0-9+/]+={0,2}$/.test(p.body))return json({error:'JPG·PNG 사진만 올릴 수 있어요. 다른 사진을 골라 주세요.'},400);const bin=atob(p.body);if(bin.length>MANUAL_LIMITS.imageBytes)return json({error:'사진이 너무 커요. 400KB 이하로 줄여서 올려 주세요.'},413);if(!(p.mime==='image/png'?bin.startsWith('\x89PNG\r\n\x1a\n'):bin.startsWith('\xff\xd8\xff')))return json({error:'사진 형식이 맞지 않아요. JPG·PNG 사진을 골라 주세요.'},400);
    photoId='chk-'+crypto.randomUUID();await env.DB.prepare('INSERT INTO store_manual_images(owner,id,mime,body,bytes,created_at) VALUES(?,?,?,?,?,?)').bind(linked.owner,photoId,p.mime,p.body,bin.length,now).run();}
   const runs=data._checkRuns||[],cut=new Date(Date.now()-60*86400000).toISOString(),keep=runs.filter((r)=>r.at>=cut).slice(-300),drop=runs.filter((r)=>!keep.includes(r));
   keep.push({id:crypto.randomUUID(),manualId:m.id,title:m.title,category:m.category||'기타',branchId:self?.branchId||m.branchId,byId:user!,by:owner?'사장님':self?.name||'',at:now,done,total:m.steps.length,photoId,note:typeof b.note==='string'?b.note.trim().slice(0,200):''});
+  // 개선 2차 B117: 다 못 한 단계는 다음 근무자 인수인계로 넘긴다
+  if(done.length<m.steps.length){const left=m.steps.map((x:any,i:number)=>i).filter((i:number)=>!done.includes(i)).map((i:number)=>`${i+1}. ${String(m.steps[i].text||'사진 단계').slice(0,40)}`);const lg=(data as any)._storeLog||[];lg.push({id:crypto.randomUUID(),kind:'인수인계',branchId:self?.branchId||(m.branchId==='all'?data.branches[0]?.id:m.branchId),byId:user,by:owner?'사장님':self?.name||'',...(self?{employeeId:self.id}:{}),at:now,text:`[${m.title}] 못 한 단계 — ${left.join(' / ')}`.slice(0,1000)});(data as any)._storeLog=lg.slice(-3000)}
   data._checkRuns=keep;await save();for(const r of drop)if(r.photoId)await env.DB.prepare('DELETE FROM store_manual_images WHERE owner=? AND id=?').bind(linked.owner,r.photoId).run();
   if(!owner&&done.length<m.steps.length)await notifyUser(env as any,linked.owner,{title:`${m.title} 체크가 덜 끝났어요`,body:`${self?.name||'직원'}님이 ${m.steps.length}단계 중 ${done.length}단계만 체크했어요.`,url:'/app?screen=manual',kind:'manual'}).catch(()=>null);
   return json(view());
@@ -72,7 +75,7 @@ export async function manualApi(request:Request,env:{DB:D1Database}&PushEnv){
   const existing=b.id?manuals.find(m=>m.id===b.id):null;if(b.id&&!existing)return json({error:'매뉴얼을 찾을 수 없어요. 목록을 새로고침해 주세요.'},404);
   if(!existing&&manuals.length>=MANUAL_LIMITS.manuals)return json({error:'매뉴얼은 100개까지 만들 수 있어요. 쓰지 않는 것을 지워 주세요.'},400);
   const before=existing?.steps.map((s:Step)=>s.imageId).filter((x):x is string=>!!x)||[];
-  if(existing){const sameQuiz=JSON.stringify((existing as any).quiz||null)===JSON.stringify(quiz||null);Object.assign(existing,{title,branchId,steps,category,roles,note,createdAt:existing.createdAt||existing.updatedAt,updatedAt:now,reads:[],quiz,...(sameQuiz?{}:{quizPass:{}})})}else manuals.push({id:crypto.randomUUID(),title,branchId,steps,category,roles,note:'',createdAt:now,updatedAt:now,reads:[],...(quiz?{quiz}:{})} as any);
+  if(existing){const sameQuiz=JSON.stringify((existing as any).quiz||null)===JSON.stringify(quiz||null);Object.assign(existing,{needPhoto:!!b.needPhoto,title,branchId,steps,category,roles,note,createdAt:existing.createdAt||existing.updatedAt,updatedAt:now,reads:[],quiz,...(sameQuiz?{}:{quizPass:{}})})}else manuals.push({id:crypto.randomUUID(),needPhoto:!!b.needPhoto,title,branchId,steps,category,roles,note:'',createdAt:now,updatedAt:now,reads:[],...(quiz?{quiz}:{})} as any);
   data._manuals=manuals;await save();await dropUnused(before);
   // 대상 직원에게 알림(새 매뉴얼·바뀐 매뉴얼)
   if(b.notify!==false){const m=existing||manuals.at(-1)!;for(const x of audience(m))await notifyUser(env as any,x.uid,{title:existing?'매뉴얼이 바뀌었어요':'새 매뉴얼',body:m.title+(note&&existing?' · '+note:''),url:'/app'}).catch(()=>{})}

@@ -9,6 +9,11 @@ export async function multiStoreApi(request:Request,env:{DB:D1Database}&PushEnv)
  const user=request.headers.get('oai-authenticated-user-id');if(!user)return json({error:'로그인한 뒤 다시 시도해 주세요.'},401);
  try{
  const mine=(await storesForUser(env.DB,user)).filter(x=>x.access!=='staff');
+ // 개선 2차 B163: 본사 공지를 가게마다 몇 명이 읽었는지(최근 5개)
+ if(request.method==='GET'&&new URL(request.url).searchParams.get('reads')==='1'){const out:any[]=[];for(const x of mine.slice(0,20)){const r=await env.DB.prepare('SELECT data FROM stores WHERE owner=?').bind(x.owner).first<any>();if(!r)continue;let d:any;try{d=JSON.parse(r.data)}catch{continue}
+   const staff=new Set((d.employees||[]).filter((e:any)=>e.status!=='퇴사').map((e:any)=>e.id)),uids=(d._members||[]).filter((m:any)=>staff.has(m.employeeId)).map((m:any)=>m.userId);
+   for(const n of (d._operations?.notices||[]).filter((n:any)=>n.author==='본사').slice(-5))out.push({store:x.name,title:n.title,at:n.createdAt,read:uids.filter((u:string)=>(n.reads||[]).includes(u)).length,total:uids.length})}
+  return json({reads:out.sort((a,b)=>String(b.at).localeCompare(String(a.at)))})}
  if(request.method==='GET')return json({stores:mine.map(x=>({owner:x.owner,name:x.name,access:x.access}))});
  if(request.method!=='POST')return json({error:'이 방법으로는 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},405);
  const url=new URL(request.url);if(request.headers.get('origin')!==url.origin)return json({error:'요청 출처를 확인할 수 없어요. 척척사장 화면을 새로고침한 뒤 다시 시도해 주세요.'},403);

@@ -25,7 +25,7 @@ export function StoreLog({demo=false,staff=false,compact=false,branchId}:{demo?:
  const today=kday(new Date().toISOString()),myTasks=v.tasks.filter(t=>t.employeeId===v.selfId&&t.date===today),mySigns=v.signs.filter(x=>!x.signs?.[v.selfId||'']);
  // 직원 '내 근무' 화면: 오늘 할 일·서명할 서류·최근 인수인계만 짧게
  if(compact){const hand=v.logs.filter(l=>l.kind==='인수인계'&&!l.mine).slice(0,2);if(!myTasks.length&&!mySigns.length&&!hand.length)return null;
-  return <section className="panel t-gap slog-compact" aria-label="오늘 매장 할 일">{hand.map(l=><p key={l.id} className="slog-hand"><b>인수인계</b> {l.text} <small>{l.by} · {when(l.at)}</small></p>)}
+  return <section id="store-log" className="panel t-gap slog-compact" aria-label="오늘 매장 할 일">{hand.map(l=><p key={l.id} className="slog-hand"><b>인수인계</b> {l.text} <small>{l.by} · {when(l.at)}</small></p>)}
    {myTasks.length>0&&<><h3>오늘 할 일 {myTasks.filter(t=>t.doneAt).length}/{myTasks.length}</h3><ul className="slog-tasks">{myTasks.map(t=><li key={t.id}><label className="t-check"><input type="checkbox" checked={!!t.doneAt} disabled={busy} onChange={e=>post({action:'taskDone',id:t.id,undo:!e.target.checked},e.target.checked?'완료로 표시했어요.':'되돌렸어요.')}/> {t.text}</label></li>)}</ul></>}
    {mySigns.length>0&&<p className="notice">서명할 서류 {mySigns.length}건 · 매뉴얼 탭의 '서명 서류'에서 확인해 주세요.</p>}
    {msg&&<p role="status" className="saas-success">{msg}</p>}{err&&<p role="alert" className="saas-error">{err}</p>}</section>}

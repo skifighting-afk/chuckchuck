@@ -50,7 +50,7 @@ export function alertsFor(data: {employees: Emp[]; shifts: Shift[]; attendance: 
         out.push({key: `doc:health-me:${e.id}:${hc}:${left(hc)}`, to: e.id, kind: 'staff', title: `보건증이 ${left(hc)}일 뒤 끝나요`, body: `${md(hc)}까지예요. 보건소나 병원에서 다시 받아 사장님께 알려 주세요.`});
       }
       if (/^\d{4}-\d{2}-\d{2}$/.test(end || '') && [30, 7].includes(left(end))) out.push({key: `doc:end:${e.id}:${end}:${left(end)}`, to: 'owner', kind: 'staff', title: `${e.name}님 계약이 ${left(end)}일 뒤 끝나요`, body: `기간제 계약 끝나는 날이 ${md(end)}이에요. 재계약하거나 퇴사 처리를 준비해 주세요.`});
-      if (pe && [7, 1].includes(left(pe))) out.push({key: `doc:prob:${e.id}:${pe}:${left(pe)}`, to: 'owner', kind: 'staff', title: `${e.name}님 수습이 ${left(pe)}일 뒤 끝나요`, body: `${md(pe)}까지 수습이에요. 다음 달부터 수습 감액 없이 계산돼요.`});
+      if (pe && [7, 1].includes(left(pe))) out.push({key: `doc:prob:${e.id}:${pe}:${left(pe)}`, to: 'owner', kind: 'staff', title: `${e.name}님 수습이 ${left(pe)}일 뒤 끝나요`, body: `${md(pe)}까지 수습이에요. 다음 달부터 수습 감액 없이 계산돼요. 직원 관리 → 직원 메모·평가에 수습 평가를 한 줄 남겨 두세요.`});
     }
   }
   // 107 근무 가능 시간 마감일(설정한 요일) 오전 10시 이후: 이번 주에 아직 안 낸 직원에게

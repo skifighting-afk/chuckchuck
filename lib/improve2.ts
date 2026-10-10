@@ -320,3 +320,55 @@ export const SECRET_PATTERNS: [string, RegExp][] = [
   ['Slack 토큰', /\bxox[baprs]-[A-Za-z0-9-]{20,}\b/],
 ];
 export const findSecrets = (text: string) => SECRET_PATTERNS.filter(([, r]) => r.test(text)).map(([n]) => n);
+
+/** B065 근무표 기준 이번 달 예상 인건비가 예산 90%·100%를 넘으면(사장님께 한 번씩) */
+export function budgetAlert(d: {employees: Emp[]; shifts: Shift[]; settings?: any}, now: number): A[] {
+  const budget = Number(d.settings?.laborBudget); if (!budget) return [];
+  const month = kdate(now).slice(0, 7), live2 = live(d.employees), ids = new Set(live2.map(e => e.id)); let cost = 0;
+  for (const s of d.shifts) { if (!s.date.startsWith(month) || !ids.has(s.employeeId)) continue; const e = live2.find(x => x.id === s.employeeId)!; if (e.payType === '시급') cost += hoursOf(s) * (e.wage || 0); }
+  cost += live2.filter(e => e.payType === '월급').reduce((t, e) => t + (e.wage || 0), 0);
+  const pct = cost / budget; if (pct < 0.9) return [];
+  const lv = pct >= 1 ? 100 : 90;
+  return [{key: `budget:${month}:${lv}`, to: 'owner', kind: 'payroll', title: lv === 100 ? `${Number(month.slice(5))}월 예상 인건비가 예산을 넘었어요` : `${Number(month.slice(5))}월 예상 인건비가 예산의 90%를 넘었어요`, body: `근무표 기준 약 ${Math.round(cost).toLocaleString('ko-KR')}원 · 예산 ${budget.toLocaleString('ko-KR')}원. 근무표에서 시간을 조정할 수 있어요.`, url: '/app?screen=schedule'}];
+}
+
+/** B050 일용직 근로내용확인신고 자료: 직원별 그 달 일한 날(일자)·시간·지급액(세전, 시급×시간 또는 일급) */
+export function dailyWorkerReport(es: (Emp & {employment?: string})[], att: Att[], month: string) {
+  const rows: (string | number)[][] = [['이름', '생년월', '일한 날', '일수', '시간', '지급액(세전, 근무 기록 기준)']];
+  for (const e of es.filter(x => x.employment === '일용')) {
+    const days = new Map<string, number>();
+    for (const a of att) { if (a.employeeId !== e.id || !a.end) continue; const d = kdate(Date.parse(a.start)); if (!d.startsWith(month)) continue; days.set(d, (days.get(d) || 0) + Math.max(0, (Date.parse(a.end) - Date.parse(a.start)) / H - a.breakMinutes / 60)); }
+    if (!days.size) continue; const h = [...days.values()].reduce((t, x) => t + x, 0);
+    rows.push([e.name, e.birthMonth || '', [...days.keys()].sort().map(d => Number(d.slice(8))).join(','), days.size, Math.round(h * 10) / 10, Math.round(e.payType === '일급' ? days.size * (e.wage || 0) : h * (e.wage || 0))]);
+  }
+  return rows;
+}
+
+/** B044 다가오는 급여일 달력: 날짜 → 그날 받는 직원 */
+export function payCalendar(es: (Emp & {payDay?: number})[], today: string, months = 2) {
+  const out = new Map<string, string[]>();
+  for (const e of live(es) as (Emp & {payDay?: number})[]) { let d = today; for (let i = 0; i < months; i++) { const p = payDayLeft(d, e.payDay || 10); out.set(p.date, [...(out.get(p.date) || []), e.name]); d = plus(p.date, 1); } }
+  return [...out.entries()].sort().map(([date, names]) => ({date, names}));
+}
+
+/** B054 직원이 요청해 바꾼 계좌가 아직 한 번도 확정 급여를 거치지 않았는지 */
+export function accountChangedSince(asks: {employeeId: string; type: string; status: string; changes?: Record<string, string>; answeredAt?: string; at: string}[], runs: Record<string, any>, employeeId: string) {
+  const ch = asks.filter(a => a.employeeId === employeeId && a.type === 'profile' && a.status === '반영함' && a.changes && ('bankAccount' in a.changes || 'bankName' in a.changes)).map(a => a.answeredAt || a.at).sort().pop();
+  if (!ch) return false; const lastLock = Object.values(runs || {}).filter((r: any) => r?.locked && (r.rows || []).some((x: any) => x.employeeId === employeeId)).map((r: any) => r.at || '').sort().pop() || '';
+  return lastLock < ch;
+}
+
+/** B052 마감 체크 진행률 */
+export const progressOf = (checks: {ok: boolean}[]) => ({done: checks.filter(c => c.ok).length, total: checks.length, pct: checks.length ? Math.round(checks.filter(c => c.ok).length / checks.length * 100) : 0});
+
+/** B152 자동 규칙: 금요일 오후 3시가 지나도 다음 주 근무표를 공개하지 않은 지점이 있으면 사장님께(자동 게시를 켠 매장은 빼고) */
+export function nextWeekReminder(d: {branches?: {id: string; name: string}[]; employees: Emp[]; shifts: Shift[]; publishedWeeks?: Record<string, any>; settings?: any}, now: number): A[] {
+  const k = new Date(now + 9 * H); if (k.getUTCDay() !== 5 || k.getUTCHours() < 15 || d.settings?.autoPublish || d.settings?.more?.fridayCheck === false) return [];
+  const today = kdate(now), sun = d.settings?.weekStart === 'sun', wd = new Date(today + 'T00:00:00Z').getUTCDay(), start = plus(today, sun ? 7 - wd : (8 - wd) % 7 || 7);
+  const out: A[] = [];
+  for (const b of d.branches || []) {
+    if ((b as any).info?.status === '휴점' || !live(d.employees).some(e => e.branchId === b.id) || d.publishedWeeks?.[b.id + ':' + start]) continue;
+    out.push({key: `nextweek:${b.id}:${start}`, to: 'owner', kind: 'schedule', title: `${(d.branches || []).length > 1 ? b.name + ' ' : ''}다음 주 근무표가 아직 공개 전이에요`, body: `${md(start)}부터 일주일 근무표를 짜고 '공개'를 눌러 주세요. 설정에서 자동 게시를 켜 둘 수도 있어요.`, url: '/app?screen=schedule'});
+  }
+  return out;
+}

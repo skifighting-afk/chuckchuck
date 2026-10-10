@@ -38,7 +38,9 @@ export function StoreManual({branchId,source=api,demoNote}:{branchId?:string,sou
  const all:Manual[]=useMemo(()=>!data?[]:data.manuals.filter((m:Manual)=>!branchId||!owner||m.branchId==='all'||m.branchId===branchId),[data,branchId]);
  // 사장님의 '직원 화면으로 보기': 고른 업무의 직원에게 보이는 것만
  const pool=preview?all.filter(m=>manualVisibleTo(m as any,{branchId:branchId||m.branchId,role:preview==='전체'?'':preview})&&(preview!=='전체'||!m.roles?.length)):all;
- const list=filterManuals(pool as any,cat,q) as Manual[],counts=categoryCounts(pool as any);
+ const [fav,setFav]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem('cc-manual-fav')||'[]')}catch{return []}});// 개선 2차 B126 즐겨찾기(이 기기)
+ const toggleFav=(id:string)=>{const n=fav.includes(id)?fav.filter(x=>x!==id):[...fav,id];setFav(n);try{localStorage.setItem('cc-manual-fav',JSON.stringify(n))}catch{}};
+ const list=(filterManuals(pool as any,cat,q) as Manual[]).slice().sort((a,b)=>Number(fav.includes(b.id))-Number(fav.includes(a.id))),counts=categoryCounts(pool as any);
  const cur=list.find(m=>m.id===sel)||list[0];
  const branchName=(id:string)=>id==='all'?'전체 지점':data?.branches?.find((b:any)=>b.id===id)?.name||'';
  const open=(m:Manual)=>{setSel(m.id);setDetail(true);if(!owner&&!m.read)void run({action:'read',id:m.id})};
@@ -58,15 +60,15 @@ export function StoreManual({branchId,source=api,demoNote}:{branchId?:string,sou
   <div className={'manual-layout'+(detail?' show-detail':'')}>
    <ul className="manual-list" aria-label="매뉴얼 목록">{list.map(m=><li key={m.id}><button type="button" className={'manual-item'+(cur?.id===m.id?' on':'')} aria-current={cur?.id===m.id?'true':undefined} onClick={()=>open(m)}>
     <span className="mi-top"><Badge>{m.category||'기타'}</Badge>{(owner&&!preview)?(wasEdited(m as any)&&<small className="mi-changed">↻ 바뀜</small>):stateBadge(m)}</span>
-    <b>{m.title}</b>
+    <b>{fav.includes(m.id)&&<span aria-label="즐겨찾기">★ </span>}{m.title}</b>
     <span className="mi-meta">{m.steps.length}단계 · {audienceLabel(m)} · {day(m.updatedAt)} 수정</span>
     {owner&&!preview&&<span className="mi-meta">{m.readCount??0}/{m.audience??0}명 읽음{data.branches?.length>1?' · '+branchName(m.branchId):''}</span>}
    </button></li>)}{!list.length&&<li className="empty">'{q||cat}'에 맞는 매뉴얼이 없어요.</li>}</ul>
    {cur&&<article className="manual-detail panel" aria-labelledby="manual-title">
     <button type="button" className="manual-back" onClick={()=>setDetail(false)}>← 목록</button>
-    <header><Badge>{cur.category||'기타'}</Badge><h2 id="manual-title">{cur.title}</h2><p className="md-who">{audienceLine(cur)}{data.branches?.length>1&&owner?` · ${branchName(cur.branchId)}`:''}</p>
+    <header><Badge>{cur.category||'기타'}</Badge><h2 id="manual-title">{cur.title}</h2><button type="button" className="link-btn" aria-pressed={fav.includes(cur.id)} onClick={()=>toggleFav(cur.id)}>{fav.includes(cur.id)?'★ 즐겨찾기 빼기':'☆ 즐겨찾기'}</button><p className="md-who">{audienceLine(cur)}{data.branches?.length>1&&owner?` · ${branchName(cur.branchId)}`:''}</p>
      {cur.note&&wasEdited(cur as any)&&<p className="md-note"><b>최근 수정</b> {day(cur.updatedAt)} · {cur.note}</p>}
-     {owner&&!preview&&<div className="actions"><Btn onClick={()=>{setPreview((cur.roles||[])[0]||'전체');setDetail(false)}}>직원 화면으로 보기</Btn><Btn primary onClick={()=>setEdit({id:cur.id,title:cur.title,branchId:cur.branchId,category:cur.category||'기타',roles:cur.roles||[],note:'',steps:cur.steps.map(s=>({...s})),quiz:(cur.quiz||[]).map(x=>({...x,options:[...x.options]}))})}>고치기</Btn></div>}
+     {owner&&!preview&&<div className="actions"><Btn onClick={()=>{setPreview((cur.roles||[])[0]||'전체');setDetail(false)}}>직원 화면으로 보기</Btn><Btn primary onClick={()=>setEdit({id:cur.id,needPhoto:!!(cur as any).needPhoto,title:cur.title,branchId:cur.branchId,category:cur.category||'기타',roles:cur.roles||[],note:'',steps:cur.steps.map(s=>({...s})),quiz:(cur.quiz||[]).map(x=>({...x,options:[...x.options]}))})}>고치기</Btn></div>}
      {owner&&!preview&&cur.unread&&cur.unread.length>0&&<p className="footnote">아직 안 읽은 직원: {cur.unread.join(', ')}</p>}
     </header>
     <ol className="manual-steps2">{cur.steps.map((s,i)=><li key={i}><span className="ms-num" aria-hidden="true">{i+1}</span><div className="ms-body"><span className="sr-only">{i+1}단계. </span>{s.imageId&&<ManualImage source={source} id={s.imageId} alt={`${cur.title} ${i+1}단계 사진`}/>}{s.text&&<p>{s.text}</p>}{(s as any).videoUrl&&<a className="ms-video" href={(s as any).videoUrl} target="_blank" rel="noreferrer noopener">▶ 동영상으로 보기</a>}</div></li>)}</ol>
@@ -91,7 +93,7 @@ function ManualEditor({edit,setEdit,data,busy,setBusy,error,setError,source,onSa
   addEventListener('pointermove',mv);addEventListener('pointerup',up);addEventListener('pointercancel',up)}
  return <section className="panel t-panelbody manual-edit"><h2>{edit.id?'매뉴얼 고치기':'새 매뉴얼'}</h2>{error&&<p className="saas-error" role="alert">{error}</p>}
   <div className="t-formgrid"><Field label="제목"><input maxLength={80} value={edit.title} placeholder="예: 마감 청소 순서" onChange={e=>setEdit({...edit,title:e.target.value})}/></Field>
-   <Field label="분류"><select value={edit.category} onChange={e=>setEdit({...edit,category:e.target.value})}>{MANUAL_CATEGORIES.map(c=><option key={c}>{c}</option>)}</select></Field>
+   <Field label="분류"><select value={edit.category} onChange={e=>setEdit({...edit,category:e.target.value})}>{MANUAL_CATEGORIES.map(c=><option key={c}>{c}</option>)}</select></Field><label className="t-check"><input type="checkbox" checked={!!edit.needPhoto} onChange={e=>setEdit({...edit,needPhoto:e.target.checked})}/> 체크할 때 사진 필수(예: 마감 정리 인증)</label>
    {data.branches?.length>1&&<Field label="보여 줄 지점"><select value={edit.branchId} onChange={e=>setEdit({...edit,branchId:e.target.value})}><option value="all">전체 지점</option>{data.branches.map((b:any)=><option key={b.id} value={b.id}>{b.name}</option>)}</select></Field>}</div>
   <fieldset className="ops-fs manual-aud"><legend>누구에게 보일까요</legend><div className="ops-seg"><label><input type="radio" name="maud" checked={!edit.roles.length} onChange={()=>setEdit({...edit,roles:[]})}/>모든 직원</label>{roles.map(r=><label key={r}><input type="checkbox" checked={edit.roles.includes(r)} onChange={e=>setEdit({...edit,roles:e.target.checked?[...edit.roles,r]:edit.roles.filter((x:string)=>x!==r)})}/>{r}만</label>)}</div></fieldset>
   {edit.id&&<Field label="무엇을 바꿨나요 (직원에게 같이 알려요)"><input maxLength={200} value={edit.note} placeholder="예: 3단계 세제 바뀜" onChange={e=>setEdit({...edit,note:e.target.value})}/></Field>}

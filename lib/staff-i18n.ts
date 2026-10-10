@@ -3,6 +3,17 @@
 export type Lang = 'ko' | 'en' | 'zh' | 'vi';
 export const LANGS: [Lang, string][] = [['ko', '한국어'], ['en', 'English'], ['zh', '中文'], ['vi', 'Tiếng Việt']];
 const D: Record<string, [string, string, string]> = {
+  // 개선 2차 B066 명세서 · 직원 화면 새 글
+  '실지급액': ['Net pay', '实发工资', 'Thực lĩnh'], '지급 항목': ['Earnings', '支付项目', 'Khoản được trả'], '항목': ['Item', '项目', 'Khoản'], '금액': ['Amount', '金额', 'Số tiền'],
+  '임금 총액': ['Gross pay', '工资总额', 'Tổng lương'], '공제 항목': ['Deductions', '扣除项目', 'Khoản khấu trừ'], '공제 없음': ['No deductions', '无扣除', 'Không khấu trừ'], '공제 총액': ['Total deductions', '扣除总额', 'Tổng khấu trừ'],
+  '비고': ['Note', '备注', 'Ghi chú'], '지급': ['Paid', '支付', 'Trả'], '공제': ['Deducted', '扣除', 'Trừ'], '원': ['KRW', '韩元', 'won'],
+  '오늘 한눈에': ['Today at a glance', '今日概览', 'Hôm nay'], '다음 근무까지': ['Until next shift', '距下一班', 'Đến ca tiếp'], '급여일': ['Payday', '发薪日', 'Ngày lương'],
+  '이번 달 지각·조퇴': ['Late / left early', '本月迟到·早退', 'Đi muộn / về sớm'], '남은 연차': ['Annual leave left', '剩余年假', 'Phép năm còn lại'],
+  '출근했어요': ['Clocked in', '已上班', 'Đã vào ca'], '수고하셨어요': ['Good work today', '辛苦了', 'Cảm ơn bạn'], '인수인계 남기기': ['Leave a handover note', '写交接', 'Ghi bàn giao'],
+  '근무표가 바뀌었어요': ['Your schedule changed', '排班有变动', 'Lịch đã thay đổi'], '바뀐 것 봤어요': ['Seen', '已查看', 'Đã xem'], '알림·쉬는 날': ['Alerts & days off', '提醒·休息日', 'Nhắc nhở & ngày nghỉ'],
+  '근무 전 알림': ['Shift reminder', '上班前提醒', 'Nhắc trước ca'], '쉬고 싶은 날': ['Days I want off', '想休息的日子', 'Ngày muốn nghỉ'], '내기': ['Submit', '提交', 'Gửi'],
+  '매장 정보': ['Store info', '店铺信息', 'Thông tin cửa hàng'], '매장에 전화': ['Call the store', '致电店铺', 'Gọi cửa hàng'], '비밀번호 복사': ['Copy password', '复制密码', 'Sao chép mật khẩu'],
+  '자주 묻는 질문': ['FAQ', '常见问题', 'Câu hỏi thường gặp'], '내 근무표 사진으로 보내기': ['Share my schedule image', '分享我的排班图片', 'Gửi ảnh lịch làm'],
   '오늘': ['Today', '今天', 'Hôm nay'], '근무표': ['Schedule', '排班', 'Lịch làm'], '급여': ['Pay', '工资', 'Lương'], '더보기': ['More', '更多', 'Thêm'],
   '내 계약': ['My contract', '我的合同', 'Hợp đồng'], '휴가·공지': ['Leave & notices', '休假·公告', 'Nghỉ phép & thông báo'], '매뉴얼': ['Manuals', '手册', 'Hướng dẫn'],
   '출근': ['Clock in', '上班打卡', 'Vào ca'], '다시 출근': ['Clock in again', '再次上班', 'Vào ca lại'], '퇴근': ['Clock out', '下班打卡', 'Tan ca'],

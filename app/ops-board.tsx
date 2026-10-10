@@ -1,4 +1,5 @@
 'use client';
+import {NoticeExtras,NoticeFormExtras} from './notice-extras';
 // 지시서 1라운드 C: 휴가·공지 화면. 사장님이 처리할 것을 맨 위에, 버튼 한 번으로 끝내게.
 // 실제 매장(Operations, /api/operations)과 체험 화면(DemoOperations, 메모리)이 같은 화면을 쓴다.
 import {useMemo,useState} from 'react';
@@ -75,28 +76,29 @@ function TwoWeeks({leaves,from}:{leaves:any[],from:string}){
 
 function Notices({data,owner,emps,busy,action,branchId}:{data:any,owner:boolean,emps:OpsEmp[],busy:boolean,action:Action,branchId?:string}){
  const roles=[...new Set(emps.map(e=>e.role).filter(Boolean))] as string[];
- const blank={title:'',body:'',branchId:branchId||'all',mode:'all',roles:[] as string[],ids:[] as string[],photo:'',when:'now',at:''};
- const [f,setF]=useState(blank),[err,setErr]=useState('');
+ const blank={title:'',body:'',branchId:branchId||'all',mode:'all',roles:[] as string[],ids:[] as string[],photo:'',when:'now',at:'',poll:[] as string[],file:null as null|{name:string,data:string}};
+ const [f,setF]=useState(()=>{try{const d=sessionStorage.getItem('cc-notice-draft');if(d){sessionStorage.removeItem('cc-notice-draft');const [first,...rest]=d.split(/\n|\. /);return {...blank,title:first.slice(0,100),body:d}}}catch{}return blank}),[err,setErr]=useState('');// 개선 2차 B149 비서가 만든 공지 초안
  const target=():NoticeTarget=>f.mode==='role'?{type:'role',roles:f.roles}:f.mode==='people'?{type:'people',ids:f.ids}:{type:'all'};
  async function photo(file?:File){if(!file)return;setErr('');try{const img=await createImageBitmap(file),k=Math.min(1,1280/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext('2d')!.drawImage(img,0,0,c.width,c.height);let q=.8,url=c.toDataURL('image/jpeg',q);while(url.length>330000&&q>.3){q-=.15;url=c.toDataURL('image/jpeg',q)}if(url.length>340000){setErr('사진이 너무 커요. 다른 사진을 골라 주세요.');return}setF(v=>({...v,photo:url}))}catch{setErr('사진을 읽지 못했어요. 다른 사진을 골라 주세요.')}}
  function send(e:React.FormEvent){e.preventDefault();setErr('');
   if(f.mode==='role'&&!f.roles.length){setErr('받을 업무를 하나 이상 골라 주세요.');return}
   if(f.mode==='people'&&!f.ids.length){setErr('받을 직원을 한 명 이상 골라 주세요.');return}
   let publishAt:string|null=null;if(f.when==='later'){const t=Date.parse(f.at);if(!f.at||isNaN(t)||t<Date.now()){setErr('예약 시각을 지금 이후로 골라 주세요.');return}publishAt=new Date(t).toISOString()}
-  void Promise.resolve(action({action:'postNotice',title:f.title,body:f.body,branchId:f.branchId,target:target(),publishAt,photo:f.photo||null})).then(()=>setF(blank));
+  const poll=(f.poll||[]).map((x:string)=>x.trim()).filter(Boolean);if(f.poll?.length&&poll.length<2){setErr('투표 선택지를 2개 이상 적어 주세요.');return}
+  void Promise.resolve(action({action:'postNotice',title:f.title,body:f.body,branchId:f.branchId,target:target(),publishAt,photo:f.photo||null,...(poll.length?{poll}:{}),...(f.file?{file:f.file}:{})})).then(()=>setF(blank));
  }
  const list=(data.notices||[]).slice().reverse().sort((a:any,b:any)=>Number(!!b.pinned)-Number(!!a.pinned));
  return <div className={owner?'ops-notice-layout':''}>
   <div className="ops-notice-list">{list.map((n:any)=>{const aud=n.audience??((n.readCount||0)+(n.unread?.length||0)),pct=aud?Math.round((n.readCount||0)/aud*100):0;
    return <article className="panel t-panelbody ops-notice" key={n.id}><div className="t-inline ops-notice-meta"><Badge>{n.branchId==='all'?'전체 지점':data.branches?.find((b:any)=>b.id===n.branchId)?.name||'지점'}</Badge>{owner&&<Badge>{targetLabel(n.target,emps)}</Badge>}{n.scheduled?<Badge tone="amber"><span aria-hidden="true">⏰ </span>예약 {new Date(n.publishAt).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</Badge>:<small>{new Date(n.createdAt).toLocaleDateString('ko-KR')}</small>}</div>
-    <h2>{n.pinned&&<span className="pin-tag">📌 고정</span>}{n.title}</h2>{n.photo&&<img className="ops-notice-photo" src={n.photo} alt={n.title+' 사진'}/>}<p className="ops-notice-body">{n.body}</p>
+    <h2>{n.pinned&&<span className="pin-tag">📌 고정</span>}{n.title}</h2>{n.photo&&<img className="ops-notice-photo" src={n.photo} alt={n.title+' 사진'}/>}<p className="ops-notice-body">{n.body}</p><NoticeExtras n={n} busy={busy} action={action}/>
     {owner?<div className="ops-reads"><div className="ops-readbar" role="img" aria-label={`${aud}명 중 ${n.readCount||0}명 읽음`}><i style={{width:pct+'%'}}/></div><p><b>{n.readCount||0}/{aud}명 읽음</b>{n.unread?.length>0&&<> · 안 읽은 사람: {n.unread.join(', ')}</>}</p>
      <Btn disabled={busy} onClick={()=>action({action:'pinNotice',id:n.id,pinned:!n.pinned})}>{n.pinned?'고정 풀기':'📌 맨 위에 고정'}</Btn>{!n.scheduled&&n.unread?.length>0&&<Btn disabled={busy} onClick={()=>action({action:'remindNotice',id:n.id})}><Bell size={16}/> 다시 알리기{n.remindedAt?` (마지막 ${new Date(n.remindedAt).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})})`:''}</Btn>}</div>
     :<Btn disabled={busy||n.read} onClick={()=>action({action:'readNotice',id:n.id})}><Check size={16}/>{n.read?'확인 완료':'공지 확인'}</Btn>}
    </article>})}{!list.length&&<section className="panel empty">등록된 공지가 없어요.</section>}</div>
   {owner&&<form className="panel t-panelbody ops-notice-form" onSubmit={send} aria-labelledby="new-notice"><h2 id="new-notice"><Plus size={18} aria-hidden="true"/> 새 공지</h2>
    <Field label="제목"><input required maxLength={100} value={f.title} onChange={e=>setF({...f,title:e.target.value})}/></Field>
-   <Field label="내용"><textarea required rows={5} maxLength={3000} value={f.body} onChange={e=>setF({...f,body:e.target.value})}/></Field>
+   <Field label="내용"><textarea required rows={5} maxLength={3000} value={f.body} onChange={e=>setF({...f,body:e.target.value})}/></Field><NoticeFormExtras f={f} setF={setF} setErr={setErr}/>
    {data.branches?.length>1&&<Field label="지점"><select value={f.branchId} onChange={e=>setF({...f,branchId:e.target.value})}><option value="all">전체 지점</option>{data.branches.map((b:any)=><option key={b.id} value={b.id}>{b.name}</option>)}</select></Field>}
    <fieldset className="ops-fs"><legend>받는 사람</legend><div className="ops-seg">{[['all','전체'],['role','업무별'],['people','직접 고르기']].map(([v,l])=><label key={v}><input type="radio" name="aud" checked={f.mode===v} onChange={()=>setF({...f,mode:v})}/>{l}</label>)}</div>
     {f.mode==='role'&&<div className="ops-chips">{roles.map(r=><label key={r}><input type="checkbox" checked={f.roles.includes(r)} onChange={e=>setF({...f,roles:e.target.checked?[...f.roles,r]:f.roles.filter(x=>x!==r)})}/>{r}</label>)}</div>}

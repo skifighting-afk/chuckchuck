@@ -1,4 +1,5 @@
 'use client';
+import {CANCEL_REASONS} from '../lib/improve2';
 // 작업 065·067·068·069: 체험 종료 안내, 환불·차액 안내, 세금계산서 정보와 발행 요청
 import {useState} from 'react';
 import {changeQuote,refundQuote,validBizNo,monthlyPrice,periodPrice,plans,planId,type PlanId} from '../lib/plans';
@@ -53,7 +54,7 @@ export function CancelSubscription({a,reload}:{a:any,reload:()=>Promise<void>}){
  return <details className="auth-card t-gap"><summary><b>해지 신청</b>{a.cancelAt&&<> · {new Date(a.cancelAt).toLocaleDateString('ko-KR')}까지 이용 후 해지 예정</>}</summary>
   {a.cancelAt?<><p>해지가 예약되어 있어요. {new Date(a.cancelAt).toLocaleDateString('ko-KR')}까지 지금처럼 쓰고, 그 뒤로는 기록 조회·내려받기만 할 수 있어요.</p><button className="saas-secondary" disabled={busy} onClick={()=>run({action:'undoCancel'})}>해지 취소하고 계속 이용</button></>:<>
   <p>해지해도 이번 결제 기간이 끝날 때까지 그대로 쓸 수 있어요. 자동 결제는 없어요. 남은 기간 환불을 원하시면 해지 사유에 적어 주세요(지금 해지 시 예상 환불 {won(q.refund)}원 · {q.formula}).</p>
-  <label className="saas-field">해지 사유 (선택)<textarea maxLength={500} value={reason} onChange={e=>setReason(e.target.value)}/></label>
+  <div className="t-inline" role="group" aria-label="해지 이유 고르기">{CANCEL_REASONS.map(r=><button type="button" key={r} className={reason.includes(r)?"primary":"secondary"} aria-pressed={reason.includes(r)} onClick={()=>setReason(reason.includes(r)?reason.replace(r,"").replace(/^ · | · $/g,"").replace(" ·  · "," · "):(reason?reason+" · ":"")+r)}>{r}</button>)}</div><label className="saas-field">해지 사유 (선택)<textarea maxLength={500} value={reason} onChange={e=>setReason(e.target.value)}/></label>
   <button className="saas-secondary" disabled={busy} onClick={()=>run({action:'cancelSubscription',reason})}>해지 예약</button> <a href="/refund">해지·환불 규정</a></>}
   {err&&<p className="saas-error" role="alert">{err}</p>}</details>
 }
