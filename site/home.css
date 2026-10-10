@@ -12,7 +12,7 @@
   --green:#12634b;      /* 브랜드 그린 */
   --lime:#d4f77d;       /* ✓✓ 라임 */
   --night:#0b2f24;      /* 어두운 섹션 */
-  --red:#c2412c;        /* 빨간 펜(혼란 장면에만) */
+  --red:#12634b;        /* 빨간 펜(혼란 장면에만) */
   --muted:#556158;      /* 보조 글자 */
   --line:#cfc5ad;
   --white:#fffdf8;
@@ -96,7 +96,7 @@ h1 .line{display:block}
 .desk{position:absolute;inset:0}
 .ledger{position:absolute;top:4%;left:-6%;width:min(860px,118%);background:var(--sheet);border-radius:4px;box-shadow:var(--shadow);padding:22px 22px 18px;transform-origin:30% 40%;
   background-image:repeating-linear-gradient(to bottom,transparent 0 33px,var(--rule) 33px 34px);background-position:0 54px}
-.ledger::before{content:'';position:absolute;left:68px;top:0;bottom:0;width:1px;background:rgba(194,65,44,.35)}
+.ledger::before{content:'';position:absolute;left:68px;top:0;bottom:0;width:1px;background:rgba(18,99,75,.22)}
 .ledger-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:6px;min-height:40px}
 .ledger-head .big{font-size:34px;line-height:1}
 .neat-title{display:none;font-weight:800;font-size:20px;letter-spacing:-.04em}
@@ -618,3 +618,34 @@ html.anim .hero{height:160vh}.exp-extra{font-size:15px;color:#64795f;line-height
 @media(max-width:550px){.record-intro{padding:65px 22px 30px}.record-intro h2{font-size:40px}.record-intro-copy>p:last-child{font-size:15px}.record-intro-copy br{display:none}.record-questions p{font-size:17px}.record-answer{gap:14px;padding-top:28px}.record-check{font-size:27px;letter-spacing:-10px;padding-right:8px}.record-answer h3{font-size:23px;line-height:1.5}.record-answer p{font-size:14px}.record-answer p br{display:none}.feature-stories{padding:0 22px}.feature-stories-heading>p:last-child{font-size:15px}.feature-story h3{font-size:31px}.feature-description{font-size:15px}.feature-points{font-size:13px}.feature-visual{padding:20px 15px;border-radius:18px}.story-window{padding:18px 15px}.story-bar{font-size:12px}.story-bar>span{font-size:10px}.clock-time{padding:16px 12px;gap:8px}.clock-time strong{font-size:32px}.clock-time>span:first-child{font-size:10px}.story-shift{font-size:11px}.story-shift b{min-width:50px;font-size:12px}.story-shift i{font-size:9px;min-width:48px}.story-pay th,.story-pay td{padding:14px 4px;font-size:11px}.story-document{margin-right:14px}.story-payslip{margin-left:14px}.employee-label{display:none}.story-phone{width:270px;padding-inline:18px}.store-overview{gap:10px}.store-overview>span{font-size:10px}.store-overview-row small{font-size:10px}.plans{grid-template-columns:1fr;gap:20px}.plan{padding:28px 24px}.plan ul{font-size:14px}.plan-start{font-size:15px}.pricing .sec-head p{font-size:14px}.pricing-assurance{font-size:13px}}
 
 #record-intro-title{scroll-margin-top:115px}
+
+/* Clear typography and a readable mobile first screen. */
+.hand{font-family:var(--f-sans);font-weight:650;letter-spacing:-.02em}
+.hero h1{font-size:clamp(46px,4.8vw,82px);line-height:1.14;letter-spacing:-.045em;text-wrap:initial}
+.hero .lede{max-width:29em;line-height:1.8;font-size:clamp(17px,1.3vw,20px)}
+.hero .fine{font-size:13px;line-height:1.8}
+.feature-link{min-height:48px}
+.story-window,.exp-panel,.pay-card{font-variant-numeric:tabular-nums}
+.record-intro h2{margin-top:0}.experience-heading h2{margin-top:0}.feature-stories-heading h2{margin-top:0}
+@media(max-width:900px){
+ .hero,html.anim .hero{height:auto;min-height:0}
+ .hero-pin,html.anim .hero-pin{position:relative;top:auto;height:auto;min-height:0;grid-template-rows:auto auto;gap:34px;padding-top:108px;padding-bottom:44px}
+ .hero-copy{max-width:620px;justify-self:center;width:100%}
+ .hero h1,html.anim .hero h1{font-size:clamp(34px,7.8vw,56px);line-height:1.18;letter-spacing:-.04em}
+ .hero .lede,html.anim .hero .lede{display:block;font-size:16px;line-height:1.85;margin-top:20px}
+ .hero .fine,html.anim .hero .hero-copy .fine{display:block;font-size:12px;line-height:1.8}
+ .hero .hero-copy .btn-ghost,html.anim .hero .hero-copy .btn-ghost{display:inline-flex}
+ .hero-price-note{font-size:12px;margin-top:16px;line-height:1.8}
+ .hero .cta-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:24px}
+ .hero .cta-row .btn{padding-inline:12px;font-size:14px;min-height:52px;border-radius:10px}
+ .hero .stage,html.anim .hero .stage,html:not(.anim) .hero .stage{min-height:0;perspective:none;width:100%;display:grid;place-items:center}
+ .hero .desk{display:none}
+ .hero .phone,html:not(.anim) .hero .phone{position:relative;top:auto;right:auto;width:290px;max-width:100%;margin:0 auto;opacity:1!important;transform:none!important;pointer-events:none!important;padding:9px;border-radius:33px}
+ .hero .phone-in{min-height:0;padding:22px 16px 16px;border-radius:25px}
+ .hero .pay-total b{font-size:30px}
+ .hero .phone .pay-rows li{padding:11px 0}
+ .hero .steps{display:none!important}
+ .feature-description,.record-intro-copy>p:last-child{font-size:16px;line-height:1.85}
+ .exp-top button,.exp-controls button{min-height:44px}
+}
+@media(max-width:400px){.hero .cta-row{grid-template-columns:1fr}.hero .cta-row .btn{font-size:15px}.hero h1,html.anim .hero h1{font-size:clamp(31px,8.8vw,35px)}}

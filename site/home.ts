@@ -49,7 +49,7 @@ let mx = 0, my = 0, counted = -1;
 const rolled = (to: number, t: number) => t >= 1 ? to : Math.round(to * ease(t) / 10) * 10;
 function countTo(el: HTMLElement, to: number, t: number) { el.textContent = money(rolled(to, t)); }
 function heroFrame() {
-  if (reduce) return;
+  if (reduce || innerWidth <= 900) return;
   const r = hero.getBoundingClientRect(), run = Math.max(1, r.height - innerHeight);
   const p = clamp(-r.top / run), mobile = innerWidth <= 900;
   // 칸 체크: 8%~52% 사이에 차례로
