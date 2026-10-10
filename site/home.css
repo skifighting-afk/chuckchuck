@@ -533,3 +533,13 @@ html.reduce *{animation:none!important;transition:none!important}
 .gif-box.big{position:fixed;inset:0;z-index:60;background:rgba(6,35,26,.9);display:grid;place-items:center;padding:16px;margin:0}
 .gif-box.big .demo4-gif{width:min(96vw,1100px);max-height:88vh;height:auto;border:0}
 .gif-box.big .gif-zoom{cursor:zoom-out;top:auto;bottom:-44px;right:50%;transform:translateX(50%)}
+
+/* 실제 제품 캡처: 전체 화면 비율 유지, 확대 시 화면 안에 맞춤. */
+#hero-title{font-size:clamp(40px,4.7vw,74px);line-height:1.16;letter-spacing:-.055em}
+.hero-price-note{font-size:15px;margin-top:18px;color:var(--muted)}
+.actual-tour{width:100%;max-width:620px;justify-self:center}
+.actual-tour figcaption{font-size:13px;color:var(--muted);margin-top:10px}
+.gif-box.big .demo4-gif{width:auto;height:auto;max-width:96vw;max-height:84vh;object-fit:contain}
+.gif-box.big .gif-zoom{position:fixed;top:18px;bottom:auto;right:18px;transform:none}
+.actual-limit{margin-top:28px}.demo4-feel{min-height:0}
+@media(max-width:600px){html.anim #hero-title,#hero-title{font-size:clamp(32px,8.6vw,48px)}.actual-tour{max-width:100%}}

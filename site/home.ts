@@ -176,7 +176,16 @@ $('#share').addEventListener('click', async () => {
   }
 });
 
-// 9. 시연 GIF: 누르면 크게 보기, 다시 누르거나 Esc로 닫기
+// 실제 앱 영상은 보이는 동안만 재생하고 움직임 줄이기 설정을 따른다.
+const actualVideos = $$<HTMLVideoElement>('.actual-video');
+const videoObserver = new IntersectionObserver(entries => entries.forEach(entry => {
+  const video = entry.target as HTMLVideoElement;
+  if (entry.isIntersecting && !reduce) void video.play().catch(() => {});
+  else video.pause();
+}), {threshold: .15});
+actualVideos.forEach(video => { video.muted = true; if (reduce) {video.autoplay = false; video.pause();} videoObserver.observe(video); });
+
+// 9. 실제 앱 시연: 누르면 크게 보기, 다시 누르거나 Esc로 닫기
 $$<HTMLButtonElement>('.gif-zoom').forEach(b => b.addEventListener('click', () => {
   const box = b.closest('.gif-box') as HTMLElement, on = !box.classList.contains('big');
   $$('.gif-box.big').forEach(x => { x.classList.remove('big'); x.querySelector('.gif-zoom')!.textContent = '크게 보기'; });
