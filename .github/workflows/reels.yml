@@ -4,8 +4,12 @@ name: 인스타 릴스 자동 올리기
 # 카드마다 무료 AI 목소리(MeloTTS 한국어) 나레이션과 실제 앱 화면(체험 화면)을 넣는다. 목소리 준비에 실패하면 배경음만.
 # 인스타 연결 정보(IG_USER_ID, IG_ACCESS_TOKEN)가 없으면 영상만 만들어 실행 결과 파일로 남긴다.
 on:
+  # GitHub 예약 실행은 몇 시간씩 밀리거나 빠질 때가 있어 저녁에 네 번 걸어 둔다(17:52·18:37·19:52·21:07). 하루 한 번만 올라간다(post.mjs).
   schedule:
     - cron: '52 8 * * *'
+    - cron: '37 9 * * *'
+    - cron: '52 10 * * *'
+    - cron: '7 12 * * *'
   workflow_dispatch:
     inputs:
       index:
@@ -101,4 +105,5 @@ jobs:
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
           IG_HOST: ${{ secrets.IG_HOST }}
+          EVENT: ${{ github.event_name }}
         run: node scripts/reels/post.mjs reel-out
