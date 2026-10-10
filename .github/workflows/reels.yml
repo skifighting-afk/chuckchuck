@@ -1,15 +1,13 @@
 name: 인스타 릴스 자동 올리기
 
-# 매일 저녁 6시(한국 시간)에 노무 상식·사용법 주제 하나로 릴스를 만들어 올린다.
+# 하루 한 번 릴스를 만들어 올린다. 올리는 시간은 scripts/reels/month.json의 날짜별 time(월·수·목 22시, 화 15시, 금·일 21시, 토 11시), 없으면 18시.
 # 카드마다 무료 AI 목소리(MeloTTS 한국어) 나레이션과 실제 앱 화면(체험 화면)을 넣는다. 목소리 준비에 실패하면 배경음만.
 # 인스타 연결 정보(IG_USER_ID, IG_ACCESS_TOKEN)가 없으면 영상만 만들어 실행 결과 파일로 남긴다.
 on:
-  # GitHub 예약 실행은 몇 시간씩 밀리거나 빠질 때가 있어 저녁에 네 번 걸어 둔다(17:52·18:37·19:52·21:07). 하루 한 번만 올라간다(post.mjs).
+  # GitHub 예약 실행은 몇 시간씩 밀리거나 빠질 때가 있어 10:07~23:37(한국)에 30분마다 확인만 한다.
+  # 오늘 정한 시간이 지났고 아직 안 올렸을 때만 영상을 만들어 올린다(due.mjs). 차례가 아니면 20초 안에 끝난다.
   schedule:
-    - cron: '52 8 * * *'
-    - cron: '37 9 * * *'
-    - cron: '52 10 * * *'
-    - cron: '7 12 * * *'
+    - cron: '7,37 1-14 * * *'
   workflow_dispatch:
     inputs:
       index:
@@ -17,7 +15,7 @@ on:
         required: false
         default: ''
       indexes:
-        description: '미리보기 여러 개 (쉼표로 주제 번호, 올리지 않음)'
+        description: '미리보기 여러 개 (쉼표로 주제 번호 또는 날짜 2026-10-11, 올리지 않음)'
         required: false
         default: ''
       post:
@@ -41,7 +39,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: 올릴 차례인지 확인
+        id: due
+        env:
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          IG_HOST: ${{ secrets.IG_HOST }}
+          EVENT: ${{ github.event_name }}
+        run: node scripts/reels/due.mjs
       - name: 도구 준비 (한글 글꼴 · ffmpeg · 화면 찍기)
+        if: steps.due.outputs.go == 'true'
         timeout-minutes: 20
         run: |
           export DEBIAN_FRONTEND=noninteractive
@@ -50,9 +57,11 @@ jobs:
           npm install --no-save --no-audit --no-fund playwright@1.56.0 >/dev/null
           timeout 600 npx playwright install --with-deps chromium >/dev/null
       - uses: actions/setup-python@v5
+        if: steps.due.outputs.go == 'true'
         with:
           python-version: '3.10'
       - name: 목소리 모델 캐시
+        if: steps.due.outputs.go == 'true'
         uses: actions/cache@v4
         with:
           path: |
@@ -60,6 +69,7 @@ jobs:
             ~/.cache/huggingface
           key: melotts-v1
       - name: 목소리 모델 준비 (MeloTTS · 무료)
+        if: steps.due.outputs.go == 'true'
         continue-on-error: true
         timeout-minutes: 20
         run: |
@@ -69,18 +79,20 @@ jobs:
           python -c "import nltk;[nltk.download(x,quiet=True) for x in ['averaged_perceptron_tagger','averaged_perceptron_tagger_eng','cmudict']]"
           python -c "from melo.api import TTS" && echo "REEL_PYTHON=$(which python)" >> "$GITHUB_ENV"
       - name: 릴스 만들기
+        if: steps.due.outputs.go == 'true'
         run: |
           if [ -n "${{ github.event.inputs.indexes }}" ]; then
-            for i in $(echo "${{ github.event.inputs.indexes }}" | tr ',' ' '); do node scripts/reels/make.mjs --index "$i" --out "reel-out/$i"; done
+            for i in $(echo "${{ github.event.inputs.indexes }}" | tr ',' ' '); do if [[ "$i" == *-* ]]; then node scripts/reels/make.mjs --date "$i" --out "reel-out/$i"; else node scripts/reels/make.mjs --index "$i" --out "reel-out/$i"; fi; done
           elif [ -n "${{ github.event.inputs.index }}" ]; then node scripts/reels/make.mjs --index "${{ github.event.inputs.index }}" --out reel-out; else node scripts/reels/make.mjs --out reel-out; fi
       - name: 만든 영상 보관
+        if: steps.due.outputs.go == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: reel
           path: reel-out/
           retention-days: 14
       - name: 미리보기 브랜치에 올리기 (올리지 않고 만들기만 했을 때)
-        if: github.event_name == 'workflow_dispatch' && github.event.inputs.post != 'true'
+        if: steps.due.outputs.go == 'true' && (github.event_name == 'workflow_dispatch' && github.event.inputs.post != 'true')
         run: |
           cd reel-out && find . \( -name 'voice-*.wav' -o -name 'music.wav' -o -name 'screen-*.png' \) -delete
           git init -q && git checkout -q -b reel-preview
@@ -88,7 +100,7 @@ jobs:
           git -c user.name=reel-bot -c user.email=reel-bot@users.noreply.github.com commit -qm "릴스 미리보기"
           git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" reel-preview
       - name: 영상 공개 주소 만들기 (인스타가 가져가도록 reel-media 브랜치에)
-        if: github.event_name == 'schedule' || (github.event.inputs.post == 'true' && github.event.inputs.indexes == '')
+        if: steps.due.outputs.go == 'true' && (github.event_name == 'schedule' || (github.event.inputs.post == 'true' && github.event.inputs.indexes == ''))
         run: |
           mkdir -p /tmp/media && cp reel-out/reel.mp4 reel-out/cover.jpg /tmp/media/ && cd /tmp/media
           git init -q && git checkout -q -b reel-media
@@ -100,7 +112,7 @@ jobs:
           echo "REEL_COVER_URL=https://raw.githubusercontent.com/${{ github.repository }}/$sha/cover.jpg" >> "$GITHUB_ENV"
           sleep 5
       - name: 인스타에 올리기
-        if: github.event_name == 'schedule' || (github.event.inputs.post == 'true' && github.event.inputs.indexes == '')
+        if: steps.due.outputs.go == 'true' && (github.event_name == 'schedule' || (github.event.inputs.post == 'true' && github.event.inputs.indexes == ''))
         env:
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}

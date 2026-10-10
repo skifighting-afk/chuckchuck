@@ -27,11 +27,10 @@ const api=async(path,params,method='POST')=>{
  if(!r.ok||d.error)throw Error(`인스타 API 오류 (${path.split('/').pop()}): ${d.error?.message||r.status}`);
  return d;
 };
-// 0) 하루 한 번만: 오늘(한국 날짜) 이미 올린 릴스가 있으면 건너뛴다. 예약 실행이 다음 날 새벽에 늦게 돌면(17시 전) 올리지 않는다. FORCE_POST=1이면 무시
+// 0) 하루 한 번만: 오늘(한국 날짜) 이미 올린 릴스가 있으면 건너뛴다(올릴 시간 판단은 due.mjs). FORCE_POST=1이면 무시
 if(process.env.FORCE_POST!=='1'){
  const kst=d=>new Date(new Date(d).getTime()+9*3600000);
  const now=kst(Date.now());
- if(process.env.EVENT==='schedule'&&now.getUTCHours()<17){console.log(`예약 실행이 늦게 돌아서(한국 ${now.getUTCHours()}시) 오늘 저녁 차례를 기다려요.`);process.exit(0)}
  const recent=await api(`${user}/media`,{fields:'timestamp,media_product_type',limit:'3'},'GET').catch(()=>null);
  const last=(recent?.data||[]).find(m=>m.media_product_type==='REELS');
  if(last&&kst(last.timestamp).toISOString().slice(0,10)===now.toISOString().slice(0,10)){console.log(`오늘 이미 올린 릴스가 있어 건너뛰었어요 (${last.timestamp}).`);process.exit(0)}

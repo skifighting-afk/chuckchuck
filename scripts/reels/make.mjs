@@ -19,8 +19,14 @@ const has=k=>process.argv.includes(k);
 const topics=JSON.parse(readFileSync(new URL('./topics.json',import.meta.url),'utf8'));
 const START=Date.UTC(2026,9,5);
 const day=Math.floor((Date.now()+9*3600000-START)/86400000);
+// 한 달 대본(month.json)에 오늘(또는 --date) 날짜가 있으면 그걸 쓰고, 없으면 기존 주제를 차례로
+const MONTH=JSON.parse(readFileSync(new URL('./month.json',import.meta.url),'utf8')).days;
+const kstToday=new Date(Date.now()+9*3600000).toISOString().slice(0,10);
+const mDate=arg('--date',has('--index')?'':kstToday);
+const mi=MONTH.findIndex(m=>m.date===mDate);
+const M=mi>=0?MONTH[mi]:null;
 const index=Number(arg('--index',String(((day%topics.length)+topics.length)%topics.length)));
-const t=topics[index];if(!t)throw Error('주제 번호가 범위를 벗어났어요: '+index);
+const t=M?{id:M.id,group:'사장님 노무 상식',q:M.q,a:M.a,screen:M.screen}:topics[index];if(!t)throw Error('주제 번호가 범위를 벗어났어요: '+index);
 const out=resolve(arg('--out','reel-out'));mkdirSync(out,{recursive:true});
 const img=p=>existsSync(resolve(p))?'data:image/png;base64,'+readFileSync(resolve(p)).toString('base64'):'';
 const wave=img('public/cheokcheoki-welcome.png'),guide=img('public/cheokcheoki-guide.png');
@@ -32,13 +38,13 @@ const SAY=JSON.parse(readFileSync(new URL('./say.json',import.meta.url),'utf8'))
 // 3단계 대본(hooks.json): 첫 3초 훅 5종 중 고른 하나 → 핵심 한 줄 → 저장·댓글 부르는 양자택일 마무리
 const HOOKS=JSON.parse(readFileSync(new URL('./hooks.json',import.meta.url),'utf8'));
 const H=HOOKS[t.id];
-const hookType=arg('--hook',H?.pick);
-const hookLine=H?.hooks?.[hookType]||SAY[0];
-const coreLine=SAY[1];
-const kw=H?.kw||SAY[2];
-const choice=H?.choice||['우리 가게는?','해당된다','아니다'];
+const hookType=M?M.type:arg('--hook',H?.pick);
+const hookLine=M?M.hook:(H?.hooks?.[hookType]||SAY[0]);
+const coreLine=M?M.core:SAY[1];
+const kw=M?M.kw:(H?.kw||SAY[2]);
+const choice=M?M.choice:(H?.choice||['우리 가게는?','해당된다','아니다']);
 const next=topics[(index+1)%topics.length];
-const nextKw=HOOKS[next.id]?.kw||next.q;
+const nextKw=M?(MONTH[mi+1]?.kw||HOOKS[next.id]?.kw||next.q):(HOOKS[next.id]?.kw||next.q);
 
 const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const FONT="'Noto Sans CJK KR','Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif";
@@ -81,7 +87,7 @@ p em{font-style:normal;color:#c8f169}`);
 const browser=await chromium.launch(process.env.PW_CHROMIUM?{executablePath:process.env.PW_CHROMIUM}:{});
 // 2) 실제 앱 화면 한 장: 체험 화면(예시 가게)을 휴대폰 크기로 찍는다
 const site=arg('--site',process.env.REEL_SITE||'https://chukchukapp.kr');
-const scr=has('--no-screens')?{shots:[],label:''}:await captureScreens(browser,site,t.id,out);
+const scr=has('--no-screens')?{shots:[],label:''}:await captureScreens(browser,site,t.screen||t.id,out);
 const shot=scr.shots[0];
 const phone=shot&&shell(`
 <div class="brand" style="position:absolute;left:96px;top:120px"><i>척</i>척척사장</div>
@@ -170,9 +176,10 @@ execFileSync('ffmpeg',['-y','-loglevel','error',...inputs,'-filter_complex',filt
 // 표지(썸네일) 파일: 첫 화면을 jpg로
 execFileSync('ffmpeg',['-y','-loglevel','error','-i',pngs[0],'-q:v','3',join(out,'cover.jpg')]);
 
-const tags='#자영업 #자영업자 #사장님 #소상공인 #알바관리 #직원관리 #노무상식 #주휴수당 #최저시급 #근로계약서 #급여명세서 #척척사장';
+// 해시태그는 5개 안쪽(2026 인스타 기준), 검색 키워드는 캡션 본문에
+const tags=M?(M.tags+' #자영업 #척척사장'):'#자영업 #사장님 #알바관리 #노무상식 #척척사장';
 const caption=`${hookLine}\n\n${t.q}\n${t.a}\n\n${law?'※ 일반적인 기준이에요. 사정마다 다를 수 있으니 애매하면 고용노동부 상담센터(1350)에 확인하세요.\n\n':''}📌 급할 때 꺼내 보게 저장해 둬요.\n\n${choice[0]}\n1️⃣ ${choice[1]}  2️⃣ ${choice[2]}\n댓글에 숫자만 남겨 주세요!\n\n내일은 '${nextKw}' 편이에요. 놓치기 싫으면 팔로우 👉 @chukchukbot_official\n\n이런 계산과 서류, 척척사장이 대신 해요. 30일 무료 · 카드 등록 없이 👉 프로필 링크\n\n${tags}`;
 writeFileSync(join(out,'caption.txt'),caption);
 const pred=predict({q:hookLine,cards:[coreLine],secs,audio:!mute,voice:!!voice});
-writeFileSync(join(out,'meta.json'),JSON.stringify({index,id:t.id,q:t.q,hook:hookLine,hookType,choice,kw,group:t.group,seconds:Number(total.toFixed(1)),cover:join(out,'cover.jpg'),predict:pred,music,voice,screens:{site:site.replace(/^https?:\/\//,''),screen:scr.screen||null,count:phone?1:0},timeline:secs.map((sec,i)=>({label:labels[i],sec:Math.round(sec*10)/10,voice:!!voices[i],cps:i===1?Math.round(coreLine.replace(/\s/g,'').length/sec*10)/10:null}))},null,1));
+writeFileSync(join(out,'meta.json'),JSON.stringify({index,date:M?.date||null,slot:M?.time||null,type:M?.type||null,id:t.id,q:t.q,hook:hookLine,hookType,choice,kw,group:t.group,seconds:Number(total.toFixed(1)),cover:join(out,'cover.jpg'),predict:pred,music,voice,screens:{site:site.replace(/^https?:\/\//,''),screen:scr.screen||null,count:phone?1:0},timeline:secs.map((sec,i)=>({label:labels[i],sec:Math.round(sec*10)/10,voice:!!voices[i],cps:i===1?Math.round(coreLine.replace(/\s/g,'').length/sec*10)/10:null}))},null,1));
 console.log(`릴스 만듦: ${index}번 "${t.q}" · ${total.toFixed(1)}초 · 예상 점수 ${pred.score} → ${mp4}`);
