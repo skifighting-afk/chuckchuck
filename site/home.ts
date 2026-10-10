@@ -87,24 +87,7 @@ if (!reduce) {
 
 // 4. 우리 가게는?
 type Fit = 'small' | 'five' | 'multi';
-const FIT_TEXT: Record<Fit, string> = {
-  small: '5명 미만 가게는 연장·야간 가산수당이 붙지 않아요. 아래 인건비 계산에 그대로 맞춰 뒀어요.',
-  five: '5명 이상이면 하루 8시간·주 40시간을 넘는 연장 근무와 밤 10시~아침 6시 야간 근무에 50%가 더 붙어요. 아래 계산에 반영했어요.',
-  multi: '지점이 여러 곳이면 지점마다 따로 관리하고 한 화면에서 비교해요. 아래 요금을 3지점으로 맞춰 뒀어요.',
-};
-let fit: Fit = 'small';
-const fitBtns = $$<HTMLButtonElement>('#fit button');
-function setFit(f: Fit, focus = false) {
-  fit = f;
-  fitBtns.forEach(b => { const on = b.dataset.fit === f; b.setAttribute('aria-checked', String(on)); b.tabIndex = on ? 0 : -1; if (on && focus) b.focus(); });
-  $('#fit-a').textContent = FIT_TEXT[f];
-  branches = f === 'multi' ? 3 : 1; renderQuote(); renderCalc();
-}
-fitBtns.forEach((b, i) => {
-  b.tabIndex = i ? -1 : 0;
-  b.addEventListener('click', () => setFit(b.dataset.fit as Fit));
-  b.addEventListener('keydown', e => { const d = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0; if (d) { e.preventDefault(); setFit(fitBtns[(i + d + fitBtns.length) % fitBtns.length].dataset.fit as Fit, true); } });
-});
+const fit: Fit = 'small'; // 선택 UI 삭제 후 기본값 고정
 
 // 5. 둘러보기 탭
 const tabs = $$<HTMLButtonElement>('[role=tab]');
