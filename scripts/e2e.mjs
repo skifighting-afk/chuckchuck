@@ -189,7 +189,7 @@ await step('작업 054: 직원 여러 명 붙여넣기 등록',async()=>{
 const hrOwnerCtx=await browser.newContext({storageState:await ownerCtx.storageState(),serviceWorkers:'block',viewport:{width:1280,height:900},timezoneId:'Asia/Seoul',locale:'ko-KR'});
 const hrStaffCtx=await browser.newContext({...devices['iPhone 13'],storageState:await staffCtx.storageState(),serviceWorkers:'block',browserName:undefined,defaultBrowserType:undefined,timezoneId:'Asia/Seoul',locale:'ko-KR'});
 const hrOwner=await hrOwnerCtx.newPage(),hrStaff=await hrStaffCtx.newPage();watch(hrOwner);watch(hrStaff);extra=hrOwner;
-await (await import('./hr-e2e.mjs')).hrE2E({owner:hrOwner,staff:hrStaff,srv,step,staffName:STAFF.name});
+await (await import('./hr-e2e.mjs')).hrE2E({owner:hrOwner,staff:hrStaff,srv,step,staffName:STAFF.name,browser});
 await hrOwnerCtx.close();await hrStaffCtx.close();extra=null;
 
 await step('다시 로그인 (로그아웃 후)',async()=>{
