@@ -1,0 +1,253 @@
+Logo source inventory. Customer adoption statement supplied and confirmed by site owner.
+[
+  {
+    "id": "mega",
+    "source": "https://img.79plus.co.kr/megahp/common/img/new_logo_b.png",
+    "file": "brand-mega.webp"
+  },
+  {
+    "id": "compose",
+    "source": "https://composecoffee.com/layouts/opening/img/logo.svg",
+    "file": "brand-compose.svg"
+  },
+  {
+    "id": "paik",
+    "source": "https://paikdabang.com/wp-content/themes/paikdabang/assets/images/logo.png",
+    "file": "brand-paik.webp"
+  },
+  {
+    "id": "ediya",
+    "source": "https://ediya.com/images/common/top_logo_240822.gif",
+    "file": "brand-ediya.webp"
+  },
+  {
+    "id": "venti",
+    "source": "https://www.theventi.co.kr/new2022/images/intro/intro-logo-color.png",
+    "file": "brand-venti.webp"
+  },
+  {
+    "id": "hollys",
+    "source": "https://www.hollys.co.kr/websrc/images/layout/logo_210302.gif",
+    "file": "brand-hollys.webp"
+  },
+  {
+    "id": "tenpercent",
+    "source": "https://www.tenpercentcoffee.com/images/logo_b.svg",
+    "file": "brand-tenpercent.svg"
+  },
+  {
+    "id": "bbq",
+    "source": "https://bbq.co.kr/images/symbols/logo-red.svg",
+    "file": "brand-bbq.svg"
+  },
+  {
+    "id": "bhc",
+    "source": "https://www.bhc.co.kr/_next/static/media/ico_logo_header.73c66913.svg",
+    "file": "brand-bhc.svg"
+  },
+  {
+    "id": "goobne",
+    "source": "https://www.goobne.co.kr/pc/assets/img/header-logo2.svg",
+    "file": "brand-goobne.svg"
+  },
+  {
+    "id": "cheogajip",
+    "source": "https://www.cheogajip.co.kr/logo.png",
+    "file": "brand-cheogajip.webp"
+  },
+  {
+    "id": "pelicana",
+    "source": "https://www.pelicana.co.kr/_nuxt/img/logo.54d3328.png",
+    "file": "brand-pelicana.webp"
+  },
+  {
+    "id": "nene",
+    "source": "https://nenechicken.com/images/NENE_Logo.svg",
+    "file": "brand-nene.svg"
+  },
+  {
+    "id": "jadam",
+    "source": "https://www.ejadam.co.kr:443/theme/creasor_renew/img/common/logo.png",
+    "file": "brand-jadam.webp"
+  },
+  {
+    "id": "hosigi",
+    "source": "https://cdn.imweb.me/thumbnail/20240905/5359bf2a00714.png",
+    "file": "brand-hosigi.webp"
+  },
+  {
+    "id": "paris",
+    "source": "https://d2afncas1tel3t.cloudfront.net/wp-content/uploads/2020/01/logo.jpg",
+    "file": "brand-paris.webp"
+  },
+  {
+    "id": "touslesjours",
+    "source": "https://www.tlj.co.kr/static/images/common/logo.png?v2503",
+    "file": "brand-touslesjours.webp"
+  },
+  {
+    "id": "baskin",
+    "source": "https://www.baskinrobbins.co.kr/assets/images/common/h_logo.png",
+    "file": "brand-baskin.webp"
+  },
+  {
+    "id": "dunkin",
+    "source": "https://www.dunkindonuts.co.kr/build/assets/logo-11ac097b.svg",
+    "file": "brand-dunkin.svg"
+  },
+  {
+    "id": "waffle",
+    "source": "https://www.waffleuniv.com/child/img/inc/brand_logo.png",
+    "file": "brand-waffle.webp"
+  },
+  {
+    "id": "cu",
+    "source": "https://cu.bgfretail.com/images/common/new/logo.png",
+    "file": "brand-cu.webp"
+  },
+  {
+    "id": "seven",
+    "source": "https://www.7-eleven.co.kr/front/img/com/logo.png",
+    "file": "brand-seven.webp"
+  },
+  {
+    "id": "emart24",
+    "source": "https://emart24.co.kr/assets/assets/imgs/logo.png",
+    "file": "brand-emart24.webp"
+  },
+  {
+    "id": "momstouch",
+    "source": "https://momstouch.co.kr/image/intro_logo.svg",
+    "file": "brand-momstouch.svg"
+  },
+  {
+    "id": "nobrand",
+    "source": "https://www.shinsegaefood.com/brand/nobrandburger/images/img_logo.png",
+    "file": "brand-nobrand.webp"
+  },
+  {
+    "id": "sinjeon",
+    "source": "https://www.sinjeon.co.kr/img/common/logo2_normal.png",
+    "file": "brand-sinjeon.webp"
+  },
+  {
+    "id": "yup",
+    "source": "https://www.yupdduk.com/bj-images/logo_m.png",
+    "file": "brand-yup.webp"
+  },
+  {
+    "id": "udon",
+    "source": "https://udon0410.com/wp-content/themes/udon0410/assets/images/logo_main.png",
+    "file": "brand-udon.webp"
+  },
+  {
+    "id": "grandma",
+    "source": "https://www.yeokjeonfnc.com/img/main/logo_img01_20240717.png",
+    "file": "brand-grandma.webp"
+  },
+  {
+    "id": "dailybeer",
+    "source": "https://dailybeer.co.kr/wp-content/uploads/2026/04/logo-en.svg",
+    "file": "brand-dailybeer.svg"
+  },
+  {
+    "id": "isaac",
+    "source": "https://www.isaac-toast.co.kr/img/logo.svg",
+    "file": "brand-isaac.svg"
+  },
+  {
+    "id": "mammoth",
+    "source": "https://mmthcoffee.com/img/common/logo2.png",
+    "file": "brand-mammoth.webp"
+  },
+  {
+    "id": "kyochon",
+    "source": "https://www.kyochon.com/images/common/h1_logo.png",
+    "file": "brand-kyochon.webp"
+  },
+  {
+    "id": "sulbing",
+    "source": "https://sulbing.com/new/images/pc/intro_bottom_01.png",
+    "file": "brand-sulbing.webp"
+  },
+  {
+    "id": "burgerking",
+    "source": "https://www.burgerking.co.kr/img/bg_logo.svg",
+    "file": "brand-burgerking.svg"
+  },
+  {
+    "id": "pizzahut",
+    "source": "https://www.pizzahut.co.kr/assets/web/img/common/logo2.png",
+    "file": "brand-pizzahut.webp"
+  },
+  {
+    "id": "hansot",
+    "source": "https://www.hsd.co.kr/assets/images/common/h1_logo.png",
+    "file": "brand-hansot.webp"
+  },
+  {
+    "id": "salady",
+    "source": "https://salady.com/superboard/data/siteconfig/2021021809004816136064486235.jpg",
+    "file": "brand-salady.webp"
+  },
+  {
+    "id": "young",
+    "source": "https://www.youngdabang.com/img/common/bi_new_251209.png",
+    "file": "brand-young.webp"
+  },
+  {
+    "id": "bon1",
+    "source": "https://www.bonif.co.kr/assets/web/front/assets/images/main/main_brand_logo1.svg",
+    "file": "brand-bon1.svg"
+  },
+  {
+    "id": "bon2",
+    "source": "https://www.bonif.co.kr/assets/web/front/assets/images/main/main_brand_logo2.svg",
+    "file": "brand-bon2.svg"
+  },
+  {
+    "id": "bon3",
+    "source": "https://www.bonif.co.kr/assets/web/front/assets/images/main/main_brand_logo3.svg",
+    "file": "brand-bon3.svg"
+  },
+  {
+    "id": "coffeebay",
+    "source": "https://www.coffeebay.com/main",
+    "file": "brand-coffeebay.svg"
+  },
+  {
+    "id": "gs25",
+    "source": "https://hpsimg.gsretail.com/public/js/index.01e11536.js",
+    "file": "brand-gs25.webp"
+  },
+  {
+    "id": "lotteria",
+    "source": "https://stat.lotteeatz.com/202610071416/assets/images/common/comm_logo_lotteria_red.svg",
+    "file": "brand-lotteria.svg"
+  },
+  {
+    "id": "dominos",
+    "source": "https://cdn.dominos.co.kr/domino/pc/images/sp/sp_common.png",
+    "file": "brand-dominos.webp"
+  },
+  {
+    "id": "hongkong",
+    "source": "https://www.theborn.co.kr/wp-content/uploads/2017/06/%ED%99%8D%EC%BD%A9%EB%B0%98%EC%A0%90-2.png",
+    "file": "brand-hongkong.webp"
+  },
+  {
+    "id": "twosome",
+    "source": "https://upload.wikimedia.org/wikipedia/commons/1/11/Bi_img_logo.svg",
+    "file": "brand-twosome.svg"
+  },
+  {
+    "id": "norang",
+    "source": "https://play-lh.googleusercontent.com/TL-tJqOa2TZ4Epf6GxEJCF3ykRyLDdnTVfKo6U_HyypCYZlIiKNw6Un_2RXYWGGj4tg3x5YbN4qbLwg-DS6F4XA%3Ds0-br30",
+    "file": "brand-norang.webp"
+  },
+  {
+    "id": "pizzaschool",
+    "source": "https://k.kakaocdn.net/dn/xs3Zn/btsHUxofFK1/0xdmqwgbxb5gSzvKNPBLW0/img_m.jpg",
+    "file": "brand-pizzaschool.webp"
+  }
+]
