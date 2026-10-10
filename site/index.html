@@ -53,11 +53,6 @@
       <p class="fine">카드 등록 없음 · 자동 결제 없음 · 직원 수 제한 없음</p>
     </div>
 
-    <ol class="steps" aria-label="척척사장이 하는 일">
-      <li data-step="0"><b>누가 일했는지</b><span>직원이 출근 버튼이나 매장 QR로 찍어요</span></li>
-      <li data-step="1"><b>몇 시간 일했는지</b><span>빠뜨린 기록은 사장님이 승인해야 바뀌어요</span></li>
-      <li data-step="2"><b>얼마 줄지</b><span>주휴수당까지 계산된 급여를 확인하고 확정해요</span></li>
-    </ol>
 
     <div class="stage" id="stage" aria-hidden="true">
       <div class="desk">
@@ -65,8 +60,6 @@
           <div class="ledger-head"><span class="hand big">9월 출근부</span><span class="neat-title">9월 근무 기록 <i>예시</i></span></div>
           <div class="ledger-scroll">{{LEDGER}}</div>
         </div>
-        <div class="note n1"><span class="hand">준호 수요일<br>대타 누구??</span><i class="ok">✓ 교대 승인</i></div>
-        <div class="note n2"><span class="hand">주휴수당<br>이거 맞나…</span><i class="ok">✓ 자동 계산</i></div>
         <div class="calc-toy"><span>{{CALC_TOY}}</span><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
         <div class="bubble"><small>카톡 · 준호</small>사장님 저 수요일 출근 찍는 거 깜빡했어요ㅠ<i class="ok">✓ 정정 요청으로 받았어요</i></div>
       </div>
@@ -86,16 +79,6 @@
   </div>
 </section>
 
-<!-- ② 우리 가게는? -->
-<section class="fit" aria-labelledby="fit-title">
-  <h2 id="fit-title" class="fit-q">우리 가게는</h2>
-  <div class="chips" role="radiogroup" aria-labelledby="fit-title" id="fit">
-    <button type="button" role="radio" aria-checked="true" data-fit="small">직원 1~4명</button>
-    <button type="button" role="radio" aria-checked="false" data-fit="five">직원 5명 이상</button>
-    <button type="button" role="radio" aria-checked="false" data-fit="multi">지점 2곳 이상</button>
-  </div>
-  <p class="fit-a" id="fit-a" aria-live="polite">5명 미만 가게는 연장·야간 가산수당이 붙지 않아요. 아래 인건비 계산에 그대로 맞춰 뒀어요.</p>
-</section>
 
 <!-- ③ 체크 두 번이면 끝나요 -->
 <section class="tour" id="tour" aria-labelledby="tour-title">
