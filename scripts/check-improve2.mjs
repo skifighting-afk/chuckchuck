@@ -74,6 +74,11 @@ ok('B020 on time no hint',I.clockInHint([{date:day,start:'10:00',end:'18:00'}],K
 ok('B020 after end hint',I.clockInHint([{date:day,start:'10:00',end:'18:00'}],K(day,'19:00')).includes('이미 끝난'),true);
 {const {explainPay}=await import('../lib/pay-explain.ts');ok('B056 juhu skipped reason',explainPay({gross:100,deduction:0,net:100,juhuSkipped:['2026-09-07'],payType:'시급'}).some(t=>t.includes('9/7 시작 주는')),true);
  ok('B056 no juhu reason',explainPay({gross:100,deduction:0,net:100,hours:10,payType:'시급',earnings:[{name:'기본급',amount:100}]}).some(t=>t.includes('주휴수당이 없어요')),true);}
+// ── 처음 시작 가이드 단계
+{const {TOURS}=await import('../lib/tour-steps.ts');const PAGES=['홈','직원 관리','근무 스케줄','출퇴근 기록','급여·명세서','휴가·공지','매장 매뉴얼','인건비 리포트','설정'];
+ ok('owner tour 8+ steps, staff 5+',[TOURS.owner.length>=8,TOURS.staff.length>=5],[true,true]);
+ ok('every step has title+body',[...TOURS.owner,...TOURS.staff].every(s=>s.title&&s.body&&s.body.length<=160),true);
+ ok('owner pages exist',TOURS.owner.every(s=>!s.page||PAGES.includes(s.page))&&(!TOURS.owner.at(-1).action?.page||PAGES.includes(TOURS.owner.at(-1).action.page)),true);}
 // ── 서버
 const T=await authedTest({domain:'example.invalid'}),{q,headersFor,id}=T,env=T.env;
 async function raw(user,path,body,method){return api(new Request('https://qa.local'+path,{method:method||(body?'POST':'GET'),headers:{origin:'https://qa.local',...(await headersFor(user))},...(body?{body:JSON.stringify(body)}:{})}),env)}
