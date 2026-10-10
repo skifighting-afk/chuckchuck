@@ -14,8 +14,8 @@ const officer = O.privacyOfficer.name ? `${O.privacyOfficer.name}${O.privacyOffi
 const company = show(O.company);
 
 export const TERMS: LegalDoc = {
-  key: 'terms', title: '척척사장 이용약관', version: LEGAL.terms.version, effective: '2026-10-17', reviewed: false,
-  history: [{version: LEGAL.terms.version, effective: '2026-10-17', note: '전자근로계약서 요금을 체결 1건당 3,000원으로 정함(제7조, 무료 제공 없음)'},{version: '2026-10-09-prelaunch', effective: '2026-10-16', note: '지식재산권(제13조의2), 서비스 장애와 보상(제11조의2), 운영정책(제9조) 추가'},{version: '2026-10-04-prelaunch', effective: '2026-10-04', note: '판매 준비판(운영자 정보 확정 전, 법률 검토 전 초안)'}],
+  key: 'terms', title: '척척사장 이용약관', version: LEGAL.terms.version, effective: '2026-10-18', reviewed: false,
+  history: [{version: LEGAL.terms.version, effective: '2026-10-18', note: '운영자(플러스이브이) 정보 확정'},{version: '2026-10-10-prelaunch', effective: '2026-10-17', note: '전자근로계약서 요금을 체결 1건당 3,000원으로 정함(제7조, 무료 제공 없음)'},{version: '2026-10-09-prelaunch', effective: '2026-10-16', note: '지식재산권(제13조의2), 서비스 장애와 보상(제11조의2), 운영정책(제9조) 추가'},{version: '2026-10-04-prelaunch', effective: '2026-10-04', note: '판매 준비판(운영자 정보 확정 전, 법률 검토 전 초안)'}],
   sections: [
     {id: 't1', title: '제1조 (목적)', body: [`이 약관은 ${company}(이하 "회사")가 제공하는 매장 관리 서비스 "척척사장"(이하 "서비스")의 이용 조건과 절차, 회사와 회원의 권리·의무를 정합니다.`]},
     {id: 't2', title: '제2조 (용어)', body: [
@@ -91,9 +91,10 @@ export const TERMS: LegalDoc = {
 };
 
 export const PRIVACY: LegalDoc = {
-  key: 'privacy', title: '척척사장 개인정보 처리방침', version: LEGAL.privacy.version, effective: '2026-10-16', reviewed: false,
+  key: 'privacy', title: '척척사장 개인정보 처리방침', version: LEGAL.privacy.version, effective: '2026-10-18', reviewed: false,
   history: [
-    {version: LEGAL.privacy.version, effective: '2026-10-16', note: '광고성 정보 수신 동의(선택), 2단계 인증 정보, 출근 위치 확인 거부 방법 추가'},
+    {version: LEGAL.privacy.version, effective: '2026-10-18', note: '운영자 정보 확정(플러스이브이, 개인정보 보호책임자), 스토어 앱(알림 토큰·카메라·위치), 결제 대행(토스페이먼츠), 화면 오류 기록 추가'},
+    {version: '2026-10-09b-prelaunch', effective: '2026-10-16', note: '광고성 정보 수신 동의(선택), 2단계 인증 정보, 출근 위치 확인 거부 방법 추가'},
     {version: '2026-10-09-prelaunch', effective: '2026-10-09', note: '메타(페이스북·인스타그램) 광고 성과 측정 도구 사용 안내 추가(10항·6항)'},
     {version: '2026-10-04-prelaunch', effective: '2026-10-04', note: '판매 준비판(운영자 정보 확정 전, 법률 검토 전 초안)'},
   ],
@@ -107,6 +108,8 @@ export const PRIVACY: LegalDoc = {
         ['결제 (유료 이용 시)', '결제 금액, 요금제, 결제 수단 종류, 결제·취소 시각, 영수증 주소 (카드번호는 받지 않음)', '요금 결제·환불, 법정 기록 보관'],
         ['비밀번호 찾기 요청 (로그인 못 할 때)', '가입 이메일, 이름, 연락받을 전화번호, 가게 이름(선택)', '본인 확인 후 임시 비밀번호 안내'],
         ['서비스 이용 중 생성', '접속·변경 기록(누가, 언제, 무엇을), 알림 받을 기기의 구독 정보(알림을 켠 경우), 문의 내용과 답변', '보안, 분쟁 대비, 알림 발송, 문의 응대'],
+        ['스토어 앱 (앱을 쓰는 경우)', '앱 알림을 켠 기기의 알림 토큰과 기기 종류(안드로이드·아이폰). 카메라(QR·사진)와 위치(출근 위치 확인)는 그 기능을 쓸 때만 쓰고, 위치 좌표는 저장하지 않음(매장과의 거리 판정만 기록)', '앱 알림 발송, QR 출퇴근·사진 첨부, 출근 위치 확인'],
+        ['화면 오류 기록', '오류 문구와 화면 주소(이메일·전화번호 등은 지운 뒤 저장, 14일 보관)', '서비스 오류 찾기·고치기'],
         ['광고성 정보 수신 (선택)', '수신 동의 여부와 동의·철회 시각', '새 기능·할인 소식 안내. 동의하지 않아도 서비스는 똑같이 쓸 수 있고, 계정 화면에서 언제든 끌 수 있어요. 2년마다 동의를 다시 확인해요(정보통신망법 제50조).'],
         ['2단계 인증 (켠 경우)', '인증 앱 등록용 비밀값, 비상 코드의 해시값, 인증을 마친 세션의 해시값', '비밀번호가 새도 계정을 지키기 위함'],
         ['로그인 기록', '로그인 성공·실패 시각, 기기 종류(브라우저·OS), IP 주소 앞부분(예: 211.36.*.*) — 90일 보관', '계정 보안(내가 아닌 로그인 확인)'],
@@ -156,6 +159,8 @@ export const PRIVACY: LegalDoc = {
         ['Supabase Pte. Ltd.', '데이터베이스 보관, 로그인, 서버 기능 운영'],
         ['GitHub, Inc.', '화면 파일 배포(접속할 때 IP 주소 등 접속 기록이 남을 수 있음)'],
         ['브라우저 알림 서비스(Google, Apple, Mozilla 등)', '휴대폰 알림 전달(알림을 켠 경우)'],
+        ['토스페이먼츠(주)', '요금 결제·환불 처리(결제를 시작할 때부터, 카드번호 등 결제 정보는 토스페이먼츠가 직접 받음)'],
+        ['Google LLC(Firebase Cloud Messaging)·Apple Inc.(Apple Push Notification service)', '스토어 앱 알림 전달(앱에서 알림을 켠 경우)'],
       ]},
       '메일 발송 업체(Resend 등)는 아직 연결하지 않았습니다. 연결하면 이 방침을 고쳐 미리 알립니다.',
       '위탁 계약에 개인정보 보호법 제26조에 따라 목적 외 처리 금지, 안전성 확보 조치, 재위탁 제한, 관리·감독, 손해배상 책임을 정하고, 수탁자가 안전하게 처리하는지 감독합니다.',
@@ -167,6 +172,7 @@ export const PRIVACY: LegalDoc = {
         ['Supabase Pte. Ltd. (privacy@supabase.com)', '싱가포르 법인. 데이터 저장 위치는 대한민국 서울(AWS ap-northeast-2)', '1·2항의 정보 전부', '서비스 이용 때마다 암호화 통신으로 전송', '데이터베이스·로그인·서버 운영', '탈퇴 또는 위탁 계약 종료 시까지(3항 기준)'],
         ['GitHub, Inc. (github.com/contact/privacy)', '미국', '화면에 접속한 기기의 IP 주소 등 접속 기록', '화면을 열 때 네트워크로 전송', '화면 파일 전달', 'GitHub 정책에 따른 기간'],
         ['Google LLC·Apple Inc.·Mozilla Corporation 등 (각 회사 개인정보 문의 창구)', '미국 등', '알림 받을 기기의 구독 주소, 암호화된 알림 내용(업체는 내용을 볼 수 없음)', '알림을 보낼 때 네트워크로 전송', '휴대폰 알림 전달', '전달 후 업체 정책에 따라 삭제'],
+        ['Google LLC(Firebase)·Apple Inc. (각 회사 개인정보 문의 창구)', '미국', '앱 알림 토큰, 알림 제목·내용', '앱 알림을 보낼 때 네트워크로 전송', '스토어 앱 알림 전달', '전달 후 업체 정책에 따라 삭제'],
         ['Meta Platforms, Inc. (facebook.com/privacy/policy)', '미국', '로그인 전 공개 화면 방문 기록, 무료 체험 가입 완료 여부, 브라우저·기기 정보, IP 주소, Meta 쿠키(10항)', '공개 화면을 열거나 가입을 마칠 때 네트워크로 전송', '광고 성과 측정·광고 대상 최적화', 'Meta 정책에 따른 기간(회사는 따로 보관하지 않음)'],
       ]},
       '거부 방법과 효과: 알림은 언제든 끌 수 있고, 끄면 알림 서비스로 이전되지 않습니다. Meta로의 전송은 10항의 방법으로 거부할 수 있고, 거부해도 서비스 이용에는 영향이 없습니다. 데이터베이스(Supabase)는 서비스의 핵심 저장소라 이전을 거부하면 서비스를 이용할 수 없으며, 이 경우 가입하지 않거나 탈퇴할 수 있습니다.',

@@ -3,15 +3,15 @@
 // 값을 채우면 lib/legal.ts의 약관·방침 판(version)도 함께 올린다(다시 동의 받기).
 export const OPERATOR = {
   service: '척척사장',
-  company: '',            // 상호
-  representative: '',     // 대표자
-  bizNo: '',              // 사업자등록번호 10자리(숫자만)
+  company: '플러스이브이',  // 상호(사업자등록증 기준, 서비스명은 척척사장)
+  representative: '김경인',  // 대표자
+  bizNo: '4305101099',    // 사업자등록번호 10자리(숫자만)
   mailOrderNo: '',        // 통신판매업 신고번호
-  address: '',            // 사업장 주소
-  phone: '',              // 고객 문의 전화
-  email: '',              // 고객 문의 이메일
+  address: '서울특별시 구로구 경서로 7, 1층 101호(개봉동, 드림빌)', // 사업장 주소
+  phone: '010-4823-2636',  // 고객 문의 전화
+  email: 'skifightin@gmail.com', // 고객 문의 이메일
   kakaoChannel: '',       // 지시서 144: 카카오톡 채널 1:1 상담 주소(예: https://pf.kakao.com/_xxxx/chat)
-  privacyOfficer: {name: '', position: '', contact: ''}, // 개인정보 보호책임자
+  privacyOfficer: {name: '김경인', position: '대표', contact: '010-4823-2636 · skifightin@gmail.com'}, // 개인정보 보호책임자
   hosting: 'Supabase Pte. Ltd.(서버·데이터베이스, 서울 리전) · GitHub Inc.(화면 파일)',
 } as const;
 export const PENDING = '확인 필요';
