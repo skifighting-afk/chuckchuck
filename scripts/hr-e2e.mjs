@@ -47,7 +47,7 @@ export async function hrE2E({owner,staff,srv,step,staffName}){
   await owner.getByRole('button',{name:'담당자로 지정',exact:true}).click();await owner.getByRole('button',{name:'입력 유지하고 최신 기록 확인',exact:true}).click();await owner.getByRole('alert').filter({hasText:'최신 기록을 불러오지 못했어요.'}).waitFor();
   assert.equal(await select(owner,'담당 직원').inputValue(),emp);assert.equal(await select(owner,'맡길 업무').inputValue(),'meetings');assert.equal(await owner.locator('.hr-notice').filter({hasText:'최신 기록을 불러왔어요.'}).count(),0);
   await owner.unroute(pattern);await owner.getByRole('button',{name:'입력 유지하고 최신 기록 확인',exact:true}).click();await owner.getByRole('status').filter({hasText:'최신 기록을 불러왔어요.'}).waitFor();assert.equal(await select(owner,'담당 직원').inputValue(),emp);
-  await owner.route(pattern,r=>r.request().method()==='POST'?r.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'시험 저장 실패'})}):r.url().includes('/hr/context')?r.fulfill({status:403,contentType:'application/json',body:JSON.stringify({error:'접근 권한이 없어요.'})}):r.continue());
+  await owner.route(pattern,r=>r.request().method()==='POST'?r.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'시험 저장 실패'})}):r.request().url().includes('/hr/context')?r.fulfill({status:403,contentType:'application/json',body:JSON.stringify({error:'접근 권한이 없어요.'})}):r.continue());
   await owner.getByRole('button',{name:'담당자로 지정',exact:true}).click();await owner.getByRole('button',{name:'입력 유지하고 최신 기록 확인',exact:true}).click();await owner.getByRole('alert').filter({hasText:'접근 권한이 없어요.'}).waitFor();assert.equal(await select(owner,'담당 직원').count(),0);await owner.unroute(pattern);
  });
 }
