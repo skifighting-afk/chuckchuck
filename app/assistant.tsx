@@ -28,7 +28,9 @@ export function AssistantDock({state,branch,page,run}:{state:Team,branch:string,
   if(!faq.current.length){try{const {FAQ}=await import('../lib/faq');faq.current=FAQ.flatMap(g=>g.items)}catch{}}
   const nd=t.match(/^(?:공지|공지사항)\s*[:：]\s*(.{2,})$/)||t.match(/^(.{2,}?)\s*(?:라고|이라고)?\s*공지\s*(?:해|써|올려|남겨)/);if(nd){try{sessionStorage.setItem('cc-notice-draft',nd[1].trim().slice(0,3000))}catch{}setMsgs(m=>[...m,{id:seq.current++,from:'me',lines:[raw]},{id:seq.current++,from:'bot',lines:['공지 초안을 만들었어요. 휴가·공지 화면의 새 공지 칸에 넣어 둘게요. 제목과 받는 사람을 확인하고 올려 주세요.',`내용: ${nd[1].trim().slice(0,200)}`],actions:[{type:'go',target:'operations',label:'공지 쓰러 가기'} as any],done:{}}]);return}
   const r:Reply=reply(t,state,branch,today(),Date.now(),faq.current,memo.current);memo.current=r.memo||{};
-  setMsgs(m=>[...m,{id:seq.current++,from:'me',lines:[raw]},{id:seq.current++,from:'bot',lines:r.lines,actions:r.actions,done:{},tone:r.tone}]);
+  // 개선 2차 B147: 답에 버튼이 없으면, 물어본 말에 맞는 화면을 '근거 보기'로 붙인다
+  let acts=r.actions||[];if(!acts.length){const T:[RegExp,Target][]=[[/근무표|스케줄|대타|교대|15시간|52시간/,'schedule'],[/출근|퇴근|지각|결근|출퇴근/,'attendance'],[/급여|명세서|인건비|시급|공제|주휴/,'payroll'],[/휴가|연차|공지/,'operations'],[/계약/,'contracts'],[/직원|보건증|입사|퇴사/,'employees'],[/리포트|분석|비교/,'reports']];const hit=T.find(([re])=>re.test(t));if(hit&&PAGE_OF[hit[1]]!==page)acts=[{type:'go',target:hit[1],label:`근거 보기 · ${PAGE_OF[hit[1]]}`} as any]}
+  setMsgs(m=>[...m,{id:seq.current++,from:'me',lines:[raw]},{id:seq.current++,from:'bot',lines:r.lines,actions:acts,done:{},tone:r.tone}]);
  };
  const act=async(m:Msg,i:number)=>{const a=m.actions![i];setBusy(m.id*100+i);try{const res=await run(a),text=typeof res==='string'?res:res.text,undo=typeof res==='string'?null:res.undo;setMsgs(list=>list.map(x=>x.id===m.id?{...x,done:{...x.done,[i]:text||'했어요.'},undo:{...x.undo,[i]:undo}}:x))}finally{setBusy(-1)}};
  const revert=async(m:Msg,i:number)=>{const u=m.undo?.[i];if(!u)return;setBusy(m.id*100+i);try{const t=await u();setMsgs(list=>list.map(x=>x.id===m.id?{...x,done:{...x.done,[i]:t},undo:{...x.undo,[i]:null}}:x))}finally{setBusy(-1)}};

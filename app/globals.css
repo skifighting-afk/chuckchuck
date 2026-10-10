@@ -726,3 +726,8 @@ html.lite *{animation:none!important;transition:none!important}html.lite img[src
 .t-skel{display:grid;gap:12px;width:min(640px,92vw);margin:24px auto}.t-skel i{display:block;height:18px;border-radius:8px;background:linear-gradient(90deg,#e5e7eb,#f3f4f6,#e5e7eb);background-size:200% 100%;animation:skel 1.2s infinite}.t-skel i:nth-child(1){height:28px;width:50%}.t-skel i:nth-child(3){width:80%}
 @keyframes skel{to{background-position:-200% 0}}@media (prefers-reduced-motion:reduce){.t-skel i{animation:none}}
 .demo-reset{margin-left:8px}
+.page-help{display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;margin-left:4px;border-radius:50%;border:0;background:radial-gradient(circle,transparent 12px,transparent 13px),none;box-shadow:inset 0 0 0 1px transparent;font-size:1rem;font-weight:700;vertical-align:middle;text-decoration:none;opacity:.7}
+.page-help:hover,.page-help:focus-visible{opacity:1}
+@media print{.page-help{display:none}}
+.signup-steps{display:flex;gap:6px;list-style:none;padding:0;margin:4px 0 12px;font-size:.85rem;flex-wrap:wrap}.signup-steps li{display:flex;align-items:center;gap:4px;opacity:.65}.signup-steps li[aria-current]{opacity:1;font-weight:700}.signup-steps b{display:inline-flex;width:22px;height:22px;border-radius:50%;align-items:center;justify-content:center;background:#e2e8f0;color:#0f172a}.signup-steps li[aria-current] b{background:#16a34a;color:#fff}
+.setup-list{list-style:none;padding:0}.setup-list .ok{opacity:.7}

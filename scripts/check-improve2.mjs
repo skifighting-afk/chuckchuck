@@ -67,6 +67,13 @@ ok('B052 progress',I.progressOf([{ok:true},{ok:false}]),{done:1,total:2,pct:50})
 ok('B152 friday reminder',I.nextWeekReminder({branches:[{id:'b',name:'본점'}],employees:emp,shifts:[],publishedWeeks:{}},K('2026-09-11','16:00')).map(a=>a.key),['nextweek:b:2026-09-14']);
 ok('B152 published → none',I.nextWeekReminder({branches:[{id:'b',name:'본점'}],employees:emp,shifts:[],publishedWeeks:{'b:2026-09-14':{at:'x',acks:{}}}},K('2026-09-11','16:00')).length,0);
 ok('B152 not friday',I.nextWeekReminder({branches:[{id:'b',name:'본점'}],employees:emp,shifts:[]},K('2026-09-10','16:00')).length,0);
+// ── 3묶음
+ok('B020 no shift hint',I.clockInHint([],K(day,'09:00')).startsWith('오늘 근무표에 없는'),true);
+ok('B020 too early hint',I.clockInHint([{date:day,start:'12:00',end:'18:00'}],K(day,'09:30')).startsWith('근무 시작(12:00)까지 2시간 30분'),true);
+ok('B020 on time no hint',I.clockInHint([{date:day,start:'10:00',end:'18:00'}],K(day,'09:30')),'');
+ok('B020 after end hint',I.clockInHint([{date:day,start:'10:00',end:'18:00'}],K(day,'19:00')).includes('이미 끝난'),true);
+{const {explainPay}=await import('../lib/pay-explain.ts');ok('B056 juhu skipped reason',explainPay({gross:100,deduction:0,net:100,juhuSkipped:['2026-09-07'],payType:'시급'}).some(t=>t.includes('9/7 시작 주는')),true);
+ ok('B056 no juhu reason',explainPay({gross:100,deduction:0,net:100,hours:10,payType:'시급',earnings:[{name:'기본급',amount:100}]}).some(t=>t.includes('주휴수당이 없어요')),true);}
 // ── 서버
 const T=await authedTest({domain:'example.invalid'}),{q,headersFor,id}=T,env=T.env;
 async function raw(user,path,body,method){return api(new Request('https://qa.local'+path,{method:method||(body?'POST':'GET'),headers:{origin:'https://qa.local',...(await headersFor(user))},...(body?{body:JSON.stringify(body)}:{})}),env)}

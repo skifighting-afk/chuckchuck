@@ -122,7 +122,7 @@ export function AttendanceMore2({s,es,day,busy,mutate}:{s:Team,es:Team['employee
 /* ───────── 리포트 ───────── */
 /** B132 인건비율 목표 · B133 요일별 · B135 지각 많은 때 · B136 대타 추이 · B137·B138 주의 직원 · B140 작년 같은 달 · B194 이번 달 쓴 기능 */
 export function ReportMore2({s,es,month,swaps,sales,rows=[]}:{s:Team,es:Team['employees'],month:string,swaps?:any[],sales?:number,rows?:any[]}){
- const [rg,setRg]=useState({from:month+'-01',to:todayK()});
+ const [rg,setRg]=useState({from:month+'-01',to:todayK()}),[wdSel,setWdSel]=useState(-1);
  const [sw,setSw]=useState<any[]>(swaps||[]);useEffect(()=>{if(swaps||/^\/(demo|try)/.test(location.pathname))return;fetch('/api/operations').then(r=>r.ok?r.json():null).then((d:any)=>setSw(d?.swaps||[])).catch(()=>{})},[]);// B136 대타 기록
  const ids=new Set(es.map(e=>e.id)),att=s.attendance.filter(a=>ids.has(a.employeeId)),sh=s.shifts.filter(x=>ids.has(x.employeeId));
  const wd=weekdayCost(att as any,es as any,month),maxC=Math.max(1,...wd.map(x=>x.cost)),hot=lateHotspots(sh as any,att as any,month,tol(s)),risk=riskFlags(sh as any,att as any,es as any,month,prevMonth(month));
@@ -131,7 +131,9 @@ export function ReportMore2({s,es,month,swaps,sales,rows=[]}:{s:Team,es:Team['em
  return <section className="panel t-gap" aria-labelledby="rep2-title"><div className="panel-heading"><h2 id="rep2-title">더 보는 리포트</h2><button type="button" className="secondary" onClick={()=>xls(`리포트-${month}.xls`,[{name:'요일별 인건비',rows:[['요일','인건비(시급 직원)','근무 시간','하루 평균'],...wd.map(x=>[W[x.wd],x.cost,x.hours,x.perDay])]},{name:'지각 많은 때',rows:[['요일','지각'],...hot.weekday.map((n,i)=>[W[i],n])]}])}>엑셀</button></div><div className="t-panelbody">
   {rs&&<p className={rs.over?'notice':'footnote'}>매출 대비 인건비 <b>{rs.pct}%</b>{target?` · 목표 ${target}%${rs.over?' — 목표를 넘었어요':' 안'}`:' · 설정에서 목표 비율을 정할 수 있어요'}</p>}
   <h3>요일별 인건비 <small>(시급 직원 · 출퇴근 기준)</small></h3>
-  <ul className="week-load">{wd.map(x=><li key={x.wd}><span className="wl-name">{W[x.wd]}</span><span className="wl-bar" role="img" aria-label={`${won(x.cost)}원`}><i style={{width:x.cost/maxC*100+'%'}}/></span><span>{won(x.cost)}원 · {x.hours}시간{x.perDay?` · 하루 ${won(x.perDay)}원`:''}</span></li>)}</ul>
+  <ul className="week-load">{wd.map(x=><li key={x.wd}><span className="wl-name"><button type="button" className="link-btn" aria-expanded={wdSel===x.wd} onClick={()=>setWdSel(wdSel===x.wd?-1:x.wd)} title="근거 보기">{W[x.wd]}</button></span><span className="wl-bar" role="img" aria-label={`${won(x.cost)}원`}><i style={{width:x.cost/maxC*100+'%'}}/></span><span>{won(x.cost)}원 · {x.hours}시간{x.perDay?` · 하루 ${won(x.perDay)}원`:''}</span></li>)}</ul>
+  {wdSel>=0&&(()=>{const rows2=att.filter(a=>a.end&&new Date(Date.parse(a.start)+9*3600000).toISOString().startsWith(month)&&new Date(Date.parse(a.start)+9*3600000).getUTCDay()===wdSel).map(a=>{const e=es.find(x=>x.id===a.employeeId)!,c:any=(a as any).credit||a,h=Math.max(0,(Date.parse(c.end)-Date.parse(c.start))/3600000-a.breakMinutes/60);return {a,e,h:Math.round(h*100)/100,cost:e?.payType==='시급'?Math.round(h*e.wage):0}});
+   return <div className="notice" role="region" aria-label={`${W[wdSel]}요일 근거`}><b>{W[wdSel]}요일 근거 {rows2.length}건</b> · 인정 시간 × 시급(시급 직원만)<ul>{rows2.map(r=><li key={r.a.id}>{new Date(Date.parse(r.a.start)+9*3600000).toISOString().slice(5,10).replace('-','/')} {r.e?.name} · {r.h}시간{r.cost?` × ${won(r.e.wage)}원 = ${won(r.cost)}원`:` · ${r.e?.payType}`}</li>)}</ul></div>})()}
   {hot.weekday.some(Boolean)&&<p>지각이 많은 요일: {hot.weekday.map((n,i)=>({n,i})).filter(x=>x.n).sort((a,b)=>b.n-a.n).slice(0,3).map(x=>`${W[x.i]} ${x.n}번`).join(' · ')}{hot.slots.length?` · 시간대: ${hot.slots.map(([k,n])=>`${k} ${n}번`).join(' · ')}`:''}</p>}
   {tr.some(x=>x.n)&&<p>대타·교대 승인: {tr.map(x=>`${Number(x.month.slice(5))}월 ${x.n}건`).join(' → ')}</p>}
   {yoy.before!=null&&<p>작년 {Number(yoy.lastYear.slice(5))}월 확정 급여 {won(yoy.before)}원{yoy.now!=null?` → 올해 ${won(yoy.now)}원 (${yoy.pct!>=0?'+':''}${yoy.pct}%)`:''}</p>}
@@ -222,7 +224,7 @@ export function PayMore2({s,es,month,branch,rows,busy,save}:{s:Team,es:Team['emp
   <details><summary>4대보험 고지액과 비교</summary><div className="t-inline"><input type="number" min={0} aria-label="이번 달 고지액(근로자+사업주)" value={bill} onChange={e=>setBill(e.target.value)} placeholder="고지서 합계"/><button type="button" className="secondary" disabled={busy} onClick={()=>save({...s,insuranceBills:{...((s as any).insuranceBills||{}),[month+':'+branch]:Math.max(0,Math.round(Number(bill)||0))}} as any)}>저장</button></div>{bill&&<p className="footnote">명세서 근로자 공제 합계 {won(ins)}원. 고지서는 사업주 부담분도 같이 나와 보통 공제액의 약 2배예요{Number(bill)?` · 지금 ${(Number(bill)/Math.max(1,ins)).toFixed(2)}배`:''}. 크게 다르면 취득·상실 신고나 보수월액을 확인하세요.</p>}</details>
   {lp.length>0&&<details><summary>연차수당 정산 예상(퇴사·1년 만료 때)</summary><ul>{lp.map(({e,v})=><li key={e.id}>{e.name} · 남은 {e.leaveBalance}일 × 하루 {Math.round((e.weeklyHours||0)/5*10)/10}시간 × {won(e.wage)}원 ≈ <b>{won(v)}원</b></li>)}</ul><p className="footnote">5명 이상 매장 · 사용 촉진을 하지 않은 경우 기준의 예상이에요.</p></details>}
   {du.length>0&&<details><summary>두루누리 지원 예상 {du.length}명</summary><ul>{du.map(({e,m,v})=><li key={e.id}>{e.name} · 월 보수 약 {won(m)}원 → 월 약 {won(v)}원 지원(근로자·사업주 합)</li>)}</ul><p className="footnote">10명 미만 사업장, 월 보수 270만 원 미만, 신규 가입 등 조건이 있어요. 근로복지공단(1588-0075)에서 확인하세요.</p></details>}
-  <p className="footnote">공제 항목(기숙사비·유니폼 등)을 직접 넣을 때는 법령 근거나 직원의 서면 동의가 있어야 해요(근로기준법 제43조 임금 전액 지급). 서명 서류에서 동의서를 받아 두세요.</p>
+  {(()=>{const LAW=/국민연금|건강|장기요양|고용보험|소득세|지방소득세|원천징수|가불|선지급|주급|결근|지각/;const own=rows.flatMap((r:any)=>(r.deductions||[]).filter((d:any)=>!LAW.test(d.name)).map((d:any)=>({r,d})));return own.length?<div className="notice" role="note"><b>직접 넣은 공제 {own.length}건</b> — 직원 서면 동의가 필요해요(근로기준법 제43조).<ul>{own.map(({r,d}:any,i:number)=><li key={i}>{r.name} · {d.name} {won(d.amount)}원</li>)}</ul>매장 매뉴얼 → 서명 서류에서 '임금 공제 동의서'로 서명을 받아 두세요.</div>:<p className="footnote">기숙사비·유니폼처럼 법에 없는 공제를 넣을 때는 직원 서면 동의가 필요해요. 서명 서류에 '임금 공제 동의서' 양식이 있어요.</p>})()}
  </div></section>;
 }
 
@@ -243,4 +245,13 @@ export function BranchCompare2({s,month}:{s:Team,month:string}){
   <div className="t-tablewrap"><table className="t-table"><thead><tr>{head.map(h=><th key={h}>{h}</th>)}</tr></thead><tbody>{rows.map((r,i)=><tr key={r.id}><td>{i+1}</td><td>{r.name}</td><td>{r.status}</td><td>{r.staff}명</td><td>{r.hours}시간</td><td>{won(r.cost)}원</td><td>{won(r.perHour)}원</td><td>{r.checks}</td></tr>)}</tbody><tfoot><tr><th></th><th>전 지점 합계</th><td></td><td>{tot.staff}명</td><td>{tot.hours}시간</td><td><b>{won(tot.cost)}원</b></td><td>{tot.hours?won(Math.round(tot.cost/tot.hours)):0}원</td><td></td></tr></tfoot></table></div>
   {sales?<p className="footnote">이달 매출 {won(sales)}원 · 일한 시간당 매출 약 {won(Math.round(sales/Math.max(1,tot.hours)))}원 · 매출 대비 인건비 {Math.round(tot.cost/sales*1000)/10}%</p>:<p className="footnote">인건비는 출퇴근 기록 × 시급 + 월급으로 어림했어요(주휴·가산·보험 제외). 리포트에서 매출을 넣으면 시간당 매출도 보여요.</p>}
  </section>;
+}
+
+/** B166 지점 준비 체크(새 지점을 열면 할 일) */
+export function BranchSetup({s,onOpen}:{s:Team,onOpen:(id:string,page?:string)=>void}){
+ const list=s.branches.map(b=>{const x:any=b,es=s.employees.filter(e=>e.branchId===b.id&&e.status!=='퇴사');
+  const items=[{k:'영업시간',ok:!!x.hours,page:'근무 스케줄'},{k:'매장 전화',ok:!!x.phone,page:'근무 스케줄'},{k:'직원 1명 이상',ok:es.length>0,page:'직원 관리'},{k:'시간대별 필요 인원',ok:(s.staffingNeeds||[]).some((n:any)=>!n.branchId||n.branchId===b.id),page:'근무 스케줄'},{k:'이번 주 근무표',ok:s.shifts.some(sh=>es.some(e=>e.id===sh.employeeId)&&sh.date>=todayK()&&sh.date<=datePlus(todayK(),6)),page:'근무 스케줄'},{k:'와이파이·첫 출근 안내',ok:!!x.info?.wifi||!!x.info?.firstDay,page:'매장 매뉴얼'}];
+  return {b,items,done:items.filter(i=>i.ok).length}}).filter(r=>r.done<r.items.length);
+ if(!list.length)return null;
+ return <section className="panel t-gap" aria-labelledby="bs-title"><div className="panel-heading"><h2 id="bs-title">지점 준비 체크</h2></div><div className="t-panelbody">{list.map(r=><div key={r.b.id}><h3>{r.b.name} · {r.done}/{r.items.length}</h3><ul className="setup-list">{r.items.map(i=><li key={i.k} className={i.ok?'ok':'todo'}>{i.ok?'✓':'○'} {i.k}{!i.ok&&<> <button type="button" className="link-btn" onClick={()=>onOpen(r.b.id,i.page)}>하러 가기</button></>}</li>)}</ul></div>)}<p className="footnote">QR 출퇴근을 쓰면 지점마다 '출퇴근 QR 만들기'도 해 주세요.</p></div></section>;
 }

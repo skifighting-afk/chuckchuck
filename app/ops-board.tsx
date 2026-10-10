@@ -95,7 +95,7 @@ function Notices({data,owner,emps,busy,action,branchId}:{data:any,owner:boolean,
     {owner?<div className="ops-reads"><div className="ops-readbar" role="img" aria-label={`${aud}명 중 ${n.readCount||0}명 읽음`}><i style={{width:pct+'%'}}/></div><p><b>{n.readCount||0}/{aud}명 읽음</b>{n.unread?.length>0&&<> · 안 읽은 사람: {n.unread.join(', ')}</>}</p>
      <Btn disabled={busy} onClick={()=>action({action:'pinNotice',id:n.id,pinned:!n.pinned})}>{n.pinned?'고정 풀기':'📌 맨 위에 고정'}</Btn>{!n.scheduled&&n.unread?.length>0&&<Btn disabled={busy} onClick={()=>action({action:'remindNotice',id:n.id})}><Bell size={16}/> 다시 알리기{n.remindedAt?` (마지막 ${new Date(n.remindedAt).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})})`:''}</Btn>}</div>
     :<Btn disabled={busy||n.read} onClick={()=>action({action:'readNotice',id:n.id})}><Check size={16}/>{n.read?'확인 완료':'공지 확인'}</Btn>}
-   </article>})}{!list.length&&<section className="panel empty">등록된 공지가 없어요.</section>}</div>
+   </article>})}{!list.length&&<section className="panel empty">등록된 공지가 없어요.{owner?<> <button type="button" className="link-btn" onClick={()=>document.querySelector<HTMLInputElement>('.ops-notice-form input')?.focus()}>첫 공지 쓰기 →</button></>:' 새 공지가 오면 알림으로 알려 드려요.'}</section>}</div>
   {owner&&<form className="panel t-panelbody ops-notice-form" onSubmit={send} aria-labelledby="new-notice"><h2 id="new-notice"><Plus size={18} aria-hidden="true"/> 새 공지</h2>
    <Field label="제목"><input required maxLength={100} value={f.title} onChange={e=>setF({...f,title:e.target.value})}/></Field>
    <Field label="내용"><textarea required rows={5} maxLength={3000} value={f.body} onChange={e=>setF({...f,body:e.target.value})}/></Field><NoticeFormExtras f={f} setF={setF} setErr={setErr}/>

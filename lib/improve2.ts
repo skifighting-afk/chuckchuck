@@ -372,3 +372,14 @@ export function nextWeekReminder(d: {branches?: {id: string; name: string}[]; em
   }
   return out;
 }
+
+/** B020 출근 버튼 옆 안내: 근무표에 없는 날·시작까지 1시간 넘게 남음·근무가 이미 끝남(막지는 않음) */
+export function clockInHint(today: {start: string; end: string; date: string}[], now: number) {
+  if (!today.length) return '오늘 근무표에 없는 출근이에요. 출근하면 사장님 확인 목록에 "예정 외"로 보여요.';
+  const s = today.slice().sort((a, b) => a.start.localeCompare(b.start)), first = s[0], last = s[s.length - 1];
+  const st = at(first.date, first.start); let en = at(last.date, last.end); if (last.end <= last.start) en += DAY;
+  if (st - now > 60 * 60000) { const m = Math.round((st - now) / 60000); return `근무 시작(${first.start})까지 ${m >= 120 ? Math.floor(m / 60) + '시간 ' + (m % 60 ? (m % 60) + '분' : '') : m + '분'} 남았어요. 일찍 찍은 시간은 출퇴근 규칙에 따라 인정되지 않을 수 있어요.`.replace('  ', ' ');
+  }
+  if (now > en) return `오늘 근무(${first.start}–${last.end})는 이미 끝난 시간이에요. 깜빡했다면 출근 대신 정정 요청을 보내 주세요.`;
+  return '';
+}

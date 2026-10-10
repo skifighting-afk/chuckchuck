@@ -1,7 +1,7 @@
 // 지시서 089: 직원용 비서 "내 급여 왜 이래요?" — 명세서 항목과 지난달을 비교해 쉬운 말로 풀어 준다.
 // (테스트가 바로 불러오므로 다른 파일을 import하지 않는다)
 type Item = {name: string; amount: number; formula?: string};
-type Row = {hours?: number; days?: number; gross: number; deduction: number; net: number; earnings?: Item[]; deductions?: Item[]};
+type Row = {hours?: number; days?: number; gross: number; deduction: number; net: number; earnings?: Item[]; deductions?: Item[]; juhuSkipped?: string[]; payType?: string};
 const w = (n: number) => Math.round(n).toLocaleString('ko-KR');
 export function explainPay(cur: Row, prev?: Row | null, month = '') {
   const out: string[] = [], m = month ? Number(month.slice(5)) + '월 ' : '';
@@ -12,6 +12,10 @@ export function explainPay(cur: Row, prev?: Row | null, month = '') {
   if (ins.length) out.push(`4대보험 ${w(ins.reduce((s, x) => s + x.amount, 0))}원: ${ins.map(x => `${x.name} ${w(x.amount)}원`).join(', ')} (나라에 내는 보험료로, 사장님도 비슷한 금액을 함께 내요)`);
   if (tax.length) out.push(`세금 ${w(tax.reduce((s, x) => s + x.amount, 0))}원: ${tax.map(x => `${x.name} ${w(x.amount)}원`).join(', ')}`);
   for (const x of other) out.push(`${x.name} ${w(x.amount)}원 빠졌어요${x.formula ? `: ${x.formula}` : ''}`);
+  // 개선 2차 B056: 주휴수당을 못 받은 이유
+  const md = (d: string) => `${Number(d.slice(5, 7))}/${Number(d.slice(8, 10))}`;
+  if ((cur.juhuSkipped || []).length) out.push(`${cur.juhuSkipped!.map(md).join(', ')} 시작 주는 근무표의 근무일에 빠진 날(결근)이 있어 주휴수당이 빠졌어요. 사정이 있었다면 사장님께 '개근 인정'을 부탁하세요.`);
+  else if (cur.payType === '시급' && !(cur.earnings || []).some(x => /주휴/.test(x.name)) && (cur.hours || 0) > 0) out.push('이번 달에는 주휴수당이 없어요. 한 주에 정해진 근무가 15시간 이상이고 그 주 근무일을 모두 나와야 생겨요.');
   if (prev) {
     const d = cur.net - prev.net;
     if (Math.abs(d) >= 1000) {
