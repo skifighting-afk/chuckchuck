@@ -11,8 +11,10 @@ import {trackPageView} from '../app/meta-pixel';
   if (location.pathname === '/' && (keys.length || /access_token|error_description|type=recovery/.test(location.hash))) location.replace(appUrl + location.search + location.hash);
 }
 
-const $ = <T extends Element = HTMLElement>(s: string, r: ParentNode = document) => r.querySelector(s) as T;
-const $$ = <T extends Element = HTMLElement>(s: string, r: ParentNode = document) => [...r.querySelectorAll(s)] as T[];
+// 찾을 범위(문서나 요소). DOM 타입이 서버용 타입과 섞여도 맞게 필요한 모양만 적는다.
+type Root = {querySelector(s: string): Element | null; querySelectorAll(s: string): Iterable<Element>};
+const $ = <T extends Element = HTMLElement>(s: string, r: Root = document) => r.querySelector(s) as T;
+const $$ = <T extends Element = HTMLElement>(s: string, r: Root = document) => [...r.querySelectorAll(s)] as T[];
 const root = document.documentElement;
 const store = {get: (k: string) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k: string, v: string) => { try { localStorage.setItem(k, v); } catch { /* 저장 못 해도 화면은 그대로 */ } }};
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
