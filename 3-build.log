@@ -8,12 +8,12 @@
 
 [33m[INEFFECTIVE_DYNAMIC_IMPORT] [0mapp/att-device.ts is dynamically imported by app/schedule-extras.tsx but also statically imported by app/team.tsx, dynamic import will not move module into another chunk.
 
-화면 묶음: app.js 403KB, 필요할 때 받는 조각 26개 1279KB
+화면 묶음: app.js 409KB, 필요할 때 받는 조각 26개 1281KB
   team-DL1cDfdo.js 793KB
   capacity-dialog-DHR8esdm.js 172KB
   attendance-scan-CWox5lOW.js 133KB
   legal-page-BtE2969l.js 34KB
-  admin-desk-Cn3Nqe6n.js 25KB
+  admin-desk-BtaebJEm.js 27KB
   staff-join-T_LlB97g.js 20KB
   document-delivery-OdMdYXYe.js 14KB
   contracts-desk-CmSM4d7w.js 12KB

@@ -1416,7 +1416,7 @@ PASS 36. 2026-03-31: no clock-in or clock-out in the future (A1·A3)
 PASS: 체험 화면 숫자(급여·명세서·임금대장 합계).
 
 ── check-error-messages
-PASS: 오류 문구 576개 모두 다음 행동 안내 포함.
+PASS: 오류 문구 597개 모두 다음 행동 안내 포함.
 PASS: 오류 번호·로그 개인정보 제거.
 
 ── check-attendance-table
@@ -2044,6 +2044,37 @@ PASS: 메일 없이 비밀번호 찾기.
 
 ── check-secrets
 1. PASS 비밀값 검사 완료
+
+── check-toss
+1. PASS order id format
+2. PASS bad order id
+3. PASS period from today
+4. PASS renewal continues from paidUntil
+5. PASS paid clears cancel
+6. PASS contracts due
+7. PASS error text known
+8. PASS paid period over → expired
+9. PASS paid period live → active
+10. PASS no keys → not ready
+11. PASS no keys → prepare locked
+12. PASS keys → ready + client key only
+13. PASS needs agreement
+14. PASS server sets amount (ignores client amount)
+15. PASS wrong amount rejected
+16. PASS rejected order cannot be reused
+17. PASS other owner cannot confirm
+18. PASS confirm ok
+19. PASS toss called with secret basic auth + server amount
+20. PASS account active pro 2 slots 6 months
+21. PASS payment recorded
+22. PASS second confirm is idempotent
+23. PASS no second toss call
+24. PASS history shows payment
+25. PASS toss reject → 402 + next action
+26. PASS no contracts → nothing to pay
+27. PASS owner cannot refund
+28. PASS HQ partial refund
+29. PASS refund over balance blocked
 
 > chuckchuck@0.1.0 check:function
 > node scripts/check-supabase-function.mjs
