@@ -12,9 +12,11 @@ let extra=null;async function step(name,fn){const t=Date.now();try{await fn();co
 const kToday=()=>new Date(Date.now()+9*3600000).toISOString().slice(0,10);
 const OWNER={name:'김사장',email:'boss@example.invalid',password:'Boss-pass-2026'},STAFF={name:'이직원',email:'staff@example.invalid',password:'Staff-pass-2026'};
 
-const ownerCtx=await browser.newContext({viewport:{width:1280,height:900},timezoneId:'Asia/Seoul',locale:'ko-KR'});const owner=await ownerCtx.newPage();watch(owner);
+// Fault-injection routes must see GET requests too: service workers intercept
+// same-origin Supabase fixture reads before page.route can observe them.
+const ownerCtx=await browser.newContext({serviceWorkers:'block',viewport:{width:1280,height:900},timezoneId:'Asia/Seoul',locale:'ko-KR'});const owner=await ownerCtx.newPage();watch(owner);
 // 직원은 휴대폰(아이폰 크기·터치)으로 쓴다.
-const staffCtx=await browser.newContext({...devices['iPhone 13'],browserName:undefined,defaultBrowserType:undefined,timezoneId:'Asia/Seoul',locale:'ko-KR'});const staff=await staffCtx.newPage();watch(staff);
+const staffCtx=await browser.newContext({...devices['iPhone 13'],serviceWorkers:'block',browserName:undefined,defaultBrowserType:undefined,timezoneId:'Asia/Seoul',locale:'ko-KR'});const staff=await staffCtx.newPage();watch(staff);
 const qrConfirm=async kind=>{await staff.click(`button:has-text("${kind}")`);await staff.click('text=휴대폰 카메라로 연 QR 확인하기');await staff.click(`text=${kind} 기록하기`)};
 let joinLink,qrLink,qrPng;
 
