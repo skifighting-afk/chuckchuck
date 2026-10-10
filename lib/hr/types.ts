@@ -1,0 +1,14 @@
+import type {StoreData} from '../store-data';
+import type {PgD1} from '../pg-d1';
+export const HR_SCOPES=['hiring','training','staffing','meetings','cases','pulse','items'] as const;
+export type HrScope=typeof HR_SCOPES[number];
+export const HR_LABELS:Record<HrScope,string>={hiring:'채용 지원자',training:'신입 교육·숙련도',staffing:'희망 근무량·배정 균형',meetings:'면담·약속',cases:'의견·상담',pulse:'근무 만족도',items:'지급·반납'};
+export type HrDatabase=PgD1;
+export type HrMeta={id:string;ownerId:string;branchId:string;createdBy:string;createdAt:string;updatedAt:string;version:number};
+export type HrCommandMeta={requestId:string;version?:number};
+export type HrGrant=HrMeta&{employeeId:string;scope:HrScope;validUntil:string|null;revokedAt:string|null};
+export type HrContext={userId:string;ownerId:string;access:'owner'|'manager'|'employee';coowner:boolean;selfId:string|null;branchId:string;store:StoreData;storeVersion:number;grants:HrGrant[];now:string};
+export type HrMutationResult<T>={record:T;replayed:boolean};
+export type HrClient={get<T>(path:string):Promise<T>;post<T>(path:string,body:unknown):Promise<T>};
+export type HrPanelProps={client:HrClient;branchId:string;selfId:string|null};
+export type HrContextView={access:HrContext['access'];coowner:boolean;selfId:string|null;branchId:string;storeName:string;branches:{id:string;name:string}[];employees:{id:string;name:string;role:string}[];receivers:{id:string;name:string}[];scopes:HrScope[]};

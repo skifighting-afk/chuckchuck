@@ -1,0 +1,42 @@
+import assert from 'node:assert/strict';
+import {createHrFixture} from './hr-fixture.mjs';
+const F=await createHrFixture();
+let count=0;
+const equal=(actual,expected,label)=>{assert.deepEqual(actual,expected,label);console.log('PASS '+(++count)+' '+label)};
+try{
+ equal((await F.call('','/api/hr/context')).status,401,'anonymous HR access is denied');
+ const owner=await F.call('boss','/api/hr/context');equal(owner.status,200,'owner enters HR');
+ equal(owner.headers.get('cache-control'),'no-store','HR response is private');
+ equal((await F.call('staff','/api/hr/context?branch=branch-other')).status,403,'employee cannot select another branch');
+ equal((await F.call('manager','/api/hr/grants')).status,403,'manager cannot list grants');
+ const grant=F.command('grant',{employeeId:F.employeeId('manager'),scope:'training',validUntil:null});
+ equal((await F.call('manager','/api/hr/grants',grant)).status,403,'manager cannot grant themselves HR access');
+ const created=await F.call('boss','/api/hr/grants',grant);equal(created.status,201,'owner delegates HR independently');
+ equal((await F.call('boss','/api/hr/grants',grant)).status,200,'same request is replayed');
+ equal((await F.call('boss','/api/hr/grants',{...grant,scope:'cases'})).status,409,'requestKeyMismatch is rejected');
+ equal(Number((await F.q('SELECT count(*) AS n FROM hr_audit WHERE owner=? AND request_id=?',F.owner,grant.requestId).first()).n),1,'idempotent write creates one audit row');
+ let ctx=(await F.call('manager','/api/hr/context')).body;
+ equal(ctx.scopes.includes('training'),true,'independent training grant is usable');
+ equal(ctx.scopes.includes('cases'),false,'existing schedule permission gives no HR rights');
+ const record=created.body.record;
+ equal((await F.call('boss','/api/hr/grants',F.command('revoke',{id:record.id,version:record.version}))).status,200,'owner revokes grant');
+ ctx=(await F.call('manager','/api/hr/context')).body;equal(ctx.scopes.includes('training'),false,'revocation is immediate');
+ equal((await F.call('boss','/api/hr/grants',F.command('grant',{employeeId:F.employeeId('manager'),scope:'training',validUntil:'2020-01-01T00:00:00.000Z'}))).status,400,'expired grant cannot be issued');
+ const again=await F.call('boss','/api/hr/grants',F.command('grant',{employeeId:F.employeeId('manager'),scope:'training',validUntil:null}));
+ await F.patchStore(d=>{d.employees.find(e=>e.id===F.employeeId('manager')).branchId='branch-other'});
+ ctx=(await F.call('manager','/api/hr/context')).body;equal(ctx.scopes.includes('training'),false,'transfer does not carry old branch grant');
+ await assert.rejects(F.DB.transaction(async tx=>{await tx.prepare('INSERT INTO hr_settings(owner,candidate_retention_days) VALUES(?,30)').bind(F.owner).run();throw Error('rollback sentinel')}),/rollback sentinel/);
+ equal(Number((await F.q('SELECT count(*) AS n FROM hr_settings WHERE owner=?',F.owner).first()).n),0,'transaction rollback leaves no partial record');
+ // Hold a real PostgreSQL row lock; a queued request must re-check owner membership after it gets the lock.
+ await F.headersFor('coowner');await F.patchStore(d=>{d._coowners=[{userId:F.id('coowner'),email:'coowner@example.invalid',name:'공동 관리자'}]});
+ let unlock;const released=new Promise(r=>unlock=r);let locked;const ready=new Promise(r=>locked=r);
+ const change=F.sql.begin(async tx=>{const rows=await tx.unsafe('SELECT data FROM stores WHERE owner=$1 FOR UPDATE',[F.owner]);locked();await released;const d=JSON.parse(rows[0].data);d._coowners=[];await tx.unsafe('UPDATE stores SET data=$1,version=version+1 WHERE owner=$2',[JSON.stringify(d),F.owner])});
+ await ready;
+ let began;const waiting=new Promise(r=>began=r),transaction=F.DB.transaction.bind(F.DB);
+ F.DB.transaction=fn=>{began();return transaction(fn)};
+ const key=crypto.randomUUID();const queued=F.call('coowner','/api/hr/grants',F.command('grant',{requestId:key,employeeId:F.employeeId('staff'),scope:'training',validUntil:null}));
+ await waiting;unlock();await change;equal((await queued).status,403,'revokedDuringWrite cannot use stale owner membership');F.DB.transaction=transaction;
+ equal(Number((await F.q('SELECT count(*) AS n FROM hr_audit WHERE request_id=?',key).first()).n),0,'revoked write creates no audit');
+ equal((await F.call('outsider','/api/hr/grants',F.command('revoke',{id:again.body.record.id,version:1}))).status,404,'other tenant cannot mutate a grant');
+ console.log(`PASS: HR core ${count} assertions`);
+}finally{await F.close()}
