@@ -133,7 +133,7 @@ ok('non-HQ cannot read',(await call('i2boss','/api/client-error')).status,403);
 // 알림 점검: 직원이 고른 근무 전 알림 시간과 바로 출근 주소
 {const mod=await import('../dist/server/cron.js');const d=JSON.parse((await q('SELECT data FROM stores WHERE owner=?',id('i2boss')).first()).data);
  const now=Date.now(),kd=new Date(now+9*3600000).toISOString().slice(0,10),st2=new Date(now+90*60000+9*3600000).toISOString().slice(11,16),en=new Date(now+5*3600000+9*3600000).toISOString().slice(11,16);
- if(st2<en){d.shifts=[{id:'sh-b',employeeId:A,date:kd,start:st2,end:en,breakMinutes:0}];d._alertsSent={};await q('UPDATE stores SET data=? WHERE owner=?',JSON.stringify(d),id('i2boss')).run();
+ if(st2<en&&new Date(now+90*60000+9*3600000).toISOString().slice(0,10)===kd&&new Date(now+5*3600000+9*3600000).toISOString().slice(0,10)===kd){d.shifts=[{id:'sh-b',employeeId:A,date:kd,start:st2,end:en,breakMinutes:0}];d._alertsSent={};await q('UPDATE stores SET data=? WHERE owner=?',JSON.stringify(d),id('i2boss')).run();
   const sent=[];await mod.alertSweep(env,now,(u,m)=>sent.push(m));const b=sent.find(m=>m.kind==='before');ok('B101 2h before alert with clock link',[b?.title,b?.url],['2시간 뒤 근무가 있어요','/app?clock=1']);}
  else ok('B101 (skipped near midnight)',true);}
 await closeAll();
