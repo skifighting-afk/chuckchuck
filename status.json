@@ -1,1 +1,1 @@
-{"sha":"34d237becc44357f1749afa67170ee40b4987ee8","ref":"refs/heads/main","event":"push","run":"https://github.com/skifighting-afk/chuckchuck/actions/runs/38078803945","test":"success","e2e":"success","deploy":"success","at":"2026-10-10T19:18:33Z"}
+{"sha":"d22d281c17a3dd65a5861125468766d5304c9304","ref":"refs/pull/15/merge","event":"pull_request","run":"https://github.com/skifighting-afk/chuckchuck/actions/runs/38081759581","test":"success","e2e":"failure","deploy":"skipped","at":"2026-10-10T19:58:32Z"}

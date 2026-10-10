@@ -4,6 +4,287 @@
 
 PASS: overnight duration, breaks, Korean month boundaries and wage validation.
 
+── check-hr-core
+PASS 1 anonymous HR access is denied
+PASS 2 owner enters HR
+PASS 3 HR response is private
+PASS 4 employee cannot select another branch
+PASS 5 manager cannot list grants
+PASS 6 manager cannot grant themselves HR access
+PASS 7 owner delegates HR independently
+PASS 8 same request is replayed
+PASS 9 requestKeyMismatch is rejected
+PASS 10 idempotent write creates one audit row
+PASS 11 independent training grant is usable
+PASS 12 existing schedule permission gives no HR rights
+PASS 13 owner revokes grant
+PASS 14 revocation is immediate
+PASS 15 expired grant cannot be issued
+PASS 16 transfer does not carry old branch grant
+PASS 17 transaction rollback leaves no partial record
+PASS 18 revokedDuringWrite cannot use stale owner membership
+PASS 19 revoked write creates no audit
+PASS 20 other tenant cannot mutate a grant
+PASS: HR core 20 assertions
+
+── check-hr-hiring
+PASS 1 employees cannot read applicant contacts
+PASS 2 owner registers an applicant
+PASS 3 new applicant begins at intake
+PASS 4 SQL data is a JSON object for integrity constraints
+PASS 5 impossible interview date is rejected
+PASS 6 interview schedule is saved
+PASS 7 human hiring decision survives reload
+PASS 8 confirmed hiring links a new employee
+PASS 9 hiring creates exactly one employee
+PASS 10 new employee needs existing onboarding
+PASS 11 conversion retry is idempotent
+PASS 12 retry does not duplicate employee
+PASS 13 changed conversion with same key is rejected
+PASS 14 same phone does not silently match employee
+PASS 15 explicit existing employee link works
+PASS 16 existing link creates no extra employee
+PASS 17 cross-tenant candidate cannot be overwritten
+PASS 18 applicant lists are branch-specific
+PASS 19 delegated hiring manager can review applicants
+PASS 20 only owner makes final employee conversion
+PASS 21 concurrent store update rejects entire conversion
+PASS 22 failed conversion leaves employee count unchanged
+PASS: HR hiring 22 assertions
+
+── check-hr-training
+PASS 1 owner assigns a buddy with learning steps
+PASS 2 hidden manual cannot be injected
+PASS 3 unassigned manager cannot change learning
+PASS 4 assigned buddy can request learner acknowledgment
+PASS 5 buddy cannot acknowledge for learner
+PASS 6 learner confirms own learning
+PASS 7 acknowledgment completes learning
+PASS 8 owner reassigns buddy
+PASS 9 former buddy loses write access immediately
+PASS 10 new buddy sees carried learning
+PASS 11 owner defines a skill
+PASS 12 employee cannot self certify
+PASS 13 authorized human confirms skill level
+PASS 14 employee requests review without changing level
+PASS 15 request is not self certification
+PASS 16 concurrent skill edit is rejected
+PASS 17 delegated reviewer cannot certify self
+PASS 18 existing free skill tags are preserved
+PASS 19 transferred buddy cannot retain old branch training
+PASS 20 owner sees handover requirement
+PASS: HR training 20 assertions
+
+── check-hr-staffing
+PASS 1 overnight net time is seven hours
+PASS 2 Friday night belongs to Friday
+PASS 3 overnight shift is one start day
+PASS 4 store closing time is used
+PASS 5 missing preference is not zero
+PASS 6 two shifts on same day count once
+PASS 7 both source shifts remain visible
+PASS 8 September start is not October work
+PASS 9 48 assigned versus 60 wanted is minus 12
+PASS 10 day preference compares days
+PASS 11 adjacent outside-period day extends consecutive run
+PASS 12 outside boundary evidence is included
+PASS 13 explicit zero desired hours is valid
+PASS 14 peer cannot modify preference
+PASS 15 month days respect calendar
+PASS 16 owner records consideration
+PASS 17 employee cannot read colleague preference
+PASS 18 owner can review staffing balance
+PASS 19 analysis never edits schedule
+PASS: HR staffing 19 assertions
+
+── check-hr-meetings
+PASS 1 owner saves meeting
+PASS 2 unshared draft is hidden from employee
+PASS 3 assigned delegated manager sees private note
+PASS 4 unassigned delegated manager cannot read meeting
+PASS 5 sharing needs explicit visibility confirmation
+PASS 6 explicit share works
+PASS 7 employee sees shared summary
+PASS 8 employee DTO never includes private note
+PASS 9 employee acknowledges own summary
+PASS 10 employee can leave shared comment
+PASS 11 meeting promise is saved
+PASS 12 promise due date can change
+PASS 13 due date history is preserved
+PASS 14 employee completes own promise
+PASS 15 revoked assignee loses read access
+PASS 16 owner sees pending handover
+PASS 17 meeting does not change pay contract or employee
+PASS 18 private note is absent from general store
+PASS 19 private note is absent from audit
+PASS 20 departed assignee cannot access HR
+PASS: HR meetings 20 assertions
+
+── check-hr-cases
+PASS 1 case requires named visibility confirmation
+PASS 2 employee submits confidential identified case
+PASS 3 case retry is idempotent
+PASS 4 retry creates one case
+PASS 5 peer cannot read case
+PASS 6 foreign cannot read case
+PASS 7 outsider cannot read case
+PASS 8 assigned receiver can read case
+PASS 9 designated receiver replies
+PASS 10 receiver reply marks answered
+PASS 11 author can reopen
+PASS 12 stale reply is rejected
+PASS 13 revoked receiver cannot write
+PASS 14 owner sees handover pending
+PASS 15 new receiver does not automatically inherit cases
+PASS 16 owner explicitly hands over
+PASS 17 new assigned receiver now sees case
+PASS 18 case text is outside general store
+PASS 19 general export excludes case
+PASS 20 audit excludes case text
+PASS 21 case change creates a generic notification
+PASS 22 notifications never contain confidential body
+PASS: HR cases 22 assertions
+
+── check-hr-pulse
+PASS 1 six responses remain six
+PASS 2 target count includes nonresponses
+PASS 3 nonresponse adds no score
+PASS 4 zero responses gives zero distribution
+PASS 5 owner creates a short voluntary survey
+PASS 6 draft is not exposed
+PASS 7 owner publishes fixed target list
+PASS 8 named visibility must be confirmed
+PASS 9 target employee voluntarily responds
+PASS 10 untargeted employee cannot answer
+PASS 11 employee cannot inspect colleague answer
+PASS 12 own answer can change before deadline
+PASS 13 revision is still one response
+PASS 14 published targets cannot silently change
+PASS 15 deadline wins against a late answer
+PASS 16 staff sees own answer only
+PASS 17 peer sees no colleague answer
+PASS 18 period compares actual instants across offsets
+PASS: HR pulse 18 assertions
+
+── check-hr-items
+PASS 1 owner issues two uniforms
+PASS 2 colleague cannot acknowledge receipt
+PASS 3 employee acknowledges own receipt
+PASS 4 partial return works
+PASS 5 one uniform remains
+PASS 6 return retry is idempotent
+PASS 7 retry does not add a return
+PASS 8 return cannot exceed remainder
+PASS 9 lost item needs a reason
+PASS 10 concurrent returns serialize and reject stale request
+PASS 11 concurrent remainder is never negative
+PASS 12 issued item does not change wage
+PASS 13 departed employee cannot use HR
+PASS 14 owner can record departed employee return
+PASS 15 colleague cannot inspect issued items
+PASS: HR items 15 assertions
+
+── check-hr-lifecycle
+PASS 1 owner exports explicitly selected HR scopes
+PASS 2 export contains only selected sections
+PASS 3 owner selected export includes own authorized confidential records
+PASS 4 staff exports public self projection
+PASS 5 self export never includes private meeting note
+PASS 6 employee cannot request owner mode
+PASS 7 general export excludes HR private content
+PASS 8 unset retention never purges applicants
+PASS 9 configured closed applicant is purged
+PASS 10 due HR work sends a generic reminder
+PASS 11 same daily reminder is deduplicated
+PASS 12 deadline notifications exclude private body
+PASS 13 cleanup failure rolls back store update
+PASS 14 failed cleanup leaves employee unchanged
+PASS 15 anonymization removes linked confidential content
+PASS 16 anonymization removes personal HR links
+PASS 17 anonymized employee cannot reenter HR
+PASS 18 hr_skill_records has linked rows before transfer
+PASS 19 hr_meeting_actions has linked rows before transfer
+PASS 20 hr_meeting_comments has linked rows before transfer
+PASS 21 hr_case_messages has linked rows before transfer
+PASS 22 hr_pulse_answers has linked rows before transfer
+PASS 23 hr_item_events has linked rows before transfer
+PASS 24 hr_candidates cascades owner transfer
+PASS 25 hr_buddy_assignments cascades owner transfer
+PASS 26 hr_skill_definitions cascades owner transfer
+PASS 27 hr_skill_records cascades owner transfer
+PASS 28 hr_work_preferences cascades owner transfer
+PASS 29 hr_meetings cascades owner transfer
+PASS 30 hr_meeting_actions cascades owner transfer
+PASS 31 hr_meeting_comments cascades owner transfer
+PASS 32 hr_cases cascades owner transfer
+PASS 33 hr_case_messages cascades owner transfer
+PASS 34 hr_pulse_campaigns cascades owner transfer
+PASS 35 hr_pulse_answers cascades owner transfer
+PASS 36 hr_item_assignments cascades owner transfer
+PASS 37 hr_item_events cascades owner transfer
+PASS 38 hr_grants cascades owner transfer
+PASS 39 hr_audit cascades owner transfer
+PASS 40 hr_settings cascades owner transfer
+PASS 41 hr_reminders cascades owner transfer
+PASS 42 hr_actor_links cascades owner transfer
+PASS 43 hr_candidates cascades store deletion
+PASS 44 hr_buddy_assignments cascades store deletion
+PASS 45 hr_skill_definitions cascades store deletion
+PASS 46 hr_skill_records cascades store deletion
+PASS 47 hr_work_preferences cascades store deletion
+PASS 48 hr_meetings cascades store deletion
+PASS 49 hr_meeting_actions cascades store deletion
+PASS 50 hr_meeting_comments cascades store deletion
+PASS 51 hr_cases cascades store deletion
+PASS 52 hr_case_messages cascades store deletion
+PASS 53 hr_pulse_campaigns cascades store deletion
+PASS 54 hr_pulse_answers cascades store deletion
+PASS 55 hr_item_assignments cascades store deletion
+PASS 56 hr_item_events cascades store deletion
+PASS 57 hr_grants cascades store deletion
+PASS 58 hr_audit cascades store deletion
+PASS 59 hr_settings cascades store deletion
+PASS 60 hr_reminders cascades store deletion
+PASS 61 hr_actor_links cascades store deletion
+PASS: HR lifecycle 61 assertions
+
+── check-hr-demo
+PASS 1 hiring creates explicit unconfirmed onboarding
+PASS 2 staff cannot view applicants
+PASS 3 learner acknowledges buddy step
+PASS 4 no self certification
+PASS 5 skill review requested
+PASS 6 work preference reviewed
+PASS 7 staffing derives actual schedule evidence
+PASS 8 unshared meeting hidden
+PASS 9 private note absent from staff DTO
+PASS 10 shared meeting acknowledged
+PASS 11 unassigned manager cannot read case
+PASS 12 case conversation shared only with participants
+PASS 13 survey counts submitted answer
+PASS 14 staff cannot view named coworker answers
+PASS 15 duplicate return applies once
+PASS 16 stale version conflicts without mutation
+PASS 17 self export uses safe projections
+PASS 18 reset restores initial state
+PASS 19 all demo actions use zero network requests
+PASS: HR demo 19 assertions
+
+── check-hr-review
+PASS 1 unlink then anonymize removes past handler messages and attribution
+PASS 2 anonymizing shared creator preserves other staff skill and survey answer
+PASS 3 training grant cannot read or write another assigned buddy record
+PASS 4 read-only expiry and scheduled deletion still allow fresh authorized export
+PASS 5 meeting promise refuses a nonparticipant without exposing its meeting
+PASS 6 restricted record histories retain before after and previous assignees
+PASS 7 employee followup notifies active owner and designated handler once
+PASS 8 unlink anonymization redacts nested authors without losing unrelated learning and review evidence
+PASS 9 durable former actor attribution never revokes a relinked employee new grant
+HR final-review regressions 9 passed, 0 failed
+
+── check-hr-deploy
+PASS: HR deploy database/server/health/frontend gates
+
 ── check-team
 PASS: migration, auth, forged identity headers, origin, conflicts, owner isolation, email-bound invites (verified email only), role filtering, manager cannot approve, attendance before/after audit, payroll lock, reopen, unavailable email not marked sent, insurance and income validation.
 
