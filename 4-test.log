@@ -1999,48 +1999,51 @@ PASS: 메일 없이 비밀번호 찾기.
 68. PASS B020 after end hint
 69. PASS B056 juhu skipped reason
 70. PASS B056 no juhu reason
-71. PASS owner saves extra fields
-72. PASS extra kept
-73. PASS branch info kept
-74. PASS repeats kept
-75. PASS settings.more kept
-76. PASS staff does not see owner memo/tags/reviews
-77. PASS staff sees praise
-78. PASS staff sees wifi
-79. PASS staff sees today note only
-80. PASS staff sees events
-81. PASS setPref bad value blocked
-82. PASS setPref ok
-83. PASS pref saved, memo intact
-84. PASS dayOffWish past blocked
-85. PASS dayOffWish ok
-86. PASS owner sees wish
-87. PASS second tap removes wish
-88. PASS staff cannot memo
-89. PASS autoClose future blocked
-90. PASS autoClose ok
-91. PASS closed with flag
-92. PASS attMemo ok
-93. PASS memo saved
-94. PASS staff record hides memo
-95. PASS post notice with poll+pdf
-96. PASS staff sees poll + file
-97. PASS vote
-98. PASS bad vote
-99. PASS react
-100. PASS bad emoji
-101. PASS comment
-102. PASS owner sees counts
-103. PASS owner can delete comment
-104. PASS bad pdf rejected
-105. PASS save manual needPhoto
-106. PASS photo required
-107. PASS check with photo
-108. PASS left steps handed over
-109. PASS client error needs origin
-110. PASS scrubbed + deduped
-111. PASS non-HQ cannot read
-112. PASS B101 2h before alert with clock link
+71. PASS owner tour 8+ steps, staff 5+
+72. PASS every step has title+body
+73. PASS owner pages exist
+74. PASS owner saves extra fields
+75. PASS extra kept
+76. PASS branch info kept
+77. PASS repeats kept
+78. PASS settings.more kept
+79. PASS staff does not see owner memo/tags/reviews
+80. PASS staff sees praise
+81. PASS staff sees wifi
+82. PASS staff sees today note only
+83. PASS staff sees events
+84. PASS setPref bad value blocked
+85. PASS setPref ok
+86. PASS pref saved, memo intact
+87. PASS dayOffWish past blocked
+88. PASS dayOffWish ok
+89. PASS owner sees wish
+90. PASS second tap removes wish
+91. PASS staff cannot memo
+92. PASS autoClose future blocked
+93. PASS autoClose ok
+94. PASS closed with flag
+95. PASS attMemo ok
+96. PASS memo saved
+97. PASS staff record hides memo
+98. PASS post notice with poll+pdf
+99. PASS staff sees poll + file
+100. PASS vote
+101. PASS bad vote
+102. PASS react
+103. PASS bad emoji
+104. PASS comment
+105. PASS owner sees counts
+106. PASS owner can delete comment
+107. PASS bad pdf rejected
+108. PASS save manual needPhoto
+109. PASS photo required
+110. PASS check with photo
+111. PASS left steps handed over
+112. PASS client error needs origin
+113. PASS scrubbed + deduped
+114. PASS non-HQ cannot read
+115. PASS B101 2h before alert with clock link
 
 ── check-secrets
 1. PASS 비밀값 검사 완료
