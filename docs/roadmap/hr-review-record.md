@@ -48,3 +48,4 @@ UI regression: settings POST failure followed by 503 refresh unmounts the draft 
 Production verification: extend existing disposable smoke account with HR context/module read checks and guest 401; no real employee records or notifications are changed.
 
 - E2E transport ruling: CI HR08 GET fault was bypassed by the PWA service worker on the same-origin Supabase fixture; POST interception worked. Block service workers only in browser test contexts (Playwright documented request-routing constraint) and assert both failed GETs were intercepted. Product worker unchanged; no failed-refresh assertions removed. Evidence: CI 38082368757 red, next exact-head CI required.
+- Follow-up CI 38082869177 revealed the pre-existing PWA registration assertion. Limit service-worker blocking to fresh HR-only contexts cloned from the existing synthetic sessions; keep every original PWA/core assertion unchanged. No credentials are logged or saved outside Playwright memory.

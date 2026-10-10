@@ -12,11 +12,9 @@ let extra=null;async function step(name,fn){const t=Date.now();try{await fn();co
 const kToday=()=>new Date(Date.now()+9*3600000).toISOString().slice(0,10);
 const OWNER={name:'김사장',email:'boss@example.invalid',password:'Boss-pass-2026'},STAFF={name:'이직원',email:'staff@example.invalid',password:'Staff-pass-2026'};
 
-// Fault-injection routes must see GET requests too: service workers intercept
-// same-origin Supabase fixture reads before page.route can observe them.
-const ownerCtx=await browser.newContext({serviceWorkers:'block',viewport:{width:1280,height:900},timezoneId:'Asia/Seoul',locale:'ko-KR'});const owner=await ownerCtx.newPage();watch(owner);
+const ownerCtx=await browser.newContext({viewport:{width:1280,height:900},timezoneId:'Asia/Seoul',locale:'ko-KR'});const owner=await ownerCtx.newPage();watch(owner);
 // 직원은 휴대폰(아이폰 크기·터치)으로 쓴다.
-const staffCtx=await browser.newContext({...devices['iPhone 13'],serviceWorkers:'block',browserName:undefined,defaultBrowserType:undefined,timezoneId:'Asia/Seoul',locale:'ko-KR'});const staff=await staffCtx.newPage();watch(staff);
+const staffCtx=await browser.newContext({...devices['iPhone 13'],browserName:undefined,defaultBrowserType:undefined,timezoneId:'Asia/Seoul',locale:'ko-KR'});const staff=await staffCtx.newPage();watch(staff);
 const qrConfirm=async kind=>{await staff.click(`button:has-text("${kind}")`);await staff.click('text=휴대폰 카메라로 연 QR 확인하기');await staff.click(`text=${kind} 기록하기`)};
 let joinLink,qrLink,qrPng;
 
@@ -186,7 +184,13 @@ await step('작업 054: 직원 여러 명 붙여넣기 등록',async()=>{
  await owner.locator('.bulk-err').first().waitFor();await owner.click('button:has-text("1명 등록")');
  await owner.getByText(/직원 1명을 '입사 준비'로 등록했어요/).waitFor();await owner.getByText('붙임직원').first().waitFor();
 });
-await (await import('./hr-e2e.mjs')).hrE2E({owner,staff,srv,step,staffName:STAFF.name});
+// Keep the existing PWA registration assertions above. HR fault-injection
+// needs isolated contexts: worker-owned GETs bypass page.route on this fixture.
+const hrOwnerCtx=await browser.newContext({storageState:await ownerCtx.storageState(),serviceWorkers:'block',viewport:{width:1280,height:900},timezoneId:'Asia/Seoul',locale:'ko-KR'});
+const hrStaffCtx=await browser.newContext({...devices['iPhone 13'],storageState:await staffCtx.storageState(),serviceWorkers:'block',browserName:undefined,defaultBrowserType:undefined,timezoneId:'Asia/Seoul',locale:'ko-KR'});
+const hrOwner=await hrOwnerCtx.newPage(),hrStaff=await hrStaffCtx.newPage();watch(hrOwner);watch(hrStaff);extra=hrOwner;
+await (await import('./hr-e2e.mjs')).hrE2E({owner:hrOwner,staff:hrStaff,srv,step,staffName:STAFF.name});
+await hrOwnerCtx.close();await hrStaffCtx.close();extra=null;
 
 await step('다시 로그인 (로그아웃 후)',async()=>{
  await staff.goto(B+'/logout');await staff.waitForURL(/\/login/);await staff.goto(B+'/login?role=employee',{waitUntil:'networkidle'});
