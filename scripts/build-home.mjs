@@ -34,7 +34,7 @@ export async function buildHome({out, site = HOME_ORIGIN, app = APP_ORIGIN, pixe
   await copyFile('site/home.css', path.join(dir, 'home-'+version+'.css'));
   for (const sub of ['fonts', 'img']) {
     await mkdir(path.join(dir, sub), {recursive: true});
-    for (const f of await readdir('site/' + sub)) if (/\.(woff2|webp|txt|gif|jpg|mp4)$/.test(f) && f !== 'charset.txt') await copyFile(`site/${sub}/${f}`, path.join(dir, sub, f));
+    for (const f of await readdir('site/' + sub)) if (/\.(woff2|webp|txt|gif|jpg|mp4|png|svg)$/.test(f) && f !== 'charset.txt') await copyFile(`site/${sub}/${f}`, path.join(dir, sub, f));
   }
   // 3) HTML 채우기
   const R = await import(pathToFileURL(path.resolve(moduleDir, 'site/render.js')).href + '?t=' + Date.now());
