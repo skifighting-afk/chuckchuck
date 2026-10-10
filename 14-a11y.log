@@ -1,5 +1,0 @@
-접근성 문제 2건:
-390px /demo?role=employee [axe color-contrast] Elements must meet minimum color contrast ratio thresholds — .clock-hint
-1280px /demo?role=employee [axe color-contrast] Elements must meet minimum color contrast ratio thresholds — .clock-hint
-::error title=접근성::390px /demo?role=employee [axe color-contrast] Elements must meet minimum color contrast ratio thresholds — .clock-hint
-::error title=접근성::1280px /demo?role=employee [axe color-contrast] Elements must meet minimum color contrast ratio thresholds — .clock-hint

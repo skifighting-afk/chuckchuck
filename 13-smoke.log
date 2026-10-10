@@ -1,7 +1,7 @@
-07:17:18 새 화면 확인 b22275a
-07:17:32 API 응답 시간 /api/status 200 2685ms · /api/client-error 200 3843ms
-07:18:01 가입·가게 만들기 OK
-07:18:04 로그아웃 OK
-07:18:25 다시 로그인 OK
-07:18:46 점검 계정 삭제 완료
-07:18:46 배포 후 점검 통과
+07:25:32 새 화면 확인 6bd96d5
+07:26:13 점검 계정 삭제 완료
+배포 후 점검 실패: page.goto: Timeout 20000ms exceeded.
+Call log:
+  - navigating to "https://chukchukapp.kr/signup?role=owner&plan=basic", waiting until "networkidle"
+
+끝나지 않은 요청: POST https://mklluxpngagiechnfaxe.supabase.co/functions/v1/api/client-error 37857ms
