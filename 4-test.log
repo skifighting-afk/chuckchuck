@@ -2040,7 +2040,7 @@ PASS: 메일 없이 비밀번호 찾기.
 109. PASS client error needs origin
 110. PASS scrubbed + deduped
 111. PASS non-HQ cannot read
-112. PASS B101 (skipped near midnight)
+112. PASS B101 2h before alert with clock link
 
 ── check-secrets
 1. PASS 비밀값 검사 완료
