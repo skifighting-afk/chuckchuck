@@ -1,0 +1,42 @@
+# HR 구현 결정과 최종 검증 기록
+
+기준일: 2026-10-11. 실제 직원 데이터 없이 합성 PostgreSQL과 개발 미리보기에서 검증했다.
+운영 배포와 전체 Linux CI는 아직 완료하지 않았다.
+
+Ruling: Reuse existing isolated linked worktree; preserve old work in stash@{0} and ../hr-inputs — satisfies isolation without an extra unmanaged checkout — cost if wrong: recover stash before resuming old work.
+Ruling: Bash is unavailable on this Windows host; reproduce task-start/task-done bookkeeping in PowerShell with the same plan-specific directory and command evidence — cost if wrong: ledger format only.
+Task 1: Ruling: Baseline check-error-messages used URL.pathname as a Windows path; observed ENOENT C:\C:\... — use fileURLToPath, existing test now passes — cost if wrong: test runner path only.
+Task 1: Ruling: PgD1 instanceof fails across source/bundled constructor identities — validate the transaction and postgres begin capabilities instead — cost if wrong: unsupported adapter fails closed.
+Task 1: Ruling: Idempotent replay must re-authorize and reproject current data without caching sensitive bodies in audit — add authorize/replay/target callbacks to mutation metadata — cost if wrong: module interface adjustment.
+Task 2: Ruling: Shared record helpers use authoritative SQL owner and metadata, rather than cached JSON metadata — keeps transfer consistent — cost if wrong: common helper changes.
+Task 2: Ruling: New employees start with unconfirmed wage 0 and autoPay false; attendance is validated with an empty projection but never copied into store JSON — pay confirmation remains in existing onboarding and attendance remains separate — cost if wrong: onboarding defaults need review.
+Task 3: Ruling: PostgreSQL rejects ON UPDATE CASCADE on generated parent IDs; child owner cascades directly and composite parent FK is deferred NO ACTION — retains same-owner integrity across transfer — cost if wrong: transfer may roll back, verified in lifecycle task.
+Task 7: Ruling: A JSONB path test exposed postgres.js serializing an already stringified parameter as a JSON string; bind through text::jsonb and require object data/non-null generated parent IDs — restores SQL FK and uniqueness guarantees; earlier HR modules are rerun — cost if wrong: migration/record writer compatibility, no production HR schema deployed yet.
+Task 8: Ruling: Offboarding list is implemented in app/pay-more.tsx, not team-ui.tsx; link the actual list to employee-filtered HR items — avoids a disconnected UI — cost if wrong: navigation adjustment. Task 4 main schedule and all staff entry links are grouped in Task 10 existing-screen integration.
+Task 9: Ruling: exportHrData takes its transaction DB explicitly before context — avoids a global DB or leaking database capabilities into DTO context — cost if wrong: helper call signature only.
+Task 9: Ruling: Employee branch transfer moves period preferences and resets manager review; account unlink revokes grants but retains owner business records until explicit anonymization — prevents stale authorization while preserving submitted records — cost if wrong: retention policy adjustment.
+Task 10: Ruling: Required Windows checks exposed POSIX inline environment assignment and /tmp/URL.pathname handling — move environment setup into Node and use OS temp/file URL helpers — cost if wrong: CI runner setup only. Privacy Markdown is regenerated from the approved code changes after the full suite exposed stale generated text.
+Final review: one fresh whole-branch reviewer completed; 7 Important findings, no Critical findings, no deferred minors. All 7 entered one fix pass, no second review dispatched.
+Final: fixed unlink then anonymize retains former handler attribution — check-hr-review scenario 1 RED→GREEN; durable links support cleanup only, never authorization.
+Final: fixed anonymizing a shared creator deletes other employees' skill/survey records — scenario 2 RED→GREEN; table-specific subject deletion and shared-record redaction.
+Final: fixed training grant bypasses the assigned buddy boundary — scenario 3 RED→GREEN; owner/self/current buddy projection and owner-only reassignment.
+Final: fixed read-only subscription/deletion period blocks an otherwise authorized HR export — scenario 4 RED→GREEN; export-only exception with fresh scope checks.
+Final: fixed a meeting action can target a nonparticipant who cannot access it — scenario 5 RED→GREEN; assignees limited to meeting participants.
+Final: fixed updates discard skill, buddy, preference and assignee before/after evidence — scenario 6 RED→GREEN; record-scoped histories visible in the authorized UI/export.
+Final: fixed employee followup routes notifications to nobody — scenario 7 RED→GREEN; active owner/coowner/designated handler recipient routing, actor exclusion and replay deduplication.
+Final: nested author/history anonymization and stale actor relink scenarios 8–9 GREEN; former handler private text/identifiers removed, unrelated learning/review evidence retained, new-account grants preserved.
+Final: common recovery hook failed-GET false-success and lost-focus reproduced RED in browser → GREEN; failed refresh preserves exact draft and reports failure, successful refresh restores focus to the draft, subsequent save persists it.
+Final: Ruling: Retain a private actor-to-employee association after unlink solely for later anonymization — current membership still authorizes every request — cost if wrong: cleanup-only metadata retention requires policy review.
+Final: Ruling: Redact shared records by table and subject rather than deleting all records created by a departing employee — preserves other employees' learning/survey evidence — cost if wrong: a new HR record type needs an explicit cleanup rule.
+Final: Ruling: Meeting actions can target only existing meeting participants — each assignee can see and complete the action without a new task-only permission system — cost if wrong: broader task delegation needs a separate feature.
+Final: Ruling: Store whitelisted before/after history inside each restricted record, excluding private meeting notes and audit bodies — the existing record projection/export boundary remains authoritative — cost if wrong: large history records may need pagination later.
+Final: Ruling: Export bypasses canWrite only for the internal export operation — read-only users retain data access without reopening mutations — cost if wrong: export behavior may need a policy update.
+Final: Ruling: Sales, expenses, inventory, referral hiring and automated employment/pay decisions remain excluded — consistent with the approved HR-only scope — cost if wrong: those require separate approval and design.
+Final: Ruling: Earlier pricing/onboarding edits remain preserved outside this branch — avoids silently mixing unrelated work — cost if wrong: they need a separate integration pass.
+Final: Ruling: Existing unpublished schedule projection shows an employee's own shifts; this branch does not change it — reviewer found it pre-existing — cost if wrong: schedule visibility needs a dedicated review.
+Final: Ruling: Notification delivery retains the existing best-effort infrastructure; deterministic HR recipient routing is fixed — no new retry service was approved — cost if wrong: provider failures may lose a notification while the HR record remains saved.
+Final: Ruling: No universal retention period or independent legal-adequacy claim is introduced — explicit retention settings govern deletion — cost if wrong: production retention choices still require the business's policy decision.
+Final: Ruling: Production readiness cannot be inferred from local checks — Linux CI, deployment gates and deployed-SHA evidence remain mandatory — cost if wrong: release waits rather than risking an unverified rollout.
+Final: minor (deferred): none raised by the reviewer.
+Final verification: check/build/check:function PASS; all HR suites through check-improve2 PASS, including final-review scenarios 9/9. Aggregate npm test stops at pre-existing Windows spawnSync git EPERM in check-secrets; an equivalent scan using the same findSecrets implementation over 698 tracked/untracked files PASS. Existing check-toss 29 and check-native 25 PASS. Linux E2E/mobile remain unexecuted locally (Playwright absent); not claimed green.
+Release blocker: GitHub connector write returned 403 Resource not accessible by integration; native Git credential helper failed at mingit sh signal pipe. No HR PR, CI run or production migration/deployment has occurred.

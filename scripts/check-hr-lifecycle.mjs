@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';import {createHrFixture} from './hr-fixture.mjs';
 const F=await createHrFixture();let n=0;const eq=(a,b,l)=>{assert.deepEqual(a,b,l);console.log('PASS '+(++n)+' '+l)},w=(actor,scope,action,b)=>F.call(actor,'/api/hr/'+scope,F.command(action,b));
-const tables=['hr_candidates','hr_buddy_assignments','hr_skill_definitions','hr_skill_records','hr_work_preferences','hr_meetings','hr_meeting_actions','hr_meeting_comments','hr_cases','hr_case_messages','hr_pulse_campaigns','hr_pulse_answers','hr_item_assignments','hr_item_events','hr_grants','hr_audit','hr_settings','hr_reminders'];
+const tables=['hr_candidates','hr_buddy_assignments','hr_skill_definitions','hr_skill_records','hr_work_preferences','hr_meetings','hr_meeting_actions','hr_meeting_comments','hr_cases','hr_case_messages','hr_pulse_campaigns','hr_pulse_answers','hr_item_assignments','hr_item_events','hr_grants','hr_audit','hr_settings','hr_reminders','hr_actor_links'];
 try{
  const emp=F.employeeId('staff'),secret='LIFECYCLE-SYNTHETIC-PRIVATE';let m=(await w('boss','meetings','save',{employeeId:emp,assigneeId:'owner',scheduledAt:'2026-11-01T09:00:00.000Z',topic:'면담',sharedSummary:'공유 요약',privateNote:secret,status:'scheduled'})).body.record.meeting;m=(await w('boss','meetings','share',{id:m.id,version:m.version,confirmed:true})).body.record.meeting;
  await w('staff','cases','submit',{subject:'의견',body:secret,assigneeId:null,visibilityConfirmed:true});await w('boss','items','issue',{employeeId:emp,name:'유니폼',quantity:1,dueAt:'2026-11-01',note:secret});

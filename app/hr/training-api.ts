@@ -6,7 +6,7 @@ import {activePeople,person,isManager,hrToday,readableManual} from './people';
 import {withHrMutation,fingerprint} from './mutation';
 import {listRecords,getRecord,makeRecord,revise,putRecord,expectVersion,type HrTable} from './records';
 function buddyActive(c:HrContext,a:BuddyAssignment){return activePeople(c).some(e=>e.id===a.buddyId)&&hrToday(c)>=a.from&&hrToday(c)<=a.until}
-function buddyVisible(c:HrContext,a:BuddyAssignment){return isManager(c,'training')||a.employeeId===c.selfId||(a.buddyId===c.selfId&&buddyActive(c,a))}
+function buddyVisible(c:HrContext,a:BuddyAssignment){return c.access==='owner'||a.employeeId===c.selfId||(a.buddyId===c.selfId&&buddyActive(c,a))}
 async function projectedBuddy(db:HrDatabase,c:HrContext,id:string){const a=await getRecord<BuddyAssignment>(db,c,'hr_buddy_assignments',id);if(!buddyVisible(c,a))deny();return {...a,steps:a.steps.map(s=>{const m=c.store._manuals?.find(m=>m.id===s.manualId);return {...s,manualId:m&&(c.access==='owner'||manualVisibleTo(m,person(c,c.selfId!)))?s.manualId:null}})}}
 export async function trainingRead(db:HrDatabase,c:HrContext):Promise<TrainingView>{
  const manage=isManager(c,'training'),all=await listRecords<BuddyAssignment>(db,c,'hr_buddy_assignments'),buddies=[];
@@ -23,6 +23,7 @@ export async function trainingWrite(db:HrDatabase,ctx:HrContext,input:unknown){
  const read=async(tx:HrDatabase,c:HrContext,id:string):Promise<HrMeta>=>{if(table==='hr_buddy_assignments')return projectedBuddy(tx,c,id);const r=await getRecord<any>(tx,c,table,id);if(table==='hr_skill_records'&&!isManager(c,'training')&&r.employeeId!==c.selfId)deny();return r};
  return withHrMutation<HrMeta>(db,ctx,{...b,operation:'training:'+b.action,fingerprint:await fingerprint(b),authorize:auth,target:r=>r.id,replay:read},async(tx,c)=>{
   if(b.action==='assignBuddy'){
+   if(c.access!=='owner'&&b.buddyId!==c.selfId)deny('담당자는 본인에게 배정할 교육만 만들 수 있어요.');
    person(c,b.employeeId);person(c,b.buddyId);if(b.employeeId===b.buddyId||b.until<b.from)throw new HrError(400,'교육 기간과 서로 다른 담당자를 확인해 주세요.');for(const s of b.steps)readableManual(c,s.manualId,[b.employeeId,b.buddyId]);
    return putRecord(tx,c,table,makeRecord(c,{employeeId:b.employeeId,buddyId:b.buddyId,from:b.from,until:b.until,steps:b.steps.map(s=>({...s,id:crypto.randomUUID(),progress:'todo' as const,note:'',staffAckAt:null}))}));
   }
@@ -34,10 +35,10 @@ export async function trainingWrite(db:HrDatabase,ctx:HrContext,input:unknown){
   }
   if(b.action==='requestReview'){const old=await getRecord<SkillRecord>(tx,c,table,b.id);if(old.employeeId!==c.selfId)deny();expectVersion(old,b.version);return putRecord(tx,c,table,revise(c,old,{reviewRequestedAt:c.now}),old)}
   const old=await getRecord<BuddyAssignment>(tx,c,table,b.id);expectVersion(old,b.version);
-  if(b.action==='reassignBuddy'){person(c,b.buddyId);if(b.buddyId===old.employeeId)throw new HrError(400,'서로 다른 담당자를 선택해 주세요.');for(const s of old.steps)readableManual(c,s.manualId,[old.employeeId,b.buddyId]);return putRecord(tx,c,table,revise(c,old,{buddyId:b.buddyId}),old)}
+  if(b.action==='reassignBuddy'){if(c.access!=='owner')deny('교육 담당자 변경은 사장님에게 부탁해 주세요.');person(c,b.buddyId);if(b.buddyId===old.employeeId)throw new HrError(400,'서로 다른 담당자를 선택해 주세요.');for(const s of old.steps)readableManual(c,s.manualId,[old.employeeId,b.buddyId]);return putRecord(tx,c,table,revise(c,old,{buddyId:b.buddyId}),old)}
   const step=old.steps.find(s=>s.id===b.stepId);if(!step)notFound();let changed;
   if(b.action==='ackStep'){if(old.employeeId!==c.selfId)deny();if(step.progress!=='awaiting_ack')throw new HrError(409,'담당자의 확인 요청 후 완료할 수 있어요.');changed={...step,progress:'done' as const,staffAckAt:c.now}}
-  else{if(!(isManager(c,'training')||(old.buddyId===c.selfId&&buddyActive(c,old)))||old.employeeId===c.selfId)deny();changed={...step,progress:b.progress,note:b.note,staffAckAt:null}}
+  else{if(!(c.access==='owner'||(old.buddyId===c.selfId&&buddyActive(c,old)))||old.employeeId===c.selfId)deny();changed={...step,progress:b.progress,note:b.note,noteByEmployeeId:c.selfId,noteBy:c.userId,staffAckAt:null}}
   return putRecord(tx,c,table,revise(c,old,{steps:old.steps.map(s=>s.id===step.id?changed:s)}),old);
  });
 }
