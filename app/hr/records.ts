@@ -1,6 +1,6 @@
 import type {HrMeta,HrContext,HrDatabase} from '../../lib/hr/types';
 import {notFound,conflict,HrError} from './context';
-export type HrTable='hr_candidates'|'hr_buddy_assignments'|'hr_skill_definitions'|'hr_skill_records'|'hr_work_preferences';
+export type HrTable='hr_candidates'|'hr_buddy_assignments'|'hr_skill_definitions'|'hr_skill_records'|'hr_work_preferences'|'hr_meetings'|'hr_meeting_actions'|'hr_meeting_comments';
 export function makeRecord<T extends object>(ctx:HrContext,data:T):T&HrMeta{return {...data,id:crypto.randomUUID(),ownerId:ctx.ownerId,branchId:ctx.branchId,createdBy:ctx.userId,createdAt:ctx.now,updatedAt:ctx.now,version:1}}
 export function revise<T extends HrMeta>(ctx:HrContext,record:T,patch:Partial<T>):T{return {...record,...patch,id:record.id,ownerId:record.ownerId,branchId:record.branchId,createdBy:record.createdBy,createdAt:record.createdAt,updatedAt:ctx.now,version:record.version+1}}
 function fromRow<T extends HrMeta>(r:any):T{return {...(typeof r.data==='string'?JSON.parse(r.data):r.data),id:r.id,ownerId:r.owner,branchId:r.branch_id,createdBy:r.created_by,createdAt:r.created_at,updatedAt:r.updated_at,version:r.version}}

@@ -10,7 +10,7 @@
 
 **Spec:** `docs/superpowers/specs/2026-10-11-hr-nine-features-design.md` — 2026-10-11 사용자 승인.
 
-**상태:** 사용자 계획 승인 · 직접 구현 진행 중. 추가 HR 기능 개발 5/9 · 개발 검증 완료 5/9 · 배포 확인 0/9. 기존 100개 개선안과 별도로 추적한다.
+**상태:** 사용자 계획 승인 · 직접 구현 진행 중. 추가 HR 기능 개발 6/9 · 개발 검증 완료 6/9 · 배포 확인 0/9. 기존 100개 개선안과 별도로 추적한다.
 
 ## Global Constraints
 
@@ -140,11 +140,11 @@ type HrPanelProps = {client:HrClient;branchId:string;selfId:string|null};
 
 **Interfaces:** `Meeting = HrMeta & {employeeId:string;assigneeId:string;scheduledAt:string;topic:string;sharedSummary:string;sharedAt:string|null;privateNote:string;ackAt:string|null;status:'scheduled'|'held'|'closed'}`. `MeetingAction = HrMeta & {meetingId:string;text:string;employeeId:string;due:string;status:'open'|'done';completedAt:string|null}`. `MeetingComment = HrMeta & {meetingId:string;body:string}`. `MeetingView = {meeting:Omit<Meeting,'privateNote'>;privateNote?:string;actions:MeetingAction[];comments:MeetingComment[]}`. `meetingView(ctx:HrContext,meeting:Meeting,actions:MeetingAction[],comments:MeetingComment[]):MeetingView`. POST actions save/share/ack/comment/action/actionComplete/reassign. comment는 공유 대화이며 hr_meeting_comments에 body1000자·작성자를 저장한다. `MeetingsPanel(props:HrPanelProps)`.
 
-- [ ] **1. 실패 시험:** privateNote 검증 문자열이 직원·동료·비담당 관리자·일반 Store·푸시·일반 export 어디에도 없어야 한다. 본인 공유 요약·약속·의견만 허용, 기한 변경 이력 존재, 퇴사 담당 접근 403을 assert한다.
-- [ ] **2. 실패 확인:** build 후 `node scripts/check-hr-meetings.mjs`.
-- [ ] **3. 구현:** hr_meetings/hr_meeting_actions/hr_meeting_comments 추가. 주제100/공유요약2000/비공개메모2000/약속200자·20개 제한. 공유 미리보기와 직원 조회는 같은 DTO를 사용한다. privateNote는 owner와 현재 지정·위임 담당자만 조회한다.
-- [ ] **4. 화면:** 공유 대상 안내, 직원 확인·의견, 약속 완료·기한 변경·담당자 인계를 제공한다. 면담 내용으로 근무·계약·급여가 변경되지 않음을 비교한다.
-- [ ] **5. 통과·커밋:** core/meetings·타입 검사, 공유 전 비공개·재조회·담당 만료·입력 보존을 확인한다.
+- [x] **1. 실패 시험:** privateNote 검증 문자열이 직원·동료·비담당 관리자·일반 Store·푸시·일반 export 어디에도 없어야 한다. 본인 공유 요약·약속·의견만 허용, 기한 변경 이력 존재, 퇴사 담당 접근 403을 assert한다.
+- [x] **2. 실패 확인:** build 후 `node scripts/check-hr-meetings.mjs`.
+- [x] **3. 구현:** hr_meetings/hr_meeting_actions/hr_meeting_comments 추가. 주제100/공유요약2000/비공개메모2000/약속200자·20개 제한. 공유 미리보기와 직원 조회는 같은 DTO를 사용한다. privateNote는 owner와 현재 지정·위임 담당자만 조회한다.
+- [x] **4. 화면:** 공유 대상 안내, 직원 확인·의견, 약속 완료·기한 변경·담당자 인계를 제공한다. 면담 내용으로 근무·계약·급여가 변경되지 않음을 비교한다.
+- [x] **5. 통과·커밋:** core/meetings·타입 검사, 공유 전 비공개·재조회·담당 만료·입력 보존을 확인한다.
 
 ## Task 6: HR-08 실명 의견·상담
 
