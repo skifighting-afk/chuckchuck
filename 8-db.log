@@ -1,0 +1,6 @@
+Connecting to remote database...
+Do you want to push these migrations to the remote database?
+ • 20261010020000_native_push.sql
+ [Y/n] 
+Applying migration 20261010020000_native_push.sql...
+Finished supabase db push.
