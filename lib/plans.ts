@@ -1,7 +1,7 @@
 // 요금제 (2026-10-05 대표님 결정: 매니지와 같은 구조, 가격은 VAT 포함)
 // 베이직·프로 2가지, 지점 수 구간별 월 요금, 6지점부터 지점당 3,900원 추가. 직원 수 제한 없음.
 // 30일 무료 체험(카드 등록 없음, 자동 결제 없음, 체험 중에는 프로 기능 전부). 6개월 10%·12개월 20% 할인.
-// 전자근로계약서는 월 1장 무료, 추가 1장 3,000원(결제 연결 전에는 사용량만 기록).
+// 전자근로계약서는 무료 제공 없이 체결(양측 서명 완료)된 계약서 1건마다 3,000원(VAT 포함) — 2026-10-10 대표님 결정. 결제 연결 전에는 사용량·청구 예정액만 표시.
 export const plans = {
  basic:{id:'basic',name:'베이직',tiers:[[1,9900],[3,14900],[5,18900]] as [number,number][],extraPerBranch:3900,qr:false,description:'근무표 · 급여 자동 계산 · 명세서 · 전자계약 · 대장'},
  pro:{id:'pro',name:'프로',tiers:[[1,14900],[3,19900],[5,23900]] as [number,number][],extraPerBranch:3900,qr:true,description:'베이직 전부 + 매장 QR 출퇴근'},
@@ -9,10 +9,12 @@ export const plans = {
 export type PlanId=keyof typeof plans;
 export const TRIAL_DAYS=30;
 export const MAX_BRANCHES=50;
-export const CONTRACTS_FREE_PER_MONTH=1;
+export const CONTRACTS_FREE_PER_MONTH=0;
 export const CONTRACT_EXTRA_PRICE=3000;
 export const PERIODS=[{months:1,discount:0},{months:6,discount:0.1},{months:12,discount:0.2}] as const;
 export const money=(n:number)=>n.toLocaleString('ko-KR');
+/** 요금 안내 한 줄 */
+export const contractFeeText=()=>CONTRACTS_FREE_PER_MONTH?`월 ${CONTRACTS_FREE_PER_MONTH}건 무료 · 추가 1건 ${money(CONTRACT_EXTRA_PRICE)}원`:`체결 1건당 ${money(CONTRACT_EXTRA_PRICE)}원(VAT 포함)`;
 // 예전 요금제 이름(무료·사장님5·사장님10·여러매장)으로 저장된 가게: 무료는 베이직, 나머지는 프로로 본다.
 const LEGACY:Record<string,PlanId>={free:'basic',starter:'pro',team:'pro',multi:'pro'};
 export function planId(v:unknown):PlanId|null{if(typeof v!=='string')return null;if(Object.hasOwn(plans,v))return v as PlanId;return LEGACY[v]||null}

@@ -1,5 +1,5 @@
 // 요금 고르기(가게 만들기·계정 화면 공용). 가격은 VAT 포함.
-import {plans,monthlyPrice,periodPrice,money,PERIODS,MAX_BRANCHES,TRIAL_DAYS,CONTRACTS_FREE_PER_MONTH,CONTRACT_EXTRA_PRICE,type PlanId} from '../lib/plans';
+import {plans,monthlyPrice,periodPrice,money,PERIODS,MAX_BRANCHES,TRIAL_DAYS,CONTRACTS_FREE_PER_MONTH,CONTRACT_EXTRA_PRICE,contractFeeText,type PlanId} from '../lib/plans';
 
 export function PricingPicker({plan,setPlan,branches,setBranches,months,setMonths,idPrefix='p'}:{plan:PlanId,setPlan:(p:PlanId)=>void,branches:number,setBranches:(n:number)=>void,months:1|6|12,setMonths:(m:1|6|12)=>void,idPrefix?:string}){
  return <div className="pricing">
@@ -16,7 +16,7 @@ export function PricingPicker({plan,setPlan,branches,setBranches,months,setMonth
   <ul className="pricing-notes">
    <li>처음 {TRIAL_DAYS}일은 무료 체험이에요. 카드 등록이 없고 자동 결제되지 않아요. 체험 중에는 프로 기능(QR 출퇴근)까지 모두 써 볼 수 있어요.</li>
    <li>지점 요금: 1지점 · 2~3지점 · 4~5지점 구간 요금, 6지점부터 지점당 월 {money(plans.basic.extraPerBranch)}원 추가.</li>
-   <li>전자근로계약서는 월 {CONTRACTS_FREE_PER_MONTH}장 무료, 추가 1장 {money(CONTRACT_EXTRA_PRICE)}원.</li>
+   <li>전자근로계약서는 {contractFeeText()} 따로 붙어요(사장님·직원 둘 다 서명해 체결된 건만, 철회·거절된 건은 0원).</li>
    <li>지금은 결제 서비스를 연결하기 전이라 청구되지 않아요.</li>
   </ul>
  </div>;

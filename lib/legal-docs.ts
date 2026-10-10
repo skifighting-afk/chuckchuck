@@ -14,8 +14,8 @@ const officer = O.privacyOfficer.name ? `${O.privacyOfficer.name}${O.privacyOffi
 const company = show(O.company);
 
 export const TERMS: LegalDoc = {
-  key: 'terms', title: '척척사장 이용약관', version: LEGAL.terms.version, effective: '2026-10-16', reviewed: false,
-  history: [{version: LEGAL.terms.version, effective: '2026-10-16', note: '지식재산권(제13조의2), 서비스 장애와 보상(제11조의2), 운영정책(제9조) 추가'},{version: '2026-10-04-prelaunch', effective: '2026-10-04', note: '판매 준비판(운영자 정보 확정 전, 법률 검토 전 초안)'}],
+  key: 'terms', title: '척척사장 이용약관', version: LEGAL.terms.version, effective: '2026-10-17', reviewed: false,
+  history: [{version: LEGAL.terms.version, effective: '2026-10-17', note: '전자근로계약서 요금을 체결 1건당 3,000원으로 정함(제7조, 무료 제공 없음)'},{version: '2026-10-09-prelaunch', effective: '2026-10-16', note: '지식재산권(제13조의2), 서비스 장애와 보상(제11조의2), 운영정책(제9조) 추가'},{version: '2026-10-04-prelaunch', effective: '2026-10-04', note: '판매 준비판(운영자 정보 확정 전, 법률 검토 전 초안)'}],
   sections: [
     {id: 't1', title: '제1조 (목적)', body: [`이 약관은 ${company}(이하 "회사")가 제공하는 매장 관리 서비스 "척척사장"(이하 "서비스")의 이용 조건과 절차, 회사와 회원의 권리·의무를 정합니다.`]},
     {id: 't2', title: '제2조 (용어)', body: [
@@ -42,6 +42,7 @@ export const TERMS: LegalDoc = {
     {id: 't7', title: '제7조 (요금과 결제)', body: [
       '요금은 요금제·지점 수·이용 기간(1·6·12개월)에 따라 정해지며, 서비스 화면과 요금 안내에 부가가치세를 포함한 금액으로 표시합니다. 직원 회원은 요금을 내지 않습니다.',
       '결제는 선택한 이용 기간 단위로 한 번에 하며, 자동 갱신하지 않습니다. 기간이 끝나면 다시 결제해야 새 기록을 저장할 수 있습니다.',
+      '전자근로계약서는 사장님과 직원이 모두 서명해 체결된 계약서 1건마다 3,000원(부가가치세 포함)을 그달 이용료에 더해 받습니다. 무료로 제공하는 건수는 없으며, 서명 요청을 철회했거나 직원이 거절해 체결되지 않은 계약서에는 요금이 붙지 않습니다.',
       '요금을 바꿀 때는 적용 30일 전에 알리며, 이미 결제한 기간에는 바뀐 요금을 적용하지 않습니다.',
     ]},
     {id: 't8', title: '제8조 (청약철회·해지·환불)', body: [

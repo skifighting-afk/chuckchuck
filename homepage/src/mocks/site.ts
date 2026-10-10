@@ -642,7 +642,7 @@ export const PLAN_TIERS = {
   pro: [[1, 14900], [3, 19900], [5, 23900]] as [number, number][],
 };
 export const EXTRA_PER_BRANCH = 3900;
-export const CONTRACT_FREE_PER_MONTH = 1;
+export const CONTRACT_FREE_PER_MONTH = 0;
 export const CONTRACT_EXTRA_PRICE = 3000;
 export const TERM_DISCOUNTS = [
   { months: 1, rate: 0 },
@@ -663,7 +663,7 @@ const BASIC_FEATURES: PlanFeature[] = [
   { label: "근무표 · 대타·교대 요청" },
   { label: "출퇴근 기록 · 정정 승인" },
   { label: "급여 계산 · 임금명세서 · 임금대장" },
-  { label: `전자근로계약서 (월 ${CONTRACT_FREE_PER_MONTH}장 무료, 추가 1장 ${won(CONTRACT_EXTRA_PRICE)})` },
+  { label: `전자근로계약서 (체결 1건당 ${won(CONTRACT_EXTRA_PRICE)}, VAT 포함)` },
   { label: "휴가 · 공지 · 매장 매뉴얼" },
 ];
 
@@ -744,7 +744,7 @@ export const FAQS = [
   },
   {
     q: "근로계약서는 어떻게 쓰나요?",
-    a: "모든 요금제에서 고용노동부 표준 근로계약서 양식으로 작성하고, 사장님과 직원이 앱에서 확인·서명해요. 전자근로계약서는 월 1장 무료이고 추가 1장은 3,000원이에요. 공인 인증서 서명은 아니고, 로그인한 계정 확인과 성명·동의(선택적으로 손서명)를 기록해요.",
+    a: "모든 요금제에서 고용노동부 표준 근로계약서 양식으로 작성하고, 사장님과 직원이 앱에서 확인·서명해요. 전자근로계약서는 양측 서명으로 체결된 1건마다 3,000원(VAT 포함)이고, 철회·거절된 건은 0원이에요. 공인 인증서 서명은 아니고, 로그인한 계정 확인과 성명·동의(선택적으로 손서명)를 기록해요.",
   },
   {
     q: "로그인은 어떻게 하나요?",

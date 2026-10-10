@@ -44,6 +44,10 @@ let failure=null;
 try{
  const p=await browser.newPage({viewport:{width:390,height:844}});
  const errors=[];p.on('pageerror',e=>errors.push(e.message));
+ // 외부 광고 측정(메타 픽셀) 요청은 점검에서 막는다: 연결이 오래 열려 있으면 networkidle이 끝나지 않아 우리 화면과 상관없이 실패한다
+ await p.route(/(facebook\.(com|net)|fbcdn\.net)/,r=>r.abort());
+ const pending=new Map();p.on('request',r=>pending.set(r,Date.now()));p.on('requestfinished',r=>pending.delete(r));p.on('requestfailed',r=>pending.delete(r));
+ globalThis.__pending=()=>[...pending.entries()].map(([r,t])=>`${r.method()} ${r.url().replace(/[?#].*$/,'')} ${Date.now()-t}ms`).join(' | ');
  p.setDefaultTimeout(20000);
  // 1) 가입
  await p.goto(BASE+'/signup?role=owner&plan=basic',{waitUntil:'networkidle'});
@@ -73,5 +77,5 @@ try{
 }catch(e){failure=e;try{const pages=browser.contexts().flatMap(c=>c.pages());if(pages[0])await pages[0].screenshot({path:'smoke-failure.png',fullPage:true})}catch{}}
 finally{await browser.close()}
 try{await cleanup()}catch(e){failure=failure||e;console.error(e.message)}
-if(failure){console.error('배포 후 점검 실패:',failure.message);process.exit(1)}
+if(failure){console.error('배포 후 점검 실패:',failure.message);try{const x=globalThis.__pending?.();if(x)console.error('끝나지 않은 요청:',x.slice(0,1500))}catch{}process.exit(1)}
 log('배포 후 점검 통과');

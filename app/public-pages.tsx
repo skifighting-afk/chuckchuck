@@ -2,7 +2,7 @@
 import {useState} from 'react';
 import {CalendarDays,ClipboardCheck,FileText,QrCode,Wallet,Users,Store,Smartphone} from 'lucide-react';
 import {PricingPicker} from './pricing';
-import {plans,monthlyPrice,money,TRIAL_DAYS,CONTRACTS_FREE_PER_MONTH,CONTRACT_EXTRA_PRICE,type PlanId} from '../lib/plans';
+import {plans,monthlyPrice,money,TRIAL_DAYS,CONTRACTS_FREE_PER_MONTH,CONTRACT_EXTRA_PRICE,contractFeeText,type PlanId} from '../lib/plans';
 
 const ROWS:[string,string,string][]=[
  ['직원 수','제한 없음','제한 없음'],
@@ -10,12 +10,12 @@ const ROWS:[string,string,string][]=[
  ['출퇴근 기록 · 정정 승인','앱 버튼으로 기록','앱 버튼 + 매장 QR'],
  ['매장 QR 출퇴근 (30초마다 바뀌는 QR)','—','포함'],
  ['급여 계산 · 임금명세서 · 임금대장','포함','포함'],
- ['전자근로계약서',`월 ${CONTRACTS_FREE_PER_MONTH}장 무료 · 추가 ${money(CONTRACT_EXTRA_PRICE)}원`,`월 ${CONTRACTS_FREE_PER_MONTH}장 무료 · 추가 ${money(CONTRACT_EXTRA_PRICE)}원`],
+ ['전자근로계약서',contractFeeText(),contractFeeText()],
  ['휴가 · 공지 · 매장 매뉴얼','포함','포함'],
 ];
 
 const PLAN_FEATURES:Record<PlanId,string[]>={
- basic:['직원 수 제한 없음','근무표 · 대타·교대 요청','앱 버튼 출퇴근 · 정정 승인','급여 자동 계산 · 명세서 · 임금대장',`전자근로계약서 월 ${CONTRACTS_FREE_PER_MONTH}장 무료`,'휴가 · 공지 · 매장 매뉴얼','인건비 리포트 · 지점 비교(2지점 이상)'],
+ basic:['직원 수 제한 없음','근무표 · 대타·교대 요청','앱 버튼 출퇴근 · 정정 승인','급여 자동 계산 · 명세서 · 임금대장',`전자근로계약서 ${contractFeeText()}`,'휴가 · 공지 · 매장 매뉴얼','인건비 리포트 · 지점 비교(2지점 이상)'],
  pro:['베이직 기능 전부','매장 QR 찍어야 출퇴근 기록','30초마다 바뀌는 QR(대리 출근 막기)'],
 };
 /** 첫 화면·요금 안내에 쓰는 요금제 카드 두 장. 금액은 lib/plans.ts 그대로. */
