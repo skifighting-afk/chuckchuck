@@ -264,7 +264,7 @@ jobs:
       - name: 화면 배포 (GitHub Pages)
         id: pages
         if: steps.fresh.outputs.ok == 'yes' && steps.health.outcome == 'success'
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
       # 작업 004: 실제 주소에서 가입 → 가게 만들기 → 로그아웃 → 다시 로그인. 점검 계정은 끝나고 지운다.
       - uses: actions/setup-node@v4
         if: steps.fresh.outputs.ok == 'yes' && steps.cfg.outputs.supabase == 'yes'
