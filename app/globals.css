@@ -5,6 +5,7 @@
 @import "./personal-schedule.css";
 @import "./alignment.css";
 @import "./admin.css";
+@import "./hr/hr.css";
 
 @utility scrollbar-thin {
   scrollbar-width: thin;

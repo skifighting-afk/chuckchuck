@@ -1,4 +1,5 @@
 import {authLimit} from './auth-api';
+import {hrApi} from './hr/router';
 import {passwordApi} from './password-api';
 import {shareApi} from './share-api';
 import {supportApi} from './support-api';
@@ -75,6 +76,7 @@ async function route(request:Request,env:Env){
   const slow=()=>Response.json({error:'요청이 너무 많아요. 1분 뒤 다시 시도해 주세요.',code:'RATE_LIMITED'},{status:429,headers:{'Retry-After':'60','Cache-Control':'no-store'}});
   if(ip&&!await authLimit(env as any,'api-ip:'+ip,600,60000))return slow();
   if(uid&&request.method!=='GET'&&!await authLimit(env as any,'api-user:'+uid,300,60000))return slow();}
+ if(path.startsWith('/api/hr/'))return hrApi(request,env);
  if(path==='/api/ics')return icsApi(request,env);
  if(path==='/api/kakao-skill')return kakaoSkillApi(request,env as any);
  if(path==='/api/kiosk')return kioskApi(request,env);

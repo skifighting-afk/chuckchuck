@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';import {createHrFixture} from './hr-fixture.mjs';
+const F=await createHrFixture();let n=0;const eq=(a,b,l)=>{assert.deepEqual(a,b,l);console.log('PASS '+(++n)+' '+l)},w=(actor,action,b)=>F.call(actor,'/api/hr/items',F.command(action,b));
+try{
+ const employeeId=F.employeeId('staff'),before=JSON.stringify((await F.store()).employees);let out=await w('boss','issue',{employeeId,name:'유니폼',quantity:2,note:'상의 두 벌',dueAt:null});eq(out.status,201,'owner issues two uniforms');let r=out.body.record;
+ eq((await w('peer','ack',{id:r.id,version:r.version})).status,403,'colleague cannot acknowledge receipt');out=await w('staff','ack',{id:r.id,version:r.version});eq(out.status,200,'employee acknowledges own receipt');r=out.body.record;
+ const command=F.command('return',{id:r.id,version:r.version,quantity:1,note:'한 벌 반납'});out=await F.call('boss','/api/hr/items',command);eq(out.status,200,'partial return works');r=out.body.record;eq(r.issued-r.returned-r.lost,1,'one uniform remains');eq((await F.call('boss','/api/hr/items',command)).status,200,'return retry is idempotent');eq((await F.call('boss','/api/hr/items')).body.items[0].returned,1,'retry does not add a return');
+ eq((await w('boss','return',{id:r.id,version:r.version,quantity:2,note:''})).status,409,'return cannot exceed remainder');eq((await w('boss','lost',{id:r.id,version:r.version,quantity:1,note:''})).status,400,'lost item needs a reason');
+ const race=await Promise.all([w('boss','return',{id:r.id,version:r.version,quantity:1,note:''}),w('boss','return',{id:r.id,version:r.version,quantity:1,note:''})]);eq(race.map(x=>x.status).sort(),[200,409],'concurrent returns serialize and reject stale request');eq((await F.call('boss','/api/hr/items')).body.items[0].returned,2,'concurrent remainder is never negative');eq(JSON.stringify((await F.store()).employees),before,'issued item does not change wage');
+ out=await w('boss','issue',{employeeId,name:'출입키 A',quantity:1,note:'열쇠 별칭만 기록',dueAt:null});r=out.body.record;
+ await F.patchStore(d=>{const e=d.employees.find(e=>e.id===employeeId);e.status='퇴사';e.endDate='2026-01-01'});eq((await F.call('staff','/api/hr/items')).status,403,'departed employee cannot use HR');eq((await w('boss','return',{id:r.id,version:r.version,quantity:1,note:'퇴사 정리 반납'})).status,200,'owner can record departed employee return');
+ eq((await F.call('peer','/api/hr/items')).body.items.length,0,'colleague cannot inspect issued items');console.log('PASS: HR items '+n+' assertions');
+}finally{await F.close()}

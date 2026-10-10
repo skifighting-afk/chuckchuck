@@ -1,0 +1,10 @@
+CREATE TABLE hr_item_assignments (LIKE hr_buddy_assignments INCLUDING ALL);
+CREATE TABLE hr_item_events (LIKE hr_buddy_assignments INCLUDING ALL);
+ALTER TABLE hr_item_assignments ADD FOREIGN KEY(owner) REFERENCES stores(owner) ON UPDATE CASCADE ON DELETE CASCADE;
+ALTER TABLE hr_item_events ADD FOREIGN KEY(owner) REFERENCES stores(owner) ON UPDATE CASCADE ON DELETE CASCADE;
+ALTER TABLE hr_item_events ADD assignment_id text GENERATED ALWAYS AS (data->>'assignmentId') STORED NOT NULL;
+ALTER TABLE hr_item_events ADD FOREIGN KEY(owner,assignment_id) REFERENCES hr_item_assignments(owner,id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
+ALTER TABLE hr_item_assignments ADD CHECK((data->>'returned')::integer+(data->>'lost')::integer<=(data->>'issued')::integer);
+ALTER TABLE hr_item_assignments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE hr_item_events ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON hr_item_assignments,hr_item_events FROM anon,authenticated;

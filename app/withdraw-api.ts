@@ -52,6 +52,7 @@ export async function withdrawAction(request:Request,env:AuthEnv,b:any,linked:an
   const member=(data._members||[]).find((m:any)=>m.userId===id);
   data._members=(data._members||[]).filter((m:any)=>m.userId!==id);
   data._audit=[...(data._audit||[]),{id:crypto.randomUUID(),at:new Date().toISOString(),actor:{id,name:'직원',email:''},action:'직원 계정 탈퇴',target:member?.employeeId||'',before:null,after:null,reason:'직원 본인 탈퇴. 근무·급여 기록과 계약서는 사장님 보존 서류로 남음'}];
+  // The database trigger atomically revokes linked HR grants with membership removal.
   await env.DB.prepare('UPDATE stores SET data=?,version=version+1,updated_at=? WHERE owner=?').bind(JSON.stringify(data),new Date().toISOString(),linked.owner).run();
   // 지시서 200: 직원이 계정을 지우면 사장님께 알림(기록은 보존 서류로 남음)
   const nm=(data.employees||[]).find((e:any)=>e.id===member?.employeeId)?.name||'직원';await notifyUser(env as any,linked.owner,{title:`${nm}님이 앱 계정을 지웠어요`,body:'근무·급여 기록과 계약서는 보존 서류로 남아요. 퇴사했다면 직원 관리에서 퇴사 처리해 주세요.',url:'/app?screen=employees',kind:'staff'}).catch(()=>null);

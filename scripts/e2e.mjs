@@ -184,6 +184,14 @@ await step('작업 054: 직원 여러 명 붙여넣기 등록',async()=>{
  await owner.locator('.bulk-err').first().waitFor();await owner.click('button:has-text("1명 등록")');
  await owner.getByText(/직원 1명을 '입사 준비'로 등록했어요/).waitFor();await owner.getByText('붙임직원').first().waitFor();
 });
+// Keep the existing PWA registration assertions above. HR fault-injection
+// needs isolated contexts: worker-owned GETs bypass page.route on this fixture.
+const hrOwnerCtx=await browser.newContext({storageState:await ownerCtx.storageState(),serviceWorkers:'block',viewport:{width:1280,height:900},timezoneId:'Asia/Seoul',locale:'ko-KR'});
+const hrStaffCtx=await browser.newContext({...devices['iPhone 13'],storageState:await staffCtx.storageState(),serviceWorkers:'block',browserName:undefined,defaultBrowserType:undefined,timezoneId:'Asia/Seoul',locale:'ko-KR'});
+const hrOwner=await hrOwnerCtx.newPage(),hrStaff=await hrStaffCtx.newPage();watch(hrOwner);watch(hrStaff);extra=hrOwner;
+await (await import('./hr-e2e.mjs')).hrE2E({owner:hrOwner,staff:hrStaff,srv,step,staffName:STAFF.name});
+await hrOwnerCtx.close();await hrStaffCtx.close();extra=null;
+
 await step('다시 로그인 (로그아웃 후)',async()=>{
  await staff.goto(B+'/logout');await staff.waitForURL(/\/login/);await staff.goto(B+'/login?role=employee',{waitUntil:'networkidle'});
  await staff.fill('input[type=email]',STAFF.email);await staff.fill('input[aria-label="비밀번호"]',STAFF.password);await staff.locator('form button[type=submit]').click();

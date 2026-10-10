@@ -1,0 +1,4 @@
+export function HrEntry({demo=false,staff=false,branchId}:{demo?:boolean;staff?:boolean;branchId?:string}){
+ const href=(view:string)=>(demo?'/demo?screen=hr&role='+(staff?'employee':'owner')+'&':'/hr?')+'view='+view+(branchId?'&branch='+encodeURIComponent(branchId):'');
+ return <section className="panel t-gap"><div className="panel-heading"><h2>{staff?'함께 일하는 과정':'사람·교육'}</h2></div><div className="t-panelbody"><p>{staff?'내 교육부터 근무 희망, 의견과 받은 물품까지 확인해요.':'채용과 교육, 희망 근무량과 면담을 매장별로 이어가요. 담당 권한은 별도로 지정해요.'}</p><div className="hr-entry-links">{(staff?[['training','내 교육·숙련도'],['staffing','근무 희망'],['cases','의견·상담'],['items','받은 물품']]:[['hiring','채용·입사 준비'],['training','교육·숙련도'],['staffing','근무량·배정 균형'],['meetings','면담·약속']]).map(([view,label])=><a key={view} href={href(view)}>{label} →</a>)}</div></div></section>;
+}

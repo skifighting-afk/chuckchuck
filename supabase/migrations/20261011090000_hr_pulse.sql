@@ -1,0 +1,10 @@
+CREATE TABLE hr_pulse_campaigns (LIKE hr_buddy_assignments INCLUDING ALL);
+CREATE TABLE hr_pulse_answers (LIKE hr_buddy_assignments INCLUDING ALL);
+ALTER TABLE hr_pulse_campaigns ADD FOREIGN KEY(owner) REFERENCES stores(owner) ON UPDATE CASCADE ON DELETE CASCADE;
+ALTER TABLE hr_pulse_answers ADD FOREIGN KEY(owner) REFERENCES stores(owner) ON UPDATE CASCADE ON DELETE CASCADE;
+ALTER TABLE hr_pulse_answers ADD campaign_id text GENERATED ALWAYS AS (data->>'campaignId') STORED NOT NULL;
+ALTER TABLE hr_pulse_answers ADD FOREIGN KEY(owner,campaign_id) REFERENCES hr_pulse_campaigns(owner,id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
+CREATE UNIQUE INDEX hr_pulse_person ON hr_pulse_answers(owner,campaign_id,(data->>'employeeId'));
+ALTER TABLE hr_pulse_campaigns ENABLE ROW LEVEL SECURITY;
+ALTER TABLE hr_pulse_answers ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON hr_pulse_campaigns,hr_pulse_answers FROM anon,authenticated;

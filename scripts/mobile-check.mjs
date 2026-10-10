@@ -13,7 +13,7 @@ const ctx=await browser.newContext({viewport:{width:390,height:844},deviceScaleF
 // 날짜·시각처럼 매일 바뀌는 값 때문에 비교가 흔들리지 않게 시계를 고정
 await ctx.addInitScript(()=>{const fixed=Date.parse('2026-10-05T10:00:00+09:00'),D=Date;class F extends D{constructor(...a){super(...(a.length?a:[fixed]))}static now(){return fixed}};globalThis.Date=F});
 const pages=[['public-home','/'],['public-start','/start'],['public-login','/login'],['public-signup','/signup?role=owner'],['public-calculator','/calculator'],['public-help','/help'],['public-refund','/refund'],['public-terms','/terms'],['public-pricing','/pricing'],['public-status','/status'],['public-privacy','/privacy'],['public-policy','/policy'],['public-news','/news'],['public-privacy-request','/privacy-request'],['public-accessibility','/accessibility'],
- ...['home','employees','attendance','schedule','payroll','contracts','retirement','outbox','operations','manual','reports','stores','settings','guide'].map(s=>['demo-'+s,'/demo?screen='+s]),['demo-staff','/demo?role=employee']];
+ ...['home','employees','attendance','schedule','payroll','contracts','retirement','outbox','operations','manual','reports','stores','settings','guide'].map(s=>['demo-'+s,'/demo?screen='+s]),['demo-staff','/demo?role=employee'],...['hiring','training','staffing','meetings','cases','pulse','items','settings','export'].flatMap(view=>['owner','employee','manager'].map(role=>['hr-'+view+'-'+role,'/demo?screen=hr&view='+view+'&role='+role]))];
 const failures=[],report={};
 const page=await ctx.newPage();
 for(const [name,path] of pages){

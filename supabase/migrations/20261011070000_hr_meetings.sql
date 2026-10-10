@@ -1,0 +1,14 @@
+CREATE TABLE hr_meetings (LIKE hr_buddy_assignments INCLUDING ALL);
+CREATE TABLE hr_meeting_actions (LIKE hr_buddy_assignments INCLUDING ALL);
+CREATE TABLE hr_meeting_comments (LIKE hr_buddy_assignments INCLUDING ALL);
+ALTER TABLE hr_meetings ADD FOREIGN KEY(owner) REFERENCES stores(owner) ON UPDATE CASCADE ON DELETE CASCADE;
+ALTER TABLE hr_meeting_actions ADD FOREIGN KEY(owner) REFERENCES stores(owner) ON UPDATE CASCADE ON DELETE CASCADE;
+ALTER TABLE hr_meeting_comments ADD FOREIGN KEY(owner) REFERENCES stores(owner) ON UPDATE CASCADE ON DELETE CASCADE;
+ALTER TABLE hr_meeting_actions ADD meeting_id text GENERATED ALWAYS AS (data->>'meetingId') STORED NOT NULL;
+ALTER TABLE hr_meeting_comments ADD meeting_id text GENERATED ALWAYS AS (data->>'meetingId') STORED NOT NULL;
+ALTER TABLE hr_meeting_actions ADD FOREIGN KEY(owner,meeting_id) REFERENCES hr_meetings(owner,id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
+ALTER TABLE hr_meeting_comments ADD FOREIGN KEY(owner,meeting_id) REFERENCES hr_meetings(owner,id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
+ALTER TABLE hr_meetings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE hr_meeting_actions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE hr_meeting_comments ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON hr_meetings,hr_meeting_actions,hr_meeting_comments FROM anon,authenticated;

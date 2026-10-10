@@ -17,6 +17,7 @@ import {loadAttendance} from './attendance-store';
 import {closingMissed,noticeReminders,absenceAlerts,careDays,leavePromotion} from '../lib/ops-alerts';
 import {ratesFor,hasRatesFor} from '../lib/pay-rules';
 import {sendAlimtalk} from '../lib/alimtalk-send';
+import {hrDeadlineSweep} from './hr/lifecycle';
 const json=(d:any,status=200)=>Response.json(d,{status,headers:{'Cache-Control':'no-store'}});
 function same(a:string,b:string){if(a.length!==b.length)return false;let r=0;for(let i=0;i<a.length;i++)r|=a.charCodeAt(i)^b.charCodeAt(i);return r===0}
 export async function trialReminders(env:any,now=Date.now(),notify=(uid:string,m:any)=>notifyUser(env,uid,m)){
@@ -42,8 +43,9 @@ export async function cronApi(request:Request,env:any){
  const contracts=await contractReminders(env).catch(()=>0);
  const backups=await weeklyBackups(env).catch(()=>0);
  const raises=await applyRaises(env).catch(()=>0);
+ const hr=await hrDeadlineSweep(env);
  await env.DB.prepare('DELETE FROM notifications WHERE created_at<?').bind(new Date(Date.now()-90*86400000).toISOString()).run().catch(()=>{});
- return json({ok:true,reminders,deletions,contracts,backups,raises});
+ return json({ok:true,reminders,deletions,contracts,backups,raises,hr});
 }
 
 /** 지시서 045: 예약한 시급 인상을 그날 반영 */

@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const text=readFileSync('.github/workflows/deploy.yml','utf8'),deploy=text.slice(text.indexOf('\n  deploy:'));
+const steps=['name: DB 마이그레이션','name: 서버 함수 배포','name: 배포 확인','name: 화면 배포 (GitHub Pages)'].map(s=>deploy.indexOf(s));
+assert(steps.every(n=>n>=0)&&steps.every((n,i)=>!i||n>steps[i-1]),'database → server → health → frontend order');
+const pages=deploy.slice(steps[3],deploy.indexOf('\n      - ',steps[3]));
+assert(pages.includes("steps.health.outcome == 'success'"),'frontend requires successful health');
+assert(deploy.includes('Supabase 비밀값 없음: 배포 중단'),'missing server credentials must fail closed');
+assert(deploy.includes('git ls-remote origin refs/heads/main'),'preserve latest-main check');
+console.log('PASS: HR deploy database/server/health/frontend gates');

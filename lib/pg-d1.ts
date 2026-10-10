@@ -42,6 +42,8 @@ export class PgD1 {
   client: PgClient;
   constructor(client: PgClient) { this.client = client; }
   prepare(query: string) { return new Statement(this, query); }
+  /** 조건 확인과 여러 변경을 같은 PostgreSQL 트랜잭션으로 실행한다. */
+  async transaction<T>(fn: (tx: PgD1) => Promise<T>): Promise<T> { return this.client.begin(tx => fn(new PgD1(tx))); }
   /** D1 batch는 하나의 트랜잭션이다. */
   async batch(statements: Statement[]) { return this.client.begin(async tx => { const out: Result[] = []; for (const s of statements) out.push(await s.exec(tx)); return out; }); }
   async exec(query: string) { await this.client.unsafe(query); return {count: 1, duration: 0}; }

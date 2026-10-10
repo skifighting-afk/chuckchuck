@@ -33,6 +33,7 @@ export async function exportApi(request: Request, env: {DB: D1Database}) {
     const body = {
       exportedAt: new Date().toISOString(),
       format: 'chukchuk-store-export/1',
+      hrExport: {url:'/hr?view=export',note:'채용·교육·면담·의견·상담·만족도·지급품은 포함하지 않아요. 사람·교육에서 범위를 선택해 별도로 내려받으세요.'},
       note: '근로계약서·임금명세서·출퇴근 기록은 근로기준법 제42조에 따라 3년간 보존해야 합니다. 이 파일을 안전한 곳에 보관하세요. 휴가 증빙 파일 본문은 들어 있지 않습니다(목록만).',
       store: data,
       contracts: contracts.map(c => ({...c, document_json: parse(c.document_json), owner_signature: parse(c.owner_signature), employee_signature: parse(c.employee_signature), events: events.filter(e => e.envelope_id === c.id).map(e => ({...e, record_json: parse(e.record_json)}))})),

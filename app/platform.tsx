@@ -31,6 +31,7 @@ const Help=lazy(()=>import('./help').then(x=>({default:x.Help})));
 const LiveQr=lazy(()=>import('./live-qr').then(x=>({default:x.LiveQr})));
 const Withdraw=lazy(()=>import('./withdraw').then(x=>({default:x.Withdraw})));
 const TeamApp=lazy(()=>import('./team'));
+const HrWorkspace=lazy(()=>import('./hr/workspace').then(x=>({default:x.HrWorkspace})));
 // 가이드 93: 약관·요금·상태 화면은 열 때만 불러온다
 const LegalPage=lazy(()=>import('./legal-page').then(x=>({default:x.LegalPage})));
 const PricingPage=lazy(()=>import('./public-pages').then(x=>({default:x.PricingPage})));
@@ -79,7 +80,7 @@ export default function Platform(){
  if(path==='/kiosk')return <KioskPage/>;
  if(path==='/logout')return <Logout/>;
  if(path==='/start')return <Start/>;
- if(path==='/demo'||path==='/try')return <TeamApp demo/>;
+ if(path==='/demo'||path==='/try')return query.get('screen')==='hr'?<HrWorkspace demo/>:<TeamApp demo/>;
  if(path==='/terms'||path==='/privacy')return <Shell><LegalPage privacy={path==='/privacy'}/></Shell>;
  if(path==='/privacy-request')return <Shell><PrivacyRequest/></Shell>;
  if(path==='/news')return <Shell><NewsPage/></Shell>;
@@ -103,6 +104,7 @@ export default function Platform(){
  if(!account.onboarded&&(qrEntry||account.user.role==='employee'))return <Shell><StaffJoin returnTo={qrEntry||"/app"}/></Shell>;
  if(!account.onboarded)return <Onboarding offers={account.transferOffers} onDone={()=>location.assign('/app')} email={account.user.email} initial={planId(query.get('plan'))||'pro'}/>;
  if(path==='/signup'||path==='/account')return <Account data={account} reload={reload}/>;
+ if(path==='/hr')return <Shell><HrWorkspace/></Shell>;
  return <><IncidentBanner staff={account.access!=='owner'}/><StoreSwitcher stores={account.stores} current={account.currentStore}/>{account.access==='owner'&&<><ServiceNotices notices={account.serviceNotices}/><TrialBanner account={account.account}/></>}{account.storeClosingAt&&<div className="closing-banner" role="status">{account.access==='owner'?<>탈퇴를 예약해 {new Date(account.storeClosingAt).toLocaleDateString('ko-KR')}에 가게 데이터가 삭제돼요. 지금은 읽기 전용이에요. <a href="/withdraw">예약 취소</a></>:<>이 가게는 {new Date(account.storeClosingAt).toLocaleDateString('ko-KR')}에 서비스에서 삭제될 예정이에요. 그 전에 <a href="/contracts">내 근로계약서와 임금명세서</a>를 내려받아 두세요.</>}</div>}<div className="account-strip"><a href="/account"><Store size={15}/>{account.storeName}<span>{account.access==='owner'?'계정·요금제':'내 계정'}</span></a>{account.hq&&<a href="/admin">본사 관리</a>}<span>{account.access==='employee'?'직원 계정':account.access==='manager'?'매니저 계정':account.account?.status==='active'?'이용 중':account.account?.status==='trialing'?`무료 체험 · ${Math.max(0,Math.ceil((+new Date(account.account.trialEndsAt)-Date.now())/86400000))}일 남음`:account.account?.status==='expired'||account.account?.status==='cancelled'?'체험 종료 · 조회 가능':'사전 운영'}</span><a href="/help">도움말</a><InstallButton/><TextSizeToggle/><ThemeToggle/><a href={account.user.authMethod==='email'?'/logout':signOut} target="_top"><LogOut size={14}/>로그아웃</a></div><TeamApp/></>;
 }
 function ConsentGate({onDone}:{onDone:()=>Promise<void>}){
