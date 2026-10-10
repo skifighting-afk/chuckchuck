@@ -67,7 +67,7 @@ export const SEO_META: Record<string, SeoMeta> = {
   "/pricing": {
     title: "이용 요금 | 척척사장 요금제",
     description:
-      "베이직 월 9,900원부터, 프로(QR 출퇴근) 월 14,900원부터(1지점, VAT 포함). 직원 수 제한 없이 지점 수로만 요금이 정해지고, 가입 후 30일은 무료예요.",
+      "직원 1명당 월 베이직 2,900원, 프로(QR 출퇴근) 3,900원(VAT 포함). 지점 수와 결제 기간에 따른 할인은 없어요. 가입 후 30일은 무료예요.",
     keywords: "척척사장 요금, 매장 관리 요금제, 출퇴근 관리 가격, 소상공인 요금",
   },
   "/guide": {
@@ -637,24 +637,13 @@ export interface Plan {
 }
 
 // 요금은 운영 앱 lib/plans.ts와 같아야 한다(scripts/check-claims.mjs가 비교). 모든 금액은 VAT 포함.
-export const PLAN_TIERS = {
-  basic: [[1, 9900], [3, 14900], [5, 18900]] as [number, number][],
-  pro: [[1, 14900], [3, 19900], [5, 23900]] as [number, number][],
-};
-export const EXTRA_PER_BRANCH = 3900;
+// 2026-10-10 결정: 직원 1명당 월 요금(VAT 포함). 지점 칸·결제 기간 할인 없음. 앱 결제 연결 전까지 이 값은 안내용.
+export const EMPLOYEE_PRICE = { basic: 2900, pro: 3900 } as const;
 export const CONTRACT_FREE_PER_MONTH = 0;
 export const CONTRACT_EXTRA_PRICE = 3000;
-export const TERM_DISCOUNTS = [
-  { months: 1, rate: 0 },
-  { months: 6, rate: 0.1 },
-  { months: 12, rate: 0.2 },
-];
-/** 지점 수에 맞는 월 요금(VAT 포함). 6지점부터 지점당 추가. */
-export function monthlyPrice(plan: keyof typeof PLAN_TIERS, branches: number) {
-  const tiers = PLAN_TIERS[plan];
-  for (const [upTo, price] of tiers) if (branches <= upTo) return price;
-  const [last, top] = tiers[tiers.length - 1];
-  return top + (branches - last) * EXTRA_PER_BRANCH;
+/** 직원 수에 맞는 월 요금(VAT 포함). 직원 한 명 이상으로 계산. */
+export function monthlyPrice(plan: keyof typeof EMPLOYEE_PRICE, employees = 1) {
+  return EMPLOYEE_PRICE[plan] * Math.max(1, Math.floor(employees) || 1);
 }
 const won = (v: number) => `${v.toLocaleString("ko-KR")}원`;
 
@@ -672,10 +661,10 @@ export const PLANS: Plan[] = [
     id: "basic",
     name: "베이직",
     tagline: "근무표·급여·계약을 한곳에서",
-    limit: `2~3지점 ${won(monthlyPrice("basic", 3))} · 4~5지점 ${won(monthlyPrice("basic", 5))}`,
-    price: `월 ${won(monthlyPrice("basic", 1))}`,
-    priceNote: "1지점 · VAT 포함",
-    total: `6지점부터 지점당 월 ${won(EXTRA_PER_BRANCH)} 추가`,
+    limit: "직원 수만큼 곱해요",
+    price: `직원 1명당 월 ${won(monthlyPrice("basic", 1))}`,
+    priceNote: "VAT 포함 · 지점·기간 할인 없음",
+    total: "직원 수 제한 없음",
     highlight: false,
     cta: "30일 무료로 시작하기",
     url: EXTERNAL.starter,
@@ -686,10 +675,10 @@ export const PLANS: Plan[] = [
     id: "pro",
     name: "프로",
     tagline: "베이직 전부 + 매장 QR 출퇴근",
-    limit: `2~3지점 ${won(monthlyPrice("pro", 3))} · 4~5지점 ${won(monthlyPrice("pro", 5))}`,
-    price: `월 ${won(monthlyPrice("pro", 1))}`,
-    priceNote: "1지점 · VAT 포함",
-    total: `6지점부터 지점당 월 ${won(EXTRA_PER_BRANCH)} 추가`,
+    limit: "직원 수만큼 곱해요",
+    price: `직원 1명당 월 ${won(monthlyPrice("pro", 1))}`,
+    priceNote: "VAT 포함 · 지점·기간 할인 없음",
+    total: "직원 수 제한 없음",
     highlight: true,
     cta: "30일 무료로 시작하기",
     url: EXTERNAL.team,
@@ -702,7 +691,7 @@ export const PRICING_VAT_NOTE =
   "안내된 모든 요금은 VAT 포함 금액이에요. 6개월 구독은 10%, 12개월 구독은 20% 할인돼요.";
 
 export const PRICING_LIMIT_NOTE =
-  "직원 수는 제한이 없어요. 요금은 지점(매장) 수로만 정해져요.";
+  "직원 수는 제한이 없어요. 요금은 직원 1명당 월 금액을 직원 수만큼 곱해요.";
 
 // 순서(번호)는 다른 페이지가 FAQS[n]으로 골라 쓰므로 바꾸지 않는다. 답은 운영 앱 도움말(lib/faq.ts)과 맞춘다.
 export const FAQS = [
@@ -732,7 +721,7 @@ export const FAQS = [
   },
   {
     q: "지점이 여러 곳이에요.",
-    a: "요금은 지점 수 구간으로 정해져요. 1지점, 2~3지점, 4~5지점 요금이 있고 6지점부터는 지점당 월 3,900원이 더해져요. 앱에서 지점별 화면을 바꿔 가며 관리하고 지점끼리 비교할 수 있어요.",
+    a: "요금은 지점 수와 상관없어요. 직원 1명당 월 요금이고, 지점 칸이나 결제 기간 할인은 없어요. 앱에서 지점별 화면을 바꿔 가며 관리하고 지점끼리 비교할 수 있어요(지점 2곳 이상).",
   },
   {
     q: "휴가 신청도 되나요?",
@@ -740,7 +729,7 @@ export const FAQS = [
   },
   {
     q: "직원 수 제한이 있나요?",
-    a: "없어요. 요금은 지점 수로만 정해지고, 직원은 몇 명이든 같은 요금이에요.",
+    a: "없어요. 직원 수는 몇 명이든 괜찮아요. 요금은 직원 1명당 월 금액이에요.",
   },
   {
     q: "근로계약서는 어떻게 쓰나요?",

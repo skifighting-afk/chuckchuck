@@ -176,6 +176,14 @@ $('#share').addEventListener('click', async () => {
   }
 });
 
+// 9. 시연 GIF: 누르면 크게 보기, 다시 누르거나 Esc로 닫기
+$$<HTMLButtonElement>('.gif-zoom').forEach(b => b.addEventListener('click', () => {
+  const box = b.closest('.gif-box') as HTMLElement, on = !box.classList.contains('big');
+  $$('.gif-box.big').forEach(x => { x.classList.remove('big'); x.querySelector('.gif-zoom')!.textContent = '크게 보기'; });
+  if (on) { box.classList.add('big'); b.textContent = '닫기'; }
+}));
+addEventListener('keydown', e => { if (e.key === 'Escape') $$('.gif-box.big').forEach(x => { x.classList.remove('big'); x.querySelector('.gif-zoom')!.textContent = '크게 보기'; }); });
+
 // 11. 커서 이름표 (마우스일 때만)
 const cur = $('#cursor');
 if (matchMedia('(pointer: fine)').matches) {

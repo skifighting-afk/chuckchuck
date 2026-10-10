@@ -88,22 +88,26 @@
     <article class="demo4-card">
       <p class="demo4-tag">01 · 근무표</p>
       <p class="demo4-feel">“토요일 밤마다 카톡으로 근무표 돌리느라 잠 못 자요.”</p>
-      <img class="demo4-gif" src="{{BASE}}home/img/demo-01.gif" width="520" height="260" alt="근무표 가상 시연: 지난주 근무표를 열고, 그대로 복사해, 칸을 확인한 뒤 직원에게 공개해요." loading="lazy">
+      <figure class="gif-box"><img class="demo4-gif" src="{{BASE}}home/img/demo-01.gif" width="760" height="270" alt="근무표 가상 시연: 지난주 근무표를 열고, 그대로 복사해, 칸을 확인한 뒤 직원에게 공개해요." loading="lazy"><button type="button" class="gif-zoom">크게 보기</button></figure>
+      <ol class="demo4-steps"><li><b>1</b> 지난주 근무표 열기</li><li><b>2</b> 그대로 복사</li><li><b>3</b> 이번 주 칸 확인</li><li><b>4</b> 직원에게 공개</li></ol>
     </article>
     <article class="demo4-card">
       <p class="demo4-tag">02 · 출퇴근</p>
       <p class="demo4-feel">“저 찍었는데요?” 말싸움, 이제 그만하고 싶어요.</p>
-      <img class="demo4-gif" src="{{BASE}}home/img/demo-02.gif" width="520" height="260" alt="출퇴근 가상 시연: 직원이 출근을 찍고, 기록이 1분 단위로 남고, 빠뜨린 기록은 정정 요청으로 올리고, 사장님이 승인해요." loading="lazy">
+      <figure class="gif-box"><img class="demo4-gif" src="{{BASE}}home/img/demo-02.gif" width="760" height="270" alt="출퇴근 가상 시연: 직원이 출근을 찍고, 기록이 1분 단위로 남고, 빠뜨린 기록은 정정 요청으로 올리고, 사장님이 승인해요." loading="lazy"><button type="button" class="gif-zoom">크게 보기</button></figure>
+      <ol class="demo4-steps"><li><b>1</b> 직원이 출근 버튼 찍기</li><li><b>2</b> 기록이 1분 단위로 남음</li><li><b>3</b> 빠뜨린 기록은 정정 요청</li><li><b>4</b> 사장님이 승인</li></ol>
     </article>
     <article class="demo4-card">
       <p class="demo4-tag">03 · 대타·교대</p>
       <p class="demo4-feel">“토요일 누구 대타 없나요?” 단톡방이 밤새 울려요.</p>
-      <img class="demo4-gif" src="{{BASE}}home/img/demo-03.gif" width="520" height="260" alt="대타·교대 가상 시연: 직원이 대타를 요청하고, 상대가 수락하고, 사장님이 승인하면 근무표에 반영돼요." loading="lazy">
+      <figure class="gif-box"><img class="demo4-gif" src="{{BASE}}home/img/demo-03.gif" width="760" height="270" alt="대타·교대 가상 시연: 직원이 대타를 요청하고, 상대가 수락하고, 사장님이 승인하면 근무표에 반영돼요." loading="lazy"><button type="button" class="gif-zoom">크게 보기</button></figure>
+      <ol class="demo4-steps"><li><b>1</b> 직원이 대타 요청</li><li><b>2</b> 상대 직원이 수락</li><li><b>3</b> 사장님 승인 대기</li><li><b>4</b> 승인하면 근무표 자동 반영</li></ol>
     </article>
     <article class="demo4-card">
       <p class="demo4-tag">04 · 급여·명세서</p>
       <p class="demo4-feel">“월급날 주휴수당 계산하다 날 샌 적 있으시죠?”</p>
-      <img class="demo4-gif" src="{{BASE}}home/img/demo-04.gif" width="520" height="260" alt="급여·명세서 가상 시연: 근무 기록을 모으고, 주휴수당을 넣고, 공제를 설정대로 빼고, 명세서를 내요." loading="lazy">
+      <figure class="gif-box"><img class="demo4-gif" src="{{BASE}}home/img/demo-04.gif" width="760" height="270" alt="급여·명세서 가상 시연: 근무 기록을 모으고, 주휴수당을 넣고, 공제를 설정대로 빼고, 명세서를 내요." loading="lazy"><button type="button" class="gif-zoom">크게 보기</button></figure>
+      <ol class="demo4-steps"><li><b>1</b> 근무 기록 집계</li><li><b>2</b> 주휴수당 자동 포함</li><li><b>3</b> 4대보험·세금 설정대로 공제</li><li><b>4</b> 명세서 발급</li></ol>
     </article>
   </div>
 </section>
@@ -253,7 +257,7 @@
     <form class="calc-form" id="calc-form" novalidate>
       <fieldset class="seg"><legend>기준 연도</legend>
         <label><input type="radio" name="year" id="yr-2026" value="2026" checked><span>2026년</span></label>
-        <label><input type="radio" name="year" id="yr-2027" value="2027"><span>2027년</span></label>
+        <label><input type="radio" name="year" id="yr-2027" value="2027" disabled><span>2027년 (미정)</span></label>
       </fieldset>
       <label class="field" for="c-wage"><span>시급</span><span class="in"><input id="c-wage" inputmode="numeric" value="{{MINWAGE}}" autocomplete="off"><em>원</em></span><small id="c-min">최저임금 {{MINWAGE_TEXT}}원</small></label>
       <label class="field" for="c-hours"><span>하루 근무</span><span class="in"><input id="c-hours" type="number" min="1" max="12" step="0.5" value="6"><em>시간</em></span><small>휴게 시간을 뺀 시간</small></label>
@@ -269,7 +273,8 @@
         <label><input type="radio" name="deduct" id="dd-33" value="3.3"><span>3.3% (프리랜서)</span></label>
       </fieldset>
       <label class="field" for="c-night"><span>야간 근무 (밤 10시~아침 6시)</span><span class="in"><input id="c-night" type="number" inputmode="decimal" min="0" max="168" step="0.5" value="0"><em>시간</em></span><small>주당 시간. 5명 이상 사업장만 50% 가산해요</small></label>
-      <p class="rec"><b>추천 = 근로기준법 기준.</b> 5명 이상 · 4대보험 적용이에요. 연장·야간 가산과 주휴수당을 법대로 넣어요. <button type="button" class="btn btn-sm btn-ghost" id="rec-apply">추천 설정으로</button></p>
+      <p class="rec"><b>추천 설정</b>은 5명 이상, 4대보험 적용이에요. 근로기준법 가산(연장·야간)은 5명 이상 사업장에 적용되고, 4대보험 가입은 사업장과 근로자 조건에 따라 달라요. 실제 조건을 골라 주세요. <button type="button" class="btn btn-sm btn-ghost" id="rec-apply">추천 설정으로</button></p>
+      <p class="rec fine">검증 범위: 주휴(근로기준법 제55조)와 가산 기준(제56조)은 법 조문 기준이에요. 2026 4대보험 요율과 최저임금은 2차 안내 자료로 확인했고, 공식 고시 원문 대조는 아직이에요. 2027년은 기준이 정해지지 않아 계산하지 않아요.</p>
     </form>
     <article class="result" id="result" aria-live="polite">
       <p class="r-label">우리 가게 한 달 인건비 <span class="demo">계산 결과</span></p>

@@ -4,7 +4,6 @@ import SectionLabel from "@/components/base/SectionLabel";
 import Seo from "@/components/base/Seo";
 import PageHero from "@/components/feature/PageHero";
 import PlanCard from "@/components/feature/PlanCard";
-import PricingCalculator from "@/components/feature/PricingCalculator";
 import FaqAccordion from "@/components/feature/FaqAccordion";
 import FinalCta from "@/pages/home/components/FinalCta";
 import {
@@ -28,7 +27,7 @@ const COMPARE: [string, string, string][] = [
   ["여러 지점 비교", "지점 2곳 이상", "지점 2곳 이상"],
 ];
 
-const TIER_ROWS: [string, number][] = [["1지점", 1], ["2~3지점", 3], ["4~5지점", 5]];
+const TIER_ROWS: [string, number][] = [["직원 1명", 1], ["직원 5명", 5], ["직원 10명", 10]];
 
 const PRICING_NOTES = [
   {
@@ -57,14 +56,14 @@ export default function Pricing() {
     <>
       <Seo
         title="이용 요금 | 척척사장 요금제"
-        description="척척사장 요금제는 베이직(1지점 월 9,900원부터)과 프로(QR 출퇴근 포함, 1지점 월 14,900원부터) 두 가지예요. 모든 금액 VAT 포함, 직원 수 제한 없음, 가입 후 30일 무료."
+        description="척척사장 요금제는 베이직(직원 1명당 월 2,900원부터)과 프로(QR 출퇴근 포함, 직원 1명당 월 3,900원부터) 두 가지예요. 모든 금액 VAT 포함, 직원 수 제한 없음, 가입 후 30일 무료."
         path="/pricing"
         keywords="척척사장 요금, 매장 관리 요금, 출퇴근 관리 가격, 소상공인 요금제"
       />
       <PageHero
         label="이용 요금"
         title="가게 규모에 맞춰 고르세요"
-        lead="베이직과 프로 두 가지예요. 직원 수 제한 없이 지점 수로만 요금이 정해지고, 가입 후 30일은 카드 등록 없이 무료예요."
+        lead="베이직과 프로 두 가지예요. 직원 1명당 월 요금이고 지점 수로는 요금이 달라지지 않고, 가입 후 30일은 카드 등록 없이 무료예요."
         actions={
           <a
             href={EXTERNAL.demo}
@@ -130,25 +129,6 @@ export default function Pricing() {
               </tbody>
             </table>
           </Reveal>
-        </Container>
-      </section>
-
-      <section className="border-t border-background-200 bg-background-50 py-16 md:py-20">
-        <Container>
-          <div className="grid gap-8 lg:grid-cols-[1fr_1.1fr] lg:items-start lg:gap-14">
-            <Reveal>
-              <SectionLabel>요금 계산</SectionLabel>
-              <h2 className="mt-4 font-heading text-[28px] font-bold leading-[1.24] tracking-tight text-foreground-950 md:text-[36px]">
-                내 가게는 얼마일까요
-              </h2>
-              <p className="mt-4 text-[18px] leading-relaxed text-foreground-700">
-                요금제, 지점 수, 구독 기간을 고르면 결제 금액을 바로 보여 드려요. 6개월은 10%, 12개월은 20% 할인돼요.
-              </p>
-            </Reveal>
-            <Reveal delay={80}>
-              <PricingCalculator />
-            </Reveal>
-          </div>
         </Container>
       </section>
 
