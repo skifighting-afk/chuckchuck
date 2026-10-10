@@ -10,7 +10,7 @@ export function TrialBanner({account}:{account:any}){
  if(typeof account?.graceLeft==='number')return <div className="trial-banner 1d" role="alert">정기 결제가 되지 않았어요. {account.graceLeft>0?`${account.graceLeft}일 동안은 그대로 쓸 수 있어요.`:'지금은 조회·내려받기만 돼요.'} 카드를 확인하거나 결제 수단을 바꿔 주세요. <a href="/account#checkout-title">결제 수단 확인 →</a></div>;
  const n=account?.notice;if(!n?.level)return null;
  const text=n.level==='ended'?'무료 체험이 끝났어요. 기록 조회와 내려받기는 계속 돼요.':n.level==='1d'?'무료 체험이 내일 끝나요.':`무료 체험이 ${n.daysLeft}일 남았어요.`;
- return <div className={'trial-banner '+n.level} role="status">{text} 자동으로 결제되지 않아요. <a href="/account#checkout-title">결제하기 →</a></div>
+ return <div className={'trial-banner '+n.level} role="status">{text} 자동으로 결제되지 않아요. {!(window as any).Capacitor?.isNativePlatform?.()&&<a href="/account#checkout-title">결제하기 →</a>}</div>
 }
 export function PlanChangeQuote({a,plan,branches,months}:{a:any,plan:PlanId,branches:number,months:1|6|12}){
  if(a.status!=='active'||!a.periodStart)return <p className="saas-fine">{a.status==='trialing'?'체험 중에는 차액 없이 바로 바뀌어요.':'결제를 연결하기 전이라 차액이 청구되지 않아요.'}</p>;

@@ -348,3 +348,4 @@ async function join(request:Request,env:Env,userId:string){
 
 
 
+export {notifyUser};// 테스트용(앱 알림 검사)

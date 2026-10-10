@@ -26,9 +26,13 @@ const env = {
   SOLAPI_API_KEY: read('SOLAPI_API_KEY'), SOLAPI_API_SECRET: read('SOLAPI_API_SECRET'), SOLAPI_PFID: read('SOLAPI_PFID'), SOLAPI_SENDER: read('SOLAPI_SENDER'), ALIMTALK_TEMPLATES: read('ALIMTALK_TEMPLATES'), KAKAO_SKILL_KEY: read('KAKAO_SKILL_KEY'),
   // 토스페이먼츠 결제(키가 없으면 결제하기가 잠김)
   TOSS_CLIENT_KEY: read('TOSS_CLIENT_KEY'), TOSS_SECRET_KEY: read('TOSS_SECRET_KEY'),
+  // 스토어 앱 알림(안드로이드 FCM 서비스 계정 JSON, 아이폰 APNs .p8 키)
+  FCM_SERVICE_ACCOUNT: read('FCM_SERVICE_ACCOUNT'), APNS_KEY: read('APNS_KEY'), APNS_KEY_ID: read('APNS_KEY_ID'), APNS_TEAM_ID: read('APNS_TEAM_ID'), APNS_BUNDLE_ID: read('APNS_BUNDLE_ID'), APNS_SANDBOX: read('APNS_SANDBOX'),
 };
 // 허용할 화면 주소. 여러 개면 쉼표로 구분하고, 첫 번째가 메일 링크 등에 쓰는 대표 주소다.
-const origins = (read('APP_ORIGIN') || '').split(',').map(s => s.trim().replace(/\/$/, '')).filter(Boolean);
+// 스토어 앱(Capacitor) 화면 주소: 아이폰 capacitor://localhost, 안드로이드 https://localhost — 대표 주소(첫 번째) 뒤에 붙인다
+const nativeOrigins = (read('APP_NATIVE_ORIGINS') || 'capacitor://localhost,https://localhost').split(',').map(s => s.trim()).filter(Boolean);
+const origins = [...(read('APP_ORIGIN') || '').split(',').map(s => s.trim().replace(/\/$/, '')).filter(Boolean), ...nativeOrigins];
 
 Deno.serve(async (req: Request) => {
   const origin = req.headers.get('origin');
@@ -48,8 +52,11 @@ Deno.serve(async (req: Request) => {
   let path = url.pathname.replace(/^\/functions\/v1/, '');
   if (!path.startsWith('/api')) path = '/api' + path;
   // 기존 코드는 "요청 주소의 출처 == Origin 헤더"로 위조 요청을 막는다. 화면 주소를 요청 주소로 삼아 그 검사를 그대로 살린다.
-  const base = allowed || origins[0] || url.origin;
+  // 앱 화면(capacitor://)은 표준 출처가 아니라서 대표 주소로 바꿔 넘긴다(서버의 같은 출처 검사가 그대로 작동하게)
+  const fromApp = !!allowed && nativeOrigins.includes(allowed);
+  const base = (fromApp ? origins[0] : allowed) || origins[0] || url.origin;
   const headers = new Headers(req.headers);
+  if (fromApp) { headers.set('origin', base); headers.set('x-cc-app', allowed!.startsWith('capacitor:') ? 'ios' : 'android'); } else headers.delete('x-cc-app');
   for (const name of [...headers.keys()]) if (name.startsWith('oai-authenticated-user-') || name === 'cookie') headers.delete(name);
   const body = ['GET', 'HEAD'].includes(req.method) ? undefined : await req.arrayBuffer();
   try {

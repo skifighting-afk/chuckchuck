@@ -2,8 +2,9 @@
 import {serverError} from '../lib/errors';
 import {sendPush,type PushEnv} from '../lib/webpush';
 import {guessKind,NOTIFY_KINDS,type NotifyKind} from '../lib/notify-kinds';
+import {sendNative,validNativeToken,type NativeEnv} from '../lib/native-push';
 const json=(v:unknown,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store'}});
-type Env=PushEnv&{DB:D1Database};
+type Env=PushEnv&NativeEnv&{DB:D1Database};
 export async function pushApi(request:Request,env:Env){
  const user=request.headers.get('oai-authenticated-user-id');if(!user)return json({error:'로그인한 뒤 다시 시도해 주세요.'},401);
  try{
@@ -18,6 +19,14 @@ export async function pushApi(request:Request,env:Env){
    await env.DB.prepare('INSERT INTO push_subscriptions(endpoint,user_id,p256dh,auth,created_at) VALUES(?,?,?,?,?) ON CONFLICT(endpoint) DO UPDATE SET user_id=excluded.user_id,p256dh=excluded.p256dh,auth=excluded.auth').bind(s.endpoint,user,s.keys.p256dh,s.keys.auth,new Date().toISOString()).run();
    return json({ok:true});
   }
+  // 스토어 앱 알림: 기기 토큰 등록·삭제(한 사람당 기기 10대까지)
+  if(b.action==='nativeToken'){
+   if(!validNativeToken(b.token,b.platform))return json({error:'앱 알림 정보를 다시 만들어 주세요. 앱을 껐다 켜 주세요.'},400);
+   const c=await env.DB.prepare('SELECT count(*) AS n FROM native_push_tokens WHERE user_id=?').bind(user).first<any>();if(Number(c?.n||0)>=10)await env.DB.prepare('DELETE FROM native_push_tokens WHERE token IN (SELECT token FROM native_push_tokens WHERE user_id=? ORDER BY created_at LIMIT 1)').bind(user).run();
+   await env.DB.prepare('INSERT INTO native_push_tokens(token,user_id,platform,created_at) VALUES(?,?,?,?) ON CONFLICT(token) DO UPDATE SET user_id=excluded.user_id,platform=excluded.platform,created_at=excluded.created_at').bind(b.token,user,b.platform,new Date().toISOString()).run();
+   return json({ok:true});
+  }
+  if(b.action==='nativeRemove'){await env.DB.prepare('DELETE FROM native_push_tokens WHERE user_id=? AND (token=? OR ?=1)').bind(user,typeof b.token==='string'?b.token:'',b.all===true?1:0).run();return json({ok:true})}
   if(b.action==='unsubscribe'){await env.DB.prepare('DELETE FROM push_subscriptions WHERE user_id=? AND (endpoint=? OR ?=1)').bind(user,typeof b.endpoint==='string'?b.endpoint:'',b.all===true?1:0).run();return json({ok:true})}
   return json({error:'이 작업은 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},400);
  }catch(e){return serverError('push',e,'알림 설정을 처리하지 못했어요. 잠시 뒤 다시 시도해 주세요.')}
@@ -34,6 +43,9 @@ export async function notifyUser(env:Env,userId:string|null|undefined,message:{t
    const subs=(await env.DB.prepare('SELECT endpoint,p256dh,auth FROM push_subscriptions WHERE user_id=?').bind(userId).all<any>()).results;
    for(const s of subs){const r=await sendPush(env,s,message,fetcher).catch(()=>({status:'failed' as const}));if(r.status==='sent')sent++;if(r.status==='gone')await env.DB.prepare('DELETE FROM push_subscriptions WHERE endpoint=?').bind(s.endpoint).run()}
   }
+  // 스토어 앱 기기
+  if(env.FCM_SERVICE_ACCOUNT||env.APNS_KEY){const toks=((await env.DB.prepare('SELECT token,platform FROM native_push_tokens WHERE user_id=?').bind(userId).all<any>().catch(()=>({results:[]}))).results||[]) as any[];
+   for(const t of toks){const r=await sendNative(env,t,message,fetcher).catch(()=>'failed' as const);if(r==='sent')sent++;if(r==='gone')await env.DB.prepare('DELETE FROM native_push_tokens WHERE token=?').bind(t.token).run()}}
   await env.DB.prepare('INSERT INTO notifications(id,user_id,kind,title,body,url,created_at,pushed) VALUES(?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(),userId,kind,message.title.slice(0,120),message.body.slice(0,500),message.url||'/app',new Date().toISOString(),sent).run().catch(()=>{});
   return sent;
  }catch{return 0}

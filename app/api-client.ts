@@ -18,7 +18,8 @@ try {
   }
 } catch {}
 declare const __KAKAO_LOGIN__: boolean;
-export const kakaoLoginEnabled = typeof __KAKAO_LOGIN__ !== 'undefined' && __KAKAO_LOGIN__;
+// 스토어 앱 안에서는 카카오 로그인을 숨긴다(앱 심사: 소셜 로그인을 넣으면 애플 로그인도 필요, 돌아오는 주소도 앱에서 못 받음)
+export const kakaoLoginEnabled = typeof __KAKAO_LOGIN__ !== 'undefined' && __KAKAO_LOGIN__ && !(typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.());
 export const kakaoLoginUrl = (next = '/app') => SUPABASE + '/auth/v1/authorize?provider=kakao&redirect_to=' + encodeURIComponent(location.origin + next + (next.includes('?') ? '&' : '?') + 'oauth=kakao');
 let refreshing: Promise<void> | null = null;
 

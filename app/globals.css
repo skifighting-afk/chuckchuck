@@ -731,3 +731,6 @@ html.lite *{animation:none!important;transition:none!important}html.lite img[src
 @media print{.page-help{display:none}}
 .signup-steps{display:flex;gap:6px;list-style:none;padding:0;margin:4px 0 12px;font-size:.85rem;flex-wrap:wrap}.signup-steps li{display:flex;align-items:center;gap:4px;opacity:.65}.signup-steps li[aria-current]{opacity:1;font-weight:700}.signup-steps b{display:inline-flex;width:22px;height:22px;border-radius:50%;align-items:center;justify-content:center;background:#e2e8f0;color:#0f172a}.signup-steps li[aria-current] b{background:#16a34a;color:#fff}
 .setup-list{list-style:none;padding:0}.setup-list .ok{opacity:.7}
+/* 스토어 앱 안: 요금·결제로 가는 곳은 숨김(앱 심사 규정), 안전 영역 여백 */
+html.native-app a[href^="/pricing"],html.native-app a[href*="checkout"],html.native-app .checkout,html.native-app .contract-fees{display:none!important}
+html.native-app body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}

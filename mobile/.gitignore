@@ -1,0 +1,7 @@
+node_modules/
+www/
+android/
+ios/
+*.jks
+*.p8
+*.keystore

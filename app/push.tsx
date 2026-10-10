@@ -2,7 +2,17 @@
 // 작업 092: 이 기기에서 알림 받기(명세서 도착·계약 서명 요청·정정 결과·휴가 결과·대타 요청)
 import {useEffect,useState} from 'react';
 const dec=(s:string)=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')+'==='.slice((s.length+3)%4)),c=>c.charCodeAt(0));
+import {isNativeApp,registerNativePush} from './native';
+/** 스토어 앱 안: 기기 알림(FCM·APNs) 켜기 */
+function NativePushToggle(){
+ const [st,setSt]=useState<'idle'|'busy'|'on'|'off'>('idle');
+ return <div className="push-toggle"><button type="button" className="saas-secondary" disabled={st==='busy'} onClick={async()=>{setSt('busy');setSt(await registerNativePush()?'on':'off')}}>{st==='on'?'앱 알림 켜짐 ✓':'앱 알림 켜기'}</button><small>{st==='off'?'알림이 허용되지 않았어요. 휴대폰 설정 → 앱 → 척척사장 → 알림을 켠 뒤 다시 눌러 주세요.':'명세서 도착, 계약서 서명 요청, 근무 전 알림 등을 이 휴대폰으로 받아요.'}</small></div>;
+}
 export function PushToggle(){
+ if(isNativeApp())return <NativePushToggle/>;
+ return <WebPushToggle/>;
+}
+function WebPushToggle(){
  const [key,setKey]=useState<string|null|undefined>(undefined),[on,setOn]=useState(false),[busy,setBusy]=useState(false),[msg,setMsg]=useState('');
  const supported=typeof window!=='undefined'&&'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
  useEffect(()=>{if(!supported)return;fetch('/api/push').then(r=>r.json()).then((d:any)=>setKey(d.publicKey||null)).catch(()=>setKey(null));navigator.serviceWorker.ready.then(r=>r.pushManager.getSubscription()).then(s=>setOn(!!s)).catch(()=>{})},[]);

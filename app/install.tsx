@@ -5,7 +5,7 @@ let deferred:any=null;const listeners=new Set<()=>void>();
 export function registerSW(){
  if(typeof window==='undefined'||!('serviceWorker' in navigator))return;
  window.addEventListener('beforeinstallprompt',(e:any)=>{e.preventDefault();deferred=e;listeners.forEach(f=>f())});
- window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
+ if(!(window as any).Capacitor?.isNativePlatform?.())window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));// 스토어 앱 안에서는 서비스 워커를 쓰지 않음
 }
 const standalone=()=>typeof window!=='undefined'&&(matchMedia('(display-mode: standalone)').matches||(navigator as any).standalone===true);
 const ios=()=>typeof navigator!=='undefined'&&/iPhone|iPad|iPod/.test(navigator.userAgent);

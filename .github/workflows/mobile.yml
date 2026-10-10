@@ -1,0 +1,151 @@
+# 스토어 앱 빌드·업로드(안드로이드·아이폰)
+# - 직접 실행(Actions → 앱 빌드 → Run workflow): 플랫폼·올릴 곳을 고른다
+# - mobile/·app/native.ts가 바뀌면 서명 없이 빌드만 해 본다(깨졌는지 확인)
+# 키는 모두 저장소 Secrets에만 넣는다(값을 코드·로그에 남기지 않음). 키가 없으면 그 단계는 건너뛴다.
+name: 앱 빌드
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: '플랫폼'
+        type: choice
+        options: [both, android, ios]
+        default: both
+      upload:
+        description: '스토어에 올리기(안드로이드 내부 테스트 · 아이폰 TestFlight)'
+        type: boolean
+        default: false
+      version_name:
+        description: '앱 버전(예: 1.0.0)'
+        default: '1.0.0'
+  push:
+    branches: [main]
+    paths: ['mobile/**', 'app/native.ts', '.github/workflows/mobile.yml']
+permissions:
+  contents: read
+concurrency:
+  group: mobile-${{ github.ref }}
+  cancel-in-progress: true
+env:
+  VERSION_NAME: ${{ inputs.version_name || '1.0.0' }}
+  VERSION_CODE: ${{ github.run_number }}
+
+jobs:
+  web:
+    name: 앱에 담을 화면
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22, cache: npm}
+      - run: npm ci
+      - name: 화면 빌드
+        run: node scripts/portable-build.mjs
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+      - name: www 만들기
+        working-directory: mobile
+        run: node scripts/build-www.mjs
+      - uses: actions/upload-artifact@v4
+        with: {name: www, path: mobile/www, retention-days: 3}
+
+  android:
+    name: 안드로이드
+    needs: web
+    if: github.event_name == 'push' || inputs.platform != 'ios'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22}
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '21'}
+      - uses: actions/download-artifact@v4
+        with: {name: www, path: mobile/www}
+      - name: Capacitor 설치
+        working-directory: mobile
+        run: npm install --no-audit --no-fund
+      - name: 안드로이드 프로젝트 준비
+        working-directory: mobile
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: node scripts/add-native.mjs android
+      - name: SDK 라이선스
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+      - name: AAB 빌드
+        working-directory: mobile/android
+        run: ./gradlew --no-daemon bundleRelease
+      - name: 서명(업로드 키)
+        id: sign
+        env:
+          KS: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KS_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          aab=mobile/android/app/build/outputs/bundle/release/app-release.aab
+          if [ -z "$KS" ]; then echo "업로드 키가 없어 서명 없이 둡니다(빌드 확인만)."; echo "signed=no" >> "$GITHUB_OUTPUT"; exit 0; fi
+          echo "$KS" | base64 -d > upload.jks
+          jarsigner -sigalg SHA256withRSA -digestalg SHA-256 -keystore upload.jks -storepass "$KS_PASS" -keypass "${KEY_PASS:-$KS_PASS}" "$aab" "$KS_ALIAS" >/dev/null
+          rm -f upload.jks
+          cp "$aab" chukchuk-${VERSION_NAME}-${VERSION_CODE}.aab
+          echo "signed=yes" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        if: steps.sign.outputs.signed == 'yes'
+        with: {name: android-aab, path: 'chukchuk-*.aab', retention-days: 14}
+      - name: 플레이 내부 테스트에 올리기
+        if: inputs.upload && steps.sign.outputs.signed == 'yes'
+        env:
+          PLAY_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [ -z "$PLAY_JSON" ]; then echo "PLAY_SERVICE_ACCOUNT_JSON이 없어 올리지 않아요. 만든 AAB는 Artifacts에서 받아 플레이 콘솔에 직접 올릴 수 있어요."; exit 0; fi
+          echo "$PLAY_JSON" > play.json
+          node mobile/scripts/play-upload.mjs play.json chukchuk-${VERSION_NAME}-${VERSION_CODE}.aab internal
+          rm -f play.json
+
+  ios:
+    name: 아이폰
+    needs: web
+    if: github.event_name == 'push' || inputs.platform != 'android'
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22}
+      - name: Xcode 26 고르기
+        run: |
+          x=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          if [ -n "$x" ]; then sudo xcode-select -s "$x"; fi
+          xcodebuild -version
+      - uses: actions/download-artifact@v4
+        with: {name: www, path: mobile/www}
+      - name: Capacitor 설치
+        working-directory: mobile
+        run: npm install --no-audit --no-fund
+      - name: 아이폰 프로젝트 준비
+        working-directory: mobile
+        run: node scripts/add-native.mjs ios
+      - name: 서명 없이 빌드 확인
+        if: github.event_name == 'push' || !inputs.upload
+        working-directory: mobile/ios/App
+        run: xcodebuild -project App.xcodeproj -scheme App -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build | tail -20
+      - name: 아카이브·TestFlight 올리기
+        if: github.event_name == 'workflow_dispatch' && inputs.upload
+        working-directory: mobile/ios/App
+        env:
+          KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          ISSUER: ${{ secrets.APPSTORE_ISSUER_ID }}
+          KEY_P8: ${{ secrets.APPSTORE_KEY_P8 }}
+          TEAM: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          if [ -z "$KEY_ID" ] || [ -z "$ISSUER" ] || [ -z "$KEY_P8" ] || [ -z "$TEAM" ]; then echo "App Store Connect 키(APPSTORE_KEY_ID·APPSTORE_ISSUER_ID·APPSTORE_KEY_P8·APPLE_TEAM_ID)가 없어 올리지 않아요."; exit 1; fi
+          key="$RUNNER_TEMP/AuthKey.p8"; printf '%s' "$KEY_P8" > "$key"
+          auth=(-allowProvisioningUpdates -authenticationKeyPath "$key" -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER")
+          xcodebuild -project App.xcodeproj -scheme App -configuration Release -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            DEVELOPMENT_TEAM="$TEAM" CODE_SIGN_STYLE=Automatic CODE_SIGN_ENTITLEMENTS=App/App.entitlements PRODUCT_BUNDLE_IDENTIFIER=kr.chukchukapp.app \
+            MARKETING_VERSION="$VERSION_NAME" CURRENT_PROJECT_VERSION="$VERSION_CODE" "${auth[@]}" archive | tail -30
+          node -e 'const fs=require("fs");fs.writeFileSync(process.argv[1],`<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0"><dict><key>method</key><string>app-store-connect</string><key>destination</key><string>upload</string><key>teamID</key><string>${process.argv[2]}</string><key>signingStyle</key><string>automatic</string><key>uploadSymbols</key><true/></dict></plist>\n`)' "$RUNNER_TEMP/ExportOptions.plist" "$TEAM"
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/App.xcarchive" -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" -exportPath "$RUNNER_TEMP/export" "${auth[@]}" | tail -30
+          rm -f "$key"
+          echo "TestFlight에 올렸어요. App Store Connect → TestFlight에서 처리(10~30분)를 기다려 주세요."

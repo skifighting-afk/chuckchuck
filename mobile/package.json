@@ -1,0 +1,25 @@
+{
+  "name": "chuckchuck-mobile",
+  "version": "1.0.0",
+  "private": true,
+  "description": "척척사장 스토어 앱(안드로이드·아이폰) — Capacitor로 웹 화면을 앱에 담는다. 네이티브 폴더(android·ios)는 빌드 때 만든다.",
+  "scripts": {
+    "www": "node scripts/build-www.mjs",
+    "native": "node scripts/add-native.mjs",
+    "icons": "npx capacitor-assets generate --iconBackgroundColor '#12634b' --iconBackgroundColorDark '#0b3d2e' --splashBackgroundColor '#12634b' --splashBackgroundColorDark '#0b3d2e'"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.0.0",
+    "@capacitor/app": "8.0.0",
+    "@capacitor/browser": "8.0.0",
+    "@capacitor/core": "8.0.0",
+    "@capacitor/ios": "8.0.0",
+    "@capacitor/push-notifications": "8.0.0",
+    "@capacitor/splash-screen": "8.0.0",
+    "@capacitor/status-bar": "8.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "3.0.5",
+    "@capacitor/cli": "8.0.0"
+  }
+}

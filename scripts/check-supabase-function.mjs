@@ -52,6 +52,11 @@ assert.equal(r.status,200,JSON.stringify(r.data));assert.ok(r.data.session.acces
 r=await call('/api/auth',{method:'POST',body:{action:'register',agree:true,email:'owner@example.kr',password:'safe-pass-91',name:'중복',role:'owner'}});
 assert.equal(r.status,409);
 r=await call('/api/auth');assert.equal(r.data.authenticated,true);assert.equal(r.data.verified,false);assert.equal(r.data.email,'owner@example.kr');
+// 스토어 앱(아이폰 capacitor://localhost, 안드로이드 https://localhost)에서 온 요청: 허용하고, 서버의 같은 출처 검사도 통과해야 함
+for(const appOrigin of ['capacitor://localhost','https://localhost']){
+ r=await call('/api/auth',{origin:appOrigin});assert.equal(r.cors,appOrigin,'앱 출처 CORS 허용 '+appOrigin);assert.equal(r.data.authenticated,true);
+ r=await call('/api/push',{method:'POST',body:{action:'nativeRemove',all:true},origin:appOrigin});assert.equal(r.status,200,'앱에서 보낸 POST가 출처 검사에 막히지 않음 '+appOrigin+' '+JSON.stringify(r.data));
+}
 
 // 위조한 신원 헤더는 무시되어야 함
 r=await handler(new Request(SUPA+'/functions/v1/api/account',{headers:{origin:APP,apikey:'anon',authorization:'Bearer anon','oai-authenticated-user-id':'native:hacker','oai-authenticated-user-email':'hq@example.kr'}}));
