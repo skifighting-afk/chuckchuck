@@ -483,8 +483,8 @@ html.reduce *{animation:none!important;transition:none!important}
 .demo4 .mock-sched i:nth-child(10){--k:9}.demo4 .mock-sched i:nth-child(11){--k:10}.demo4 .mock-sched i:nth-child(12){--k:11}
 .demo4 .mock-sched i:nth-child(13){--k:12}.demo4 .mock-sched i:nth-child(14){--k:13}.demo4 .mock-sched i:nth-child(15){--k:14}
 @keyframes cell-on{0%{background:#eceee6;transform:scale(.85)}15%,80%{background:#b9e4a1;transform:scale(1)}95%,100%{background:#eceee6;transform:scale(.85)}}
-.st-wait,.st-done{display:inline-block}
-.st-done{display:none}
+.demo4 .pending,.demo4 .ok-chip,.demo4 .pay-chip{display:inline-grid}
+.st-wait,.st-done{grid-area:1/1;white-space:nowrap}
 .demo4 .st-wait{animation:swap-out 6s infinite both}
 .demo4 .st-done{animation:swap-in 6s infinite both}
 @keyframes swap-out{0%,40%{opacity:1}50%,100%{opacity:0}}
@@ -495,4 +495,4 @@ html.reduce *{animation:none!important;transition:none!important}
 @keyframes slide-in{0%{opacity:0;transform:translateX(-12px)}15%,85%{opacity:1;transform:translateX(0)}100%{opacity:0}}
 .demo4 .mock-clock .qr-chip{animation:qr-blink 2s infinite}
 @keyframes qr-blink{0%,100%{opacity:1}50%{opacity:.45}}
-@media (prefers-reduced-motion:reduce){.demo4 *{animation:none!important}.demo4 .st-done{display:none}.demo4 .st-wait{display:inline-block}}
+@media (prefers-reduced-motion:reduce){.demo4 *{animation:none!important}.demo4 .st-done{opacity:0}.demo4 .st-wait{opacity:1}}
