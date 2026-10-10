@@ -10,7 +10,7 @@
 
 **Spec:** `docs/superpowers/specs/2026-10-11-hr-nine-features-design.md` — 2026-10-11 사용자 승인.
 
-**상태:** 구현 계획 검토 대기. 추가 HR 기능 개발 0/9 · 검증 완료 0/9 · 배포 확인 0/9. 기존 100개 개선안과 별도로 추적한다.
+**상태:** 사용자 계획 승인 · 직접 구현 진행 중. 추가 HR 기능 개발 1/9 · 개발 검증 완료 1/9 · 배포 확인 0/9. 기존 100개 개선안과 별도로 추적한다.
 
 ## Global Constraints
 
@@ -104,11 +104,11 @@ type HrPanelProps = {client:HrClient;branchId:string;selfId:string|null};
 
 **Interfaces:** `CandidateStage = '지원 접수'|'면접 예정'|'면접 완료'|'채용 결정'|'보류'|'지원 철회'|'종료'`. `Candidate = HrMeta & {name:string;phone:string;role:string;availability:string;source:string;stage:CandidateStage;interviewAt:string|null;questions:string;convertedEmployeeId:string|null;closedAt:string|null}`. `POST /api/hr/hiring` action은 save/stage/convert/retentionSettings/archive. convert는 new/link, employeeId, storeVersion을 받는다. `HiringPanel(props:HrPanelProps)`를 제공한다.
 
-- [ ] **1. 실패 시험:** 등록→면접→채용 결정→직원 전환을 시험한다. 전환 재전송은 직원 +1, 기존 직원 연결은 +0, 전화만 같으면 자동 연결하지 않음, 잘못된 날짜 400, 타 사업자·지점 403/404를 assert한다.
-- [ ] **2. 실패 확인:** build 후 `node scripts/check-hr-hiring.mjs`에서 미구현 실패를 확인한다.
-- [ ] **3. 구현:** hr_candidates에 이름40/전화30/업무20/가능시간1000/경로80/질문2000자 제한을 둔다. 전환은 owner만 확정한다. fresh store를 teamSchema 검증하고 `newMember` 기본값·입사 준비 상태로 추가하거나 선택 직원을 연결한다. candidate 갱신·store version 증가·감사를 같은 트랜잭션으로 저장한다.
-- [ ] **4. 화면:** 상태별 목록·명시적 상태 변경·직원 연결 전 확인을 제공한다. 종료 지원자 보관 일수는 owner의 명시 설정 후 적용하고 대상 건수·삭제 예정일을 표시한다.
-- [ ] **5. 통과·커밋:** core/hiring·타입 검사를 실행한다. 재조회, 직원 화면 연결, 다른 내용의 같은 키 409, 동시 store 변경 시 부분 저장 0을 확인한다.
+- [x] **1. 실패 시험:** 등록→면접→채용 결정→직원 전환을 시험한다. 전환 재전송은 직원 +1, 기존 직원 연결은 +0, 전화만 같으면 자동 연결하지 않음, 잘못된 날짜 400, 타 사업자·지점 403/404를 assert한다.
+- [x] **2. 실패 확인:** build 후 `node scripts/check-hr-hiring.mjs`에서 미구현 실패를 확인한다.
+- [x] **3. 구현:** hr_candidates에 이름40/전화30/업무20/가능시간1000/경로80/질문2000자 제한을 둔다. 전환은 owner만 확정한다. fresh store를 teamSchema 검증하고 `newMember` 기본값·입사 준비 상태로 추가하거나 선택 직원을 연결한다. candidate 갱신·store version 증가·감사를 같은 트랜잭션으로 저장한다.
+- [x] **4. 화면:** 상태별 목록·명시적 상태 변경·직원 연결 전 확인을 제공한다. 종료 지원자 보관 일수는 owner의 명시 설정 후 적용하고 대상 건수·삭제 예정일을 표시한다.
+- [x] **5. 통과·커밋:** core/hiring·타입 검사를 실행한다. 재조회, 직원 화면 연결, 다른 내용의 같은 키 409, 동시 store 변경 시 부분 저장 0을 확인한다.
 
 ## Task 3: HR-03·04 신입 담당자·업무 숙련도
 
