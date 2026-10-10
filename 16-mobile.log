@@ -1,60 +1,60 @@
-PASS public-home
-PASS public-start
-PASS public-login
-PASS public-signup
-PASS public-calculator
-PASS public-help
-PASS public-refund
-PASS public-terms
-PASS public-pricing
-PASS public-status
-PASS public-privacy
-PASS public-policy
-PASS public-news
-PASS public-privacy-request
-PASS public-accessibility
-PASS demo-home
-PASS demo-employees
-PASS demo-attendance
-PASS demo-schedule
-PASS demo-payroll
-PASS demo-contracts
-PASS demo-retirement
-PASS demo-outbox
-PASS demo-operations
-PASS demo-manual
-PASS demo-reports
-PASS demo-stores
-PASS demo-settings
-PASS demo-guide
-PASS demo-staff
-PASS hr-hiring-owner
-PASS hr-hiring-employee
-PASS hr-hiring-manager
-PASS hr-training-owner
-PASS hr-training-employee
-PASS hr-training-manager
-PASS hr-staffing-owner
-PASS hr-staffing-employee
-PASS hr-staffing-manager
-PASS hr-meetings-owner
-PASS hr-meetings-employee
-PASS hr-meetings-manager
-PASS hr-cases-owner
-PASS hr-cases-employee
-PASS hr-cases-manager
-PASS hr-pulse-owner
-PASS hr-pulse-employee
-PASS hr-pulse-manager
-PASS hr-items-owner
-PASS hr-items-employee
-PASS hr-items-manager
-PASS hr-settings-owner
-PASS hr-settings-employee
-PASS hr-settings-manager
-PASS hr-export-owner
-PASS hr-export-employee
-PASS hr-export-manager
+PASS public-home · 이전과 0% 다름
+PASS public-start · 이전과 0% 다름
+PASS public-login · 이전과 0% 다름
+PASS public-signup · 이전과 0% 다름
+PASS public-calculator · 이전과 0% 다름
+PASS public-help · 이전과 0% 다름
+PASS public-refund · 이전과 0% 다름
+PASS public-terms · 이전과 0% 다름
+PASS public-pricing · 이전과 0% 다름
+PASS public-status · 이전과 0.02% 다름
+PASS public-privacy · 이전과 0% 다름
+PASS public-policy · 이전과 0% 다름
+PASS public-news · 이전과 0% 다름
+PASS public-privacy-request · 이전과 0% 다름
+PASS public-accessibility · 이전과 0% 다름
+PASS demo-home · 이전과 0% 다름
+PASS demo-employees · 이전과 0% 다름
+PASS demo-attendance · 이전과 0% 다름
+PASS demo-schedule · 이전과 0% 다름
+PASS demo-payroll · 이전과 0% 다름
+PASS demo-contracts · 이전과 0% 다름
+PASS demo-retirement · 이전과 0% 다름
+PASS demo-outbox · 이전과 0% 다름
+PASS demo-operations · 이전과 0% 다름
+PASS demo-manual · 이전과 0% 다름
+PASS demo-reports · 이전과 0% 다름
+PASS demo-stores · 이전과 0% 다름
+PASS demo-settings · 이전과 0% 다름
+PASS demo-guide · 이전과 0% 다름
+PASS demo-staff · 이전과 0% 다름
+PASS hr-hiring-owner · 이전과 0% 다름
+PASS hr-hiring-employee · 이전과 0% 다름
+PASS hr-hiring-manager · 이전과 0% 다름
+PASS hr-training-owner · 이전과 0% 다름
+PASS hr-training-employee · 이전과 0% 다름
+PASS hr-training-manager · 이전과 0% 다름
+PASS hr-staffing-owner · 이전과 0% 다름
+PASS hr-staffing-employee · 이전과 0% 다름
+PASS hr-staffing-manager · 이전과 0% 다름
+PASS hr-meetings-owner · 이전과 0% 다름
+PASS hr-meetings-employee · 이전과 0% 다름
+PASS hr-meetings-manager · 이전과 0% 다름
+PASS hr-cases-owner · 이전과 0% 다름
+PASS hr-cases-employee · 이전과 0% 다름
+PASS hr-cases-manager · 이전과 0% 다름
+PASS hr-pulse-owner · 이전과 0% 다름
+PASS hr-pulse-employee · 이전과 0% 다름
+PASS hr-pulse-manager · 이전과 0% 다름
+PASS hr-items-owner · 이전과 0% 다름
+PASS hr-items-employee · 이전과 0% 다름
+PASS hr-items-manager · 이전과 0% 다름
+PASS hr-settings-owner · 이전과 0% 다름
+PASS hr-settings-employee · 이전과 0% 다름
+PASS hr-settings-manager · 이전과 0% 다름
+PASS hr-export-owner · 이전과 0% 다름
+PASS hr-export-employee · 이전과 0% 다름
+PASS hr-export-manager · 이전과 0% 다름
 PASS public-home (큰 글씨)
 PASS public-start (큰 글씨)
 PASS public-login (큰 글씨)
