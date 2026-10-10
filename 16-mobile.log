@@ -3,31 +3,31 @@ PASS public-start · 이전과 0% 다름
 PASS public-login · 이전과 0% 다름
 PASS public-signup · 이전과 0% 다름
 PASS public-calculator · 이전과 0% 다름
-PASS public-help · 이전과 0% 다름
+PASS public-help · 이전과 12.21% 다름
 PASS public-refund · 이전과 0% 다름
 PASS public-terms · 이전과 0% 다름
 PASS public-pricing · 이전과 0% 다름
-PASS public-status · 이전과 0.04% 다름
+PASS public-status · 이전과 0.14% 다름
 PASS public-privacy · 이전과 0% 다름
 PASS public-policy · 이전과 0% 다름
 PASS public-news · 이전과 0% 다름
 PASS public-privacy-request · 이전과 0% 다름
 PASS public-accessibility · 이전과 0% 다름
-PASS demo-home · 이전과 0% 다름
-PASS demo-employees · 이전과 0% 다름
-PASS demo-attendance · 이전과 0% 다름
-PASS demo-schedule · 이전과 0% 다름
-PASS demo-payroll · 이전과 0% 다름
-PASS demo-contracts · 이전과 0% 다름
-PASS demo-retirement · 이전과 0% 다름
-PASS demo-outbox · 이전과 0% 다름
-PASS demo-operations · 이전과 0% 다름
-PASS demo-manual · 이전과 0% 다름
-PASS demo-reports · 이전과 0% 다름
-PASS demo-stores · 이전과 0% 다름
-PASS demo-settings · 이전과 0% 다름
-PASS demo-guide · 이전과 0% 다름
-PASS demo-staff · 이전과 0% 다름
+PASS demo-home · 이전과 20.38% 다름
+PASS demo-employees · 이전과 13.47% 다름
+PASS demo-attendance · 이전과 14.26% 다름
+PASS demo-schedule · 이전과 17.84% 다름
+PASS demo-payroll · 이전과 14.43% 다름
+PASS demo-contracts · 이전과 15.4% 다름
+PASS demo-retirement · 이전과 12.8% 다름
+PASS demo-outbox · 이전과 15.96% 다름
+PASS demo-operations · 이전과 26.83% 다름
+PASS demo-manual · 이전과 14.86% 다름
+PASS demo-reports · 이전과 17.39% 다름
+PASS demo-stores · 이전과 16.97% 다름
+PASS demo-settings · 이전과 14.71% 다름
+PASS demo-guide · 이전과 16.04% 다름
+PASS demo-staff · 이전과 19.09% 다름
 PASS public-home (큰 글씨)
 PASS public-start (큰 글씨)
 PASS public-login (큰 글씨)
@@ -58,4 +58,5 @@ PASS demo-stores (큰 글씨)
 PASS demo-settings (큰 글씨)
 PASS demo-guide (큰 글씨)
 PASS demo-staff (큰 글씨)
+이전 실행과 2% 넘게 달라진 화면: public-help 12.21%, demo-home 20.38%, demo-employees 13.47%, demo-attendance 14.26%, demo-schedule 17.84%, demo-payroll 14.43%, demo-contracts 15.4%, demo-retirement 12.8%, demo-outbox 15.96%, demo-operations 26.83%, demo-manual 14.86%, demo-reports 17.39%, demo-stores 16.97%, demo-settings 14.71%, demo-guide 16.04%, demo-staff 19.09%
 390px 화면 30개(보통·큰 글씨): 가로 넘침 없음
