@@ -61,7 +61,6 @@
           <div class="ledger-scroll">{{LEDGER}}</div>
         </div>
         <div class="calc-toy"><span>{{CALC_TOY}}</span><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-        <div class="bubble"><small>카톡 · 준호</small>사장님 저 수요일 출근 찍는 거 깜빡했어요ㅠ<i class="ok">✓ 정정 요청으로 받았어요</i></div>
       </div>
       <div class="phone" id="hero-phone">
         <div class="phone-in">
@@ -82,28 +81,29 @@
 
 <!-- ②-b 실제 화면 가상 시현 -->
 <section class="demo4" aria-labelledby="demo4-title">
-  <p class="kicker hand">사장님 하루, 실제 화면으로</p>
+  <p class="kicker hand">사장님 하루, 가상 시연으로</p>
   <h2 id="demo4-title" class="demo4-h">이 네 장면만 풀면 끝나요</h2>
+  <p class="demo4-note">실제 앱 화면을 본뜬 <b>가상 시연</b>이에요. 예시 가게 데이터이고, 실제 가게 기록이 아니에요.</p>
   <div class="demo4-grid">
     <article class="demo4-card">
       <p class="demo4-tag">01 · 근무표</p>
-      <p class="demo4-feel">"토요일 밤마다 카톡으로 근무표 돌리느라 잠 못 자요."</p>
-      <div class="stack"><div class="frame f1"><small class="cap">① 지난주 근무표 열기</small><div class="mock mock-sched"><span>민지</span><i></i><i></i><i></i><i></i><i></i><span>준호</span><i></i><i></i><i></i><i></i><i></i><span>서연</span><i></i><i></i><i></i><i></i><i></i></div></div><div class="frame f2"><small class="cap">② 그대로 복사</small><div class="mock mock-sched"><span>민지</span><i class="on"></i><i class="on"></i><i></i><i class="on"></i><i class="on"></i><span>준호</span><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><span>서연</span><i></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i></div></div><div class="frame f3"><small class="cap">③ 이번 주 칸 확인</small><div class="mock mock-sched"><span>민지</span><i class="on"></i><i class="on"></i><i></i><i class="on"></i><i class="on"></i><span>준호</span><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><span>서연</span><i></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i></div></div><div class="frame f4"><small class="cap">④ 직원에게 공개</small><p class="ok-chip">✓ 근무표 공개 완료</p></div></div>
+      <p class="demo4-feel">“토요일 밤마다 카톡으로 근무표 돌리느라 잠 못 자요.”</p>
+      <img class="demo4-gif" src="{{BASE}}home/img/demo-01.gif" width="520" height="260" alt="근무표 가상 시연: 지난주 근무표를 열고, 그대로 복사해, 칸을 확인한 뒤 직원에게 공개해요." loading="lazy">
     </article>
     <article class="demo4-card">
       <p class="demo4-tag">02 · 출퇴근</p>
-      <p class="demo4-feel">""저 찍었는데요?" 말싸움, 이제 그만하고 싶어요."</p>
-      <div class="stack"><div class="frame f1"><small class="cap">① 직원이 출근 버튼 찍기</small><div class="mock mock-clock"><p><small>서연</small><b>출근 찍기</b></p></div></div><div class="frame f2"><small class="cap">② 기록이 1분 단위로 남음</small><div class="mock mock-clock"><p><small>서연</small><b>17:00 – 22:30</b></p></div></div><div class="frame f3"><small class="cap">③ 빠뜨린 기록은 정정 요청</small><div class="mock mock-clock"><p class="pending">정정 요청 · 승인 대기</p></div></div><div class="frame f4"><small class="cap">④ 사장님이 승인</small><div class="mock mock-clock"><p class="pending">✓ 승인 완료</p></div></div></div>
+      <p class="demo4-feel">“저 찍었는데요?” 말싸움, 이제 그만하고 싶어요.</p>
+      <img class="demo4-gif" src="{{BASE}}home/img/demo-02.gif" width="520" height="260" alt="출퇴근 가상 시연: 직원이 출근을 찍고, 기록이 1분 단위로 남고, 빠뜨린 기록은 정정 요청으로 올리고, 사장님이 승인해요." loading="lazy">
     </article>
     <article class="demo4-card">
       <p class="demo4-tag">03 · 대타·교대</p>
-      <p class="demo4-feel">""토요일 누구 대타 없나요?" 단톡방이 밤새 울려요."</p>
-      <div class="stack"><div class="frame f1"><small class="cap">① 직원이 대타 요청</small><div class="mock mock-swap"><p><small>서연 → 민지</small><b>토 17:00 – 22:30</b></p></div></div><div class="frame f2"><small class="cap">② 상대 직원이 수락</small><div class="mock mock-swap"><p><small>민지 수락</small><b>토 17:00 – 22:30</b></p></div></div><div class="frame f3"><small class="cap">③ 사장님 승인 대기</small><div class="mock mock-swap"><p class="pending">승인 대기</p></div></div><div class="frame f4"><small class="cap">④ 승인하면 근무표 자동 반영</small><p class="ok-chip">✓ 근무표 반영</p></div></div>
+      <p class="demo4-feel">“토요일 누구 대타 없나요?” 단톡방이 밤새 울려요.</p>
+      <img class="demo4-gif" src="{{BASE}}home/img/demo-03.gif" width="520" height="260" alt="대타·교대 가상 시연: 직원이 대타를 요청하고, 상대가 수락하고, 사장님이 승인하면 근무표에 반영돼요." loading="lazy">
     </article>
     <article class="demo4-card">
       <p class="demo4-tag">04 · 급여·명세서</p>
-      <p class="demo4-feel">"월급날 주휴수당 계산하다 날 샌 적 있으시죠?"</p>
-      <div class="stack"><div class="frame f1"><small class="cap">① 근무 기록 집계</small><div class="mock mock-pay"><p><small>민지</small><b>계산 중…</b></p></div></div><div class="frame f2"><small class="cap">② 주휴수당 자동 포함</small><div class="mock mock-pay"><p><small>민지 · 주휴수당 포함</small><b>1,614,254원</b></p></div></div><div class="frame f3"><small class="cap">③ 4대보험·세금 설정대로 공제</small><div class="mock mock-pay"><p><small>공제 후 실수령</small><b>확인</b></p></div></div><div class="frame f4"><small class="cap">④ 명세서 발급</small><p class="pay-chip">명세서 발급 ✓</p></div></div>
+      <p class="demo4-feel">“월급날 주휴수당 계산하다 날 샌 적 있으시죠?”</p>
+      <img class="demo4-gif" src="{{BASE}}home/img/demo-04.gif" width="520" height="260" alt="급여·명세서 가상 시연: 근무 기록을 모으고, 주휴수당을 넣고, 공제를 설정대로 빼고, 명세서를 내요." loading="lazy">
     </article>
   </div>
 </section>
@@ -191,6 +191,23 @@
     <p>출퇴근은 1분 단위까지 그대로 남아요. 09:00 · 18:03처럼요.</p>
     <p>점장이 자리에 없어도, 매니저가 못 봐도 괜찮아요. 찍는 순간 기록되고, 사장님은 나중에 확인만 하면 돼요.</p>
     <p class="fine">위치(GPS)는 확인하지 않아요. 오른쪽은 모양만 보여 주는 예시예요.</p>
+    <figure class="qr-scene">
+      <svg viewBox="0 0 360 200" role="img" aria-label="매장 벽에 붙은 QR을 알바가 휴대폰으로 찍는 예시 그림">
+        <rect x="0" y="0" width="360" height="200" rx="18" fill="#efe7d3"/>
+        <rect x="24" y="24" width="150" height="152" rx="12" fill="#fffdf8" stroke="#0f3d2f" stroke-width="2"/>
+        <text x="99" y="50" text-anchor="middle" font-size="13" font-weight="800" fill="#0f3d2f">출근은 여기서 찍어요</text>
+        <g transform="translate(44 62)"><rect width="66" height="66" fill="#fffdf8"/><g fill="#0f3d2f"><rect x="31.06" y="7.76" width="3.88" height="3.88"/><rect x="31.06" y="15.53" width="3.88" height="3.88"/><rect x="31.06" y="27.18" width="3.88" height="3.88"/><rect x="19.41" y="31.06" width="3.88" height="3.88"/><rect x="31.06" y="31.06" width="3.88" height="3.88"/><rect x="34.94" y="31.06" width="3.88" height="3.88"/><rect x="38.82" y="31.06" width="3.88" height="3.88"/><rect x="46.59" y="31.06" width="3.88" height="3.88"/><rect x="54.35" y="31.06" width="3.88" height="3.88"/><rect x="38.82" y="34.94" width="3.88" height="3.88"/><rect x="46.59" y="34.94" width="3.88" height="3.88"/><rect x="50.47" y="34.94" width="3.88" height="3.88"/><rect x="58.24" y="34.94" width="3.88" height="3.88"/><rect x="38.82" y="38.82" width="3.88" height="3.88"/><rect x="50.47" y="38.82" width="3.88" height="3.88"/><rect x="62.12" y="38.82" width="3.88" height="3.88"/><rect x="31.06" y="42.71" width="3.88" height="3.88"/><rect x="38.82" y="42.71" width="3.88" height="3.88"/><rect x="42.71" y="42.71" width="3.88" height="3.88"/><rect x="46.59" y="42.71" width="3.88" height="3.88"/><rect x="50.47" y="42.71" width="3.88" height="3.88"/><rect x="58.24" y="42.71" width="3.88" height="3.88"/><rect x="34.94" y="46.59" width="3.88" height="3.88"/><rect x="50.47" y="46.59" width="3.88" height="3.88"/><rect x="54.35" y="46.59" width="3.88" height="3.88"/><rect x="58.24" y="46.59" width="3.88" height="3.88"/><rect x="62.12" y="46.59" width="3.88" height="3.88"/><rect x="34.94" y="50.47" width="3.88" height="3.88"/><rect x="38.82" y="50.47" width="3.88" height="3.88"/><rect x="42.71" y="50.47" width="3.88" height="3.88"/><rect x="50.47" y="50.47" width="3.88" height="3.88"/><rect x="54.35" y="50.47" width="3.88" height="3.88"/><rect x="62.12" y="50.47" width="3.88" height="3.88"/><rect x="34.94" y="54.35" width="3.88" height="3.88"/><rect x="38.82" y="54.35" width="3.88" height="3.88"/><rect x="42.71" y="54.35" width="3.88" height="3.88"/><rect x="46.59" y="54.35" width="3.88" height="3.88"/><rect x="58.24" y="54.35" width="3.88" height="3.88"/><rect x="46.59" y="58.24" width="3.88" height="3.88"/><rect x="62.12" y="58.24" width="3.88" height="3.88"/><rect x="38.82" y="62.12" width="3.88" height="3.88"/><rect x="42.71" y="62.12" width="3.88" height="3.88"/><rect x="46.59" y="62.12" width="3.88" height="3.88"/><rect x="50.47" y="62.12" width="3.88" height="3.88"/></g><rect x="0" y="0" width="27.18" height="27.18" fill="#0f3d2f"/><rect x="3.88" y="3.88" width="19.41" height="19.41" fill="#fffdf8"/><rect x="7.76" y="7.76" width="11.65" height="11.65" fill="#0f3d2f"/><rect x="38.82352941176471" y="0" width="27.18" height="27.18" fill="#0f3d2f"/><rect x="42.71" y="3.88" width="19.41" height="19.41" fill="#fffdf8"/><rect x="46.59" y="7.76" width="11.65" height="11.65" fill="#0f3d2f"/><rect x="0" y="38.82352941176471" width="27.18" height="27.18" fill="#0f3d2f"/><rect x="3.88" y="42.71" width="19.41" height="19.41" fill="#fffdf8"/><rect x="7.76" y="46.59" width="11.65" height="11.65" fill="#0f3d2f"/></g>
+        <text x="99" y="150" text-anchor="middle" font-size="11" fill="#556158">30초마다 새 QR</text>
+        <rect x="206" y="28" width="118" height="164" rx="20" fill="#0f3d2f"/>
+        <rect x="216" y="44" width="98" height="132" rx="10" fill="#fffdf8"/>
+        <text x="265" y="68" text-anchor="middle" font-size="12" font-weight="800" fill="#0f3d2f">민지 · 홀</text>
+        <text x="265" y="88" text-anchor="middle" font-size="11" fill="#556158">09:00 출근</text>
+        <circle cx="265" cy="128" r="22" fill="#d4f77d"/>
+        <path d="M255 128l7 7 13-14" fill="none" stroke="#0f3d2f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="265" y="170" text-anchor="middle" font-size="10" fill="#556158">찍는 순간 기록됨</text>
+      </svg>
+      <figcaption>예시 그림입니다. 실제 매장 사진이 아니에요.</figcaption>
+    </figure>
   </div>
   <figure class="qr-screen" aria-label="30초마다 바뀌는 매장 QR 예시">
     <canvas id="qr-canvas" width="290" height="290"></canvas>
@@ -230,7 +247,7 @@
 <section class="calc" id="calc" aria-labelledby="calc-title">
   <div class="sec-head">
     <h2 id="calc-title">이번 달 인건비,<br>30초면 나와요.</h2>
-    <p>시급과 근무 시간만 넣어 보세요. 주휴수당은 근로기준법 제55조 계산식(주 15시간 이상, 1주 근무시간 ÷ 40 × 8시간)으로 넣었어요.</p>
+    <p>시급과 근무 시간, 사업장 규모와 공제 방식만 고르면 돼요. 주휴수당은 근로기준법 제55조(주 15시간 이상, 1주 근무시간 ÷ 40 × 8시간)로 넣었어요.</p>
   </div>
   <div class="calc-grid">
     <form class="calc-form" id="calc-form" novalidate>
@@ -242,6 +259,17 @@
       <label class="field" for="c-hours"><span>하루 근무</span><span class="in"><input id="c-hours" type="number" min="1" max="12" step="0.5" value="6"><em>시간</em></span><small>휴게 시간을 뺀 시간</small></label>
       <div class="field"><span id="c-days-l">일주일에</span><div class="stepper" role="group" aria-labelledby="c-days-l"><button type="button" data-step="-1" aria-label="하루 빼기">−</button><output id="c-days">5</output><span>일</span><button type="button" data-step="1" aria-label="하루 더하기">+</button></div></div>
       <div class="field"><span id="c-people-l">이렇게 일하는 직원</span><div class="stepper" role="group" aria-labelledby="c-people-l"><button type="button" data-step="-1" aria-label="한 명 빼기">−</button><output id="c-people">2</output><span>명</span><button type="button" data-step="1" aria-label="한 명 더하기">+</button></div></div>
+      <fieldset class="seg"><legend>사업장 규모</legend>
+        <label><input type="radio" name="size" id="sz-small" value="small"><span>5명 미만</span></label>
+        <label><input type="radio" name="size" id="sz-five" value="five" checked><span>5명 이상</span></label>
+      </fieldset>
+      <fieldset class="seg"><legend>4대보험·세금 공제</legend>
+        <label><input type="radio" name="deduct" id="dd-none" value="none"><span>공제 안 함</span></label>
+        <label><input type="radio" name="deduct" id="dd-ins" value="insurance" checked><span>4대보험</span></label>
+        <label><input type="radio" name="deduct" id="dd-33" value="3.3"><span>3.3% (프리랜서)</span></label>
+      </fieldset>
+      <label class="field" for="c-night"><span>야간 근무 (밤 10시~아침 6시)</span><span class="in"><input id="c-night" type="number" inputmode="decimal" min="0" max="168" step="0.5" value="0"><em>시간</em></span><small>주당 시간. 5명 이상 사업장만 50% 가산해요</small></label>
+      <p class="rec"><b>추천 = 근로기준법 기준.</b> 5명 이상 · 4대보험 적용이에요. 연장·야간 가산과 주휴수당을 법대로 넣어요. <button type="button" class="btn btn-sm btn-ghost" id="rec-apply">추천 설정으로</button></p>
     </form>
     <article class="result" id="result" aria-live="polite">
       <p class="r-label">우리 가게 한 달 인건비 <span class="demo">계산 결과</span></p>
@@ -250,39 +278,30 @@
         <div><dt>한 사람 월급</dt><dd id="r-month">0원</dd></div>
         <div><dt>주휴수당</dt><dd id="r-juhu">주 0원</dd></div>
         <div><dt>한 달 근무</dt><dd id="r-hours">0시간</dd></div>
+        <div><dt>공제 (직원 부담)</dt><dd id="r-ded">0원</dd></div>
+        <div><dt>실수령 (예상)</dt><dd id="r-net">0원</dd></div>
+        <div><dt>사장님 부담 4대보험</dt><dd id="r-er">0원</dd></div>
       </dl>
       <p class="r-warn" id="r-warn" hidden></p>
-      <p class="r-fine">1년 52.14주 ÷ 12 = 4.345주로 월 환산 · 4대보험·세금 공제 전 · 사장님 부담 4대보험 포함 계산은 <a href="{{APP}}/calculator">자세한 계산기</a>에서</p>
+      <p class="r-fine">1년 52.14주 ÷ 12 = 4.345주로 월 환산 · 예상치예요. 실제 금액은 사장님이 확인하고, 자세한 계산은 <a href="{{APP}}/calculator">계산기</a>에서</p>
       <svg class="r-stamp" viewBox="0 0 40 24" aria-hidden="true"><path d="M3 12l6 6L21 5"/><path d="M17 15l4 3L37 4"/></svg>
       <p class="r-brand">척척사장 · chukchukapp.kr</p>
       <div class="r-act"><button type="button" class="btn btn-sm" id="share">결과 보내기</button><span id="share-msg" role="status"></span></div>
     </article>
   </div>
+  <figure class="calc-gif"><img src="{{BASE}}home/img/calc-setting.gif" width="640" height="400" alt="인건비 계산기 가상 화면: 공제 없음, 5명 미만으로 바꾸면 결과가 바뀌고, 추천 설정으로 돌아가요." loading="lazy"><figcaption>설정을 바꾸면 결과가 바로 바뀌어요. 가상 화면 예시예요.</figcaption></figure>
 </section>
 
 <!-- ⑦ 요금 -->
 <section class="pricing" id="pricing" aria-labelledby="pricing-title">
   <div class="sec-head">
-    <h2 id="pricing-title">직원이 늘어도<br>요금은 그대로예요.</h2>
-    <p>직원 수와 상관없이 지점 수로만 정해요. 표시한 금액은 부가세 포함이에요.</p>
+    <h2 id="pricing-title">직원 1명당<br>월 요금이에요.</h2>
+    <p>직원 수만큼 곱해서 내요. 지점 수나 결제 기간에 따른 할인은 없어요. 표시한 금액은 부가세 포함이에요.</p>
   </div>
   <div class="price-grid">
     <fieldset class="plans"><legend class="sr">요금제 고르기</legend>{{PLAN_CARDS}}</fieldset>
-    <div class="quote" aria-live="polite">
-      <div class="q-ctl">
-        <div class="field"><span id="br-l">지점 수</span><div class="stepper" role="group" aria-labelledby="br-l"><button type="button" data-step="-1" aria-label="지점 하나 빼기">−</button><output id="br">1</output><span>곳</span><button type="button" data-step="1" aria-label="지점 하나 더하기">+</button></div></div>
-        <fieldset class="seg"><legend>결제 주기</legend>
-          <label><input type="radio" name="period" id="pd-1" value="1" checked><span>매달</span></label>
-          <label><input type="radio" name="period" id="pd-6" value="6"><span>6개월 −10%</span></label>
-          <label><input type="radio" name="period" id="pd-12" value="12"><span>12개월 −20%</span></label>
-        </fieldset>
-      </div>
-      <p class="q-big">월 <b id="q-month">{{PRICE_START}}</b>원</p>
-      <p class="q-sub" id="q-sub">매달 결제 · 부가세 포함</p>
-      <a class="btn" id="q-cta" href="{{APP}}/signup?role=owner&amp;plan=basic">베이직으로 {{TRIAL}}일 무료 시작</a>
-      <p class="fine">{{TRIAL}}일 동안은 프로 기능까지 모두 써요. 끝나면 사장님이 직접 고를 때만 유료로 바뀌어요.</p>
-    </div>
   </div>
+  <p class="fine">{{TRIAL}}일 동안은 프로 기능까지 모두 써요. 끝나면 사장님이 직접 고를 때만 유료로 바뀌어요.</p>
 </section>
 
 <!-- ⑧ 걱정 다섯 가지 -->

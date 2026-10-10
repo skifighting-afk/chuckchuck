@@ -49,6 +49,10 @@ export function periodPrice(plan:PlanId,branches:number,months:1|6|12){
  const d=PERIODS.find(x=>x.months===months)?.discount??0;
  return Math.floor(monthlyPrice(plan,branches)*months*(1-d)/10)*10;
 }
+// 2026-10-10 대표님 결정: 직원 1명당 월 요금(VAT 포함), 지점 칸·결제 기간 할인 없음, 기존 가입자 없음.
+// 홈페이지 요금 카드가 이 값을 쓴다. 앱 결제(toss·saas-api)는 아직 지점 구간 함수를 쓰고 있어서 연결 전까지 따로 둔다.
+export const EMPLOYEE_PRICE={basic:2900,pro:3900} as const;
+export function employeeMonthlyPrice(plan:PlanId,employees=1){return EMPLOYEE_PRICE[plan]*Math.max(1,Math.floor(employees)||1)}
 export function capacityError(state:any,a:any){
  const limits=planLimits(a);
  if(state.branches.length>limits.branches)return `지금 요금은 지점 ${limits.branches}곳 기준이에요. 계정·요금제에서 지점 수를 바꿔 주세요.`;

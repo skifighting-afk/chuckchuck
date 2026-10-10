@@ -506,3 +506,19 @@ html.reduce *{animation:none!important;transition:none!important}
 @keyframes frame-cycle{0%{opacity:0}4%,21%{opacity:1}25%,100%{opacity:0}}
 .demo4 .stack .mock{border:0;padding:0}
 @media (prefers-reduced-motion:reduce){.demo4 .frame{animation:none;opacity:0}.demo4 .frame.f1{opacity:1}}
+
+/* 가상 시연 · 인건비 설정 · 매장 QR 예시 (2026-10-10) */
+.demo4-note{margin:-20px 0 30px;color:var(--muted);font-size:15px;line-height:1.6}
+.demo4-note b{color:var(--ink)}
+@media(min-width:601px){.demo4-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.demo4-grid .mock{min-height:150px}
+.rec{margin:4px 0 0;font-size:14px;line-height:1.6;color:var(--ink);display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.rec .btn-ghost{padding:6px 14px}
+.qr-scene{margin:26px 0 0;max-width:440px}
+.qr-scene svg{display:block;width:100%;height:auto}
+.qr-scene figcaption{margin-top:10px;font-size:14px;color:var(--muted)}
+
+.demo4-gif{display:block;width:100%;height:auto;border-radius:14px;border:1px solid var(--line);background:var(--sheet)}
+.calc-gif{margin:40px 0 0;max-width:640px}
+.calc-gif img{display:block;width:100%;height:auto;border-radius:14px;border:1px solid var(--line)}
+.calc-gif figcaption{margin-top:10px;font-size:14px;color:var(--muted)}

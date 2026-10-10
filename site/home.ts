@@ -1,5 +1,5 @@
 // 척척사장 홈페이지 동작. 글과 숫자는 HTML에 이미 다 있고(자바스크립트가 없어도 읽힌다), 여기서는 움직임과 계산만 붙인다.
-import {plans, monthlyPrice, periodPrice, money, TRIAL_DAYS, type PlanId} from './render';
+import {plans, employeeMonthlyPrice, money, TRIAL_DAYS, type PlanId} from './render';
 import {estimateLabor} from '../lib/labor-estimate';
 import {ratesFor} from '../lib/pay-rules';
 import {trackPageView} from '../app/meta-pixel';
@@ -43,7 +43,7 @@ addEventListener('scroll', onNav, {passive: true}); onNav();
 // 3. 히어로: 손글씨 장부 → 체크 → 휴대폰 급여 화면
 const hero = $('#hero'), stage = $('#stage'), ledger = $('#ledger'), phone = $('#hero-phone');
 const cells = $$<HTMLTableCellElement>('td[data-k]', ledger).sort((a, b) => +a.dataset.k! - +b.dataset.k!);
-const notes = [$('.n1'), $('.bubble'), $('.n2'), $('.calc-toy')];
+const notes = $$('.calc-toy');
 const steps = $$('.steps li');
 const totalEl = $('#pay-total'), total = Number(totalEl.dataset.won);
 let mx = 0, my = 0, counted = -1;
@@ -85,10 +85,6 @@ if (!reduce) {
   heroFrame();
 }
 
-// 4. 우리 가게는?
-type Fit = 'small' | 'five' | 'multi';
-const fit: Fit = 'small'; // 선택 UI 삭제 후 기본값 고정
-
 // 5. 둘러보기 탭
 const tabs = $$<HTMLButtonElement>('[role=tab]');
 function selectTab(i: number, focus = false) {
@@ -127,34 +123,47 @@ const cmp = $('#compare'), cmpRange = $<HTMLInputElement>('#cmp-range');
 const setSplit = () => cmp.style.setProperty('--split', cmpRange.value + '%');
 cmpRange.addEventListener('input', setSplit); setSplit();
 
-// 8. 인건비 계산 (lib/labor-estimate.ts 그대로)
-const wageIn = $<HTMLInputElement>('#c-wage'), hoursIn = $<HTMLInputElement>('#c-hours');
+// 8. 인건비 계산 (lib/labor-estimate.ts 그대로). 설정: 사업장 규모, 공제 방식, 야간 근무
+const wageIn = $<HTMLInputElement>('#c-wage'), hoursIn = $<HTMLInputElement>('#c-hours'), nightIn = $<HTMLInputElement>('#c-night');
 const daysOut = $('#c-days'), peopleOut = $('#c-people');
-let days = 5, people = 2, year = 2026, wageTouched = false, branches = 1;
+let days = 5, people = 2, year = 2026, wageTouched = false;
 const num = (v: string) => Number(v.replace(/[^\d.]/g, '')) || 0;
+const picked = (name: string) => ($<HTMLInputElement>(`input[name=${name}]:checked`)?.value ?? '');
 function steppers(scope: Root, get: () => number, set: (v: number) => void, min: number, max: number) {
   $$<HTMLButtonElement>('button[data-step]', scope).forEach(b => b.addEventListener('click', () => { set(clamp(get() + Number(b.dataset.step), min, max)); }));
 }
 steppers(daysOut.parentElement!, () => days, v => { days = v; renderCalc(); }, 1, 7);
 steppers(peopleOut.parentElement!, () => people, v => { people = v; renderCalc(); }, 1, 30);
 $$<HTMLInputElement>('input[name=year]').forEach(r => r.addEventListener('change', () => { year = Number(r.value); if (!wageTouched) wageIn.value = money(ratesFor(year).minimumWage); renderCalc(); }));
+$$<HTMLInputElement>('input[name=size], input[name=deduct]').forEach(r => r.addEventListener('change', renderCalc));
 wageIn.addEventListener('input', () => { wageTouched = true; const v = num(wageIn.value); wageIn.value = v ? money(v) : ''; renderCalc(); });
 hoursIn.addEventListener('input', renderCalc);
+nightIn.addEventListener('input', renderCalc);
+$('#rec-apply').addEventListener('click', () => {
+  $<HTMLInputElement>('#sz-five').checked = true; $<HTMLInputElement>('#dd-ins').checked = true; renderCalc();
+});
 let lastShare = '';
 function renderCalc() {
-  const wage = num(wageIn.value), daily = clamp(Number(hoursIn.value) || 0, 0, 24);
+  const wage = num(wageIn.value), daily = clamp(Number(hoursIn.value) || 0, 0, 24), night = clamp(Number(nightIn.value) || 0, 0, 168);
+  const five = picked('size') === 'five', ded = (picked('deduct') || 'none') as 'none' | '3.3' | 'insurance';
   daysOut.textContent = String(days); peopleOut.textContent = String(people);
-  const r = estimateLabor({wage, dailyHours: daily, days, people, year, fivePlus: fit === 'five'});
+  const r = estimateLabor({wage, dailyHours: daily, days, people, year, fivePlus: five, nightHours: night, deduction: ded});
   $('#c-min').textContent = `${year}년 최저임금 ${money(r.minimumWage)}원`;
   $('#r-total').textContent = money(r.total.gross);
   $('#r-month').textContent = money(r.month.gross) + '원';
   $('#r-juhu').textContent = r.juhuEligible ? `주 ${money(r.week.juhu)}원` : '주 15시간 미만이라 없음';
   $('#r-hours').textContent = `${r.month.hours}시간`;
+  $('#r-ded').textContent = `${money(r.month.employeeDeduction)}원`;
+  $('#r-net').textContent = `${money(r.month.net)}원`;
+  $('#r-er').textContent = ded === 'insurance' ? `${money(r.month.employerInsurance)}원` : '해당 없음';
   const warn = $('#r-warn'), msgs: string[] = [];
   if (r.belowMinimum) msgs.push(`시급이 ${year}년 최저임금(${money(r.minimumWage)}원)보다 낮아요.`);
-  if (fit === 'five' && r.week.overtime) msgs.push('하루 8시간·주 40시간을 넘는 연장 근무 가산(50%)을 넣었어요.');
+  if (five && r.week.overtime) msgs.push('하루 8시간·주 40시간을 넘는 연장 근무에 50% 가산을 넣었어요.');
+  if (!five && (night || r.week.overtime)) msgs.push('연장·야간 가산은 5명 이상 사업장에만 적용돼요. 지금은 빼고 계산했어요.');
+  if (r.pensionHealthExcluded) msgs.push('월 60시간 미만이라 국민연금·건강보험은 빼고 계산했어요.');
   warn.hidden = !msgs.length; warn.textContent = msgs.join(' ');
-  lastShare = `[우리 가게 한 달 인건비]\n시급 ${money(wage)}원 · 하루 ${daily}시간 · 주 ${days}일 · ${people}명\n한 사람 월급 ${money(r.month.gross)}원 (주휴수당 ${r.juhuEligible ? '주 ' + money(r.week.juhu) + '원' : '없음'})\n합계 약 ${money(r.total.gross)}원 (${year}년 기준, 공제 전)\n계산: 척척사장 https://chukchukapp.kr/calculator`;
+  const dedName = ded === 'insurance' ? '4대보험' : ded === '3.3' ? '3.3%' : '공제 없음';
+  lastShare = `[우리 가게 한 달 인건비]\n시급 ${money(wage)}원 · 하루 ${daily}시간 · 주 ${days}일 · ${people}명 · ${five ? '5명 이상' : '5명 미만'} · ${dedName}\n한 사람 월급 ${money(r.month.gross)}원 (주휴수당 ${r.juhuEligible ? '주 ' + money(r.week.juhu) + '원' : '없음'})\n합계 약 ${money(r.total.gross)}원 (${year}년 기준, 예상치)\n계산: 척척사장 https://chukchukapp.kr/calculator`;
 }
 $('#calc-form').addEventListener('submit', e => e.preventDefault());
 $('#share').addEventListener('click', async () => {
@@ -167,28 +176,6 @@ $('#share').addEventListener('click', async () => {
   }
 });
 
-// 9. 요금 (lib/plans.ts 그대로)
-let plan: PlanId = 'basic', months: 1 | 6 | 12 = 1;
-const brOut = $('#br');
-steppers(brOut.parentElement!, () => branches, v => { branches = v; renderQuote(); }, 1, 50);
-$$<HTMLInputElement>('input[name=plan]').forEach(r => r.addEventListener('change', () => { plan = r.value as PlanId; renderQuote(); }));
-$$<HTMLInputElement>('input[name=period]').forEach(r => r.addEventListener('change', () => { months = Number(r.value) as 1 | 6 | 12; renderQuote(); }));
-function renderQuote() {
-  brOut.textContent = String(branches);
-  const total = periodPrice(plan, branches, months), perMonth = Math.floor(total / months / 10) * 10, full = monthlyPrice(plan, branches);
-  $('#q-month').textContent = money(perMonth);
-  $('#q-sub').textContent = months === 1 ? `매달 ${money(full)}원 · 부가세 포함` : `${months}개월 ${money(total)}원 한 번에 · 매달 내면 ${money(full * months)}원 · 부가세 포함`;
-  const cta = $<HTMLAnchorElement>('#q-cta');
-  const nm = plans[plan].name, last = nm.charCodeAt(nm.length - 1);
-  cta.textContent = `${nm}${(last - 0xAC00) % 28 ? '으로' : '로'} ${TRIAL_DAYS}일 무료 시작`;
-  cta.href = cta.href.replace(/plan=\w+/, 'plan=' + plan);
-}
-
-// 10. 결말: 장부의 모든 칸이 체크된다
-const fin = $$('.finale-ledger td[data-k]');
-if (!reduce) new IntersectionObserver(([e], o) => { if (!e.isIntersecting) return; o.disconnect(); fin.forEach((c, i) => setTimeout(() => c.classList.add('on'), 40 * i)); }, {threshold: 0.35}).observe($('.finale-ledger'));
-else fin.forEach(c => c.classList.add('on'));
-
 // 11. 커서 이름표 (마우스일 때만)
 const cur = $('#cursor');
 if (matchMedia('(pointer: fine)').matches) {
@@ -199,5 +186,5 @@ if (matchMedia('(pointer: fine)').matches) {
   addEventListener('pointermove', e => { cur.style.left = e.clientX + 'px'; cur.style.top = e.clientY + 'px'; }, {passive: true});
 }
 
-renderCalc(); renderQuote();
+renderCalc();
 trackPageView();

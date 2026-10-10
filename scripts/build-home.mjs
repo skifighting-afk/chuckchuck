@@ -31,14 +31,14 @@ export async function buildHome({out, site = HOME_ORIGIN, app = APP_ORIGIN, pixe
   await copyFile('site/home.css', path.join(dir, 'home.css'));
   for (const sub of ['fonts', 'img']) {
     await mkdir(path.join(dir, sub), {recursive: true});
-    for (const f of await readdir('site/' + sub)) if (/\.(woff2|webp|txt)$/.test(f) && f !== 'charset.txt') await copyFile(`site/${sub}/${f}`, path.join(dir, sub, f));
+    for (const f of await readdir('site/' + sub)) if (/\.(woff2|webp|txt|gif)$/.test(f) && f !== 'charset.txt') await copyFile(`site/${sub}/${f}`, path.join(dir, sub, f));
   }
   // 3) HTML 채우기
   const R = await import(pathToFileURL(path.resolve(dir, 'site/render.js')).href + '?t=' + Date.now());
   const PR = await import(pathToFileURL(path.resolve(dir, 'lib/pay-rules.js')).href + '?t=' + Date.now());
   const base = preview ? '' : '/';
   const pay = R.crewTotal();
-  const desc = `앱 설치 없이 휴대폰으로 쓰는 작은 가게 직원 관리. 근무표, 출퇴근, 급여 계산과 명세서, 전자근로계약서까지. 직원 수 제한 없이 월 ${R.money(R.monthlyPrice('basic', 1))}원부터, ${R.TRIAL_DAYS}일 무료, 카드 등록 없음.`;
+  const desc = `앱 설치 없이 휴대폰으로 쓰는 작은 가게 직원 관리. 근무표, 출퇴근, 급여 계산과 명세서, 전자근로계약서까지. 직원 1명당 월 ${R.money(R.employeeMonthlyPrice('basic', 1))}원부터, ${R.TRIAL_DAYS}일 무료, 카드 등록 없음.`;
   const fb = pixelId ? {script: ' https://connect.facebook.net', img: ' https://www.facebook.com', connect: ' https://www.facebook.com https://connect.facebook.net'} : {script: '', img: '', connect: ''};
   const csp = ["default-src 'self'", `script-src 'self'${fb.script}`, "style-src 'self'", `img-src 'self' data:${fb.img}`, "font-src 'self'", `connect-src 'self'${fb.connect}`, "object-src 'none'", "base-uri 'self'", `form-action 'self' ${app}`, 'upgrade-insecure-requests'].join('; ');
   const minWage = R.money(PR.ratesFor(2026).minimumWage);
@@ -47,7 +47,7 @@ export async function buildHome({out, site = HOME_ORIGIN, app = APP_ORIGIN, pixe
     TRIAL: String(R.TRIAL_DAYS), LEDGER: R.ledgerHtml(false), FINALE_LEDGER: R.ledgerHtml(true), PHONE_ROWS: R.phoneRowsHtml(),
     PAY_TOTAL: R.money(pay), PAY_TOTAL_RAW: String(pay), CALC_TOY: R.money(R.crewPay()[0].month).slice(0, -1),
     WORRIES: R.worriesHtml(app), NOT_DOING: R.NOT_DOING.map(x => `<li>${R.esc(x)}</li>`).join(''), FOOTER: R.footerHtml(), PLAN_CARDS: R.planCardsHtml(app),
-    PRICE_START: R.money(R.monthlyPrice('basic', 1)), CONTRACT_FEE: R.esc(R.contractFeeText()), MINWAGE: minWage, MINWAGE_TEXT: minWage,
+    PRICE_START: R.money(R.employeeMonthlyPrice('basic', 1)), CONTRACT_FEE: R.esc(R.contractFeeText()), MINWAGE: minWage, MINWAGE_TEXT: minWage,
   };
   let tpl = await readFile('site/index.html', 'utf8');
   tpl = tpl.replace(/\{\{(\w+)\}\}/g, (m, k) => { if (!(k in vars)) throw Error('site/index.html: 채울 값이 없어요 ' + m); return vars[k]; });
