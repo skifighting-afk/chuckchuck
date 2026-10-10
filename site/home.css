@@ -496,3 +496,4 @@ html.reduce *{animation:none!important;transition:none!important}
 .demo4 .mock-clock .qr-chip{animation:qr-blink 2s infinite}
 @keyframes qr-blink{0%,100%{opacity:1}50%{opacity:.45}}
 @media (prefers-reduced-motion:reduce){.demo4 *{animation:none!important}.demo4 .st-done{opacity:0}.demo4 .st-wait{opacity:1}}
+
