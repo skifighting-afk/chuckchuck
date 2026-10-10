@@ -3,7 +3,7 @@
 type Shift = {id: string; employeeId: string; date: string; start: string; end: string};
 type Att = {id: string; employeeId: string; start: string; end: string | null};
 type Emp = {id: string; name: string; status?: string; branchId?: string; healthCertUntil?: string; employment?: string; endDate?: string; joined?: string; probation?: {months: number}};
-export type Alert = {key: string; to: 'owner' | string; kind: 'noshow' | 'clockout' | 'before' | 'payroll' | 'schedule' | 'staff'; title: string; body: string};
+export type Alert = {key: string; to: 'owner' | string; kind: 'noshow' | 'clockout' | 'before' | 'payroll' | 'schedule' | 'staff'; title: string; body: string; url?: string};
 const DAY = 86400000;
 const kdate = (ms: number) => new Date(ms + 9 * 3600000).toISOString().slice(0, 10);
 const at = (d: string, hm: string) => Date.parse(`${d}T${hm}:00+09:00`);
@@ -19,7 +19,9 @@ export function alertsFor(data: {employees: Emp[]; shifts: Shift[]; attendance: 
     const [ss, se] = span(s);
     const mine = data.attendance.filter(a => a.employeeId === s.employeeId && Date.parse(a.start) < se && (a.end ? Date.parse(a.end) : now) > ss - 2 * 3600000);
     // 101 근무 1시간 전(직원)
-    if (ss - now <= 60 * 60000 && ss - now > 0 && !mine.length) out.push({key: 'before:' + s.id, to: e.id, kind: 'before', title: '1시간 뒤 근무가 있어요', body: `${s.start}–${s.end} 근무예요. 매장 QR을 찍고 출근해 주세요.`});
+    // 개선 2차 B101: 직원이 고른 시간(0이면 끔) → 매장 기본값 → 60분 · B003 알림에서 바로 출근 화면으로
+    const bm = (() => { const v = Number((e as any).extra?.beforeMin ?? data.settings?.more?.beforeMinutes ?? 60); return [0, 30, 60, 120, 180].includes(v) ? v : 60; })();
+    if (bm && ss - now <= bm * 60000 && ss - now > 0 && !mine.length) out.push({key: 'before:' + s.id, to: e.id, kind: 'before', title: bm >= 60 ? `${bm / 60}시간 뒤 근무가 있어요` : `${bm}분 뒤 근무가 있어요`, body: `${s.start}–${s.end} 근무예요. 매장 QR을 찍고 출근해 주세요.`, url: '/app?clock=1'});
     // 001 미출근(사장님): 예정 +10분, 근무가 끝나기 전, 기록 없음
     if (now >= ss + 10 * 60000 && now < se && !mine.length) out.push({key: 'noshow:' + s.id, to: 'owner', kind: 'noshow', title: `${e.name}님 출근 기록이 없어요`, body: `${s.start} 출근 예정이었어요. ${Math.round((now - ss) / 60000)}분째 기록이 없어요.`});
     // 002 퇴근 누락(직원·사장님): 예정 퇴근 +30분, 열린 기록

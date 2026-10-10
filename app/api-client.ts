@@ -48,7 +48,10 @@ window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
   const headers = new Headers(init?.headers || (input instanceof Request ? input.headers : undefined));
   headers.set('apikey', ANON);
   headers.set('Authorization', 'Bearer ' + (s?.access_token || ANON));
+  const t0 = performance.now();
   const res = await original(SUPABASE + '/functions/v1' + path, {...init, method: init?.method || (input instanceof Request ? input.method : 'GET'), headers, credentials: 'omit'});
+  // 개선 2차 B198: 2초 넘게 걸린 요청은 주소(물음표 뒤 빼고)와 걸린 시간만 남긴다
+  const ms = Math.round(performance.now() - t0); if (ms > 2000 && !path.startsWith('/api/client-error')) reportClient('slow', `${(init?.method || 'GET').toUpperCase()} ${path.replace(/[?#].*$/, '')} ${ms}ms`);
   if (path.startsWith('/api/auth') && (init?.method || 'GET').toUpperCase() === 'POST') {
     const d: any = await res.clone().json().catch(() => null);
     if (d && typeof d === 'object' && 'session' in d) save(d.session);
@@ -58,3 +61,14 @@ window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
 
 /** 로그인되어 있는지(토큰이 있는지) — 화면 분기용 */
 export const hasSession = () => !!current;
+
+/** 개선 2차 B196·B198: 화면 오류·느린 요청 보고(한 화면에 10번까지, 개인정보는 서버에서 한 번 더 지움) */
+let reported = 0;
+export function reportClient(kind: 'error' | 'slow', message: string) {
+  if (reported++ >= 10 || /^\/(demo|try)/.test(location.pathname)) return;
+  try { void window.fetch('/api/client-error', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({kind, message: String(message).slice(0, 600), path: location.pathname})}).catch(() => null); } catch {}
+}
+try {
+  addEventListener('error', (e: Event) => { if ((e as ErrorEvent).message) reportClient('error', `${(e as ErrorEvent).message} @${String((e as ErrorEvent).filename || '').split('/').pop()}:${(e as ErrorEvent).lineno}`); });
+  addEventListener('unhandledrejection', (e: Event) => { const r: any = (e as PromiseRejectionEvent).reason; reportClient('error', 'promise: ' + String(r?.message || r).slice(0, 300)); });
+} catch {}

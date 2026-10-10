@@ -6,6 +6,7 @@ import {trialNotice} from '../lib/plans';
 import {notifyUser} from './push-api';
 import {processDeletions} from './withdraw-api';
 import {alertsFor} from '../lib/alert-sweep';
+import {workAlerts,scheduleAckReminders,visaAlerts,minWageNotice,digestFilter,dailyDigest} from '../lib/improve2';
 import {dailyBrief,weeklyBrief,staleRequests} from '../lib/briefing';
 import {weekStartOf,plus as plusD} from '../lib/schedule-rules';
 import {upcomingDeadlines} from '../lib/tax-calendar';
@@ -14,6 +15,7 @@ import {applyDueRaises} from '../lib/wage-raise';
 import {holidaysFor} from '../lib/holidays';
 import {loadAttendance} from './attendance-store';
 import {closingMissed,noticeReminders,absenceAlerts,careDays,leavePromotion} from '../lib/ops-alerts';
+import {ratesFor,hasRatesFor} from '../lib/pay-rules';
 import {sendAlimtalk} from '../lib/alimtalk-send';
 const json=(d:any,status=200)=>Response.json(d,{status,headers:{'Cache-Control':'no-store'}});
 function same(a:string,b:string){if(a.length!==b.length)return false;let r=0;for(let i=0;i<a.length;i++)r|=a.charCodeAt(i)^b.charCodeAt(i);return r===0}
@@ -92,10 +94,18 @@ export async function alertSweep(env:any,now=Date.now(),notify=(uid:string,m:any
   const list:any[]=alertsFor({...d,approvedLeaves:leaves,availability:d._operations?.availability||{}},now);
   // 지시서 081·073: 매일 아침 8시 브리핑, 월요일엔 지난주 리포트도(사장님 알림 설정에서 끌 수 있음)
   {const k=new Date(now+9*3600000),today=k.toISOString().slice(0,10);
-   if(k.getUTCHours()===8){const b=dailyBrief({...d,leavesPending:(d._operations?.leaves||[]).filter((l:any)=>l.status==='승인 대기').length},today);list.push({key:'brief:'+today,to:'owner',kind:'brief',title:'☀ '+b.title,body:b.body});
+   if(k.getUTCHours()===(Number(d.settings?.more?.briefHour)||8)){const b=dailyBrief({...d,leavesPending:(d._operations?.leaves||[]).filter((l:any)=>l.status==='승인 대기').length},today);list.push({key:'brief:'+today,to:'owner',kind:'brief',title:'☀ '+b.title,body:b.body});
     if(k.getUTCDay()===1){const wk=await loadAttendance(env.DB,r.owner,new Date(Date.parse(today+'T00:00:00+09:00')-8*86400000).toISOString(),new Date(now).toISOString()).catch(()=>[]);const w=weeklyBrief({...d,attendance:wk},today);list.push({key:'weekly:'+today,to:'owner',kind:'brief',title:w.title,body:w.body});}}}
   // 지시서 067·052: 마감 체크 없이 퇴근 · 24시간 지나도 안 읽은 공지
   list.push(...closingMissed(d,now),...noticeReminders(d,now),...careDays(d,now),...leavePromotion(d,now));
+  // 개선 2차: B005 휴게 끝·B006 휴게 없이 4시간·B014 16시간 열린 기록 · B035 근무표 미확인 · B090 체류 기간 · B058 12월 내년 최저임금
+  list.push(...workAlerts(d,now),...scheduleAckReminders(d,now),...(new Date(now+9*3600000).getUTCHours()>=9?visaAlerts(d,now):[]));
+  {const k=new Date(now+9*3600000);if(k.getUTCHours()>=9){const ny=k.getUTCFullYear()+1,nm=hasRatesFor(ny)?ratesFor(ny).minimumWage:undefined;list.push(...minWageNotice(d,now,nm))}}
+  // B015 하루 요약: 켜 두면 사장님 낱개 미출근·퇴근 누락 알림을 빼고 저녁 9시에 한 번
+  {const on=!!d.settings?.more?.digest;if(on){const kept=digestFilter(list,true);list.length=0;list.push(...kept);const k=new Date(now+9*3600000);if(k.getUTCHours()===21){const tol=({lenient:10,normal:5,strict:0} as any)[d.settings?.attendanceTolerance||'normal'];const g=dailyDigest(d,now,tol);if(g)list.push(g)}}}
+  // B043 명세서를 보낸 지 24시간이 지나도 안 연 직원에게 한 번(72시간 지나면 그만)
+  {const rows2=((await env.DB.prepare("SELECT p.id,p.employee_id FROM payslip_documents p LEFT JOIN document_activity a ON a.kind='payslip' AND a.document_id=p.id WHERE p.owner_id=? AND p.created_at<? AND p.created_at>? AND a.viewed_at IS NULL LIMIT 200").bind(r.owner,new Date(now-24*3600000).toISOString(),new Date(now-72*3600000).toISOString()).all().catch(()=>({results:[]}))).results||[]) as any[];
+   for(const p of rows2)list.push({key:'slipremind:'+p.id,to:p.employee_id,kind:'payroll',title:'아직 열어 보지 않은 급여명세서가 있어요',body:'급여명세서를 열어 금액을 확인해 주세요. 이상한 항목은 명세서에서 바로 물어볼 수 있어요.',url:'/app?screen=documents'})}
   // 지시서 010: 결근·지각 누적 — 하루 한 번(오전 9시 첫 점검)만 이번 달 기록을 읽는다
   {const k=new Date(now+9*3600000);if(k.getUTCHours()===9&&k.getUTCMinutes()<10){const month=k.toISOString().slice(0,7),full=await loadAttendance(env.DB,r.owner,new Date(Date.parse(month+'-01T00:00:00+09:00')).toISOString(),new Date(now).toISOString()).catch(()=>null);if(full)list.push(...absenceAlerts({...d,attendance:full},month,now))}}
   // 지시서 195: 3일 넘게 대기 중인 요청 — 하루 한 번(오전 9시 이후) 사장님께
@@ -115,7 +125,7 @@ export async function alertSweep(env:any,now=Date.now(),notify=(uid:string,m:any
   const prev=typeof d._alertsSent==='string'?(()=>{try{return JSON.parse(d._alertsSent)}catch{return {}}})():d._alertsSent||{},done:Record<string,number>={...prev};let changed=false;
   for(const a of list){if(done[a.key])continue;
    const uid=a.to==='owner'?r.owner:(d._members||[]).find((m:any)=>m.employeeId===a.to)?.userId;
-   if(uid){await notify(uid,{title:a.title,body:a.body,url:'/app',kind:a.kind});sent++}
+   if(uid){await notify(uid,{title:a.title,body:a.body,url:a.url||'/app',kind:a.kind});sent++}
    if(a.kind==='clockout'&&a.to!=='owner'){const e=d.employees.find((x:any)=>x.id===a.to);await sendAlimtalk(env,e?.phone,'CLOCKOUT_MISSING',{이름:e?.name||'',날짜:new Date(now+9*3600000).toISOString().slice(5,10).replace('-','/')}).catch(()=>null)}
    done[a.key]=now;changed=true}
   if(changed){for(const k of Object.keys(done))if(now-done[k]>(/^(absentcnt|latecnt):/.test(k)?35:3)*86400000)delete done[k];

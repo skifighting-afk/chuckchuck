@@ -700,3 +700,15 @@ body.ms-dragging,body.ms-dragging *{user-select:none!important;-webkit-user-sele
 /* 출시 준비 */
 .checkout-notes{font-size:13px;color:#5b6470;padding-left:18px;margin:8px 0}.refund-calc{border:1px solid #d7e4dc;border-radius:12px;padding:12px 16px;margin:16px 0}.refund-calc .t-inline{flex-wrap:wrap;gap:8px}.refund-calc input{min-height:48px;width:8em}.refund-result{font-size:16px}.support-hours{margin:8px 0}
 .help-experts{border:1px solid #d7e4dc;border-radius:12px;padding:12px 16px;margin:16px 0}.help-experts ul{padding-left:18px;display:grid;gap:6px}.help-experts a{display:inline-flex;align-items:center;min-height:44px}.news-item ul{padding-left:18px}
+/* 개선 2차 */
+.staff-badges{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.badge-soft,.badge-ok,.badge-warn,.badge-tag{display:inline-block;font-size:.8rem;line-height:1.4;padding:2px 8px;border-radius:999px;margin:2px 4px 2px 0;background:var(--muted,#f1f5f9);color:var(--fg,#0f172a)}
+.badge-ok{background:#dcfce7;color:#14532d}.badge-warn{background:#fef3c7;color:#78350f}.badge-tag{background:#e0e7ff;color:#1e1b4b}
+.week-load{list-style:none;padding:0;margin:8px 0}.week-load li{display:grid;grid-template-columns:5.5em 1fr auto;gap:8px;align-items:center;padding:3px 0}
+.wl-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.wl-bar{position:relative;height:12px;background:var(--muted,#f1f5f9);border-radius:6px;overflow:hidden}
+.wl-bar i{position:absolute;inset:0 auto 0 0;background:#3b82f6;border-radius:6px}.wl-bar i.over{background:#dc2626}.wl-bar b{position:absolute;top:0;bottom:0;width:2px;background:#64748b}.wl-bar b.max{background:#dc2626}
+@media (max-width:560px){.week-load li{grid-template-columns:4.5em 1fr;}.week-load li>span:last-child{grid-column:1/-1;font-size:.85rem}}
+.home-more2{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.praise-cards{display:grid;gap:6px}.praise-card{margin:0;padding:8px 12px;border-radius:10px;background:#fef9c3;color:#422006}
+.ast-copy{font-size:.8rem}
+@media print{.home-more2,.ast-tools{display:none}}

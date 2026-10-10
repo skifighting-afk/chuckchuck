@@ -6,7 +6,7 @@ import {suggestFaq,parseThread} from '../lib/faq-suggest';
 const post=async(body:any)=>{const r=await fetch('/api/support',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const d:any=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||'처리하지 못했어요.');return d};
 const when=(v?:string)=>v?new Date(v).toLocaleString('ko-KR',{dateStyle:'short',timeStyle:'short'}):'';
 export function Support(){
- const [data,setData]=useState<any>(null),[category,setCategory]=useState(()=>{try{return new URLSearchParams(location.search).get('category')||'사용 방법'}catch{return '사용 방법'}}),[body,setBody]=useState(''),[busy,setBusy]=useState(false),[msg,setMsg]=useState(''),[err,setErr]=useState('');
+ const [data,setData]=useState<any>(null),[category,setCategory]=useState(()=>{try{return new URLSearchParams(location.search).get('category')||'사용 방법'}catch{return '사용 방법'}}),[body,setBody]=useState(()=>{try{return (new URLSearchParams(location.search).get('body')||'').slice(0,1500)}catch{return ''}}),[busy,setBusy]=useState(false),[msg,setMsg]=useState(''),[err,setErr]=useState('');
  const load=()=>fetch('/api/support').then(r=>r.json()).then(setData).catch(()=>setErr('문의 목록을 불러오지 못했어요. 새로고침해 주세요.'));
  useEffect(()=>{load()},[]);
  const send=async()=>{setBusy(true);setErr('');setMsg('');try{await post({action:'create',category,body});setBody('');setMsg('문의를 남겼어요. 답변이 오면 알림(켜 둔 경우)과 이 화면으로 알려 드려요.');await load()}catch(e){setErr((e as Error).message)}finally{setBusy(false)}};

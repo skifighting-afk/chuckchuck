@@ -29,6 +29,7 @@ import {multiStoreApi} from './multi-store-api';
 import {kakaoSkillApi} from './kakao-skill-api';
 import {kioskApi,kioskPinHash} from './kiosk-api';
 import {piiLogApi} from './pii-log-api';
+import {clientErrorApi} from './client-error-api';
 import {openApi,openAdminApi,sendWebhooks} from './open-api';
 import {staffDocsApi} from './staff-docs-api';
 import {pushApi,notifyUser,notificationsApi} from './push-api';
@@ -88,6 +89,7 @@ async function route(request:Request,env:Env){
  if(path==='/api/store-log')return storeLogApi(request,env as any);
  if(path==='/api/multi-store')return multiStoreApi(request,env as any);
  if(path==='/api/pii-log')return piiLogApi(request,env);
+ if(path==='/api/client-error')return clientErrorApi(request,env as any);
  if(path==='/api/open-admin')return openAdminApi(request,env);
  if(path==='/api/staff-docs')return staffDocsApi(request,env);
  if(path==='/api/push')return pushApi(request,env);
@@ -127,7 +129,7 @@ async function route(request:Request,env:Env){
  if(request.headers.get('origin')!==new URL(request.url).origin)return json({error:'요청 출처를 확인할 수 없어요. 척척사장 화면을 새로고침한 뒤 다시 시도해 주세요.'},403);
  const text=await request.text();if(text.length>1500000)return json({error:'한 번에 저장할 수 있는 양을 넘었어요. 오래된 기록을 정리하거나 나눠서 저장해 주세요.'},413);
  let b:any;try{b=JSON.parse(text)}catch{return json({error:'요청을 읽지 못했어요. 새로고침한 뒤 다시 시도해 주세요.'},400)}
- if(access!=='owner'&&(request.method==='PUT'||!['attendance','request','ackWeek','requestCertificate','staffAsk','takeOpenShift','lateReason','setKioskPin'].includes(b.action)))return json({error:'이 작업은 사장님만 할 수 있어요. 사장님께 요청해 주세요.'},403);
+ if(access!=='owner'&&(request.method==='PUT'||!['attendance','request','ackWeek','requestCertificate','staffAsk','takeOpenShift','lateReason','setKioskPin','setPref','dayOffWish'].includes(b.action)))return json({error:'이 작업은 사장님만 할 수 있어요. 사장님께 요청해 주세요.'},403);
  if(access!=='owner'&&b.action==='attendance'&&b.employeeId!==self!.id)return json({error:'본인 출퇴근만 기록할 수 있어요. 내 계정으로 로그인했는지 확인해 주세요.'},403);
  if(access!=='owner'&&b.action==='request'){const target=state.attendance.find(a=>a.id===b.id);if(!target||target.employeeId!==self!.id)return json({error:'본인 출퇴근만 정정 요청할 수 있어요.'},403);}
  // 출퇴근은 화면이 조금 오래돼도 지금 서버 기록을 기준으로 처리한다(같은 시각에 여러 직원이 찍어도 막지 않음). 저장은 아래 version 조건으로 원자적.
@@ -223,6 +225,20 @@ async function route(request:Request,env:Env){
   if(!self)fail('직원 계정에서만 적을 수 있어요. 직원으로 로그인해 주세요.');const a:any=state.attendance.find(x=>x.id===b.id&&x.employeeId===self!.id);if(!a)fail('내 출근 기록을 찾을 수 없어요. 새로고침해 주세요.');
   if(kdate(a.start)<kdate(new Date(Date.now()-86400000).toISOString()))fail('지난 기록은 수정 요청으로 사유를 남겨 주세요.');if(locked(a))fail('급여가 확정된 달이에요. 사장님께 말씀해 주세요.');
   const reason=String(b.reason||'').trim().slice(0,100);if(!reason)fail('이유를 한 줄 적어 주세요.');const before=a.lateReason;a.lateReason=reason;log('지각 사유',self!.name,before?{lateReason:before}:null,{lateReason:reason});askNotice={owner:true,title:`${self!.name}님 지각 사유`,body:reason.slice(0,60),url:'/app?screen=attendance'};break;}
+ case 'setPref':{// 개선 2차 B101: 직원이 근무 전 알림 시간을 고른다(0이면 끔)
+  if(!self)fail('직원 계정에서만 바꿀 수 있어요. 직원으로 로그인해 주세요.');const v=Number(b.beforeMin);if(![0,30,60,120,180].includes(v))fail('알림 시간을 목록에서 골라 주세요.');const e:any=state.employees.find(x=>x.id===self!.id);e.extra={...(e.extra||{}),beforeMin:v};break;}
+ case 'dayOffWish':{// 개선 2차 B036: 쉬고 싶은 날(근무표 짜기 전에) — 같은 날 다시 누르면 지움
+  if(!self)fail('직원 계정에서만 낼 수 있어요. 직원으로 로그인해 주세요.');if(!/^\d{4}-\d{2}-\d{2}$/.test(String(b.date||''))||b.date<kdate(new Date().toISOString()))fail('오늘 이후 날짜를 골라 주세요.');
+  const list:any[]=(state as any).dayOffWishes||[];const has=list.find(x=>x.employeeId===self!.id&&x.date===b.date);
+  if(has)(state as any).dayOffWishes=list.filter(x=>x!==has);else{if(list.filter(x=>x.employeeId===self!.id&&x.date>=kdate(new Date().toISOString())).length>=10)fail('쉬고 싶은 날은 10개까지 낼 수 있어요. 지난 것을 지우고 다시 내 주세요.');(state as any).dayOffWishes=[...list,{id:crypto.randomUUID(),employeeId:self!.id,date:b.date,note:String(b.note||'').slice(0,100),at:new Date().toISOString()}].slice(-3000);askNotice={owner:true,title:`${self!.name}님 휴무 희망`,body:`${b.date.slice(5).replace('-','/')} 쉬고 싶어요${b.note?' · '+String(b.note).slice(0,40):''}`,url:'/app?screen=schedule'}}break;}
+ case 'attMemo':{// 개선 2차 B017: 사장님만 보는 출퇴근 기록 메모
+  const a:any=state.attendance.find(x=>x.id===b.id);if(!a)fail('기록을 찾을 수 없어요. 새로고침해 주세요.');const memo=String(b.memo||'').trim().slice(0,200);if(memo)a.memo=memo;else delete a.memo;break;}
+ case 'autoClose':{// 개선 2차 B016: 퇴근을 안 찍은 기록을 예정 퇴근 시각으로 임시 마감(표시 남김, 직원에게 확인 요청)
+  const a:any=state.attendance.find(x=>x.id===b.id);if(!a||a.end)fail('열린 기록이 아니에요. 새로고침해 주세요.');if(locked(a))fail('급여가 확정된 달이에요. 확정을 먼저 풀어 주세요.');
+  const end=String(b.end||'');if(!Number.isFinite(Date.parse(end))||Date.parse(end)<=Date.parse(a.start)||Date.parse(end)>Date.now())fail('마감 시각을 확인해 주세요. 출근보다 뒤, 지금보다 앞이어야 해요.');
+  const before={...a};a.end=new Date(end).toISOString();a.autoClosed=true;if(a.breakStart){a.breakMinutes+=Math.max(0,(Date.parse(a.end)-Date.parse(a.breakStart))/60000);a.breakStart=null}
+  const done=applyCredit(a,state,true);Object.assign(a,done);log('미퇴근 임시 마감',state.employees.find(e=>e.id===a.employeeId)?.name||'직원',before,a,'예정 퇴근 시각으로 임시 마감');
+  const uid=(members||[]).find((m:any)=>m.employeeId===a.employeeId)?.userId;if(uid)askNotice={uid,title:'퇴근 기록을 임시로 마감했어요',body:`${new Date(Date.parse(a.end)+9*3600000).toISOString().slice(11,16)} 퇴근으로 넣었어요. 실제와 다르면 정정 요청을 보내 주세요.`,url:'/app'};break;}
  case 'setKioskPin':{// 지시서 020: 태블릿 출퇴근 비밀번호(직원 본인이 정하거나, 사장님이 지워 다시 정하게)
   const e:any=access==='owner'?state.employees.find(x=>x.id===b.employeeId):self;if(!e)fail('직원을 찾을 수 없어요. 새로고침해 주세요.');
   if(access==='owner'){delete e.kioskPin;log('태블릿 비밀번호 초기화',e.name,null,null);break}

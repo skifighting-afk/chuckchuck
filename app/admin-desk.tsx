@@ -54,3 +54,9 @@ function ServiceNoticeAdmin(){
   {list&&<ul>{list.map(n=><li key={n.id}>{n.kind} · {n.title} · 시행 {n.effective_at} · 동의 {n.agreed}명</li>)}</ul>}
  </details>
 }
+/** 개선 2차 B196·B198: 화면 오류·느린 요청 최근 100건(개인정보 지운 글) */
+export function ClientErrors(){
+ const [rows,setRows]=useState<any[]|null>(null),[err,setErr]=useState('');
+ const load=async()=>{setErr('');const r=await fetch('/api/client-error');const d:any=await r.json().catch(()=>({}));if(!r.ok){setErr(d.error||'불러오지 못했어요. 새로고침해 주세요.');return}setRows(d.rows||[])};
+ return <section className="saas-account" aria-labelledby="ce-title"><h2 id="ce-title">화면 오류·느린 요청</h2>{!rows?<button type="button" onClick={load}>최근 기록 보기</button>:rows.length?<ul>{rows.map((r,i)=><li key={i}><small>{String(r.at).slice(5,16).replace('T',' ')} · {r.kind==='slow'?'느림':'오류'} · {r.path}</small><br/>{r.message}</li>)}</ul>:<p className="saas-fine">최근 14일 기록이 없어요.</p>}{err&&<p role="alert">{err}</p>}</section>;
+}
