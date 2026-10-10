@@ -1,4 +1,4 @@
-# main에 올리면: 설치 → 타입 검사 → 빌드 → 테스트(실제 Postgres) → GitHub Pages(화면) + Supabase(DB·서버 함수) 배포.
+# main에 올리면: 검사 → Supabase DB → 서버 함수 → 응답 확인 → GitHub Pages 화면 배포.
 # 결과는 ci-status 브랜치에 기록된다(비공개 저장소에서도 Claude가 git으로 확인할 수 있게).
 name: 빌드·배포
 
@@ -163,21 +163,18 @@ jobs:
           if [ -n "$SUPABASE_ACCESS_TOKEN" ] && [ -n "$SUPABASE_DB_PASSWORD" ] && [ -n "$SUPABASE_PROJECT_REF" ]; then
             echo "supabase=yes" >> "$GITHUB_OUTPUT"; echo "Supabase도 여기서 배포" | tee ci-logs/5-config.log
           else
-            echo "supabase=no" >> "$GITHUB_OUTPUT"; echo "Supabase 비밀값 없음: 화면만 배포 (DB·서버 함수는 Claude가 Supabase 연결로 배포)" | tee ci-logs/5-config.log
+            echo "supabase=no" >> "$GITHUB_OUTPUT"; echo "Supabase 비밀값 없음: 배포 중단" | tee ci-logs/5-config.log
+            exit 1
           fi
       - uses: actions/download-artifact@v4
         with:
           name: function
           path: supabase/functions/api
-      - name: 화면 배포 (GitHub Pages)
-        id: pages
-        if: steps.fresh.outputs.ok == 'yes'
-        uses: actions/deploy-pages@v4
       - name: 화면 주소 정리
         id: origin
         if: steps.fresh.outputs.ok == 'yes'
         run: |
-          page="${{ steps.pages.outputs.page_url }}"
+          page="https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/"
           APP_DOMAIN="${APP_DOMAIN:-$(node -p "require('./deploy.config.json').APP_DOMAIN||''")}"
           origins="$(echo "$page" | sed -E 's#^(https?://[^/]+).*#\1#')"
           if [ -n "$APP_DOMAIN" ]; then origins="https://$APP_DOMAIN,$origins"; fi
@@ -194,6 +191,7 @@ jobs:
           set -o pipefail
           supabase link --project-ref "$SUPABASE_PROJECT_REF" -p "$SUPABASE_DB_PASSWORD" 2>&1 | tee ci-logs/7-link.log
       - name: DB 마이그레이션
+        id: database
         if: steps.cfg.outputs.supabase == 'yes'
         run: |
           set -o pipefail
@@ -246,21 +244,27 @@ jobs:
           done
           supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" "${args[@]}" 2>&1 | sed -E 's/=.*/=***/' | tee ci-logs/10-secrets.log
       - name: 서버 함수 배포
+        id: function
         if: steps.cfg.outputs.supabase == 'yes'
         run: |
           set -o pipefail
           supabase functions deploy api --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt --use-api 2>&1 | tee ci-logs/11-function.log
       - name: 배포 확인
-        if: steps.fresh.outputs.ok == 'yes'
+        id: health
+        if: steps.fresh.outputs.ok == 'yes' && steps.cfg.outputs.supabase == 'yes'
         run: |
           SUPABASE_URL="${SUPABASE_URL:-$(node -p "require('./deploy.config.json').SUPABASE_URL")}"
           SUPABASE_ANON_KEY="${SUPABASE_ANON_KEY:-$(node -p "require('./deploy.config.json').SUPABASE_ANON_KEY")}"
-          if [ -z "$SUPABASE_URL" ]; then echo "Supabase 주소가 아직 없어 확인을 건너뜀" | tee ci-logs/12-health.log; exit 0; fi
+          if [ -z "$SUPABASE_URL" ]; then echo "Supabase 주소 없음: 배포 중단" | tee ci-logs/12-health.log; exit 1; fi
           set -o pipefail
           code=$(curl -s -o ci-logs/12-health.json -w '%{http_code}' -H "apikey: $SUPABASE_ANON_KEY" -H "Origin: ${{ steps.origin.outputs.primary }}" "$SUPABASE_URL/functions/v1/api/auth")
           echo "GET /api/auth → $code" | tee -a ci-logs/12-health.log
           cat ci-logs/12-health.json | tee -a ci-logs/12-health.log
           [ "$code" = "200" ]
+      - name: 화면 배포 (GitHub Pages)
+        id: pages
+        if: steps.fresh.outputs.ok == 'yes' && steps.health.outcome == 'success'
+        uses: actions/deploy-pages@v4
       # 작업 004: 실제 주소에서 가입 → 가게 만들기 → 로그아웃 → 다시 로그인. 점검 계정은 끝나고 지운다.
       - uses: actions/setup-node@v4
         if: steps.fresh.outputs.ok == 'yes' && steps.cfg.outputs.supabase == 'yes'

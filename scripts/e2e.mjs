@@ -184,6 +184,8 @@ await step('작업 054: 직원 여러 명 붙여넣기 등록',async()=>{
  await owner.locator('.bulk-err').first().waitFor();await owner.click('button:has-text("1명 등록")');
  await owner.getByText(/직원 1명을 '입사 준비'로 등록했어요/).waitFor();await owner.getByText('붙임직원').first().waitFor();
 });
+await (await import('./hr-e2e.mjs')).hrE2E({owner,staff,srv,step,staffName:STAFF.name});
+
 await step('다시 로그인 (로그아웃 후)',async()=>{
  await staff.goto(B+'/logout');await staff.waitForURL(/\/login/);await staff.goto(B+'/login?role=employee',{waitUntil:'networkidle'});
  await staff.fill('input[type=email]',STAFF.email);await staff.fill('input[aria-label="비밀번호"]',STAFF.password);await staff.locator('form button[type=submit]').click();

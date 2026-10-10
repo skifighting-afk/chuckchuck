@@ -1,6 +1,9 @@
 // Supabase Edge Function을 Node에서 실제 Postgres와 가짜 Supabase Auth로 돌려 보는 통합 점검.
 // 사용: FUNCTION_BUNDLE=<묶은 함수 파일> node scripts/check-supabase-function.mjs
 import assert from 'node:assert/strict';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {fileURLToPath,pathToFileURL} from 'node:url';
 import {testDB,closeAll} from './test-db.mjs';
 
 const APP='https://app.example.kr',SUPA='https://proj.supabase.co';
@@ -29,10 +32,10 @@ let handler;
 globalThis.Deno={env:{get:k=>({SUPABASE_DB_URL:(process.env.TEST_DATABASE_URL||'postgres://postgres:postgres@localhost:5432/chuck_test')+'?options=-c%20search_path%3D'+schema,SUPABASE_URL:SUPA,SUPABASE_ANON_KEY:'anon',SUPABASE_SERVICE_ROLE_KEY:'service',APP_ORIGIN:APP+',https://skifighting-afk.github.io',HQ_ADMIN_EMAIL:'hq@example.kr'})[k]},serve:h=>{handler=h}};
 // 빌드된 함수(npm:postgres를 불러오는 Deno용)를 Node에서 돌리려고 드라이버 경로만 바꾼다.
 const {readFileSync,writeFileSync,mkdtempSync}=await import('node:fs');
-const bundle=process.env.FUNCTION_BUNDLE||new URL('../supabase/functions/api/index.js',import.meta.url).pathname;
-const tmp=mkdtempSync('/tmp/fn-')+'/index.mjs';
+const bundle=process.env.FUNCTION_BUNDLE||fileURLToPath(new URL('../supabase/functions/api/index.js',import.meta.url));
+const tmp=join(mkdtempSync(join(tmpdir(),'chuck-fn-')),'index.mjs');
 writeFileSync(tmp,readFileSync(bundle,'utf8').replace(/(["'])npm:postgres@[^"']+\1/g,JSON.stringify(import.meta.resolve('postgres'))));
-await import(tmp);
+await import(pathToFileURL(tmp).href);
 
 let session=null;
 async function call(path,{method='GET',body,origin=APP,token}={}){

@@ -80,7 +80,7 @@ export default function Platform(){
  if(path==='/kiosk')return <KioskPage/>;
  if(path==='/logout')return <Logout/>;
  if(path==='/start')return <Start/>;
- if(path==='/demo'||path==='/try')return <TeamApp demo/>;
+ if(path==='/demo'||path==='/try')return query.get('screen')==='hr'?<HrWorkspace demo/>:<TeamApp demo/>;
  if(path==='/terms'||path==='/privacy')return <Shell><LegalPage privacy={path==='/privacy'}/></Shell>;
  if(path==='/privacy-request')return <Shell><PrivacyRequest/></Shell>;
  if(path==='/news')return <Shell><NewsPage/></Shell>;

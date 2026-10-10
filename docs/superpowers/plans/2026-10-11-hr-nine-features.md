@@ -10,7 +10,7 @@
 
 **Spec:** `docs/superpowers/specs/2026-10-11-hr-nine-features-design.md` — 2026-10-11 사용자 승인.
 
-**상태:** 사용자 계획 승인 · 직접 구현 진행 중. 추가 HR 기능 기능 구현 9/9 · 서버 검증 9/9 · 전체 화면 검증 대기 · 배포 확인 0/9. 기존 100개 개선안과 별도로 추적한다.
+**상태:** 사용자 계획 승인 · 직접 구현 진행 중. 추가 HR 기능 구현 9/9 · 서버 검증 9/9 · 화면 57개 상태 확인 · 최종 리뷰·CI 검증 진행 중 · 배포 확인 0/9. 기존 100개 개선안과 별도로 추적한다.
 
 ## Global Constraints
 
@@ -91,12 +91,12 @@ type HrPanelProps = {client:HrClient;branchId:string;selfId:string|null};
 - `HrWorkspace({demo=false}:{demo?:boolean})`를 `/hr`에서 lazy load한다. 각 모듈 Panel은 공통 `HrPanelProps`를 받는다.
 - `createHrFixture()`는 기존 authedTest를 재사용한다. boss/staff/peer/manager/outsider, 두 사업자·두 지점, `call(actor,path,body?)`, `employeeId(actor)`, `store()`, `q`, `close()`를 제공한다.
 
-- [ ] **1. 환경 확인:** 기존 미완성 변경을 보존하고 using-git-worktrees에 따라 최신 main에서 HR 전용 worktree/branch를 준비한다. 승인 spec·plan만 복사하고 baseline `npm run check`, build, 기존 관련 테스트 결과를 기록한다.
-- [ ] **2. 실패 시험:** `assert.equal((await F.call('', '/api/hr/context')).status,401)`, 직원의 다른 지점 접근 403, 미위임 관리자의 위임 403, owner 위임 후 허용, 만료·회수·전근 후 403을 검증한다. transaction 예외 후 생성 행 0, 같은 키·내용의 감사 1건, `requestKeyMismatch` 409를 검증한다.
-- [ ] **3. 실패 확인:** `npm run build` 후 `node scripts/check-hr-core.mjs`; 새 API 미연결로 실패하는지 확인한다.
-- [ ] **4. 기반 구현:** hr_grants/hr_audit/hr_settings를 추가한다. owner FK는 stores(owner) ON UPDATE/DELETE CASCADE, RLS 활성화 및 anon/authenticated 직접 접근 revoke. 감사 요청 키는 owner+actor+request_id로 유일하며 원문 대신 fingerprint·작업·대상 ID만 저장한다. 후보 자동 파기는 기본 비활성화한다.
-- [ ] **5. 권한 경쟁·화면 시험:** 쓰기 잠금 전에 권한이 회수되는 `revokedDuringWrite`는 403·수정 0건이어야 한다. 권한 설정 화면, 만료 안내, 다른 지점 접근 거부를 확인한다.
-- [ ] **6. 통과·커밋:** core, `check-team.mjs`, `check-personal-access.mjs`, 타입 검사를 통과한 파일만 커밋한다. 운영 계정에 위임을 임의로 추가하지 않는다.
+- [x] **1. 환경 확인:** 기존 미완성 변경을 보존하고 using-git-worktrees에 따라 최신 main에서 HR 전용 worktree/branch를 준비한다. 승인 spec·plan만 복사하고 baseline `npm run check`, build, 기존 관련 테스트 결과를 기록한다.
+- [x] **2. 실패 시험:** `assert.equal((await F.call('', '/api/hr/context')).status,401)`, 직원의 다른 지점 접근 403, 미위임 관리자의 위임 403, owner 위임 후 허용, 만료·회수·전근 후 403을 검증한다. transaction 예외 후 생성 행 0, 같은 키·내용의 감사 1건, `requestKeyMismatch` 409를 검증한다.
+- [x] **3. 실패 확인:** `npm run build` 후 `node scripts/check-hr-core.mjs`; 새 API 미연결로 실패하는지 확인한다.
+- [x] **4. 기반 구현:** hr_grants/hr_audit/hr_settings를 추가한다. owner FK는 stores(owner) ON UPDATE/DELETE CASCADE, RLS 활성화 및 anon/authenticated 직접 접근 revoke. 감사 요청 키는 owner+actor+request_id로 유일하며 원문 대신 fingerprint·작업·대상 ID만 저장한다. 후보 자동 파기는 기본 비활성화한다.
+- [x] **5. 권한 경쟁·화면 시험:** 쓰기 잠금 전에 권한이 회수되는 `revokedDuringWrite`는 403·수정 0건이어야 한다. 권한 설정 화면, 만료 안내, 다른 지점 접근 거부를 확인한다.
+- [x] **6. 통과·커밋:** core, `check-team.mjs`, `check-personal-access.mjs`, 타입 검사를 통과한 파일만 커밋한다. 운영 계정에 위임을 임의로 추가하지 않는다.
 
 ## Task 2: HR-01 채용 지원자→직원 연결
 
@@ -197,13 +197,13 @@ type HrPanelProps = {client:HrClient;branchId:string;selfId:string|null};
 
 **Interfaces:** `HrDemoState = {store:StoreData;grants:HrGrant[];candidates:Candidate[];buddies:BuddyAssignment[];skills:SkillDefinition[];skillRecords:SkillRecord[];preferences:WorkPreference[];meetings:Meeting[];meetingActions:MeetingAction[];meetingComments:MeetingComment[];cases:HrCase[];caseMessages:CaseMessage[];campaigns:PulseCampaign[];answers:PulseAnswer[];items:ItemAssignment[];itemEvents:ItemEvent[]}`. `createHrDemo():HrDemoState`, `createHrDemoClient(state:HrDemoState,role:'owner'|'employee'|'manager'):HrClient`. 역할 전환에도 같은 예시 상태를 사용한다.
 
-- [ ] **1. 실패 시험:** 9개 기능의 조작 후 예시 상태 변화·역할별 조회·초기화를 assert한다. 실제 API POST는0이어야 한다.
-- [ ] **2. 데모·진입 연결:** `/demo?role=owner&screen=hr&view=hiring` 등 기능 링크를 제공한다. 관리자는 매장 운영→사람·교육, 직원은 내 교육/근무 희망/의견·상담/받은 물품 카드에서 진입한다. 기능을 홈에 모두 펼치지 않는다. 예시 데이터 표기를 고정한다.
-- [ ] **3. 검증 등록:** core/hiring/training/staffing/meetings/cases/pulse/items/lifecycle/demo 검사를 check-model에 등록한다. 기존 E2E에 9개 서버 저장→재조회 시나리오와 권한 실패를 추가한다.
+- [x] **1. 실패 시험:** 9개 기능의 조작 후 예시 상태 변화·역할별 조회·초기화를 assert한다. 실제 API POST는0이어야 한다.
+- [x] **2. 데모·진입 연결:** `/demo?role=owner&screen=hr&view=hiring` 등 기능 링크를 제공한다. 관리자는 매장 운영→사람·교육, 직원은 내 교육/근무 희망/의견·상담/받은 물품 카드에서 진입한다. 기능을 홈에 모두 펼치지 않는다. 예시 데이터 표기를 고정한다.
+- [x] **3. 검증 등록:** core/hiring/training/staffing/meetings/cases/pulse/items/lifecycle/demo 검사를 check-model에 등록한다. 기존 E2E에 9개 서버 저장→재조회 시나리오와 권한 실패를 추가한다.
 - [ ] **4. 화면 확인:** 360/390/768/1280px, 큰 글씨, 가로 넘침, 키보드, 포커스 복귀, 느린 통신, 409 입력 보존, 재접속을 확인한다. 기존 근태·급여·계약 핵심 동선도 확인한다. 브라우저 URL 제한은 우회하지 않는다.
 - [ ] **5. 필수 검사:** `npm run check`, `npm run build`, `npm test`, `npm run check:function`, `npm run e2e`, `npm run mobile`. Windows 자식 프로세스 제한은 성공으로 처리하지 않고 Linux CI 결과를 확인한다.
 - [ ] **6. 리뷰·PR:** 선택한 실행 방식에 따른 코드 리뷰와 수정 후 HR 전용 PR을 만들고 Codex에 연결한다. 미완성 요금·시작 안내 변경을 섞지 않는다.
-- [ ] **7. 배포 순서 수정:** 현재 workflow는 화면이 DB·서버보다 먼저 배포된다. 새 HR 화면 노출 전에 DB migration→서버 함수→health→화면 배포 순으로 조정하고 앞 단계 실패 시 화면을 배포하지 않는다. 최신 main 조건과 기존 secrets/URL 설정을 보존한다.
+- [x] **7. 배포 순서 수정:** 현재 workflow는 화면이 DB·서버보다 먼저 배포된다. 새 HR 화면 노출 전에 DB migration→서버 함수→health→화면 배포 순으로 조정하고 앞 단계 실패 시 화면을 배포하지 않는다. 최신 main 조건과 기존 secrets/URL 설정을 보존한다.
 - [ ] **8. 운영 확인:** 기존 자동 배포 승인 범위에 따라 CI 성공과 실제 배포 SHA·DB 적용·API·권한·화면을 확인한다. 실재 직원에게 시험 상담·알림을 만들지 않는다. 9개 항목별 증거를 기록하고 개발/검증/배포를 각각 판정한다.
 
 ## 실행 환경·완료 기록
