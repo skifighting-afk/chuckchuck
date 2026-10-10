@@ -149,7 +149,7 @@ const wageIn = $<HTMLInputElement>('#c-wage'), hoursIn = $<HTMLInputElement>('#c
 const daysOut = $('#c-days'), peopleOut = $('#c-people');
 let days = 5, people = 2, year = 2026, wageTouched = false, branches = 1;
 const num = (v: string) => Number(v.replace(/[^\d.]/g, '')) || 0;
-function steppers(scope: ParentNode, get: () => number, set: (v: number) => void, min: number, max: number) {
+function steppers(scope: Root, get: () => number, set: (v: number) => void, min: number, max: number) {
   $$<HTMLButtonElement>('button[data-step]', scope).forEach(b => b.addEventListener('click', () => { set(clamp(get() + Number(b.dataset.step), min, max)); }));
 }
 steppers(daysOut.parentElement!, () => days, v => { days = v; renderCalc(); }, 1, 7);
