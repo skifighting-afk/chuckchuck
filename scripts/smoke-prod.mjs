@@ -76,7 +76,9 @@ try{
  await p.getByText(store).first().waitFor();
  log('다시 로그인 OK');
  // HR 운영 스키마·권한은 이번에 만든 빈 점검 매장에서 읽기만 확인한다.
- await p.goto(BASE+'/hr?view=training',{waitUntil:'networkidle'});
+ // HR readiness is proved by the visible workspace and authenticated API reads,
+ // not unrelated best-effort telemetry becoming idle on a slow connection.
+ await p.goto(BASE+'/hr?view=training',{waitUntil:'domcontentloaded'});
  await p.getByRole('heading',{name:'사람·교육',exact:true}).waitFor();
  const hr=await p.evaluate(async()=>{
   const read=async path=>{const r=await fetch(path);return{status:r.status,private:r.headers.get('cache-control')?.includes('no-store'),body:await r.json()}};
@@ -86,7 +88,7 @@ try{
  if(hr.context.status!==200||hr.context.body.access!=='owner'||hr.context.body.storeName!==store||hr.context.body.employees.length!==0)throw Error('HR 점검 매장·사장님 권한 확인 실패');
  for(const m of hr.modules)if(m.status!==200||!m.private)throw Error('HR '+m.name+' 운영 조회 실패: '+m.status);
  log('HR 9개 기능·권한 설정 운영 API 조회 OK (빈 점검 매장·읽기 전용)');
- const guest=await browser.newPage();const [guestResponse]=await Promise.all([guest.waitForResponse(r=>r.url().includes('/hr/context')),guest.goto(BASE+'/hr',{waitUntil:'networkidle'})]);
+ const guest=await browser.newPage();const [guestResponse]=await Promise.all([guest.waitForResponse(r=>r.url().includes('/hr/context')),guest.goto(BASE+'/hr',{waitUntil:'domcontentloaded'})]);
  if(guestResponse.status()!==401)throw Error('HR 비로그인 접근 차단 실패: '+guestResponse.status());await guest.close();log('HR 비로그인 접근 401 차단 OK');
  if(errors.length)throw Error('화면 오류: '+errors.slice(0,3).join(' | '));
 }catch(e){failure=e;try{const pages=browser.contexts().flatMap(c=>c.pages());if(pages[0])await pages[0].screenshot({path:'smoke-failure.png',fullPage:true})}catch{}}
