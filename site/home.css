@@ -551,3 +551,5 @@ html.reduce *{animation:none!important;transition:none!important}
 @media(prefers-reduced-motion:reduce){.experience *{animation:none!important;transition:none!important}.exp-pointer{display:none}}.reduce .experience *{animation:none!important;transition:none!important}.reduce .exp-pointer{display:none}
 
 .exp-enter>.exp-panel,.exp-enter>.exp-phone-card,.exp-enter>.exp-paper{animation:exp-focus 6.5s cubic-bezier(.25,.6,.3,1) both}@keyframes exp-focus{0%,18%,100%{transform:scale(1)}60%,80%{transform:scale(1.015)}}
+
+html.anim .hero{height:160vh}.exp-extra{font-size:15px;color:#64795f;line-height:1.9;margin:0 0 25px}@media(max-width:650px){html.anim .hero{height:145vh}}
