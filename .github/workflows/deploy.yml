@@ -166,7 +166,7 @@ jobs:
             echo "supabase=no" >> "$GITHUB_OUTPUT"; echo "Supabase 비밀값 없음: 배포 중단" | tee ci-logs/5-config.log
             exit 1
           fi
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: function
           path: supabase/functions/api
@@ -305,7 +305,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: logs-*
           path: logs
