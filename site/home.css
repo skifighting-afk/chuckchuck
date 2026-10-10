@@ -497,3 +497,12 @@ html.reduce *{animation:none!important;transition:none!important}
 @keyframes qr-blink{0%,100%{opacity:1}50%{opacity:.45}}
 @media (prefers-reduced-motion:reduce){.demo4 *{animation:none!important}.demo4 .st-done{opacity:0}.demo4 .st-wait{opacity:1}}
 
+
+/* 시현 카드: 단계별 흐름 (4단계 자동 전환, 8초 루프) */
+.demo4 .stack{position:relative;height:190px;border:1px dashed var(--line);border-radius:12px;background:var(--white)}
+.demo4 .frame{position:absolute;inset:0;padding:12px;display:flex;flex-direction:column;justify-content:center;gap:8px;opacity:0;animation:frame-cycle 8s infinite}
+.demo4 .frame.f2{animation-delay:2s}.demo4 .frame.f3{animation-delay:4s}.demo4 .frame.f4{animation-delay:6s}
+.demo4 .cap{font-size:12px;font-weight:800;color:var(--green)}
+@keyframes frame-cycle{0%{opacity:0}4%,21%{opacity:1}25%,100%{opacity:0}}
+.demo4 .stack .mock{border:0;padding:0}
+@media (prefers-reduced-motion:reduce){.demo4 .frame{animation:none;opacity:0}.demo4 .frame.f1{opacity:1}}
