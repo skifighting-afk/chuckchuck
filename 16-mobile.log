@@ -21,13 +21,13 @@ PASS demo-payroll · 이전과 0% 다름
 PASS demo-contracts · 이전과 0% 다름
 PASS demo-retirement · 이전과 0% 다름
 PASS demo-outbox · 이전과 0% 다름
-PASS demo-operations · 이전과 0% 다름
+PASS demo-operations · 이전과 0.81% 다름
 PASS demo-manual · 이전과 0% 다름
 PASS demo-reports · 이전과 0% 다름
 PASS demo-stores · 이전과 0% 다름
 PASS demo-settings · 이전과 0% 다름
 PASS demo-guide · 이전과 0% 다름
-PASS demo-staff · 이전과 0% 다름
+PASS demo-staff · 이전과 0.31% 다름
 PASS public-home (큰 글씨)
 PASS public-start (큰 글씨)
 PASS public-login (큰 글씨)
