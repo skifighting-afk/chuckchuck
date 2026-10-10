@@ -86,7 +86,7 @@ jobs:
           elif [ -n "${{ github.event.inputs.index }}" ]; then node scripts/reels/make.mjs --index "${{ github.event.inputs.index }}" --out reel-out; else node scripts/reels/make.mjs --out reel-out; fi
       - name: 만든 영상 보관
         if: steps.due.outputs.go == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: reel
           path: reel-out/

@@ -74,7 +74,7 @@ jobs:
           node scripts/coverage.mjs --min 90 2>&1 | tee ci-logs/5-coverage.log
       - name: 배포 파일 보관
         if: steps.build.outcome == 'success'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: function
           path: supabase/functions/api/index.js
@@ -85,7 +85,7 @@ jobs:
           path: dist/client
       - name: 기록 보관
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: logs-test
           path: ci-logs
@@ -129,7 +129,7 @@ jobs:
         run: cp e2e-failure-*.png ci-logs/ 2>/dev/null || true
       - name: 기록 보관
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: logs-e2e
           path: ci-logs
@@ -289,7 +289,7 @@ jobs:
         run: cp smoke-failure.png ci-logs/13-smoke-failure.png 2>/dev/null || true
       - name: 기록 보관
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: logs-deploy
           path: ci-logs
