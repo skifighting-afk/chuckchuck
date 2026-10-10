@@ -447,3 +447,28 @@ fieldset{min-width:0}
 @media(max-width:600px){.tour,.crew,.calc,.pricing,.worries{padding-block:88px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
 html.reduce *{animation:none!important;transition:none!important}
+
+/* 실제 화면 가상 시현 4장면 */
+.demo4{padding:110px var(--gut);background:var(--paper)}
+.demo4-h{font-size:clamp(26px,3vw,38px);letter-spacing:-.04em;color:var(--ink);margin:10px 0 36px}
+.demo4-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+.demo4-card{background:var(--sheet);border:1px solid var(--line);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:12px}
+.demo4-tag{font-size:12px;font-weight:800;color:var(--green);letter-spacing:.04em}
+.demo4-feel{font-size:15px;line-height:1.5;color:var(--ink);min-height:4.5em}
+.demo4-do{font-size:13px;line-height:1.5;color:var(--muted);margin-top:auto}
+.demo4-do b{color:var(--ink)}
+.mock{background:var(--white);border:1px dashed var(--line);border-radius:12px;padding:12px;font-size:12px;color:var(--ink)}
+.mock p{margin:0 0 8px}
+.mock small{display:block;color:var(--muted);font-size:11px}
+.mock b{font-size:16px;letter-spacing:-.02em}
+.mock-sched{display:grid;grid-template-columns:44px repeat(5,1fr);gap:5px;align-items:center}
+.mock-sched span{font-weight:700;font-size:11px}
+.mock-sched i{height:16px;border-radius:4px;background:#eceee6}
+.mock-sched i.on{background:#b9e4a1}
+.qr-chip,.pending,.ok-chip,.pay-chip{display:inline-block;font-size:11px;font-weight:700;padding:4px 8px;border-radius:999px;margin:0 6px 6px 0}
+.qr-chip{background:#eaf0e5;color:var(--green)}
+.pending{background:#fff1c9;color:#7a5a00}
+.ok-chip{background:var(--lime);color:var(--ink)}
+.pay-chip{background:#eaf0e5;color:var(--green)}
+@media(max-width:900px){.demo4-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.demo4{padding-block:88px}.demo4-grid{grid-template-columns:1fr}}
