@@ -10,7 +10,7 @@ const authorize=(ctx:HrContext)=>{if(!canHr(ctx,'hiring','manage'))deny()};
 async function retention(db:HrDatabase,ctx:HrContext){const r=await db.prepare('SELECT candidate_retention_days FROM hr_settings WHERE owner=?').bind(ctx.ownerId).first<any>();return {id:'retention',candidateRetentionDays:r?.candidate_retention_days??null}}
 export async function hiringRead(db:HrDatabase,ctx:HrContext):Promise<HiringView>{
  authorize(ctx);const candidates=await listRecords<Candidate>(db,ctx,'hr_candidates'),settings=await retention(db,ctx);
- return{candidates,storeVersion:ctx.storeVersion,owner:ctx.access==='owner',employees:ctx.access==='owner'?ctx.store.employees.filter(e=>e.branchId===ctx.branchId&&!staffGone(e)).map(e=>({id:e.id,name:e.name})):[],candidateRetentionDays:settings.candidateRetentionDays,deletionPreview:candidates.flatMap(c=>{const purgeAt=candidatePurgeAt(c,settings.candidateRetentionDays);return purgeAt?[{id:c.id,name:c.name,purgeAt}]:[]})};
+ return{candidates,storeVersion:ctx.storeVersion,owner:ctx.access==='owner',employees:ctx.access==='owner'?ctx.store.employees.filter(e=>e.branchId===ctx.branchId&&!e.anonymizedAt&&!staffGone(e)).map(e=>({id:e.id,name:e.name})):[],candidateRetentionDays:settings.candidateRetentionDays,deletionPreview:candidates.flatMap(c=>{const purgeAt=candidatePurgeAt(c,settings.candidateRetentionDays);return purgeAt?[{id:c.id,name:c.name,purgeAt}]:[]})};
 }
 export async function hiringWrite(db:HrDatabase,ctx:HrContext,input:unknown){
  const b=hiringSchema.parse(input);authorize(ctx);
@@ -32,7 +32,7 @@ export async function hiringWrite(db:HrDatabase,ctx:HrContext,input:unknown){
   if(old.stage!=='채용 결정'||old.convertedEmployeeId)throw new HrError(409,'채용 결정과 기존 연결 상태를 확인해 주세요.');
   if(c.storeVersion!==b.storeVersion)conflict();
   let employeeId:string;
-  if(b.mode==='link'){const e=c.store.employees.find(e=>e.id===b.employeeId&&e.branchId===c.branchId&&!staffGone(e));if(!e)notFound();employeeId=e.id}
+  if(b.mode==='link'){const e=c.store.employees.find(e=>e.id===b.employeeId&&e.branchId===c.branchId&&!e.anonymizedAt&&!staffGone(e));if(!e)notFound();employeeId=e.id}
   else{
    const e={...newMember(c.branchId),name:old.name,phone:old.phone,role:old.role,status:'입사 준비' as const,wage:0,autoPay:false},next={...c.store,employees:[...c.store.employees,e]};
    // Attendance lives in its own table; validate Team without copying it into stores.data.

@@ -12,7 +12,7 @@ export function grantRow(r:any):HrGrant{return{id:r.id,ownerId:r.owner,branchId:
 export async function contextFromRow(db:HrDatabase,userId:string,row:{owner:string;data:string;version:number},branchId?:string):Promise<HrContext>{
  const raw=JSON.parse(row.data),member=raw._members?.find((m:any)=>m.userId===userId),self=raw.employees?.find((e:any)=>e.id===member?.employeeId);
  const owner=row.owner===userId||(raw._coowners||[]).some((c:any)=>c.userId===userId);
- if(!owner&&staffGone(self))deny();
+ if(!owner&&(staffGone(self)||self?.anonymizedAt))deny();
  const branch=branchId||(owner?raw.branches[0]?.id:self.branchId);
  if(!raw.branches.some((b:any)=>b.id===branch)||(!owner&&branch!==self.branchId))deny();
  const now=new Date().toISOString(),grants=(await db.prepare('SELECT * FROM hr_grants WHERE owner=? AND branch_id=? AND revoked_at IS NULL').bind(row.owner,branch).all()).results.map(grantRow);
@@ -24,7 +24,7 @@ export async function resolveHrContext(request:Request,env:{DB:HrDatabase},branc
  return contextFromRow(env.DB,uid,linked.row,branchId);
 }
 export function contextView(ctx:HrContext):HrContextView{
- const e=ctx.store.employees,active=e.filter(x=>x.branchId===ctx.branchId&&!staffGone(x)),scopes=HR_SCOPES.filter(s=>canHr(ctx,s,'manage'));
- const receivers=active.filter(x=>ctx.grants.some(g=>g.employeeId===x.id&&g.scope==='cases'&&!g.revokedAt&&(!g.validUntil||g.validUntil>ctx.now))).map(x=>({id:x.id,name:x.name}));
+ const e=ctx.store.employees,active=e.filter(x=>x.branchId===ctx.branchId&&!x.anonymizedAt&&!staffGone(x)),scopes=HR_SCOPES.filter(s=>canHr(ctx,s,'manage'));
+ const receivers=active.filter(x=>ctx.grants.some(g=>g.employeeId===x.id&&g.scope==='cases'&&!g.revokedAt&&(!g.validUntil||Date.parse(g.validUntil)>Date.parse(ctx.now)))).map(x=>({id:x.id,name:x.name}));
  return{access:ctx.access,coowner:ctx.coowner,selfId:ctx.selfId,branchId:ctx.branchId,storeName:ctx.store.store.name,branches:ctx.store.branches.filter(b=>ctx.access==='owner'||b.id===ctx.branchId).map(b=>({id:b.id,name:b.name})),employees:active.filter(x=>ctx.access==='owner'||scopes.length||x.id===ctx.selfId).map(x=>({id:x.id,name:x.name,role:x.role})),receivers,scopes:[...scopes]};
 }

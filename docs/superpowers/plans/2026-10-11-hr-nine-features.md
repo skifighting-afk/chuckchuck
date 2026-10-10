@@ -185,11 +185,11 @@ type HrPanelProps = {client:HrClient;branchId:string;selfId:string|null};
 
 **Interfaces:** `purgeClosedCandidates(db:HrDatabase,ownerId:string,now:string):Promise<number>`. `HrExport = {generatedAt:string;ownerId:string;mode:'self'|'owner';sections:Partial<Record<HrScope,unknown>>}`. `exportHrData(ctx:HrContext,selection:HrScope[],mode:'self'|'owner'):Promise<HrExport>`. POST /api/hr/export는 선택 범위만 출력하며 self는 본인에게 공개되는 DTO로 한정한다.
 
-- [ ] **1. 실패 시험:** `ownerLifecycle`: 대표 변경 후 owner FK 일치, stores 삭제 후 자식0, 직원 익명화 후 식별 정보·기밀 문자열 없음, 위임 즉시 무효화, 일반 export에 기밀 없음. 후보 보관 설정 미입력은 파기0, 설정한 종료 후보만 정리됨을 assert한다.
-- [ ] **2. 실패 확인:** build 후 `node scripts/check-hr-lifecycle.mjs`.
-- [ ] **3. 원자적 수명 연결:** stores.data UPDATE에 PostgreSQL AFTER UPDATE 트리거 `reconcile_hr_people()`를 둔다. 직원의 새 anonymizedAt 변경은 같은 DB 트랜잭션에서 관련 HR 본문·개인 연결을 정리하고 grant를 회수한다. 담당 퇴사·전근은 현재 접근 차단과 인계 대기를 반영한다. 트리거 실패 시 stores UPDATE도 롤백되는지 시험한다. owner 변경·삭제는 FK CASCADE로 처리한다.
-- [ ] **4. 운영·설명:** 후보 보관은 owner의 명시 설정 후 실행한다. 기존 급여·계약 보관 기간을 상담에 임의로 적용하지 않는다. 일반 export에는 HR 별도 내보내기를 안내한다. cron의 중복 방지 방식으로 면담·약속·반납 기한을 알리고 본문은 넣지 않는다. 처리 항목·공개 범위를 개인정보 안내와 맞춘다.
-- [ ] **5. 통과·커밋:** core/lifecycle, `check-transfer.mjs`, `check-withdraw.mjs`, `check-cron.mjs`, `check-store-log.mjs`, 타입 검사. 삭제·익명화 시험은 격리 테스트 DB에서만 수행한다.
+- [x] **1. 실패 시험:** `ownerLifecycle`: 대표 변경 후 owner FK 일치, stores 삭제 후 자식0, 직원 익명화 후 식별 정보·기밀 문자열 없음, 위임 즉시 무효화, 일반 export에 기밀 없음. 후보 보관 설정 미입력은 파기0, 설정한 종료 후보만 정리됨을 assert한다.
+- [x] **2. 실패 확인:** build 후 `node scripts/check-hr-lifecycle.mjs`.
+- [x] **3. 원자적 수명 연결:** stores.data UPDATE에 PostgreSQL AFTER UPDATE 트리거 `reconcile_hr_people()`를 둔다. 직원의 새 anonymizedAt 변경은 같은 DB 트랜잭션에서 관련 HR 본문·개인 연결을 정리하고 grant를 회수한다. 담당 퇴사·전근은 현재 접근 차단과 인계 대기를 반영한다. 트리거 실패 시 stores UPDATE도 롤백되는지 시험한다. owner 변경·삭제는 FK CASCADE로 처리한다.
+- [x] **4. 운영·설명:** 후보 보관은 owner의 명시 설정 후 실행한다. 기존 급여·계약 보관 기간을 상담에 임의로 적용하지 않는다. 일반 export에는 HR 별도 내보내기를 안내한다. cron의 중복 방지 방식으로 면담·약속·반납 기한을 알리고 본문은 넣지 않는다. 처리 항목·공개 범위를 개인정보 안내와 맞춘다.
+- [x] **5. 통과·커밋:** core/lifecycle, `check-transfer.mjs`, `check-withdraw.mjs`, `check-cron.mjs`, `check-store-log.mjs`, 타입 검사. 삭제·익명화 시험은 격리 테스트 DB에서만 수행한다.
 
 ## Task 10: 데모·모바일·전체 검증·배포
 

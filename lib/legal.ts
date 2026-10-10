@@ -2,7 +2,7 @@
 // 지금은 사업자 정보가 확정되지 않은 '판매 준비' 판이다(작업 013·014·015에서 정식 문서로 교체).
 export const LEGAL = {
   terms: {version: '2026-10-11-prelaunch', title: '이용약관(판매 준비 안내)', path: '/terms'},
-  privacy: {version: '2026-10-11-prelaunch', title: '개인정보 처리방침(데이터 이용 안내)', path: '/privacy'},
+  privacy: {version: '2026-10-11-hr1-prelaunch', title: '개인정보 처리방침(데이터 이용 안내)', path: '/privacy'},
   // 동의받지 않고 게시만 하는 문서
   policy: {version: '2026-10-09-v1', title: '운영정책', path: '/policy'},
   accessibility: {version: '2026-10-09-v1', title: '접근성 안내', path: '/accessibility'},

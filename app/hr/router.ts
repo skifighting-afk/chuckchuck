@@ -10,6 +10,7 @@ import {casesRead,casesWrite} from './cases-api';
 import {notifyCaseChange} from './notifications';
 import {pulseRead,pulseWrite} from './pulse-api';
 import {itemsRead,itemsWrite} from './items-api';
+import {hrExportWrite} from './export-api';
 const json=(v:unknown,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 export async function hrApi(request:Request,env:{DB:D1Database}):Promise<Response>{
  try{
@@ -54,6 +55,7 @@ export async function hrApi(request:Request,env:{DB:D1Database}):Promise<Respons
    if(request.method==='GET')return json(await itemsRead(db,ctx,url));
    const result=await itemsWrite(db,ctx,body);return json(result,!result.replayed&&body.action==='issue'?201:200);
   }
+  if(url.pathname==='/api/hr/export'&&request.method==='POST')return json(await hrExportWrite(db,ctx,body));
   return json({error:'화면 주소를 확인하고 다시 열어 주세요.'},404);
  }catch(e){if(e instanceof HrError)return json({error:e.message},e.status);if(e instanceof ZodError)return json({error:'입력 항목과 날짜를 확인해 주세요.',fields:e.issues.map(i=>({path:i.path.join('.'),message:i.message}))},400);return serverError('hr',{name:e instanceof Error?e.name:'Error',code:(e as any)?.code,message:'HR operation failed'})}
 }
