@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 export async function hrE2E({owner,staff,srv,step,staffName}){
  const B=srv.ORIGIN,store=JSON.parse((await srv.db.q('SELECT data FROM stores LIMIT 1').first()).data),emp=store.employees.find(e=>e.name===staffName).id;
  const open=(p,view)=>p.goto(B+'/hr?view='+view,{waitUntil:'networkidle'}),field=(p,name)=>p.getByRole('textbox',{name}),select=(p,name)=>p.getByRole('combobox',{name,exact:true});
- const save=async(p,name)=>{const [res]=await Promise.all([p.waitForResponse(r=>r.request().method()==='POST'&&r.url().includes('/hr/')),p.getByRole('button',{name,exact:true}).click()]);assert(res.ok(),await res.text());await p.waitForFunction(label=>!Array.from(document.querySelectorAll('button')).some(b=>b.textContent.trim()===label&&b.disabled),name);return(await res.json()).record};
+ const save=async(p,name)=>{const [res]=await Promise.all([p.waitForResponse(r=>r.request().method()==='POST'&&r.url().includes('/hr/')),p.getByRole('button',{name,exact:true}).click()]);assert(res.ok(),await res.text());await p.waitForFunction(()=>!document.querySelector('.hr-notice[aria-busy="true"]'));return(await res.json()).record};
  const row=async(table,id)=>{const r=await srv.db.q('SELECT data FROM '+table+' WHERE id=?',id).first();assert(r,'saved database row');return typeof r.data==='string'?JSON.parse(r.data):r.data};
  let candidate,buddy,assignment,skill,meeting,hrCase,campaign,item;
  await step('HR01 채용 결정 → 입사 준비 직원 연결 → 재조회',async()=>{
@@ -40,5 +40,14 @@ export async function hrE2E({owner,staff,srv,step,staffName}){
  });
  await step('HR10 지급2 → 직원 수령 → 부분 반납1 → 재조회',async()=>{
   await open(owner,'items');await owner.getByText('직원에게 물품 지급하기',{exact:true}).click();await select(owner,'물품을 받을 직원').selectOption(emp);await field(owner,'물품 이름·키 별칭').fill('HR 유니폼');await owner.getByRole('spinbutton',{name:'지급 수량',exact:true}).fill('2');item=await save(owner,'지급 기록 저장');await open(staff,'items');await save(staff,'이 물품을 받았어요');await open(owner,'items');await owner.getByText('부분 반납·반납 요청·분실 기록',{exact:true}).click();await save(owner,'처리 기록 저장');await owner.reload({waitUntil:'networkidle'});assert.equal((await row('hr_item_assignments',item.id)).returned,1);assert((await row('hr_item_assignments',item.id)).receivedAt);
+ });
+ await step('HR 담당자 설정 503 입력 보존 → 복구 → 403 화면 차단',async()=>{
+  await open(owner,'settings');await select(owner,'담당 직원').selectOption(emp);await select(owner,'맡길 업무').selectOption('meetings');
+  const pattern='**/hr/**';await owner.route(pattern,r=>r.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'시험 연결 실패'})}));
+  await owner.getByRole('button',{name:'담당자로 지정',exact:true}).click();await owner.getByRole('button',{name:'입력 유지하고 최신 기록 확인',exact:true}).click();await owner.getByRole('alert').filter({hasText:'최신 기록을 불러오지 못했어요.'}).waitFor();
+  assert.equal(await select(owner,'담당 직원').inputValue(),emp);assert.equal(await select(owner,'맡길 업무').inputValue(),'meetings');assert.equal(await owner.locator('.hr-notice').filter({hasText:'최신 기록을 불러왔어요.'}).count(),0);
+  await owner.unroute(pattern);await owner.getByRole('button',{name:'입력 유지하고 최신 기록 확인',exact:true}).click();await owner.getByRole('status').filter({hasText:'최신 기록을 불러왔어요.'}).waitFor();assert.equal(await select(owner,'담당 직원').inputValue(),emp);
+  await owner.route(pattern,r=>r.request().method()==='POST'?r.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'시험 저장 실패'})}):r.url().includes('/hr/context')?r.fulfill({status:403,contentType:'application/json',body:JSON.stringify({error:'접근 권한이 없어요.'})}):r.continue());
+  await owner.getByRole('button',{name:'담당자로 지정',exact:true}).click();await owner.getByRole('button',{name:'입력 유지하고 최신 기록 확인',exact:true}).click();await owner.getByRole('alert').filter({hasText:'접근 권한이 없어요.'}).waitFor();assert.equal(await select(owner,'담당 직원').count(),0);await owner.unroute(pattern);
  });
 }
