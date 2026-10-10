@@ -1,0 +1,72 @@
+{
+ "index": 5,
+ "date": "2026-10-13",
+ "slot": "15:00",
+ "type": "이것도 불법",
+ "id": "late-fine",
+ "q": "알바 지각비 받아도 돼?",
+ "hook": "지각 3번에 만 원 벌금, 이거 해도 될까?",
+ "hookType": "이것도 불법",
+ "choice": [
+  "지각 제일 잦은 때?",
+  "오픈",
+  "마감"
+ ],
+ "kw": "지각비",
+ "group": "사장님 노무 상식",
+ "seconds": 14.3,
+ "cover": "/home/runner/work/chuckchuck/chuckchuck/reel-out/2026-10-13/cover.jpg",
+ "predict": {
+  "score": 99,
+  "hook": 100,
+  "sustain": 100,
+  "read": 100,
+  "visual": 100,
+  "sound": 90,
+  "voice": true,
+  "seconds": 14,
+  "cps": 4.8,
+  "notes": []
+ },
+ "music": {
+  "bpm": 108,
+  "key": "C",
+  "progression": 2
+ },
+ "voice": {
+  "model": "MeloTTS KR",
+  "pitch": 1.18,
+  "tempo": 1
+ },
+ "screens": {
+  "site": "chukchukapp.kr",
+  "screen": "attendance",
+  "count": 1
+ },
+ "timeline": [
+  {
+   "label": "훅(썸네일)",
+   "sec": 3.5,
+   "voice": true,
+   "cps": null
+  },
+  {
+   "label": "핵심",
+   "sec": 4.4,
+   "voice": true,
+   "cps": 4.8
+  },
+  {
+   "label": "앱 화면",
+   "sec": 2.4,
+   "voice": true,
+   "cps": null
+  },
+  {
+   "label": "댓글 질문",
+   "sec": 3.7,
+   "voice": true,
+   "cps": null
+  }
+ ]
+}

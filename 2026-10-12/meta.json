@@ -1,0 +1,72 @@
+{
+ "index": 5,
+ "date": "2026-10-12",
+ "slot": "22:00",
+ "type": "사건 판정",
+ "id": "case-drink",
+ "q": "음료 3잔으로 알바를 고소하면?",
+ "hook": "알바가 음료 3잔 마셨다고 고소한 사장, 결과는?",
+ "hookType": "사건 판정",
+ "choice": [
+  "직원 음료, 우리 가게는?",
+  "공짜",
+  "돈 받음"
+ ],
+ "kw": "음료 3잔",
+ "group": "사장님 노무 상식",
+ "seconds": 14.6,
+ "cover": "/home/runner/work/chuckchuck/chuckchuck/reel-out/2026-10-12/cover.jpg",
+ "predict": {
+  "score": 96,
+  "hook": 92,
+  "sustain": 100,
+  "read": 100,
+  "visual": 99,
+  "sound": 90,
+  "voice": true,
+  "seconds": 14.3,
+  "cps": 5.8,
+  "notes": []
+ },
+ "music": {
+  "bpm": 108,
+  "key": "C",
+  "progression": 2
+ },
+ "voice": {
+  "model": "MeloTTS KR",
+  "pitch": 1.18,
+  "tempo": 1.04
+ },
+ "screens": {
+  "site": "chukchukapp.kr",
+  "screen": "manual",
+  "count": 1
+ },
+ "timeline": [
+  {
+   "label": "훅(썸네일)",
+   "sec": 4,
+   "voice": true,
+   "cps": null
+  },
+  {
+   "label": "핵심",
+   "sec": 4.1,
+   "voice": true,
+   "cps": 5.8
+  },
+  {
+   "label": "앱 화면",
+   "sec": 2.3,
+   "voice": true,
+   "cps": null
+  },
+  {
+   "label": "댓글 질문",
+   "sec": 3.8,
+   "voice": true,
+   "cps": null
+  }
+ ]
+}

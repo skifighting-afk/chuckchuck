@@ -1,0 +1,72 @@
+{
+ "index": 5,
+ "date": "2026-10-11",
+ "slot": "21:00",
+ "type": "돈 계산",
+ "id": "mw-2027",
+ "q": "2027년 최저임금, 알바 한 명 얼마 더?",
+ "hook": "내년부터 알바 한 명, 한 달에 얼마 더 나가게?",
+ "hookType": "돈 계산",
+ "choice": [
+  "내년 알바 시급 어떻게 해?",
+  "최저에 맞춤",
+  "더 줄 거야"
+ ],
+ "kw": "1만700원",
+ "group": "사장님 노무 상식",
+ "seconds": 14.9,
+ "cover": "/home/runner/work/chuckchuck/chuckchuck/reel-out/2026-10-11/cover.jpg",
+ "predict": {
+  "score": 97,
+  "hook": 95,
+  "sustain": 100,
+  "read": 100,
+  "visual": 97,
+  "sound": 90,
+  "voice": true,
+  "seconds": 14.6,
+  "cps": 5.7,
+  "notes": []
+ },
+ "music": {
+  "bpm": 108,
+  "key": "C",
+  "progression": 2
+ },
+ "voice": {
+  "model": "MeloTTS KR",
+  "pitch": 1.18,
+  "tempo": 1.19
+ },
+ "screens": {
+  "site": "chukchukapp.kr",
+  "screen": "payroll",
+  "count": 1
+ },
+ "timeline": [
+  {
+   "label": "훅(썸네일)",
+   "sec": 3.4,
+   "voice": true,
+   "cps": null
+  },
+  {
+   "label": "핵심",
+   "sec": 5.1,
+   "voice": true,
+   "cps": 5.7
+  },
+  {
+   "label": "앱 화면",
+   "sec": 2.1,
+   "voice": true,
+   "cps": null
+  },
+  {
+   "label": "댓글 질문",
+   "sec": 3.9,
+   "voice": true,
+   "cps": null
+  }
+ ]
+}
