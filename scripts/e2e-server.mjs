@@ -28,7 +28,7 @@ export async function startE2EServer({port=Number(process.env.E2E_PORT||8790),ww
     res.writeHead(r.status,out);return res.end(Buffer.from(await r.arrayBuffer()));
    }
    let file=normalize(join(www,decodeURIComponent(url.pathname)));
-   if(!file.startsWith(normalize(www))||!existsSync(file)||!extname(file))file=join(www,'index.html');
+   if(!file.startsWith(normalize(www))||!existsSync(file)||!extname(file))file=join(www,url.pathname==='/'?'index.html':'app.html');
    res.writeHead(200,{'content-type':types[extname(file)]||'application/octet-stream'});res.end(readFileSync(file));
   }catch(e){console.error(e);res.writeHead(500);res.end('server error')}
  });

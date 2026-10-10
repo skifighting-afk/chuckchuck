@@ -45,7 +45,7 @@ const fn=spawn(cli[0],[...cli.slice(1),'functions','serve','api','--no-verify-jw
 const types={'.html':'text/html; charset=utf-8','.js':'text/javascript','.css':'text/css','.png':'image/png','.svg':'image/svg+xml','.json':'application/json','.txt':'text/plain; charset=utf-8'};
 createServer((req,res)=>{
  const url=new URL(req.url,ORIGIN);let file=normalize(join('dist/client',decodeURIComponent(url.pathname)));
- if(!file.startsWith('dist/client')||!existsSync(file)||!extname(file))file='dist/client/index.html';
+ if(!file.startsWith('dist/client')||!existsSync(file)||!extname(file))file=url.pathname==='/'?'dist/client/index.html':'dist/client/app.html';
  res.writeHead(200,{'Content-Type':types[extname(file)]||'application/octet-stream','Cache-Control':'no-store'});res.end(readFileSync(file));
 }).listen(PORT,()=>{say(`화면: ${ORIGIN}`);say(`Supabase Studio: ${status.STUDIO_URL||'http://127.0.0.1:54323'} · 메일 확인(Inbucket/Mailpit): ${status.INBUCKET_URL||status.MAILPIT_URL||'http://127.0.0.1:54324'}`);say('끝내려면 Ctrl+C (Supabase 스택은 `npx supabase stop`으로 끔)')});
 const stop=()=>{fn.kill();process.exit(0)};process.on('SIGINT',stop);process.on('SIGTERM',stop);

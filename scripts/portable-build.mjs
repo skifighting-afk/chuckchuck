@@ -58,6 +58,9 @@ for(const [path,file,title,desc] of PUBLIC_PAGES){
  if(page.includes('noindex'))throw new Error('공개 화면에 noindex가 남았어요: '+path);
  await writeFile('dist/client/'+file,page);
 }
+// 첫 화면(/)은 브랜드 홈페이지(site/)로 바꾼다. 앱 화면은 /app(app.html)과 나머지 주소(404.html)에서 그대로 열린다.
+await writeFile('dist/client/app.html',html);
+{const {buildHome}=await import('./build-home.mjs');const r=await buildHome({out:'dist/client',site,pixelId:metaPixelId});console.log(`홈페이지: index.html ${Math.round(r.html.length/1024)}KB`)}
 await writeFile('dist/client/sitemap.xml','<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'+PUBLIC_PAGES.map(([p])=>'  <url><loc>'+site+p+'</loc></url>').join('\n')+'\n</urlset>\n');
 await writeFile('dist/client/robots.txt','User-agent: *\nAllow: /\nDisallow: /app\nDisallow: /admin\nDisallow: /account\nDisallow: /contracts\nDisallow: /manager\nSitemap: '+site+'/sitemap.xml\n');
 await writeFile('dist/client/.nojekyll','');
