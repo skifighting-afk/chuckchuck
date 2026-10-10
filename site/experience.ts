@@ -49,6 +49,7 @@ host.addEventListener('click',e=>{const b=(e.target as Element).closest<HTMLButt
 });
 host.addEventListener('change',e=>{pause();const t=e.target as HTMLSelectElement;if(t.id==='exp-wage')wageKind=t.value;if(t.id==='exp-deduct')deduct=t.value;if(t.id==='exp-branch'){branch=t.value;step=1}render(false)});
 host.addEventListener('focusin',()=>pause());
+document.addEventListener('click',e=>{const a=(e.target as Element).closest<HTMLAnchorElement>('[data-tour-chapter]');if(!a)return;const n=Number(a.dataset.tourChapter);if(!Number.isInteger(n)||n<0||n>=chapters.length)return;pause();chapter=n;step=0;render();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){host!.classList.remove('exp-expanded');el('exp-zoom').textContent='화면 확대';el('exp-zoom').setAttribute('aria-expanded','false')}});
 new IntersectionObserver(([entry])=>{visible=entry.isIntersecting;deadline=Date.now()+6500},{threshold:.15}).observe(host);
 setInterval(()=>{if(playing&&visible&&!document.hidden&&Date.now()>=deadline)next()},350);

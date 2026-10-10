@@ -75,7 +75,7 @@ export function footerHtml() {
 export function planCardsHtml(app: string) {
   return (['basic', 'pro'] as PlanId[]).map(id => {
     const p = plans[id];
-    return `<label class="plan${id === 'pro' ? ' pro' : ''}"><input type="radio" name="plan" id="plan-${id}" value="${id}"${id === 'basic' ? ' checked' : ''}><span class="plan-head"><b>${p.name}</b>${id === 'pro' ? '<span class="flag">매장 QR 출퇴근</span>' : ''}</span><span class="plan-from">직원 1명당 월 <b>${money(employeeMonthlyPrice(id, 1))}</b>원</span><ul>${PLAN_FEATURES[id].map(f => `<li>${esc(f)}</li>`).join('')}</ul></label>`;
+    return `<article class="plan${id === 'pro' ? ' pro' : ''}"><div class="plan-head"><b>${p.name}</b>${id === 'pro' ? '<span class="flag">매장 QR 출퇴근</span>' : ''}</div><p class="plan-purpose">${id === 'basic' ? '근무표부터 급여·서류까지 한곳에서' : '직원이 매장에서 직접 찍는 출퇴근까지'}</p><p class="plan-from"><span>직원 1명당 월</span><b>${money(employeeMonthlyPrice(id, 1))}<small>원</small></b><span>부가세 포함</span></p><ul>${PLAN_FEATURES[id].map(f => `<li>${esc(f)}</li>`).join('')}</ul><a class="btn plan-start" href="${esc(app)}/signup?role=owner&amp;plan=${id}">${p.name} ${TRIAL_DAYS}일 무료로 시작</a></article>`;
   }).join('');
 }
 
