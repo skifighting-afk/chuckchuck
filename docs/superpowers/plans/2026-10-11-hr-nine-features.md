@@ -10,7 +10,7 @@
 
 **Spec:** `docs/superpowers/specs/2026-10-11-hr-nine-features-design.md` — 2026-10-11 사용자 승인.
 
-**상태:** 사용자 계획 승인 · 직접 구현 진행 중. 추가 HR 기능 개발 6/9 · 개발 검증 완료 6/9 · 배포 확인 0/9. 기존 100개 개선안과 별도로 추적한다.
+**상태:** 사용자 계획 승인 · 직접 구현 진행 중. 추가 HR 기능 개발 7/9 · 개발 검증 완료 7/9 · 배포 확인 0/9. 기존 100개 개선안과 별도로 추적한다.
 
 ## Global Constraints
 
@@ -152,10 +152,10 @@ type HrPanelProps = {client:HrClient;branchId:string;selfId:string|null};
 
 **Interfaces:** `HrCase = HrMeta & {employeeId:string;assigneeId:string|null;subject:string;status:'received'|'reviewing'|'answered'|'closed'|'handover';lastReplyAt:string|null}`. `CaseMessage = HrMeta & {caseId:string;fromEmployeeId:string|null;fromOwner:boolean;body:string}`. `CaseView = {record:HrCase;messages:CaseMessage[]}`. `caseView(ctx:HrContext,record:HrCase,messages:CaseMessage[]):CaseView`. POST actions submit/reply/status/reassign/reopen. `CasesPanel(props:HrPanelProps)`.
 
-- [ ] **1. 실패 시험:** 동료·다른 지점의 대상 조회404, 비담당 관리자403/404, 지정 담당의 위임 회수 후403, 인계 대기를 검증한다. 공개 범위 미확인400, 같은 submit1건, 본문이 알림·로그·일반 응답에 없는지 assert한다.
-- [ ] **2. 실패 확인:** build 후 `node scripts/check-hr-cases.mjs`.
-- [ ] **3. 구현:** hr_cases/hr_case_messages 추가. 제목100/본문2000자·대화200개 제한. 본인·owner·현재 유효한 지정 cases 담당자만 열람한다. 담당 만료 후 owner 인계 전 다른 담당자에게 자동 공개하지 않는다. 기존 익명 건의는 읽거나 변환하지 않는다.
-- [ ] **4. 화면·통과·커밋:** 제출 전 작성자 이름과 공개 대상을 안내한다. 접수·답변·재문의·인계를 제공한다. 푸시는 일반 제목·링크만 전한다. core/cases, `check-store-log.mjs`, 타입 검사와 409 입력 보존을 확인한다.
+- [x] **1. 실패 시험:** 동료·다른 지점의 대상 조회404, 비담당 관리자403/404, 지정 담당의 위임 회수 후403, 인계 대기를 검증한다. 공개 범위 미확인400, 같은 submit1건, 본문이 알림·로그·일반 응답에 없는지 assert한다.
+- [x] **2. 실패 확인:** build 후 `node scripts/check-hr-cases.mjs`.
+- [x] **3. 구현:** hr_cases/hr_case_messages 추가. 제목100/본문2000자·대화200개 제한. 본인·owner·현재 유효한 지정 cases 담당자만 열람한다. 담당 만료 후 owner 인계 전 다른 담당자에게 자동 공개하지 않는다. 기존 익명 건의는 읽거나 변환하지 않는다.
+- [x] **4. 화면·통과·커밋:** 제출 전 작성자 이름과 공개 대상을 안내한다. 접수·답변·재문의·인계를 제공한다. 푸시는 일반 제목·링크만 전한다. core/cases, `check-store-log.mjs`, 타입 검사와 409 입력 보존을 확인한다.
 
 ## Task 7: HR-09 짧은 근무 만족도
 

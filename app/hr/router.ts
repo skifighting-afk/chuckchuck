@@ -6,6 +6,8 @@ import {hiringRead,hiringWrite} from './hiring-api';
 import {trainingRead,trainingWrite} from './training-api';
 import {staffingRead,staffingWrite} from './staffing-api';
 import {meetingsRead,meetingsWrite} from './meetings-api';
+import {casesRead,casesWrite} from './cases-api';
+import {notifyCaseChange} from './notifications';
 const json=(v:unknown,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 export async function hrApi(request:Request,env:{DB:D1Database}):Promise<Response>{
  try{
@@ -37,6 +39,10 @@ export async function hrApi(request:Request,env:{DB:D1Database}):Promise<Respons
   if(url.pathname==='/api/hr/meetings'){
    if(request.method==='GET')return json(await meetingsRead(db,ctx));
    const result=await meetingsWrite(db,ctx,body);return json(result,!result.replayed&&body.action==='save'&&!body.id?201:200);
+  }
+  if(url.pathname==='/api/hr/cases'){
+   if(request.method==='GET')return json(await casesRead(db,ctx,url));
+   const result=await casesWrite(db,ctx,body);if(!result.replayed)await notifyCaseChange(env,db,ctx,result.record.record.id,body.action);return json(result,!result.replayed&&body.action==='submit'?201:200);
   }
   return json({error:'화면 주소를 확인하고 다시 열어 주세요.'},404);
  }catch(e){if(e instanceof HrError)return json({error:e.message},e.status);if(e instanceof ZodError)return json({error:'입력 항목과 날짜를 확인해 주세요.',fields:e.issues.map(i=>({path:i.path.join('.'),message:i.message}))},400);return serverError('hr',{name:e instanceof Error?e.name:'Error',code:(e as any)?.code,message:'HR operation failed'})}

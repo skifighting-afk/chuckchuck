@@ -29,3 +29,7 @@ export type MeetingAction=HrMeta&{meetingId:string;text:string;employeeId:string
 export type MeetingComment=HrMeta&{meetingId:string;body:string};
 export type MeetingView={meeting:Omit<Meeting,'privateNote'>;privateNote?:string;actions:MeetingAction[];comments:MeetingComment[]};
 export type MeetingsView={context:HrContextView;manage:boolean;assignees:{id:string;name:string}[];meetings:(MeetingView&{handover:boolean;editable:boolean})[]};
+export type HrCase=HrMeta&{employeeId:string;assigneeId:string|null;subject:string;status:'received'|'reviewing'|'answered'|'closed'|'handover';lastReplyAt:string|null};
+export type CaseMessage=HrMeta&{caseId:string;fromEmployeeId:string|null;fromOwner:boolean;body:string};
+export type CaseView={record:HrCase;messages:CaseMessage[]};
+export type CasesView={context:HrContextView;cases:CaseView[]};
