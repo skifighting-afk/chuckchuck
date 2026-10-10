@@ -472,3 +472,27 @@ html.reduce *{animation:none!important;transition:none!important}
 .pay-chip{background:#eaf0e5;color:var(--green)}
 @media(max-width:900px){.demo4-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:600px){.demo4{padding-block:88px}.demo4-grid{grid-template-columns:1fr}}
+
+/* GIF처럼 반복 재생되는 시현 (6초 루프) */
+.demo4 .mock-sched i{animation:cell-on 6s infinite both}
+.demo4 .mock-sched i:nth-child(n+2){animation-delay:var(--d,0s)}
+.demo4 .mock-sched i{animation-delay:calc(var(--k,0)*.12s)}
+.demo4 .mock-sched i:nth-child(1){--k:0}.demo4 .mock-sched i:nth-child(2){--k:1}.demo4 .mock-sched i:nth-child(3){--k:2}
+.demo4 .mock-sched i:nth-child(4){--k:3}.demo4 .mock-sched i:nth-child(5){--k:4}.demo4 .mock-sched i:nth-child(6){--k:5}
+.demo4 .mock-sched i:nth-child(7){--k:6}.demo4 .mock-sched i:nth-child(8){--k:7}.demo4 .mock-sched i:nth-child(9){--k:8}
+.demo4 .mock-sched i:nth-child(10){--k:9}.demo4 .mock-sched i:nth-child(11){--k:10}.demo4 .mock-sched i:nth-child(12){--k:11}
+.demo4 .mock-sched i:nth-child(13){--k:12}.demo4 .mock-sched i:nth-child(14){--k:13}.demo4 .mock-sched i:nth-child(15){--k:14}
+@keyframes cell-on{0%{background:#eceee6;transform:scale(.85)}15%,80%{background:#b9e4a1;transform:scale(1)}95%,100%{background:#eceee6;transform:scale(.85)}}
+.st-wait,.st-done{display:inline-block}
+.st-done{display:none}
+.demo4 .st-wait{animation:swap-out 6s infinite both}
+.demo4 .st-done{animation:swap-in 6s infinite both}
+@keyframes swap-out{0%,40%{opacity:1}50%,100%{opacity:0}}
+@keyframes swap-in{0%,40%{opacity:0}50%,90%{opacity:1}100%{opacity:0}}
+.demo4 .pending,.demo4 .ok-chip,.demo4 .pay-chip{animation:chip-pulse 6s infinite both}
+@keyframes chip-pulse{0%,40%{transform:scale(1)}45%{transform:scale(1.08)}50%,100%{transform:scale(1)}}
+.demo4 .mock-swap p:first-child{animation:slide-in 6s infinite both}
+@keyframes slide-in{0%{opacity:0;transform:translateX(-12px)}15%,85%{opacity:1;transform:translateX(0)}100%{opacity:0}}
+.demo4 .mock-clock .qr-chip{animation:qr-blink 2s infinite}
+@keyframes qr-blink{0%,100%{opacity:1}50%{opacity:.45}}
+@media (prefers-reduced-motion:reduce){.demo4 *{animation:none!important}.demo4 .st-done{display:none}.demo4 .st-wait{display:inline-block}}
