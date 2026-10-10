@@ -2040,29 +2040,70 @@ PASS: 메일 없이 비밀번호 찾기.
 109. PASS client error needs origin
 110. PASS scrubbed + deduped
 111. PASS non-HQ cannot read
-node:internal/modules/run_main:123
-    triggerUncaughtException(
-    ^
+112. PASS B101 (skipped near midnight)
 
-AssertionError [ERR_ASSERTION]: B101 2h before alert with clock link
-+ actual - expected
+── check-secrets
+1. PASS 비밀값 검사 완료
 
-  [
-+   undefined,
-+   undefined
--   '2시간 뒤 근무가 있어요',
--   '/app?clock=1'
-  ]
+── check-toss
+1. PASS order id format
+2. PASS bad order id
+3. PASS period from today
+4. PASS renewal continues from paidUntil
+5. PASS paid clears cancel
+6. PASS contracts due
+7. PASS error text known
+8. PASS paid period over → expired
+9. PASS paid period live → active
+10. PASS no keys → not ready
+11. PASS no keys → prepare locked
+12. PASS keys → ready + client key only
+13. PASS needs agreement
+14. PASS server sets amount (ignores client amount)
+15. PASS wrong amount rejected
+16. PASS rejected order cannot be reused
+17. PASS other owner cannot confirm
+18. PASS confirm ok
+19. PASS toss called with secret basic auth + server amount
+20. PASS account active pro 2 slots 6 months
+21. PASS payment recorded
+22. PASS second confirm is idempotent
+23. PASS no second toss call
+24. PASS history shows payment
+25. PASS toss reject → 402 + next action
+26. PASS no contracts → nothing to pay
+27. PASS owner cannot refund
+28. PASS HQ partial refund
+29. PASS refund over balance blocked
 
-    at ok (file:///home/runner/work/chuckchuck/chuckchuck/scripts/check-improve2.mjs:6:55)
-    at file:///home/runner/work/chuckchuck/chuckchuck/scripts/check-improve2.mjs:137:107
-    at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
-  generatedMessage: false,
-  code: 'ERR_ASSERTION',
-  actual: [ undefined, undefined ],
-  expected: [ '2시간 뒤 근무가 있어요', '/app?clock=1' ],
-  operator: 'deepStrictEqual',
-  diff: 'simple'
-}
+── check-native
+1. PASS RS256 signature verifies
+2. PASS RS256 header
+3. PASS ES256 signature verifies
+4. PASS ES256 header
+5. PASS token check ios
+6. PASS token check bad
+7. PASS token check android
+8. PASS android sent
+9. PASS fcm url + bearer
+10. PASS fcm data url
+11. PASS android gone
+12. PASS ios sent
+13. PASS apns topic + push type
+14. PASS ios gone
+15. PASS no keys skipped
+16. PASS bad token rejected
+17. PASS ios token saved
+18. PASS stored
+19. PASS notify sends to app device
+20. PASS remove all
+21. PASS removed
+22. PASS app id
+23. PASS web dir
+24. PASS capacitor versions pinned (no ^ ~)
+25. PASS entry allows app origins
 
-Node.js v22.23.3
+> chuckchuck@0.1.0 check:function
+> node scripts/check-supabase-function.mjs
+
+PASS: Supabase 함수 — CORS·출처 차단, 가입·로그인·로그아웃, 신원 헤더 위조 차단, 매장 등록, 비밀번호 재설정, 직원 역할, 본사 권한.
