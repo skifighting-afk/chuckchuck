@@ -25,7 +25,7 @@ export function trialStatus(a:any,now=Date.now()){
  // 작업 018: 해지 예약은 이번 결제 기간 끝(cancelAt)까지 그대로 이용
  // 지시서 143: 정기 결제가 실패해도 바로 잠그지 않고 7일 동안은 그대로 쓰게 한다(그동안 결제 수단을 바꾸라고 안내)
  if(a.status==='past_due'){const f=Date.parse(a.paymentFailedAt||'');return Number.isFinite(f)&&now-f<GRACE_DAYS*86400000?'grace':'expired';}
- if(a.status==='active')return a.cancelAt&&Date.parse(a.cancelAt)<=now?'cancelled':'active';
+ if(a.status==='active'){if(a.cancelAt&&Date.parse(a.cancelAt)<=now)return 'cancelled';/* 결제한 이용 기간이 끝나면 다시 결제할 때까지 조회·내려받기만 */if(a.paidUntil&&Date.parse(a.paidUntil)<=now)return 'expired';return 'active';}
  // 예전 무료 요금제 가게는 베이직으로 계속 이용(정식 판매 전 가입 고객 보호)
  if(a.status==='free'||a.plan==='free')return 'active';
  return Date.parse(a.trialEndsAt)>now?'trialing':'expired';

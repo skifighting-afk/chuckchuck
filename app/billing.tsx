@@ -1,7 +1,7 @@
 'use client';
 import {CANCEL_REASONS} from '../lib/improve2';
 // 작업 065·067·068·069: 체험 종료 안내, 환불·차액 안내, 세금계산서 정보와 발행 요청
-import {useState} from 'react';
+import {useEffect,useState} from 'react';
 import {changeQuote,refundQuote,validBizNo,monthlyPrice,periodPrice,plans,planId,type PlanId} from '../lib/plans';
 const won=(n:number)=>n.toLocaleString('ko-KR');
 const post=async(body:any)=>{const r=await fetch('/api/account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}),d:any=await r.json();if(!r.ok)throw Error(d.error||'저장하지 못했어요.');return d};
@@ -91,15 +91,40 @@ export function BizStatus({a,reload}:{a:any,reload:()=>Promise<void>}){
 const METHODS=[['card','신용·체크카드'],['kakaopay','카카오페이'],['naverpay','네이버페이'],['tosspay','토스페이'],['transfer','계좌이체']] as const;
 export function Checkout({a}:{a:any}){
  const plan=(planId(a?.plan)||'pro') as PlanId,slots=Math.max(1,Number(a?.storeSlots)||1),months=([1,6,12].includes(Number(a?.months))?Number(a?.months):1) as 1|6|12;
- const [method,setMethod]=useState('card'),[agree,setAgree]=useState(false);
+ const [method,setMethod]=useState('card'),[agree,setAgree]=useState(false),[bill,setBill]=useState<any>(null),[busy,setBusy]=useState(false),[err,setErr]=useState('');
+ useEffect(()=>{fetch('/api/billing').then(r=>r.ok?r.json():null).then(setBill).catch(()=>{})},[]);
  const list=monthlyPrice(plan,slots)*months,pay=periodPrice(plan,slots,months),off=list-pay;
- const ready=false;
+ const ready=!!bill?.ready;
+ const pay2=async()=>{setBusy(true);setErr('');try{await tossPay({kind:'plan',plan,storeSlots:slots,months,agreed:true},method,bill)}catch(e){setErr((e as Error).message)}finally{setBusy(false)}};
  return <section className="checkout" aria-labelledby="checkout-title"><h2 id="checkout-title">결제하기</h2>
   <dl className="checkout-sum"><div><dt>요금제</dt><dd>{plans[plan].name}</dd></div><div><dt>지점</dt><dd>{slots}곳</dd></div><div><dt>이용 기간</dt><dd>{months}개월</dd></div><div><dt>정가</dt><dd>{won(list)}원</dd></div>{off>0&&<div><dt>{months}개월 할인</dt><dd className="off">−{won(off)}원</dd></div>}<div className="total"><dt>결제 금액 (VAT 포함)</dt><dd>{won(pay)}원</dd></div></dl>
   <fieldset className="checkout-methods"><legend>결제 수단</legend>{METHODS.map(([v,l])=><label key={v} className={method===v?'on':''}><input type="radio" name="pay-method" value={v} checked={method===v} onChange={()=>setMethod(v)}/>{l}</label>)}</fieldset>
   <label className="checkout-agree"><input type="checkbox" checked={agree} onChange={e=>setAgree(e.target.checked)}/><span><a href="/terms">이용약관</a>과 <a href="/refund">해지·환불 규정</a>을 확인했어요. 자동 갱신 없이 {months}개월만 결제돼요.</span></label>
   <ul className="checkout-notes"><li>결제 후 7일 안이고 결제 뒤 저장한 기록이 없으면 전액 환불돼요.</li><li>기록을 저장하기 시작하면 쓴 날만큼 빼고 남은 기간을 날짜로 나눠 환불해요(전자상거래법 제17조 제2항).</li><li>자동 갱신·자동 결제는 없어요. 기간이 끝나면 다시 결제할 때까지 조회·내려받기만 돼요.</li></ul>
-  <button type="button" className="saas-primary" disabled={!ready||!agree}>{won(pay)}원 결제하기</button>
+  <button type="button" className="saas-primary" disabled={!ready||!agree||busy} onClick={pay2}>{busy?'결제창 여는 중…':`${won(pay)}원 결제하기`}</button>{err&&<p className="saas-error" role="alert">{err}</p>}{ready&&<ContractFees bill={bill} method={method}/>}
   {!ready&&<p className="checkout-wait" role="note">결제 연결을 준비하고 있어요. 사업자 등록과 결제대행사 계약이 끝나면 이 버튼이 열려요. 그 전까지는 결제 없이 체험을 그대로 쓸 수 있어요. 요금제·지점 수·기간은 아래에서 미리 바꿔 둘 수 있어요.</p>}
  </section>;
+}
+
+/* ───────── 토스페이먼츠 결제창 ───────── */
+const TOSS_METHOD:Record<string,any>={card:{method:'CARD'},transfer:{method:'TRANSFER'},kakaopay:{method:'CARD',card:{flowMode:'DIRECT',easyPay:'KAKAOPAY'}},naverpay:{method:'CARD',card:{flowMode:'DIRECT',easyPay:'NAVERPAY'}},tosspay:{method:'CARD',card:{flowMode:'DIRECT',easyPay:'TOSSPAY'}}};
+function loadToss():Promise<any>{const w=window as any;if(w.TossPayments)return Promise.resolve(w.TossPayments);return new Promise((ok,no)=>{const sc=document.createElement('script');sc.src='https://js.tosspayments.com/v2/standard';sc.onload=()=>w.TossPayments?ok(w.TossPayments):no(Error('결제창을 불러오지 못했어요. 새로고침한 뒤 다시 눌러 주세요.'));sc.onerror=()=>no(Error('결제창을 불러오지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.'));document.head.appendChild(sc)})}
+/** 서버에서 금액이 정해진 주문을 만들고 토스 결제창을 연다. 결제가 끝나면 /billing/success로 돌아와 승인한다. */
+export async function tossPay(body:any,method:string,bill:any){
+ const r=await fetch('/api/billing',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'prepare',...body})});const d:any=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||'주문을 만들지 못했어요. 새로고침한 뒤 다시 눌러 주세요.');
+ const T=await loadToss(),pay=T(d.clientKey).payment({customerKey:d.customerKey||bill?.customerKey});
+ try{await pay.requestPayment({...(TOSS_METHOD[method]||TOSS_METHOD.card),amount:{currency:'KRW',value:d.amount},orderId:d.orderId,orderName:d.orderName,successUrl:location.origin+'/billing/success',failUrl:location.origin+'/billing/fail'})}
+ catch(e:any){void fetch('/api/billing',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'abandon',orderId:d.orderId,code:e?.code})}).catch(()=>null);if(e?.code==='USER_CANCEL'||e?.code==='PAY_PROCESS_CANCELED')throw Error('결제를 그만뒀어요. 언제든 다시 결제할 수 있어요.');throw Error(e?.message?e.message+' 다시 시도해 주세요.':'결제창을 열지 못했어요. 다시 시도해 주세요.')}
+}
+/** 전자근로계약서 요금(체결 1건당 3,000원) 낼 달 */
+function ContractFees({bill,method}:{bill:any,method:string}){
+ const due=(bill?.contracts||[]).filter((x:any)=>x.due>0),[busy,setBusy]=useState(''),[err,setErr]=useState('');if(!due.length)return null;
+ return <div className="contract-fees"><h3>전자근로계약서 요금</h3><ul>{due.map((x:any)=><li key={x.month}>{Number(x.month.slice(5))}월 체결 {x.count}건{x.paid?` (낸 것 ${x.paid}건)`:''} · <b>{won(x.amount)}원</b> <button type="button" className="saas-secondary" disabled={!!busy} onClick={async()=>{setBusy(x.month);setErr('');try{await tossPay({kind:'contracts',month:x.month,agreed:true},method,bill)}catch(e){setErr((e as Error).message)}finally{setBusy('')}}}>{busy===x.month?'여는 중…':'결제하기'}</button></li>)}</ul><p className="saas-fine">체결 1건당 3,000원(VAT 포함). 이번 달 건은 달이 끝나기 전에도 낼 수 있어요.</p>{err&&<p className="saas-error" role="alert">{err}</p>}</div>;
+}
+/** 결제창에서 돌아온 화면: 승인(금액을 서버가 다시 맞춰 봄) → 결과 */
+export function BillingResult({ok}:{ok:boolean}){
+ const q=new URLSearchParams(location.search),[st,setSt]=useState<{busy:boolean,msg:string,err:string,receipt?:string}>({busy:ok,msg:'',err:''});
+ useEffect(()=>{if(!ok){void fetch('/api/billing',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'abandon',orderId:q.get('orderId'),code:q.get('code')})}).catch(()=>null);return}
+  fetch('/api/billing',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'confirm',paymentKey:q.get('paymentKey'),orderId:q.get('orderId'),amount:Number(q.get('amount'))})}).then(async r=>{const d:any=await r.json().catch(()=>({}));if(!r.ok)setSt({busy:false,msg:'',err:d.error||'결제를 확인하지 못했어요. 계정 화면에서 결제 내역을 확인해 주세요.'});else setSt({busy:false,msg:`${won(d.amount)}원 결제가 끝났어요.${d.paidUntil?` ${d.paidUntil.slice(0,10)}까지 이용할 수 있어요.`:''}`,err:'',receipt:d.receiptUrl||undefined})}).catch(()=>setSt({busy:false,msg:'',err:'인터넷 연결이 끊겼어요. 새로고침하면 다시 확인해요(돈은 두 번 빠지지 않아요).'}))},[]);
+ return <main className="saas-account"><h1>{ok?'결제 확인':'결제를 마치지 못했어요'}</h1>{ok?(st.busy?<p role="status">결제를 확인하고 있어요. 창을 닫지 마세요…</p>:st.err?<p className="saas-error" role="alert">{st.err}</p>:<><p className="saas-success" role="status">{st.msg}</p>{st.receipt&&<p><a href={st.receipt} target="_blank" rel="noopener noreferrer">영수증 보기</a></p>}</>):<p className="saas-error" role="alert">{q.get('message')||'결제가 취소됐어요.'} 다시 결제하려면 계정·요금제에서 결제하기를 눌러 주세요.</p>}<p><a href="/account">계정·요금제로 →</a></p></main>;
 }

@@ -30,6 +30,7 @@ import {kakaoSkillApi} from './kakao-skill-api';
 import {kioskApi,kioskPinHash} from './kiosk-api';
 import {piiLogApi} from './pii-log-api';
 import {clientErrorApi} from './client-error-api';
+import {tossApi} from './toss-api';
 import {openApi,openAdminApi,sendWebhooks} from './open-api';
 import {staffDocsApi} from './staff-docs-api';
 import {pushApi,notifyUser,notificationsApi} from './push-api';
@@ -90,6 +91,7 @@ async function route(request:Request,env:Env){
  if(path==='/api/multi-store')return multiStoreApi(request,env as any);
  if(path==='/api/pii-log')return piiLogApi(request,env);
  if(path==='/api/client-error')return clientErrorApi(request,env as any);
+ if(path==='/api/billing')return tossApi(request,env as any);
  if(path==='/api/open-admin')return openAdminApi(request,env);
  if(path==='/api/staff-docs')return staffDocsApi(request,env);
  if(path==='/api/push')return pushApi(request,env);

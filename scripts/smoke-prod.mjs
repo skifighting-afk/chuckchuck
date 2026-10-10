@@ -51,6 +51,8 @@ try{
  p.setDefaultTimeout(20000);
  // 1) 가입
  await p.goto(BASE+'/signup?role=owner&plan=basic',{waitUntil:'networkidle'});
+ // 응답 시간 기록(실패로 치지 않음): 상태 확인·화면 오류 보고가 오래 걸리는지 배포마다 본다
+ try{const t=await p.evaluate(async()=>{const m=async(u,o)=>{const t0=performance.now();try{const r=await fetch(u,o);return u+' '+r.status+' '+Math.round(performance.now()-t0)+'ms'}catch(e){return u+' 실패 '+Math.round(performance.now()-t0)+'ms'}};return [await m('/api/status'),await m('/api/client-error',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({kind:'slow',message:'배포 점검 응답 시간 확인',path:'/smoke'})})]});log('API 응답 시간',t.join(' · '))}catch(e){log('API 응답 시간 확인 못 함',e.message)}
  await p.fill('input[placeholder="실명을 입력해 주세요"]','점검 사장');
  await p.fill('input[type=email]',email);
  await p.fill('input[aria-label="비밀번호"]',password);

@@ -60,3 +60,11 @@ export function ClientErrors(){
  const load=async()=>{setErr('');const r=await fetch('/api/client-error');const d:any=await r.json().catch(()=>({}));if(!r.ok){setErr(d.error||'불러오지 못했어요. 새로고침해 주세요.');return}setRows(d.rows||[])};
  return <section className="saas-account" aria-labelledby="ce-title"><h2 id="ce-title">화면 오류·느린 요청</h2>{!rows?<button type="button" onClick={load}>최근 기록 보기</button>:rows.length?<ul>{rows.map((r,i)=><li key={i}><small>{String(r.at).slice(5,16).replace('T',' ')} · {r.kind==='slow'?'느림':'오류'} · {r.path}</small><br/>{r.message}</li>)}</ul>:<p className="saas-fine">최근 14일 기록이 없어요.</p>}{err&&<p role="alert">{err}</p>}</section>;
 }
+/** 토스페이먼츠 환불(본사만): 주문번호·금액·사유 → 토스 취소 API */
+export function RefundDesk(){
+ const [f,setF]=useState({orderId:'',amount:'',reason:''}),[busy,setBusy]=useState(false),[msg,setMsg]=useState(''),[err,setErr]=useState('');
+ const go=async()=>{if(!confirm(`주문 ${f.orderId}을(를) ${f.amount?Number(f.amount).toLocaleString('ko-KR')+'원':'남은 금액 전부'} 환불할까요? 되돌릴 수 없어요.`))return;setBusy(true);setErr('');setMsg('');try{const r=await fetch('/api/billing',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'refund',orderId:f.orderId.trim(),...(f.amount?{amount:Number(f.amount)}:{}),reason:f.reason})});const d:any=await r.json();if(!r.ok)throw Error(d.error||'환불하지 못했어요.');setMsg(`환불했어요 · 누적 ${Number(d.refunded).toLocaleString('ko-KR')}원 · ${d.status==='refunded'?'전액 환불':'부분 환불'}`)}catch(e){setErr((e as Error).message)}finally{setBusy(false)}};
+ return <section className="saas-account" aria-labelledby="rf-title"><h2 id="rf-title">결제 환불</h2><p className="saas-fine">고객 환불 신청(문의하기 → 환불 신청)을 확인한 뒤, 환불 규정의 계산기로 금액을 정해 넣어요. 금액을 비우면 남은 금액 전부예요.</p>
+  <label className="saas-field">주문번호<input value={f.orderId} onChange={e=>setF({...f,orderId:e.target.value})} placeholder="cc-p-..."/></label><label className="saas-field">환불 금액(원)<input type="number" min={1} value={f.amount} onChange={e=>setF({...f,amount:e.target.value})}/></label><label className="saas-field">사유<input maxLength={200} value={f.reason} onChange={e=>setF({...f,reason:e.target.value})}/></label>
+  <button type="button" disabled={busy||!f.orderId.trim()||!f.reason.trim()} onClick={go}>{busy?'환불하는 중…':'환불하기'}</button>{msg&&<p role="status">{msg}</p>}{err&&<p role="alert">{err}</p>}</section>;
+}

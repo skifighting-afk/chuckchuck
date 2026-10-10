@@ -33,7 +33,9 @@ for(const f of ['cheokcheoki-guide.png','favicon.svg','cheokcheoki-welcome.png',
 // 화면은 자기 파일만 불러오고, 서버(Supabase)에만 연결한다. 카메라(QR) 영상과 QR·명세서 이미지(data:, blob:)는 허용.
 const supabaseOrigin=new URL(supabaseUrl).origin;
 const fb=metaPixelId?{script:' https://connect.facebook.net',img:' https://www.facebook.com',connect:' https://www.facebook.com https://connect.facebook.net'}:{script:'',img:'',connect:''};
-const csp=["default-src 'self'",`script-src 'self'${fb.script}`,"style-src 'self' 'unsafe-inline'",`img-src 'self' data: blob:${fb.img}`,"media-src 'self' blob: mediastream:","font-src 'self' data:",`connect-src 'self' ${supabaseOrigin}${fb.connect}`,"object-src 'none'","base-uri 'self'","form-action 'self'","worker-src 'self' blob:","manifest-src 'self'","upgrade-insecure-requests"].join('; ');
+// 토스페이먼츠 결제창(v2): 스크립트·결제창 iframe·이미지·결제 요청 주소
+const toss={script:' https://js.tosspayments.com',frame:'https://*.tosspayments.com https://*.toss.im',img:' https://static.toss.im https://*.tosspayments.com',connect:' https://*.tosspayments.com',form:' https://*.tosspayments.com https://*.toss.im'};
+const csp=["default-src 'self'",`script-src 'self'${fb.script}${toss.script}`,"style-src 'self' 'unsafe-inline'",`img-src 'self' data: blob:${fb.img}${toss.img}`,"media-src 'self' blob: mediastream:","font-src 'self' data:",`connect-src 'self' ${supabaseOrigin}${fb.connect}${toss.connect}`,`frame-src ${toss.frame}`,"object-src 'none'","base-uri 'self'",`form-action 'self'${toss.form}`,"worker-src 'self' blob:","manifest-src 'self'","upgrade-insecure-requests"].join('; ');
 const html='<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="'+csp+'"><meta name="referrer" content="strict-origin-when-cross-origin"><title>척척사장 · 직원 관리</title><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#185b45"><meta name="description" content="입사부터 출퇴근, 급여와 계약까지. 함께 일하는 사람을 위한 매장 관리."><link rel="icon" href="/favicon.svg"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/icon-192.png"><meta name="apple-mobile-web-app-title" content="척척사장"><link rel="stylesheet" href="/app.css"></head><body><div id="root"></div><script type="module" src="/app.js"></script></body></html>';
 await writeFile('dist/client/404.html',html); // GitHub Pages: 모든 주소를 화면 앱으로(로그인 화면은 검색에 안 나오게 noindex)
 // 가이드 23: 로그인 없이 보는 공개 화면은 검색에 나오게 각자 제목·설명을 가진 HTML로 따로 둔다(GitHub Pages는 /pricing → pricing.html).
@@ -62,6 +64,8 @@ for(const [path,file,title,desc] of PUBLIC_PAGES){
 }
 // 앱 화면 껍데기를 /app(app.html)에도 둔다(GitHub Pages가 200으로 답하게). 브랜드 홈페이지는 따로 배포한다(scripts/build-home.mjs → HOME_DOMAIN).
 await writeFile('dist/client/app.html',html);
+// 토스페이먼츠 결제창이 돌아오는 주소(200으로 답하게)
+await mkdir('dist/client/billing',{recursive:true});await writeFile('dist/client/billing/success.html',html);await writeFile('dist/client/billing/fail.html',html);
 await writeFile('dist/client/sitemap.xml','<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'+PUBLIC_PAGES.filter(([p])=>p!=='/').map(([p])=>'  <url><loc>'+site+p+'</loc></url>').join('\n')+'\n</urlset>\n');
 await writeFile('dist/client/robots.txt','User-agent: *\nAllow: /\nDisallow: /app\nDisallow: /admin\nDisallow: /account\nDisallow: /contracts\nDisallow: /manager\nSitemap: '+site+'/sitemap.xml\n');
 await writeFile('dist/client/.nojekyll','');
