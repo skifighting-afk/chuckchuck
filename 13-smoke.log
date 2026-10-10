@@ -1,9 +1,0 @@
-20:57:33 새 화면 확인 b07d282
-20:57:42 API 응답 시간 /api/status 200 1940ms · /api/client-error 200 2749ms
-20:58:03 가입·가게 만들기 OK
-20:58:05 로그아웃 OK
-20:58:19 다시 로그인 OK
-20:59:02 HR 9개 기능·권한 설정 운영 API 조회 OK (빈 점검 매장·읽기 전용)
-20:59:52 점검 계정 삭제 완료
-배포 후 점검 실패: page.waitForResponse: Timeout 30000ms exceeded while waiting for event "response"
-끝나지 않은 요청: POST https://mklluxpngagiechnfaxe.supabase.co/functions/v1/api/client-error 79168ms
