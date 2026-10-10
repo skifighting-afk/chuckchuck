@@ -18,7 +18,7 @@
   document-delivery-OdMdYXYe.js 14KB
   contracts-desk-CmSM4d7w.js 12KB
 척척사장 화면·서버 함수 빌드 완료
-PASS 1. 사장님 가입 (약관 동의) (1238ms)
+PASS 1. 사장님 가입 (약관 동의) (1056ms)
 FAIL 가게 만들기 (요금 고르기·처리위탁 동의·30일 체험): locator.waitFor: Timeout 15000ms exceeded.
 Call log:
   - waiting for getByText('점검식당').first() to be visible
