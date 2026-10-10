@@ -1,7 +1,6 @@
-04:55:15 새 화면 확인 ed598ed
-04:55:57 점검 계정 삭제 완료
-배포 후 점검 실패: page.goto: Timeout 20000ms exceeded.
-Call log:
-  - navigating to "https://chukchukapp.kr/signup?role=owner&plan=basic", waiting until "networkidle"
-
-끝나지 않은 요청: POST https://mklluxpngagiechnfaxe.supabase.co/functions/v1/api/client-error 37240ms
+05:05:39 새 화면 확인 5bc1efb
+05:06:15 가입·가게 만들기 OK
+05:06:18 로그아웃 OK
+05:06:39 다시 로그인 OK
+05:06:59 점검 계정 삭제 완료
+05:06:59 배포 후 점검 통과
