@@ -11,6 +11,8 @@ const pick=k=>process.env[k]||fileConfig[k]||'';
 const supabaseUrl=pick('SUPABASE_URL')||'http://localhost:54321';
 const anonKey=pick('SUPABASE_ANON_KEY')||'local-anon-key';
 const appDomain=pick('APP_DOMAIN');
+// 브랜드 홈페이지 주소. 로그인 안 한 사람이 앱 첫 화면(/)에 오면 여기로 보낸다.
+const homeOrigin='https://'+(pick('HOME_DOMAIN').trim()||'chukchuksajang.co.kr')+'/';
 // 메타 광고 픽셀(공개 값). 비어 있으면 광고 추적 코드는 전혀 실리지 않는다.
 const metaPixelId=pick('META_PIXEL_ID').trim();
 if(metaPixelId&&!/^\d{15,16}$/.test(metaPixelId))throw Error('META_PIXEL_ID는 15~16자리 숫자여야 해요: '+metaPixelId);
@@ -20,7 +22,7 @@ if(process.env.CI&&process.env.REQUIRE_SUPABASE_CONFIG&&(!pick('SUPABASE_URL')||
 await mkdir('dist/client',{recursive:true});
 await copyFile('lib/vendor/noble-hashes/LICENSE','dist/client/noble-hashes-LICENSE.txt');
 await copyFile('lib/vendor/jsQR.LICENSE','dist/client/jsQR-LICENSE.txt');
-await build({input:'app/client.tsx',resolve:{alias:{'@':path.resolve('.')}},transform:{define:{'process.env.NODE_ENV':JSON.stringify('production'),__SUPABASE_URL__:JSON.stringify(supabaseUrl),__SUPABASE_ANON_KEY__:JSON.stringify(anonKey),__META_PIXEL_ID__:JSON.stringify(metaPixelId),__KAKAO_LOGIN__:JSON.stringify(fileConfig.KAKAO_LOGIN===true),__KAKAO_CHANNEL__:JSON.stringify(typeof fileConfig.KAKAO_CHANNEL_URL==='string'?fileConfig.KAKAO_CHANNEL_URL:'')},jsx:{runtime:'automatic'}},output:{dir:'dist/client',entryFileNames:'app.js',chunkFileNames:'chunks/[name]-[hash].js',format:'esm',minify:true}});
+await build({input:'app/client.tsx',resolve:{alias:{'@':path.resolve('.')}},transform:{define:{'process.env.NODE_ENV':JSON.stringify('production'),__SUPABASE_URL__:JSON.stringify(supabaseUrl),__SUPABASE_ANON_KEY__:JSON.stringify(anonKey),__META_PIXEL_ID__:JSON.stringify(metaPixelId),__KAKAO_LOGIN__:JSON.stringify(fileConfig.KAKAO_LOGIN===true),__HOME_ORIGIN__:JSON.stringify(homeOrigin),__KAKAO_CHANNEL__:JSON.stringify(typeof fileConfig.KAKAO_CHANNEL_URL==='string'?fileConfig.KAKAO_CHANNEL_URL:'')},jsx:{runtime:'automatic'}},output:{dir:'dist/client',entryFileNames:'app.js',chunkFileNames:'chunks/[name]-[hash].js',format:'esm',minify:true}});
 // 작업 010: 묶음 크기 기록(처음 받는 app.js와 필요할 때 받는 조각)
 {const {readdirSync,statSync}=await import('node:fs');const kb=f=>Math.round(statSync(f).size/1024);const chunks=existsSync('dist/client/chunks')?readdirSync('dist/client/chunks').map(f=>[f,kb('dist/client/chunks/'+f)]).sort((a,b)=>b[1]-a[1]):[];console.log(`화면 묶음: app.js ${kb('dist/client/app.js')}KB, 필요할 때 받는 조각 ${chunks.length}개 ${chunks.reduce((n,c)=>n+c[1],0)}KB`);for(const [f,k] of chunks.slice(0,8))console.log(`  ${f} ${k}KB`)}
 const css=await compile(await readFile('app/globals.css','utf8'),{base:path.resolve('app'),onDependency:()=>{}});
@@ -53,15 +55,14 @@ const PUBLIC_PAGES=[
  ['/status','status.html','서비스 상태 · 척척사장','척척사장 서버와 데이터베이스가 정상인지, 최근 서비스 안내를 확인해요.'],
 ];
 for(const [path,file,title,desc] of PUBLIC_PAGES){
- const page=html.replace('<meta name="robots" content="noindex,nofollow">','<link rel="canonical" href="'+site+path+'"><meta property="og:type" content="website"><meta property="og:site_name" content="척척사장"><meta property="og:title" content="'+esc(title)+'"><meta property="og:description" content="'+esc(desc)+'"><meta property="og:url" content="'+site+path+'"><meta property="og:image" content="'+site+'/icon-512.png"><meta property="og:locale" content="ko_KR">')
+ const page=html.replace('<meta name="robots" content="noindex,nofollow">','<link rel="canonical" href="'+(path==='/'?homeOrigin:site+path)+'"><meta property="og:type" content="website"><meta property="og:site_name" content="척척사장"><meta property="og:title" content="'+esc(title)+'"><meta property="og:description" content="'+esc(desc)+'"><meta property="og:url" content="'+site+path+'"><meta property="og:image" content="'+site+'/icon-512.png"><meta property="og:locale" content="ko_KR">')
   .replace(/<title>[^<]*<\/title>/,'<title>'+esc(title)+'</title>').replace(/<meta name="description" content="[^"]*">/,'<meta name="description" content="'+esc(desc)+'">');
  if(page.includes('noindex'))throw new Error('공개 화면에 noindex가 남았어요: '+path);
  await writeFile('dist/client/'+file,page);
 }
-// 첫 화면(/)은 브랜드 홈페이지(site/)로 바꾼다. 앱 화면은 /app(app.html)과 나머지 주소(404.html)에서 그대로 열린다.
+// 앱 화면 껍데기를 /app(app.html)에도 둔다(GitHub Pages가 200으로 답하게). 브랜드 홈페이지는 따로 배포한다(scripts/build-home.mjs → HOME_DOMAIN).
 await writeFile('dist/client/app.html',html);
-{const {buildHome}=await import('./build-home.mjs');const r=await buildHome({out:'dist/client',site,pixelId:metaPixelId});console.log(`홈페이지: index.html ${Math.round(r.html.length/1024)}KB`)}
-await writeFile('dist/client/sitemap.xml','<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'+PUBLIC_PAGES.map(([p])=>'  <url><loc>'+site+p+'</loc></url>').join('\n')+'\n</urlset>\n');
+await writeFile('dist/client/sitemap.xml','<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'+PUBLIC_PAGES.filter(([p])=>p!=='/').map(([p])=>'  <url><loc>'+site+p+'</loc></url>').join('\n')+'\n</urlset>\n');
 await writeFile('dist/client/robots.txt','User-agent: *\nAllow: /\nDisallow: /app\nDisallow: /admin\nDisallow: /account\nDisallow: /contracts\nDisallow: /manager\nSitemap: '+site+'/sitemap.xml\n');
 await writeFile('dist/client/.nojekyll','');
 // 출시 준비: 보안 취약점 신고 창구(RFC 9116)

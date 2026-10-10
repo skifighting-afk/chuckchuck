@@ -54,6 +54,8 @@ import {Input} from '@/components/ui/input';
 import {Label} from '@/components/ui/label';
 import {Checkbox} from '@/components/ui/checkbox';
 import {RadioGroup,RadioGroupItem} from '@/components/ui/radio-group';
+declare const __HOME_ORIGIN__:string;
+const HOME_ORIGIN=typeof __HOME_ORIGIN__==='string'?__HOME_ORIGIN__.replace(/\/$/,''):'';
 const signIn=(path:string)=>'/signin-with-chatgpt?return_to='+encodeURIComponent(path.startsWith('/')&&!path.startsWith('//')?path:'/app');
 const signOut='/signout-with-chatgpt?return_to=%2Flogin';
 export default function Platform(){
@@ -82,7 +84,8 @@ export default function Platform(){
  if(status==='loading')return <Shell><div className="auth-card"><Clock3 className="auth-icon"/><h1>척척사장을 준비하고 있어요.</h1><p>계정과 매장 연결을 확인합니다.</p></div></Shell>;
  if(status==='error')return <Shell><div className="auth-card"><h1>잠시 연결이 어렵습니다.</h1><p role="alert">{error}</p><Button onClick={reload}>다시 연결</Button><CachedShifts/><a href="/login">로그인 화면</a><a href="/contracts">내 서류 보기</a><a href="/withdraw">회원 탈퇴</a></div></Shell>;
  if(status==='mfa')return <Shell><MfaPrompt onDone={()=>location.reload()}/></Shell>;
- if(status==='anonymous'&&path==='/')return <Shell><Landing/></Shell>;
+ // 로그인 안 한 사람의 첫 화면은 브랜드 홈페이지(chukchuksajang.co.kr)로. 광고 꼬리표(utm 등)는 그대로 넘긴다. 내 컴퓨터·테스트에서는 기존 소개 화면.
+ if(status==='anonymous'&&path==='/'){if(HOME_ORIGIN&&![...query.keys()].some(k=>!/^(utm_|fbclid$|gclid$)/.test(k))&&!/^(localhost|127\.|\[::1\])/.test(location.hostname)){location.replace(HOME_ORIGIN+location.search);return null}return <Shell><Landing/></Shell>}
  if(status==='anonymous'||path==='/login')return <Login account={account} role={(query.has('reset')||query.get('mode')==='reset')?'owner':qrEntry?'employee':path==='/employee'?'employee':query.get('role')==='employee'?'employee':path==='/signup'?'owner':query.get('role')==='owner'?'owner':undefined} next={qrEntry|| (query.get('role')==='employee'?'/employee':path==='/employee'?'/employee'+location.search:invite?'/?invite='+encodeURIComponent(invite):query.get('next')==='/account'?'/account':path==='/signup'?'/signup?plan='+(planId(query.get('plan'))?query.get('plan'):'free'):'/app')}/>;
  if(account?.mustChangePassword)return <Shell><ChangePasswordGate onDone={reload}/></Shell>;
  if(account?.consentRequired)return <ConsentGate onDone={reload}/>;

@@ -11,7 +11,7 @@
 <link rel="canonical" href="{{SITE}}/">
 <meta property="og:type" content="website"><meta property="og:site_name" content="척척사장"><meta property="og:title" content="척척사장 · 찍으면 출근, 누르면 월급"><meta property="og:description" content="{{DESCRIPTION}}"><meta property="og:url" content="{{SITE}}/"><meta property="og:image" content="{{SITE}}/icon-512.png"><meta property="og:locale" content="ko_KR">
 <meta name="theme-color" content="#0f3d2f">
-<link rel="icon" href="/favicon.svg"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/icon-192.png">
+<link rel="icon" href="/favicon.svg"><link rel="apple-touch-icon" href="/icon-192.png">
 <link rel="preload" href="{{BASE}}home/fonts/pretendard.woff2" as="font" type="font/woff2" crossorigin>
 {{JSONLD}}
 </head>
@@ -22,7 +22,7 @@
 <body>
 <a class="skip" href="#main">본문으로 건너뛰기</a>
 <header class="nav" id="nav">
-  <a class="logo" href="{{APP}}/" aria-label="척척사장 처음으로">
+  <a class="logo" href="{{BASE}}" aria-label="척척사장 처음으로">
     <svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="11"/><path d="m8 20 6 6 13-13m-7 12 4 3 10-12"/></svg>
     <span>척척사장</span>
   </a>
@@ -165,7 +165,7 @@
       </div>
       <ol class="pair">
         <li><span class="ck">✓</span><div><b>사장님이 쓰고 먼저 서명해요</b><p>근무일, 시간, 시급 같은 조건을 넣으면 계약서가 만들어져요.</p></div></li>
-        <li><span class="ck">✓</span><div><b>직원이 읽고 서명해요</b><p>직원이 본문을 확인하고 서명하면 둘 다 사본을 내려받을 수 있어요. 월 {{CONTRACT_FREE}}장 무료, 더 쓰면 1장에 {{CONTRACT_EXTRA}}원이에요.</p></div></li>
+        <li><span class="ck">✓</span><div><b>직원이 읽고 서명해요</b><p>직원이 본문을 확인하고 서명하면 둘 다 사본을 내려받을 수 있어요. 요금은 {{CONTRACT_FEE}}이에요.</p></div></li>
       </ol>
     </div>
   </div>
@@ -302,7 +302,7 @@
 
 <footer class="foot">
   <div class="foot-top">
-    <a class="logo" href="{{APP}}/" aria-label="척척사장"><svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="11"/><path d="m8 20 6 6 13-13m-7 12 4 3 10-12"/></svg><span>척척사장</span></a>
+    <a class="logo" href="{{BASE}}" aria-label="척척사장"><svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="11"/><path d="m8 20 6 6 13-13m-7 12 4 3 10-12"/></svg><span>척척사장</span></a>
     <div class="prefs"><button type="button" id="pref-text" aria-pressed="false">가 글씨 크게</button><button type="button" id="pref-motion" aria-pressed="false">움직임 줄이기</button></div>
   </div>
   <nav class="foot-links" aria-label="약관과 안내">

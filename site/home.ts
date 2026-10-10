@@ -4,10 +4,11 @@ import {estimateLabor} from '../lib/labor-estimate';
 import {ratesFor} from '../lib/pay-rules';
 import {trackPageView} from '../app/meta-pixel';
 
-// 0. 예전 주소(/?invite=…, 로그인 메일의 되돌아오기 주소)는 앱으로 넘긴다. 광고 꼬리표(utm·fbclid)만 있으면 그대로 둔다.
+// 0. 앱으로 가야 할 주소(/?invite=…, 로그인 메일의 되돌아오기 주소)는 앱 도메인으로 넘긴다. 광고 꼬리표(utm·fbclid)만 있으면 그대로 둔다.
 {
   const q = new URLSearchParams(location.search), keys = [...q.keys()].filter(k => !/^(utm_|fbclid$|gclid$|ref$)/.test(k));
-  if (location.pathname === '/' && (keys.length || /access_token|error_description|type=recovery/.test(location.hash))) location.replace('/app' + location.search + location.hash);
+  const appUrl = (document.querySelector('.nav-login') as HTMLAnchorElement | null)?.href || '/app';
+  if (location.pathname === '/' && (keys.length || /access_token|error_description|type=recovery/.test(location.hash))) location.replace(appUrl + location.search + location.hash);
 }
 
 const $ = <T extends Element = HTMLElement>(s: string, r: ParentNode = document) => r.querySelector(s) as T;

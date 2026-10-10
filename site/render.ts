@@ -1,15 +1,15 @@
 // 홈페이지(site/)에서 화면과 빌드가 같이 쓰는 내용. 숫자는 lib/에서만 가져온다(요금·계산식·사업자 정보를 따로 적지 않는다).
-import {plans,monthlyPrice,periodPrice,money,TRIAL_DAYS,CONTRACTS_FREE_PER_MONTH,CONTRACT_EXTRA_PRICE,type PlanId} from '../lib/plans';
+import {plans,monthlyPrice,periodPrice,money,TRIAL_DAYS,CONTRACTS_FREE_PER_MONTH,CONTRACT_EXTRA_PRICE,contractFeeText,type PlanId} from '../lib/plans';
 import {estimateLabor} from '../lib/labor-estimate';
 import {operatorLines} from '../lib/operator';
 
 export const esc = (s: string) => s.replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'} as Record<string, string>)[c]);
-export {plans, monthlyPrice, periodPrice, money, TRIAL_DAYS, CONTRACTS_FREE_PER_MONTH, CONTRACT_EXTRA_PRICE};
+export {plans, monthlyPrice, periodPrice, money, TRIAL_DAYS, CONTRACTS_FREE_PER_MONTH, CONTRACT_EXTRA_PRICE, contractFeeText};
 export type {PlanId};
 
 /** 요금제 카드 기능 목록 — app/public-pages.tsx PLAN_FEATURES와 같은 내용 */
 export const PLAN_FEATURES: Record<PlanId, string[]> = {
-  basic: ['직원 수 제한 없음', '근무표 · 대타·교대 요청', '앱 버튼 출퇴근 · 정정 승인', '급여 자동 계산 · 명세서 · 임금대장', `전자근로계약서 월 ${CONTRACTS_FREE_PER_MONTH}장 무료`, '휴가 · 공지 · 매장 매뉴얼', '인건비 리포트 · 지점 비교(2지점 이상)'],
+  basic: ['직원 수 제한 없음', '근무표 · 대타·교대 요청', '앱 버튼 출퇴근 · 정정 승인', '급여 자동 계산 · 명세서 · 임금대장', `전자근로계약서 ${contractFeeText()}`, '휴가 · 공지 · 매장 매뉴얼', '인건비 리포트 · 지점 비교(2지점 이상)'],
   pro: ['베이직 기능 전부', '매장 QR을 찍어야 출퇴근 기록', '30초마다 바뀌는 QR(대리 출근 막기)'],
 };
 

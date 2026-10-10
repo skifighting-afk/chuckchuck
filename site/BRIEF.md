@@ -1,6 +1,7 @@
 # 척척사장 브랜드 홈페이지 — 크리에이티브 브리프 (2026-10)
 
-이 폴더(`site/`)가 chukchukapp.kr 첫 화면(`/`)이다. 앱 화면(`/app`, `/signup`, `/demo` …)은 그대로 `app/`에서 나온다.
+이 폴더(`site/`)가 브랜드 홈페이지 **chukchuksajang.co.kr**이다(`deploy.config.json`의 HOME_DOMAIN). 앱은 그대로 chukchukapp.kr(`app/`)이고, 로그인 안 한 사람이 앱 첫 화면(`/`)에 오면 홈페이지로 넘어간다.
+배포: 홈페이지 전용 저장소(skifighting-afk/chukchuksajang)의 Actions가 이 저장소 main을 받아 `node scripts/build-home.mjs --site _site`로 만들고 GitHub Pages에 올린다(매시간 + 수동 실행). 그 저장소의 워크플로는 `site/pages.yml`.
 요금·최저임금·계산식·사업자 정보는 `lib/plans.ts`, `lib/labor-estimate.ts`, `lib/operator.ts`를 그대로 불러 쓴다(숫자를 홈페이지에 따로 적지 않는다).
 
 ## 01–06 시장 · 고객 · 목표 · 경쟁 · 포지셔닝 · USP

@@ -1,0 +1,31 @@
+# 홈페이지 전용 저장소(skifighting-afk/chukchuksajang)의 .github/workflows/pages.yml
+# 척척사장 저장소(공개)의 main을 받아 홈페이지를 만들고 GitHub Pages(chukchuksajang.co.kr)에 올린다.
+# 요금·계산식이 바뀌면 매시간 돌 때 반영된다. 바로 반영하려면 Actions → 홈페이지 배포 → Run workflow.
+name: 홈페이지 배포
+on:
+  push: {branches: [main]}
+  workflow_dispatch:
+  schedule: [{cron: '23 * * * *'}]
+permissions: {contents: read, pages: write, id-token: write}
+concurrency: {group: pages, cancel-in-progress: false}
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {repository: skifighting-afk/chuckchuck, ref: main, fetch-depth: 1}
+      - name: 홈페이지가 아직 main에 없으면 작업 브랜치에서
+        run: if [ ! -d site ]; then git fetch --depth 1 origin homepage-brand && git checkout FETCH_HEAD; fi
+      - uses: actions/setup-node@v4
+        with: {node-version: 22}
+      - run: node scripts/build-home.mjs --site _site
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with: {path: _site}
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: {name: github-pages, url: '${{ steps.d.outputs.page_url }}'}
+    steps:
+      - id: d
+        uses: actions/deploy-pages@v4
