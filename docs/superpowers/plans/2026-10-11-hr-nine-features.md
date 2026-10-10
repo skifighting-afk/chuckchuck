@@ -10,7 +10,7 @@
 
 **Spec:** `docs/superpowers/specs/2026-10-11-hr-nine-features-design.md` — 2026-10-11 사용자 승인.
 
-**상태:** 사용자 계획 승인 · 직접 구현 진행 중. 추가 HR 기능 개발 8/9 · 개발 검증 완료 8/9 · 배포 확인 0/9. 기존 100개 개선안과 별도로 추적한다.
+**상태:** 사용자 계획 승인 · 직접 구현 진행 중. 추가 HR 기능 기능 구현 9/9 · 서버 검증 9/9 · 전체 화면 검증 대기 · 배포 확인 0/9. 기존 100개 개선안과 별도로 추적한다.
 
 ## Global Constraints
 
@@ -174,10 +174,10 @@ type HrPanelProps = {client:HrClient;branchId:string;selfId:string|null};
 
 **Interfaces:** `ItemAssignment = HrMeta & {employeeId:string;name:string;issued:number;returned:number;lost:number;issuedAt:string;dueAt:string|null;receivedAt:string|null;note:string}`. `ItemEvent = HrMeta & {assignmentId:string;kind:'issue'|'ack'|'requestReturn'|'return'|'lost';quantity:number;note:string}`. `outstandingItems(rows:ItemAssignment[],employeeId:string):ItemAssignment[]`는 issued-returned-lost>0인 행을 반환한다. 분실은 별도 미해결 표시한다. POST actions issue/ack/requestReturn/return/lost. `ItemsPanel(props:HrPanelProps)`.
 
-- [ ] **1. 실패 시험:** 지급2→반납1 잔여1, 같은 요청 재전송 잔여1, 잔여보다 많은 반납409, 다른 직원 수령확인403, 접근 종료 직원403·owner 반납 기록200, 급여 변동0을 assert한다.
-- [ ] **2. 실패 확인:** build 후 `node scripts/check-hr-items.mjs`.
-- [ ] **3. 구현:** hr_item_assignments/hr_item_events 추가. 이름80/메모500자·수량1~999 정수. 반납 수량과 이벤트를 한 트랜잭션으로 갱신한다. 수령 확인은 본인, 지급·반납 확정은 owner/items 담당. 출입키는 별칭만 입력한다.
-- [ ] **4. 화면·통과·커밋:** 지급→확인→부분 반납·분실 사유·퇴사 준비 미반납 목록을 연결한다. 비용·구매·재고·급여 차감을 넣지 않는다. core/items, `check-team.mjs`, 타입 검사. 동시 반납 중 초과 요청409와 잔여 비음수를 검증한다.
+- [x] **1. 실패 시험:** 지급2→반납1 잔여1, 같은 요청 재전송 잔여1, 잔여보다 많은 반납409, 다른 직원 수령확인403, 접근 종료 직원403·owner 반납 기록200, 급여 변동0을 assert한다.
+- [x] **2. 실패 확인:** build 후 `node scripts/check-hr-items.mjs`.
+- [x] **3. 구현:** hr_item_assignments/hr_item_events 추가. 이름80/메모500자·수량1~999 정수. 반납 수량과 이벤트를 한 트랜잭션으로 갱신한다. 수령 확인은 본인, 지급·반납 확정은 owner/items 담당. 출입키는 별칭만 입력한다.
+- [x] **4. 화면·통과·커밋:** 지급→확인→부분 반납·분실 사유·퇴사 준비 미반납 목록을 연결한다. 비용·구매·재고·급여 차감을 넣지 않는다. core/items, `check-team.mjs`, 타입 검사. 동시 반납 중 초과 요청409와 잔여 비음수를 검증한다.
 
 ## Task 9: 자료 수명·내보내기·기한 알림
 

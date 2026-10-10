@@ -37,3 +37,6 @@ export type PulseCampaign=HrMeta&{title:string;questions:{id:string;text:string}
 export type PulseAnswer=HrMeta&{campaignId:string;employeeId:string;values:Record<string,1|2|3|4|5>;comment:string;submittedAt:string};
 export type PulseSummary={responded:number;targeted:number;distributions:Record<string,[number,number,number,number,number]>};
 export type PulseView={context:HrContextView;manage:boolean;campaigns:{campaign:PulseCampaign;answers:PulseAnswer[];summary:PulseSummary|null}[]};
+export type ItemAssignment=HrMeta&{employeeId:string;name:string;issued:number;returned:number;lost:number;issuedAt:string;dueAt:string|null;receivedAt:string|null;note:string};
+export type ItemEvent=HrMeta&{assignmentId:string;kind:'issue'|'ack'|'requestReturn'|'return'|'lost';quantity:number;note:string};
+export type ItemsView={context:HrContextView;manage:boolean;items:ItemAssignment[];events:ItemEvent[];people:{id:string;name:string;departed:boolean}[]};
