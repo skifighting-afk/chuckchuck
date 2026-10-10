@@ -8,7 +8,7 @@
 
 [33m[INEFFECTIVE_DYNAMIC_IMPORT] [0mapp/att-device.ts is dynamically imported by app/schedule-extras.tsx but also statically imported by app/team.tsx, dynamic import will not move module into another chunk.
 
-화면 묶음: app.js 408KB, 필요할 때 받는 조각 26개 1285KB
+화면 묶음: app.js 413KB, 필요할 때 받는 조각 26개 1285KB
   team-kUf3tzPW.js 797KB
   capacity-dialog-DHR8esdm.js 172KB
   attendance-scan-CWox5lOW.js 133KB
@@ -18,7 +18,7 @@
   document-delivery-OdMdYXYe.js 14KB
   contracts-desk-CmSM4d7w.js 12KB
 척척사장 화면·서버 함수 빌드 완료
-PASS 1. 사장님 가입 (약관 동의) (1286ms)
+PASS 1. 사장님 가입 (약관 동의) (1688ms)
 FAIL 가게 만들기 (요금 고르기·처리위탁 동의·30일 체험): locator.waitFor: Timeout 15000ms exceeded.
 Call log:
   - waiting for getByText('점검식당').first() to be visible
