@@ -1,7 +1,7 @@
 // Uses the existing isolated E2E store and authenticated owner/staff pages.
 // Every scenario changes the UI, reloads it, then checks the real PostgreSQL row.
 import assert from 'node:assert/strict';
-export async function hrE2E({owner,staff,srv,step,staffName}){
+export async function hrE2E({owner,staff,srv,step,staffName,browser}){
  const B=srv.ORIGIN,store=JSON.parse((await srv.db.q('SELECT data FROM stores LIMIT 1').first()).data),emp=store.employees.find(e=>e.name===staffName).id;
  const open=(p,view)=>p.goto(B+'/hr?view='+view,{waitUntil:'networkidle'}),field=(p,name)=>p.getByRole('textbox',{name}),select=(p,name)=>p.getByRole('combobox',{name,exact:true});
  const save=async(p,name)=>{const [res]=await Promise.all([p.waitForResponse(r=>r.request().method()==='POST'&&r.url().includes('/hr/')),p.getByRole('button',{name,exact:true}).click()]);assert(res.ok(),await res.text());await p.waitForFunction(()=>!document.querySelector('.hr-notice[aria-busy="true"]'));return(await res.json()).record};
@@ -49,5 +49,13 @@ export async function hrE2E({owner,staff,srv,step,staffName}){
   await owner.unroute(pattern);await owner.getByRole('button',{name:'입력 유지하고 최신 기록 확인',exact:true}).click();await owner.getByRole('status').filter({hasText:'최신 기록을 불러왔어요.'}).waitFor();assert.equal(await select(owner,'담당 직원').inputValue(),emp);
   await owner.route(pattern,r=>r.request().method()==='POST'?r.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'시험 저장 실패'})}):r.request().url().includes('/hr/context')?r.fulfill({status:403,contentType:'application/json',body:JSON.stringify({error:'접근 권한이 없어요.'})}):r.continue());
   await owner.getByRole('button',{name:'담당자로 지정',exact:true}).click();await owner.getByRole('button',{name:'입력 유지하고 최신 기록 확인',exact:true}).click();await owner.getByRole('alert').filter({hasText:'접근 권한이 없어요.'}).waitFor();assert.equal(await select(owner,'담당 직원').count(),0);await owner.unroute(pattern);
+ });
+ await step('HR 비로그인 로그인 안내 → 보호 API 401·캐시 차단',async()=>{
+  const guest=await browser.newPage();try{
+   await guest.goto(B+'/hr?role=owner',{waitUntil:'domcontentloaded'});await guest.locator('input[type=email]').waitFor();
+   assert.equal(await guest.getByRole('heading',{name:'사람·교육',exact:true}).count(),0);
+   const read=await guest.evaluate(async()=>{const r=await fetch('/api/hr/context');return{status:r.status,private:r.headers.get('cache-control')?.includes('no-store')}});
+   assert.equal(read.status,401);assert(read.private);
+  }finally{await guest.close()}
  });
 }
