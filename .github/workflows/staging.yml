@@ -62,5 +62,5 @@ jobs:
           echo "GET /api/auth → $code"; [ "$code" = "200" ]
       - name: 스테이징용 화면 파일
         if: steps.cfg.outputs.deploy == 'yes'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with: {name: staging-client, path: dist/client, retention-days: 7}
