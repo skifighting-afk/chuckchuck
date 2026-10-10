@@ -1416,7 +1416,7 @@ PASS 36. 2026-03-31: no clock-in or clock-out in the future (A1·A3)
 PASS: 체험 화면 숫자(급여·명세서·임금대장 합계).
 
 ── check-error-messages
-PASS: 오류 문구 567개 모두 다음 행동 안내 포함.
+PASS: 오류 문구 569개 모두 다음 행동 안내 포함.
 PASS: 오류 번호·로그 개인정보 제거.
 
 ── check-attendance-table
@@ -1927,6 +1927,93 @@ PASS: 세무사 공유 링크 (확정 급여만·끄기·만료·열람 기록·
 15. PASS 전화번호 없으면 거절
 16. PASS 같은 곳에서 한 시간 3번까지
 PASS: 메일 없이 비밀번호 찾기.
+
+── check-improve2
+1. PASS B005 break ends in 5 min
+2. PASS B006 no break after 4h → staff + owner
+3. PASS B006 silent once rested
+4. PASS B014 16h open record
+5. PASS B015 digest drops owner per-event alerts
+6. PASS B015 off keeps all
+7. PASS B015 digest text
+8. PASS B035 ack reminder after 24h
+9. PASS B035 acked → none
+10. PASS B058 only in December
+11. PASS B058 december lists low wage
+12. PASS B058 no next-year rate → silent
+13. PASS B090 visa 30 days
+14. PASS B101 staff pref first
+15. PASS B101 store default
+16. PASS B101 off
+17. PASS B010·B018 punctuality
+18. PASS B018 habit text
+19. PASS B022 copy month to same nth weekday
+20. PASS B022 missing 5th week skipped
+21. PASS B023·B034 week load over max
+22. PASS B024 weekend count
+23. PASS B027 break suggestion
+24. PASS B032 shift kind
+25. PASS B033 candidates exclude busy & over max
+26. PASS B033 available first
+27. PASS B038 changed cells
+28. PASS B040 grid header + rows
+29. PASS B039 holiday premium 5+
+30. PASS B039 under 5 none
+31. PASS B046 rounding
+32. PASS B055 transfer check
+33. PASS B067 durunuri
+34. PASS B067 10+ none
+35. PASS B069 pay period 16th
+36. PASS B069 default
+37. PASS B070 payday next month
+38. PASS B070 short month
+39. PASS B073 readiness
+40. PASS B086 missing info
+41. PASS B079 tenure
+42. PASS B088 history months
+43. PASS B092 until next
+44. PASS B133 weekday cost
+45. PASS B132 ratio over target
+46. PASS B136 swap trend
+47. PASS B140 yoy
+48. PASS B151 late memo rule once a month
+49. PASS B153 repeats due
+50. PASS B158 slash
+51. PASS B188 referral code stable
+52. PASS B196 scrub
+53. PASS B200 secret patterns
+54. PASS B200 clean text
+55. PASS owner saves extra fields
+56. PASS extra kept
+57. PASS branch info kept
+58. PASS repeats kept
+59. PASS settings.more kept
+60. PASS staff does not see owner memo/tags/reviews
+61. PASS staff sees praise
+62. PASS staff sees wifi
+63. PASS staff sees today note only
+64. PASS staff sees events
+65. PASS setPref bad value blocked
+66. PASS setPref ok
+67. PASS pref saved, memo intact
+68. PASS dayOffWish past blocked
+69. PASS dayOffWish ok
+70. PASS owner sees wish
+71. PASS second tap removes wish
+72. PASS staff cannot memo
+73. PASS autoClose future blocked
+74. PASS autoClose ok
+75. PASS closed with flag
+76. PASS attMemo ok
+77. PASS memo saved
+78. PASS staff record hides memo
+79. PASS client error needs origin
+80. PASS scrubbed + deduped
+81. PASS non-HQ cannot read
+82. PASS B101 2h before alert with clock link
+
+── check-secrets
+1. PASS 비밀값 검사 완료
 
 > chuckchuck@0.1.0 check:function
 > node scripts/check-supabase-function.mjs
