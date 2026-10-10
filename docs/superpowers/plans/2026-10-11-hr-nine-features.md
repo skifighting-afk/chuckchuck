@@ -10,7 +10,7 @@
 
 **Spec:** `docs/superpowers/specs/2026-10-11-hr-nine-features-design.md` — 2026-10-11 사용자 승인.
 
-**상태:** 사용자 계획 승인 · 직접 구현 진행 중. 추가 HR 기능 개발 1/9 · 개발 검증 완료 1/9 · 배포 확인 0/9. 기존 100개 개선안과 별도로 추적한다.
+**상태:** 사용자 계획 승인 · 직접 구현 진행 중. 추가 HR 기능 개발 3/9 · 개발 검증 완료 3/9 · 배포 확인 0/9. 기존 100개 개선안과 별도로 추적한다.
 
 ## Global Constraints
 
@@ -116,11 +116,11 @@ type HrPanelProps = {client:HrClient;branchId:string;selfId:string|null};
 
 **Interfaces:** `BuddyAssignment = HrMeta & {employeeId:string;buddyId:string;from:string;until:string;steps:{id:string;title:string;manualId:string|null;progress:'todo'|'doing'|'awaiting_ack'|'done';note:string;staffAckAt:string|null}[]}`. `SkillDefinition = HrMeta & {name:string;manualId:string|null;archivedAt:string|null}`. `SkillRecord = HrMeta & {employeeId:string;skillId:string;level:'교육 전'|'교육 중'|'도움받으면 가능'|'혼자 가능';checkedBy:string|null;checkedAt:string|null;note:string;reviewRequestedAt:string|null}`. POST actions: assignBuddy/updateStep/ackStep/reassignBuddy/saveSkill/setLevel/requestReview. `TrainingPanel(props:HrPanelProps)`.
 
-- [ ] **1. 실패 시험:** 선배는 자기 배정 단계만 변경, 신입은 자기 확인만 가능, 본인 숙련도 확정 403, 이전 선배는 재배정 후 403을 검증한다. 새 담당자에게 미완 단계가 보이며 기존 extra.skills 변경은 0이어야 한다.
-- [ ] **2. 실패 확인:** build 후 `node scripts/check-hr-training.mjs`.
-- [ ] **3. 구현:** hr_buddy_assignments/hr_skill_definitions/hr_skill_records를 추가한다. 기간 순서·현재 직원·같은 지점·매뉴얼 공개 대상을 검사한다. title100/note1000/단계30개 제한. 선배 배정은 전체 HR 권한 위임을 뜻하지 않는다. 숙련 변경은 owner 또는 training 위임자만 확정한다.
-- [ ] **4. 연결:** 담당자·교육 목록·다음 학습·확인일·매뉴얼 링크를 제공한다. 기존 자유 업무 태그는 미확인으로 보존한다. 퇴사·전근 선배는 재배정 안내, 편성 시 미확인 업무는 조언으로 표시하고 자동 탈락시키지 않는다.
-- [ ] **5. 통과·커밋:** core/training, `check-manual.mjs`, `check-team.mjs`, 타입 검사. 비공개 manualId 주입 거부·진행 동시 수정 409·담당 변경을 확인한다.
+- [x] **1. 실패 시험:** 선배는 자기 배정 단계만 변경, 신입은 자기 확인만 가능, 본인 숙련도 확정 403, 이전 선배는 재배정 후 403을 검증한다. 새 담당자에게 미완 단계가 보이며 기존 extra.skills 변경은 0이어야 한다.
+- [x] **2. 실패 확인:** build 후 `node scripts/check-hr-training.mjs`.
+- [x] **3. 구현:** hr_buddy_assignments/hr_skill_definitions/hr_skill_records를 추가한다. 기간 순서·현재 직원·같은 지점·매뉴얼 공개 대상을 검사한다. title100/note1000/단계30개 제한. 선배 배정은 전체 HR 권한 위임을 뜻하지 않는다. 숙련 변경은 owner 또는 training 위임자만 확정한다.
+- [x] **4. 연결:** 담당자·교육 목록·다음 학습·확인일·매뉴얼 링크를 제공한다. 기존 자유 업무 태그는 미확인으로 보존한다. 퇴사·전근 선배는 재배정 안내, 편성 시 미확인 업무는 조언으로 표시하고 자동 탈락시키지 않는다.
+- [x] **5. 통과·커밋:** core/training, `check-manual.mjs`, `check-team.mjs`, 타입 검사. 비공개 manualId 주입 거부·진행 동시 수정 409·담당 변경을 확인한다.
 
 ## Task 4: HR-05·06 희망 근무량·배정 균형
 
