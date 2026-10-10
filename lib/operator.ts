@@ -9,9 +9,9 @@ export const OPERATOR = {
   mailOrderNo: '',        // 통신판매업 신고번호
   address: '서울특별시 구로구 경서로 7, 1층 101호(개봉동, 드림빌)', // 사업장 주소
   phone: '010-4823-2636',  // 고객 문의 전화
-  email: 'skifightin@gmail.com', // 고객 문의 이메일
+  email: 'skifighting@gmail.com', // 고객 문의 이메일
   kakaoChannel: '',       // 지시서 144: 카카오톡 채널 1:1 상담 주소(예: https://pf.kakao.com/_xxxx/chat)
-  privacyOfficer: {name: '김경인', position: '대표', contact: '010-4823-2636 · skifightin@gmail.com'}, // 개인정보 보호책임자
+  privacyOfficer: {name: '김경인', position: '대표', contact: '010-4823-2636 · skifighting@gmail.com'}, // 개인정보 보호책임자
   hosting: 'Supabase Pte. Ltd.(서버·데이터베이스, 서울 리전) · GitHub Inc.(화면 파일)',
 } as const;
 export const PENDING = '확인 필요';
