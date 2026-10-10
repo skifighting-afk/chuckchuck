@@ -2,7 +2,7 @@
 import {build} from 'rolldown';
 import {compile} from '@tailwindcss/node';
 import {Scanner} from '@tailwindcss/oxide';
-import {readFile,writeFile,mkdir,copyFile} from 'node:fs/promises';
+import {readFile,writeFile,mkdir,copyFile,readdir,rm} from 'node:fs/promises';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 
@@ -20,10 +20,18 @@ if(metaPixelId&&!/^\d{15,16}$/.test(metaPixelId))throw Error('META_PIXEL_ID는 1
 if(metaPixelId&&readFileSync('lib/legal-docs.ts','utf8').includes('광고·행동 분석용 추적 도구는 쓰지 않습니다'))throw Error('메타 픽셀을 켜기 전에 개인정보 처리방침(lib/legal-docs.ts 10항·국외 이전)을 고쳐야 해요.');
 if(process.env.CI&&process.env.REQUIRE_SUPABASE_CONFIG&&(!pick('SUPABASE_URL')||!pick('SUPABASE_ANON_KEY')))throw Error('SUPABASE_URL과 SUPABASE_ANON_KEY(저장소 Variables)가 필요해요.');
 
-await mkdir('dist/client',{recursive:true});
+// This directory contains generated build assets only. Start clean so entry
+// detection cannot select a previous build's hashed entry.
+const clientDir=path.resolve('dist/client');
+if(!clientDir.startsWith(path.resolve('.')+path.sep))throw Error('Invalid build output path');
+await rm(clientDir,{recursive:true,force:true});
+await mkdir(clientDir,{recursive:true});
 await copyFile('lib/vendor/noble-hashes/LICENSE','dist/client/noble-hashes-LICENSE.txt');
 await copyFile('lib/vendor/jsQR.LICENSE','dist/client/jsQR-LICENSE.txt');
-await build({input:'app/client.tsx',resolve:{alias:{'@':path.resolve('.')}},transform:{define:{'process.env.NODE_ENV':JSON.stringify('production'),__SUPABASE_URL__:JSON.stringify(supabaseUrl),__SUPABASE_ANON_KEY__:JSON.stringify(anonKey),__META_PIXEL_ID__:JSON.stringify(metaPixelId),__KAKAO_LOGIN__:JSON.stringify(fileConfig.KAKAO_LOGIN===true),__HOME_ORIGIN__:JSON.stringify(homeOrigin),__KAKAO_CHANNEL__:JSON.stringify(typeof fileConfig.KAKAO_CHANNEL_URL==='string'?fileConfig.KAKAO_CHANNEL_URL:'')},jsx:{runtime:'automatic'}},output:{dir:'dist/client',entryFileNames:'app.js',chunkFileNames:'chunks/[name]-[hash].js',format:'esm',minify:true}});
+await build({input:'app/client.tsx',resolve:{alias:{'@':path.resolve('.')}},transform:{define:{'process.env.NODE_ENV':JSON.stringify('production'),__SUPABASE_URL__:JSON.stringify(supabaseUrl),__SUPABASE_ANON_KEY__:JSON.stringify(anonKey),__META_PIXEL_ID__:JSON.stringify(metaPixelId),__KAKAO_LOGIN__:JSON.stringify(fileConfig.KAKAO_LOGIN===true),__HOME_ORIGIN__:JSON.stringify(homeOrigin),__KAKAO_CHANNEL__:JSON.stringify(typeof fileConfig.KAKAO_CHANNEL_URL==='string'?fileConfig.KAKAO_CHANNEL_URL:'')},jsx:{runtime:'automatic'}},output:{dir:'dist/client',entryFileNames:'app-[hash].js',chunkFileNames:'chunks/[name]-[hash].js',format:'esm',minify:true}});
+const appEntry=(await readdir('dist/client')).find(f=>/^app-[A-Za-z0-9_-]+\.js$/.test(f));
+if(!appEntry)throw Error('Hashed app entry missing');
+await copyFile('dist/client/'+appEntry,'dist/client/app.js');
 // 작업 010: 묶음 크기 기록(처음 받는 app.js와 필요할 때 받는 조각)
 {const {readdirSync,statSync}=await import('node:fs');const kb=f=>Math.round(statSync(f).size/1024);const chunks=existsSync('dist/client/chunks')?readdirSync('dist/client/chunks').map(f=>[f,kb('dist/client/chunks/'+f)]).sort((a,b)=>b[1]-a[1]):[];console.log(`화면 묶음: app.js ${kb('dist/client/app.js')}KB, 필요할 때 받는 조각 ${chunks.length}개 ${chunks.reduce((n,c)=>n+c[1],0)}KB`);for(const [f,k] of chunks.slice(0,8))console.log(`  ${f} ${k}KB`)}
 const css=await compile(await readFile('app/globals.css','utf8'),{base:path.resolve('app'),onDependency:()=>{}});
@@ -39,7 +47,7 @@ const toss={script:' https://js.tosspayments.com',frame:'https://*.tosspayments.
 const csp=["default-src 'self'",`script-src 'self'${fb.script}${toss.script}`,"style-src 'self' 'unsafe-inline'",`img-src 'self' data: blob:${fb.img}${toss.img}`,"media-src 'self' blob: mediastream:","font-src 'self' data:",`connect-src 'self' ${supabaseOrigin}${fb.connect}${toss.connect}`,`frame-src ${toss.frame}`,"object-src 'none'","base-uri 'self'",`form-action 'self'${toss.form}`,"worker-src 'self' blob:","manifest-src 'self'","upgrade-insecure-requests"].join('; ');
 // 내용별 버전으로 배포 직후 이전 JS가 새 청크를 찾지 못하는 문제를 막는다.
 const assetVersion=createHash('sha256').update(await readFile('dist/client/app.js')).update(await readFile('dist/client/app.css')).digest('hex').slice(0,16);
-const html='<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="'+csp+'"><meta name="referrer" content="strict-origin-when-cross-origin"><title>척척사장 · 직원 관리</title><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#185b45"><meta name="description" content="입사부터 출퇴근, 급여와 계약까지. 함께 일하는 사람을 위한 매장 관리."><link rel="icon" href="/favicon.svg"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/icon-192.png"><meta name="apple-mobile-web-app-title" content="척척사장"><link rel="stylesheet" href="/app.css?v='+assetVersion+'"></head><body><div id="root"></div><script type="module" src="/app.js?v='+assetVersion+'"></script></body></html>';
+const html='<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="'+csp+'"><meta name="referrer" content="strict-origin-when-cross-origin"><title>척척사장 · 직원 관리</title><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#185b45"><meta name="description" content="입사부터 출퇴근, 급여와 계약까지. 함께 일하는 사람을 위한 매장 관리."><link rel="icon" href="/favicon.svg"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/icon-192.png"><meta name="apple-mobile-web-app-title" content="척척사장"><link rel="stylesheet" href="/app.css?v='+assetVersion+'"></head><body><div id="root"></div><script type="module" src="/'+appEntry+'"></script></body></html>';
 await writeFile('dist/client/404.html',html); // GitHub Pages: 모든 주소를 화면 앱으로(로그인 화면은 검색에 안 나오게 noindex)
 // 가이드 23: 로그인 없이 보는 공개 화면은 검색에 나오게 각자 제목·설명을 가진 HTML로 따로 둔다(GitHub Pages는 /pricing → pricing.html).
 const site='https://'+(appDomain?.trim()||'chukchukapp.kr');
