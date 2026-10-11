@@ -91,3 +91,27 @@ body{font-family:'ChukAppSans','Pretendard','Apple SD Gothic Neo','Malgun Gothic
  .pc-bulk-body .actions{min-width:0;flex-wrap:wrap}
  .pc-bulk-body button,.pc-bulk-who legend{max-width:100%;white-space:normal;overflow-wrap:anywhere}
 }
+.document-overview{margin:20px 0;padding:24px}
+.document-overview-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.document-overview-head h2{margin:0;font-size:22px;line-height:1.4}
+.document-overview-head p{margin:8px 0 0;color:#52655b;font-size:15px}
+.document-overview-tools{display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px;margin:22px 0}
+.document-overview-tools label{display:grid;gap:6px;font-size:14px;min-width:0}
+.document-overview-tools input{min-height:44px;max-width:100%;font:inherit}
+.document-overview-row{display:grid;grid-template-columns:minmax(110px,.7fr) minmax(0,1fr) minmax(0,1fr) auto;gap:20px;align-items:center;border-top:1px solid #dbe3dc;padding:20px 0}
+.document-employee h3{margin:0 0 6px;font-size:18px}
+.document-employee>span,.document-state>span{font-size:14px;color:#52655b}
+.document-state{display:grid;gap:8px;justify-items:start;min-width:0}
+.document-status{font-size:16px;line-height:1.5;word-break:keep-all}
+.document-status.green{color:#185b45}.document-status.amber{color:#795315}.document-status.muted{color:#52655b}
+.document-overview button{min-height:44px;white-space:normal}
+.document-state a{display:inline-flex;align-items:center;min-height:44px;font-size:14px}
+.document-empty{padding:24px 0;font-size:16px}
+@media(max-width:700px){
+ .document-overview{padding:18px 16px}
+ .document-overview-head{flex-wrap:wrap}.document-overview-head h2{font-size:21px}
+ .document-overview-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px 12px;align-items:start}
+ .document-employee{grid-column:1/-1;display:flex;gap:12px;align-items:center}.document-employee h3{margin:0}
+ .document-overview-row>.secondary{grid-column:1/-1;justify-self:start}
+ .document-overview-tools label{width:100%}.document-overview-tools input{width:100%;min-width:0}
+}
