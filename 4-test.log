@@ -4,9 +4,6 @@
 
 PASS: overnight duration, breaks, Korean month boundaries and wage validation.
 
-── check-app-recovery
-PASS: normal workspace remains intact; lazy-load failure has accessible recovery without raw errors.
-
 ── check-hr-core
 PASS 1 anonymous HR access is denied
 PASS 2 owner enters HR
@@ -2455,48 +2452,52 @@ PASS: 메일 없이 비밀번호 찾기.
 93. PASS routine: payroll month task
 94. PASS routine: staff
 95. PASS routine: streak allows 1 rest day
-96. PASS owner saves extra fields
-97. PASS extra kept
-98. PASS branch info kept
-99. PASS repeats kept
-100. PASS settings.more kept
-101. PASS staff does not see owner memo/tags/reviews
-102. PASS staff sees praise
-103. PASS staff sees wifi
-104. PASS staff sees today note only
-105. PASS staff sees events
-106. PASS setPref bad value blocked
-107. PASS setPref ok
-108. PASS pref saved, memo intact
-109. PASS dayOffWish past blocked
-110. PASS dayOffWish ok
-111. PASS owner sees wish
-112. PASS second tap removes wish
-113. PASS staff cannot memo
-114. PASS autoClose future blocked
-115. PASS autoClose ok
-116. PASS closed with flag
-117. PASS attMemo ok
-118. PASS memo saved
-119. PASS staff record hides memo
-120. PASS post notice with poll+pdf
-121. PASS staff sees poll + file
-122. PASS vote
-123. PASS bad vote
-124. PASS react
-125. PASS bad emoji
-126. PASS comment
-127. PASS owner sees counts
-128. PASS owner can delete comment
-129. PASS bad pdf rejected
-130. PASS save manual needPhoto
-131. PASS photo required
-132. PASS check with photo
-133. PASS left steps handed over
-134. PASS client error needs origin
-135. PASS scrubbed + deduped
-136. PASS non-HQ cannot read
-137. PASS B101 2h before alert with clock link
+96. PASS staff reminder: forgot clock-in (e2 only)
+97. PASS staff reminder: none before +10m / after end / on leave
+98. PASS staff reminder: 8pm tomorrow preview + ack nudge
+99. PASS staff reminder: owner can turn off
+100. PASS owner saves extra fields
+101. PASS extra kept
+102. PASS branch info kept
+103. PASS repeats kept
+104. PASS settings.more kept
+105. PASS staff does not see owner memo/tags/reviews
+106. PASS staff sees praise
+107. PASS staff sees wifi
+108. PASS staff sees today note only
+109. PASS staff sees events
+110. PASS setPref bad value blocked
+111. PASS setPref ok
+112. PASS pref saved, memo intact
+113. PASS dayOffWish past blocked
+114. PASS dayOffWish ok
+115. PASS owner sees wish
+116. PASS second tap removes wish
+117. PASS staff cannot memo
+118. PASS autoClose future blocked
+119. PASS autoClose ok
+120. PASS closed with flag
+121. PASS attMemo ok
+122. PASS memo saved
+123. PASS staff record hides memo
+124. PASS post notice with poll+pdf
+125. PASS staff sees poll + file
+126. PASS vote
+127. PASS bad vote
+128. PASS react
+129. PASS bad emoji
+130. PASS comment
+131. PASS owner sees counts
+132. PASS owner can delete comment
+133. PASS bad pdf rejected
+134. PASS save manual needPhoto
+135. PASS photo required
+136. PASS check with photo
+137. PASS left steps handed over
+138. PASS client error needs origin
+139. PASS scrubbed + deduped
+140. PASS non-HQ cannot read
+141. PASS B101 2h before alert with clock link
 
 ── check-secrets
 1. PASS 비밀값 검사 완료
