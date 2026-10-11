@@ -89,5 +89,15 @@ r=await call('/api/account',{token:staff.access_token});assert.equal(r.data.user
 r=await call('/api/account',{method:'POST',token:staff.access_token,body:{action:'onboard',plan:'basic',storeName:'x',branchName:'y',ownerName:'z',acknowledged:true,dpaAgreed:true}});assert.equal(r.status,403);
 r=await call('/api/admin',{token:owner.access_token});assert.equal(r.status,403,'일반 사장님은 본사 화면 불가');
 
-console.log('PASS: Supabase 함수 — CORS·출처 차단, 가입·로그인·로그아웃, 신원 헤더 위조 차단, 매장 등록, 비밀번호 재설정, 직원 역할, 본사 권한.');
+// 배포 후 53300 오류 회귀: 같은 워커가 동시에 요청을 받아도 기존 연결 한도 안에서,
+// 업무가 끝나면 유휴 연결을 반환한 뒤 다음 요청에서 다시 연결할 수 있어야 한다.
+for(const out of await Promise.all(Array.from({length:12},()=>call('/api/account',{token:owner.access_token}))))assert.equal(out.status,200);
+const active=async()=>await sql`select pid from pg_stat_activity where application_name='chukchuk-api'`;
+const busy=await active();assert(busy.length>=1&&busy.length<=3,'edge worker stays within the existing three-connection bound');
+const deadline=Date.now()+9000;
+while((await active()).length&&Date.now()<deadline)await new Promise(resolve=>setTimeout(resolve,250));
+assert.equal((await active()).length,0,'idle edge connection must be released within 9 seconds');
+assert.equal((await call('/api/account',{token:owner.access_token})).status,200,'request reconnects after idle release');
+const reconnected=await active();assert(reconnected.length>=1&&reconnected.length<=3,'reconnected worker preserves the connection bound');
+console.log('PASS: Supabase 함수 — CORS·출처 차단, 가입·로그인·로그아웃, 신원 헤더 위조 차단, 매장 등록, 비밀번호 재설정, 직원 역할, 본사 권한, 동시 요청·유휴 연결 반환·재연결.');
 await closeAll();process.exit(0);

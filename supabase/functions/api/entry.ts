@@ -8,7 +8,12 @@ import {reportError} from '../../../lib/errors';
 declare const Deno: {env: {get(name: string): string | undefined}; serve(handler: (req: Request) => Promise<Response> | Response): unknown};
 const read = (name: string) => Deno.env.get(name) || undefined;
 
-const sql = postgres(read('SUPABASE_DB_URL')!, {max: 3, prepare: false, types: pgTypes as any, onnotice() {}});
+// Edge 워커가 유휴 상태에서도 DB 연결을 계속 점유하지 않도록 제한한다.
+// 트랜잭션 중에는 연결을 유지하고 완료 후 5초 유휴일 때 반환한다.
+const sql = postgres(read('SUPABASE_DB_URL')!, {
+  max: 3, idle_timeout: 5, max_lifetime: 60, connect_timeout: 10,
+  prepare: false, types: pgTypes as any, connection: {application_name: 'chukchuk-api'}, onnotice() {},
+});
 const env = {
   DB: new PgD1(sql as any) as unknown as D1Database,
   SUPABASE_URL: read('SUPABASE_URL'),
