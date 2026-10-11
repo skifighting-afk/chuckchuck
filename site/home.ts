@@ -70,7 +70,8 @@ function heroFrame() {
   phone.style.transform = (mobile ? `translate(50%, ${lerp(-30, -50, ph)}%)` : `translateY(${lerp(-30, -50, ph)}%)`) + ` scale(${lerp(.92, 1, ph) * fitS})`;
   phone.style.pointerEvents = ph > 0.5 ? 'auto' : 'none';
   const ct = span(p, 0.7, 0.92);
-  if (ct !== counted) { counted = ct; countTo(totalEl, total, ct); $$('.amt', phone).forEach(a => { const w = Number(a.dataset.won); a.firstChild!.textContent = money(rolled(w, ct)); }); }
+  // Amounts remain readable even when the scroll animation stops midway.
+  if (ct !== counted) { counted = ct; countTo(totalEl, total, 1); $$('.amt', phone).forEach(a => { a.firstChild!.textContent = money(Number(a.dataset.won)); }); }
   // 단계 글
   const cur = p < 0.3 ? 0 : p < 0.6 ? 1 : 2;
   steps.forEach((s, i) => { s.classList.toggle('on', i < cur || (i === 2 && p > 0.9)); s.classList.toggle('cur', i === cur); });

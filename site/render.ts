@@ -79,9 +79,9 @@ export function planCardsHtml(app: string) {
   }).join('');
 }
 
-export function jsonLd(site: string) {
+export function jsonLd(site: string, appOrigin = 'https://chukchukapp.kr') {
   const app = {
-    '@context': 'https://schema.org', '@type': 'SoftwareApplication', name: '척척사장', url: site, applicationCategory: 'BusinessApplication', operatingSystem: 'Web',
+    '@context': 'https://schema.org', '@type': 'SoftwareApplication', '@id': site+'/#software', name: '척척사장', url: site, applicationCategory: 'BusinessApplication', operatingSystem: 'Web', inLanguage: 'ko-KR', image: site+'/icon-512.png', installUrl: appOrigin+'/start',
     description: '작은 가게 사장님을 위한 직원 근무표·출퇴근·급여 계산·임금명세서·전자근로계약서 관리. 앱 설치 없이 휴대폰으로.',
     offers: (['basic', 'pro'] as PlanId[]).map(id => ({'@type': 'Offer', name: plans[id].name + ' (직원 1명당, 월)', price: employeeMonthlyPrice(id, 1), priceCurrency: 'KRW'})),
   };

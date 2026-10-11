@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {build} from 'rolldown';
+import {mkdir,rm} from 'node:fs/promises';
+import {pathToFileURL} from 'node:url';
+import {resolve} from 'node:path';
+const out='dist/recovery-check.mjs';await mkdir('dist',{recursive:true});
+await build({input:'app/app-recovery.tsx',external:/^react(?:\/|$)/,transform:{jsx:{runtime:'automatic'}},output:{file:out,format:'esm'}});
+const {AppRecovery}=await import(pathToFileURL(resolve(out)).href),{renderToStaticMarkup}=await import('react-dom/server');
+const boundary=new AppRecovery({children:'직원별 급여'});
+assert.equal(renderToStaticMarkup(boundary.render()),'직원별 급여');
+boundary.state=AppRecovery.getDerivedStateFromError(new TypeError('Failed to fetch dynamically imported module'));
+const fallback=renderToStaticMarkup(boundary.render());
+assert.match(fallback,/role="alert"/);assert.match(fallback,/화면 다시 불러오기/);assert.match(fallback,/href="\/status"/);assert.match(fallback,/아직 저장하지 않은 입력/);assert.doesNotMatch(fallback,/TypeError|Failed to fetch/);
+await rm(out);console.log('PASS: normal workspace remains intact; lazy-load failure has accessible recovery without raw errors.');

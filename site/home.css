@@ -649,3 +649,9 @@ html.anim .hero{height:160vh}.exp-extra{font-size:15px;color:#64795f;line-height
  .exp-top button,.exp-controls button{min-height:44px}
 }
 @media(max-width:400px){.hero .cta-row{grid-template-columns:1fr}.hero .cta-row .btn{font-size:15px}.hero h1,html.anim .hero h1{font-size:clamp(31px,8.8vw,35px)}}
+
+/* Important conditions stay readable on every viewport. */
+.hero-price-note,.hero .fine,html.anim .hero .hero-copy .fine,.pricing-note,.plan-from>span:first-child,.plan-from>span:last-child{font-size:14px;line-height:1.65}
+.hero-price-note{word-break:keep-all}.hero h1,.feature-story h3{word-break:keep-all;overflow-wrap:normal}
+.exp-disclaimer,.exp-chapter-note{font-size:14px;line-height:1.65}
+.exp-pay-table td,.exp-pay-summary b{font-variant-numeric:tabular-nums}

@@ -1,0 +1,59 @@
+/* Keep work, amounts and controls readable before optional guidance. */
+.app-recovery{max-width:560px;margin:12vh auto;padding:24px;color:#123e30;line-height:1.7}
+.app-recovery h1{font-size:clamp(24px,5vw,32px);line-height:1.3;word-break:keep-all}
+.app-recovery button{display:block;min-height:48px;padding:12px 20px;margin:24px 0 16px;border-radius:12px;background:#185b45;color:#fff;font:inherit;font-weight:700}
+.app-recovery a{text-decoration:underline;text-underline-offset:4px}
+.app-recovery button:focus-visible,.app-recovery a:focus-visible{outline:3px solid #185b45;outline-offset:4px}
+.t-work .notice,.t-work .footnote,.t-dialog .notice{font-size:.875rem;line-height:1.65}
+.t-work h1{font-size:clamp(24px,3vw,32px);line-height:1.3;word-break:keep-all}
+.t-field{font-size:.875rem}.t-field>span{font-weight:600}
+.payroll-overview td[data-label]{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.payroll-overview th:not(:first-child){text-align:right}
+.payroll-overview td[data-label="실수령액"] b{font-size:1rem;font-weight:800;color:#123e30}
+.limits-note summary{min-height:48px;cursor:pointer;padding:12px 0;font-weight:700}
+.limits-note>p{max-width:72ch}
+#owner-assistant-launcher{display:inline-flex;flex-shrink:0}
+body:has(.ast-dock){padding-right:0}
+body:has(.ast-dock) .month-undo{left:50%}
+.ast-dock{display:none;width:min(420px,100%);box-shadow:-8px 0 24px rgba(16,37,27,.18)}
+.ast-dock.open{display:flex;animation:ast-in .18s ease-out}
+.ast-close{display:inline-flex;align-items:center}
+.ast-head{flex-wrap:wrap}.ast-head>div{min-width:140px}.ast-head>img{flex-shrink:0}
+.ast-head>.ast-close{justify-content:center;white-space:nowrap}
+.ast-fab{display:inline-flex;position:static;align-items:center;gap:6px;min-height:44px;padding:4px 10px;border:1px solid var(--ck-line);border-radius:12px;background:#fff;color:var(--ck-green);font-size:.875rem;font-weight:700}
+.ast-fab img{width:28px;height:28px;object-fit:contain}
+.ast-fab b{background:var(--ck-green);color:#fff;border-radius:999px;padding:2px 6px;font-size:12px}
+.ast-scrim{display:block;position:fixed;inset:0;z-index:39;background:rgba(16,37,27,.3)}
+@media(prefers-reduced-motion:reduce){.ast-dock.open{animation:none}}
+@media(max-width:1199px){
+ .topbar,.demo-shell .topbar{height:auto;min-height:60px;padding:8px 16px;gap:8px;flex-wrap:wrap}
+ .topbar>.t-inline{min-width:0;gap:8px}.topbar>.t-inline:first-child{flex:1 1 100%}
+ .topbar>.t-inline:last-child{flex:1 1 100%;justify-content:flex-end;flex-wrap:wrap}
+ .topbar .gsearch{flex:1;min-width:0}.topbar .gsearch input{width:100%;min-width:0}
+ #owner-assistant-launcher .ast-fab{position:static;box-shadow:none;min-height:44px;padding:4px 10px;gap:6px;font-size:.875rem}
+ #owner-assistant-launcher .ast-fab img{width:28px;height:28px}
+}
+@media(max-width:600px){
+ .demo-toolbar{grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:10px 16px}
+ .demo-title{min-width:0}.demo-title strong{font-size:18px;white-space:nowrap}.demo-title span{display:none}
+ .demo-reset{margin:0;min-height:44px;padding:8px;font-size:14px;white-space:nowrap}
+ .demo-role-tabs{grid-column:1;grid-row:2;padding:3px;gap:2px}
+ .demo-role-tabs button{min-height:44px;padding:8px 6px;font-size:14px}
+ .demo-start-link{grid-column:2;grid-row:2;font-size:14px;padding:8px;min-height:44px;white-space:nowrap;max-width:none}
+ .demo-toolbar>label{grid-column:1/-1;display:flex;align-items:center;gap:12px;font-size:14px}
+ .demo-toolbar>label select{flex:1;min-width:0;min-height:44px;font-size:16px}
+ .topbar,.demo-shell .topbar{height:auto;min-height:60px;padding:8px 16px;gap:8px;flex-wrap:wrap}
+ .topbar>.t-inline{min-width:0;gap:8px}.topbar>.t-inline:first-child{flex:1 1 100%}
+ .topbar>.t-inline:first-child>span:last-child{min-width:0;font-size:14px;line-height:1.5;word-break:keep-all}
+ .topbar>.t-inline:last-child{flex:1 1 100%;justify-content:flex-end}
+ .topbar .menu-label{display:none}.topbar .t-saved{font-size:13px;white-space:nowrap;flex-shrink:0}
+ .topbar .t-headerdate{display:none}
+ .topbar .gsearch{flex:1;min-width:0}.topbar .gsearch input{width:100%;min-width:0;font-size:16px}
+ .t-work .page-heading{align-items:flex-start;gap:12px}.t-work .page-heading h1{font-size:26px}
+ .t-work .page-heading p{font-size:15px;line-height:1.6;max-width:36ch}
+ .t-work input,.t-work select,.t-dialog input,.t-dialog select,.t-dialog textarea{font-size:16px}
+ .t-work .schedule-switch{display:flex;gap:4px}.t-work .schedule-switch button{flex:1;min-width:0;padding:10px 6px;min-height:48px;font-size:14px;word-break:keep-all}
+ .payroll-overview td[data-label]{text-align:right;white-space:normal}
+ .payroll-overview td[data-label]::before{text-align:left;font-weight:500}
+ .t-payhero{padding:20px;gap:12px}.t-payhero strong{font-size:clamp(26px,7vw,34px);font-variant-numeric:tabular-nums}
+}
