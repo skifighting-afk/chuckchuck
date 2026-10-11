@@ -4,8 +4,7 @@
 import {useEffect,useRef,useState} from 'react';
 import {TUTORIALS,searchTutorials,type Tutorial} from '../lib/tutorials';
 import {QUESTS} from '../lib/quests';
-import {startGuide} from './quests';
-import {startTour} from './tour';
+import {startGuide,QuestReopen} from './quests';
 
 type Role='owner'|'staff';
 export function runTutorial(role:Role,t:Tutorial){
@@ -36,7 +35,7 @@ function TutorialMenu({role,page,onClose}:{role:Role,page?:string,onClose:()=>vo
    {here.length>0&&<><h3>지금 화면에서</h3><ul className="tut-list">{here.map(item)}</ul></>}
    {(q||rest.length>0)&&<h3>{q?`찾은 튜토리얼 ${found.length}개`:here.length?'다른 일':'자주 찾는 일'}</h3>}
    {rest.length?<ul className="tut-list">{rest.map(item)}</ul>:q?<p className="tut-empty">찾는 튜토리얼이 없어요. <a href={'/help?q='+encodeURIComponent(q)}>도움말에서 찾아보기 →</a></p>:null}
-   <div className="tut-foot"><button type="button" className="tut-tour" onClick={()=>{onClose();setTimeout(()=>startTour(role),60)}}>🧭 화면 전체 둘러보기</button><a href="/help">도움말 전체</a></div>
+   <div className="tut-foot"><QuestReopen onDone={onClose}/><a href="/help">도움말 전체</a></div>
   </div>
  </div>;
 }

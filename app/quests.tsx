@@ -5,7 +5,6 @@
 // - 자동 점검 브라우저(navigator.webdriver)에서는 저절로 뜨는 것이 없다.
 import {useCallback,useEffect,useLayoutEffect,useRef,useState} from 'react';
 import {QUESTS,questDone,questSummary,levelOf,parseFind,type Quest,type QuestRole} from '../lib/quests';
-import {startTour} from './tour';
 import {useStartGuide} from './start-guide-store';
 
 type Store={pings?:string[];seenBy?:Record<string,string[]>;mini?:boolean;hideAll?:boolean};
@@ -175,45 +174,26 @@ function QuestParty({skip,role,q,prevXp,xp,done,demo,onClose,onNext}:{skip:strin
 
 // ── 퀘스트 보드(홈) ──
 export function QuestBoard({role,state,branch,selfId='',demo=false}:{role:QuestRole,state:any,branch:string,selfId?:string,demo?:boolean}){
+ // 홈에는 한 줄만: 레벨·진행·다음 퀘스트 시작. '내일 할게요'로 숨기면 튜토리얼 메뉴에서 다시 연다.
  const guide=useStartGuide();
- const [store,save]=useQuestStore(role,demo);
+ const [store]=useQuestStore(role,demo);
  const skip=useSkip(role),done=questDone(role,state,branch,selfId,store.pings||[]),sum=questSummary(role,done,demo,skip),lv=sum.level;
  const who=role==='owner'?'사장님':'크루';
- if(!guide.data)return <p className="start-guide-loading" role="status">{guide.error?'시작 안내 연결을 기다리고 있어요. 업무는 바로 이용할 수 있어요.':'내 매장 시작 안내를 불러오고 있어요…'}</p>;
- if(store.hideAll||Date.parse(guide.data.preferences.deferredUntil||'')>Date.now())return <button type="button" className="qb-mini" onClick={()=>void guide.client?.patch({hideAll:false,mini:false,deferredUntil:null})}>시작 안내 다시 열기</button>;
- if(sum.all){
-  if(store.hideAll)return null;
-  return <section className="qb qb-all" aria-label="퀘스트 완료"><span className="qb-trophy" aria-hidden="true">🏆</span><div><b>모든 퀘스트 완료 · Lv.{lv.level} {lv.title}</b><small>배지 {sum.list.length}개를 다 모았어요. {sum.list.map(q=>q.badge.emoji).join(' ')}</small></div><button type="button" className="qb-text" onClick={()=>save({hideAll:true})}>닫기</button></section>;
- }
- const next=sum.next!;
- if(store.mini)return <button type="button" className="qb-mini" onClick={()=>save({mini:false})} aria-expanded={false}><span aria-hidden="true">🎮</span><b>{who} 퀘스트 {sum.count}/{sum.list.length}</b><span className="qb-mini-lv">Lv.{lv.level} {lv.title}</span><span className="qb-mini-next">다음: {next.emoji} {next.title} ▸</span></button>;
- const ch=sum.chapters.findIndex(c=>c.quests.includes(next));
- return <section className="qb" aria-labelledby="qb-title">
-  <div className="qb-head">
-   <div className="qb-lv" aria-hidden="true"><small>Lv.</small><b>{lv.level}</b></div>
-   <div className="qb-meta">
-    <h2 id="qb-title">🎮 {who} 퀘스트</h2>
-    <p><b>{lv.title}</b> · {lv.max?'최고 레벨':`다음 레벨까지 ${(lv.next||0)-sum.xp} XP`}</p>
-    <div className="qb-xpbar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={lv.pct} aria-label={`경험치 ${sum.xp} XP`}><i style={{width:lv.pct+'%'}}/></div>
-   </div>
-   <button type="button" className="qb-text" onClick={()=>save({mini:true})}>접기</button><button type="button" className="qb-text" onClick={()=>void guide.client?.patch({deferredUntil:new Date(Date.now()+86400000).toISOString()})}>내일 할게요</button>
-  </div>
-  <div className="qb-next">
-   <span className="qb-next-emoji" aria-hidden="true">{next.emoji}</span>
-   <div className="qb-next-body">
-    <small>다음 퀘스트 · {ch+1}장 {sum.chapters[ch]?.name}</small>
-    <b>{next.title}</b>
-    <p>{next.why}</p>
-    <span className="qb-reward"><em>+{next.xp} XP</em><em>{next.badge.emoji} {next.badge.name}</em><em>약 {next.minutes}분</em></span>
-   </div>
-   <button type="button" className="qb-go" onClick={()=>startQuest(role,next.id)}>▶ 퀘스트 시작</button>
-  </div>
-  <ol className="qb-map">{sum.chapters.map((c,i)=><li key={c.name} className={c.done?'done':''}>
-   <span className="qb-ch">{c.done?'✓ ':''}{i+1}장 · {c.name}</span>
-   <div className="qb-nodes">{c.quests.map(q=>{const d=!!done[q.id],now=q===next;return <button type="button" key={q.id} className={'qb-node'+(d?' done':now?' now':'')} onClick={()=>startQuest(role,q.id)}>
-    <span className="qb-node-ic" aria-hidden="true">{d?'✓':q.emoji}</span><span className="qb-node-t">{q.title}</span><span className="qb-node-xp">{d?'완료':'+'+q.xp}<span className="sr-only">{d?'':' XP 도전하기'}</span></span></button>})}</div>
-  </li>)}</ol>
-  <div className="qb-badges" role="group" aria-label={`배지 ${sum.count}/${sum.list.length}`}><small>배지 {sum.count}/{sum.list.length}</small>{sum.list.map(q=><span key={q.id} className={'qb-badge'+(done[q.id]?' got':'')} title={done[q.id]?q.badge.name:`${q.title}을(를) 깨면 열려요`}>{done[q.id]?q.badge.emoji:'？'}</span>)}</div>
-  <p className="qb-foot">시작을 누르면 해당 화면으로 옮겨서 <b>어디를 누르고 어디에 입력하는지</b> 하나씩 짚어 드려요. <button type="button" className="qb-text" onClick={()=>startTour(role)}>🧭 화면 둘러보기</button></p>
+ if(!guide.data)return guide.error?<p className="start-guide-loading" role="status">시작 안내 연결을 기다리고 있어요. 업무는 바로 이용할 수 있어요.</p>:null;
+ if(questHidden(guide.data.preferences))return null;
+ const later=()=>void guide.client?.patch({deferredUntil:new Date(Date.now()+86400000).toISOString()});
+ const next=sum.next;
+ return <section className={'qb-line'+(sum.all?' all':'')} aria-label={`${who} 퀘스트`}>
+  <span className="qb-line-lv" aria-hidden="true">Lv.{lv.level}</span>
+  <span className="qb-line-meta"><b>🎮 {who} 퀘스트 {sum.count}/{sum.list.length}</b><small>{sum.all?`모두 완료 · ${lv.title} 🏆`:`${lv.title} · 다음: ${next!.emoji} ${next!.title} (+${next!.xp} XP)`}</small><i className="qb-line-bar" aria-hidden="true"><i style={{width:Math.round(sum.count/sum.list.length*100)+'%'}}/></i></span>
+  {next&&<button type="button" className="qb-line-go" onClick={()=>startQuest(role,next.id)}>▶ 퀘스트 시작</button>}
+  <button type="button" className="qb-line-x" onClick={later}>{sum.all?'닫기':'내일 할게요'}</button>
  </section>;
+}
+/** 숨김·미루기 상태(튜토리얼 메뉴에서 다시 열기) */
+export const questHidden=(p:any)=>!!p&&(p.hideAll||Date.parse(p.deferredUntil||'')>Date.now());
+export function QuestReopen({onDone}:{onDone?:()=>void}){
+ const guide=useStartGuide();
+ if(!guide.data||!questHidden(guide.data.preferences))return null;
+ return <button type="button" className="tut-tour" onClick={()=>{void guide.client?.patch({hideAll:false,mini:false,deferredUntil:null});onDone?.()}}>🎮 시작 퀘스트 다시 보기</button>;
 }

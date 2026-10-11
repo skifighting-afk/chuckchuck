@@ -908,3 +908,14 @@ li.now .sg-num{background:#15643f;color:#fff}li.done .sg-num{background:#c8f169;
 .tut-foot a{color:#15643f;font-weight:700;min-height:44px;line-height:44px}
 .tut-tour{min-height:48px;padding:0 14px;border-radius:12px;border:1px solid #c9d6ce;background:#fff;color:#10251b;font-weight:700;cursor:pointer}
 @media(max-width:380px){.topbar .t-saved{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}.topbar .tut-btn{min-width:44px;padding:0 6px}}
+/* 퀘스트 한 줄 (홈) */
+.qb-line{display:flex;align-items:center;gap:12px;margin:0 0 14px;padding:10px 12px;border-radius:16px;background:#10251b;color:#fff}
+.qb-line.all{background:#1f3a2b}
+.qb-line-lv{flex:0 0 auto;min-width:46px;height:46px;border-radius:12px;background:#c8f169;color:#10251b;font-weight:900;display:flex;align-items:center;justify-content:center;font-size:15px}
+.qb-line-meta{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.qb-line-meta b{font-size:15px}
+.qb-line-meta small{font-size:13px;color:#dceee4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qb-line-bar{display:block;height:5px;border-radius:99px;background:rgba(255,255,255,.18);margin-top:3px;overflow:hidden}.qb-line-bar>i{display:block;height:100%;background:linear-gradient(90deg,#c8f169,#ffcf33)}
+.qb-line-go{flex:0 0 auto;min-height:48px;padding:0 14px;border-radius:12px;border:0;background:#c8f169;color:#10251b;font-weight:900;cursor:pointer}
+.qb-line-x{flex:0 0 auto;min-height:48px;min-width:48px;padding:0 6px;border:0;background:none;color:#dceee4;text-decoration:underline;font-size:13px;cursor:pointer}
+@media(max-width:560px){.qb-line{flex-wrap:wrap}.qb-line-meta{flex-basis:calc(100% - 60px)}.qb-line-go{flex:1}}
+.db-donebtn{display:block;margin:10px 0 0;min-height:44px;padding:0 10px;border:0;background:none;color:#15643f;font-weight:700;font-size:14px;cursor:pointer;text-decoration:underline}

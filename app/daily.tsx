@@ -16,7 +16,7 @@ const ORDER:RoutineSlot[]=['open','during','close','week','month'];
 const dateLabel=(ms:number)=>new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric',weekday:'short'}).format(new Date(ms));
 
 export function DailyBoard({role,state,branch,selfId='',demo=false}:{role:RoutineRole,state:any,branch:string,selfId?:string,demo?:boolean}){
- const k=keyOf(role,demo),[now,setNow]=useState(()=>Date.now()),[,force]=useState(0),[party,setParty]=useState(false),box=useRef<HTMLElement>(null);
+ const k=keyOf(role,demo),[now,setNow]=useState(()=>Date.now()),[,force]=useState(0),[party,setParty]=useState(false),[showDone,setShowDone]=useState(false),box=useRef<HTMLElement>(null);
  useEffect(()=>{const t=setInterval(()=>setNow(Date.now()),60000);return()=>clearInterval(t)},[]);
  const today=kday(now),st=load(k,demo),pings=st.date===today?st.pings||[]:[];
  const r=routineFor(role,state,branch,selfId,now,pings,TOL[state?.settings?.attendanceTolerance||'normal']??5);
@@ -30,6 +30,8 @@ export function DailyBoard({role,state,branch,selfId='',demo=false}:{role:Routin
  if(!r.total)return null;
  const check=(id:string)=>set({date:today,pings:[...new Set([...pings,id])]});
  const pct=Math.round(r.done/r.total*100);
+ // 남은 일만 보여 준다(끝낸 일은 한 줄로 접어 둠)
+ const shown=showDone?r.tasks:r.tasks.filter(t=>t.status!=='done');
  if(st.mini)return <button type="button" className="db-mini" onClick={()=>set({mini:false})} aria-expanded={false}><span aria-hidden="true">☀️</span><b>오늘의 일과 {r.done}/{r.total}</b>{streak>0&&<span className="db-mini-fire">🔥 {streak}일 연속</span>}<span className="db-mini-go">{r.all?'완주!':'펼치기 ▸'}</span></button>;
  const go=(t:RoutineTask)=>startGuide(role,{id:t.id,emoji:t.emoji,title:t.title,page:t.page,steps:t.steps});
  return <section ref={box} tabIndex={-1} className={'db'+(r.all?' all':'')} aria-labelledby="db-title">
@@ -40,15 +42,16 @@ export function DailyBoard({role,state,branch,selfId='',demo=false}:{role:Routin
    <button type="button" className="qb-text db-fold" onClick={()=>set({mini:true})}>접기</button>
   </div>
   {r.all&&<p className={'db-clear'+(party?' party':'')} role="status"><span className="db-stamp" aria-hidden="true">완주</span>오늘 일과를 다 끝냈어요! {streak>1?`${streak}일째 이어 가는 중이에요.`:'내일도 이어 가 볼까요?'}</p>}
-  <ol className="db-slots">{ORDER.filter(sl=>r.tasks.some(t=>t.slot===sl)).map(sl=><li key={sl} className={sl===r.slot?'now':''}>
+  <ol className="db-slots">{ORDER.filter(sl=>shown.some(t=>t.slot===sl)).map(sl=><li key={sl} className={sl===r.slot?'now':''}>
    <h3>{SLOT_NAMES[sl]}{sl===r.slot&&<em>지금</em>}</h3>
-   <ul>{r.tasks.filter(t=>t.slot===sl).map(t=>{const done=t.status==='done';return <li key={t.id} className={'db-task '+t.status+(t.warn&&!done?' warn':'')}>
+   <ul>{shown.filter(t=>t.slot===sl).map(t=>{const done=t.status==='done';return <li key={t.id} className={'db-task '+t.status+(t.warn&&!done?' warn':'')}>
     <span className="db-check" aria-hidden="true">{done?'✓':t.status==='wait'?'⏳':t.emoji}</span>
     <div className="db-body"><b>{t.title}<span className="sr-only">{done?' 끝':t.status==='wait'?' 기다리는 중':' 남음'}</span></b><small>{t.detail}</small>
      {!done&&t.lines&&t.lines.length>0&&<ul className="db-lines">{t.lines.map((l,i)=><li key={i}>{l}</li>)}</ul>}</div>
     {!done&&(t.check?<button type="button" className="db-act ok" onClick={()=>check(t.id)}>확인했어요</button>:(t.page||t.steps)&&t.status!=='wait'?<button type="button" className="db-act" onClick={()=>go(t)}>바로 하기 ▶</button>:null)}
    </li>})}</ul>
   </li>)}</ol>
+  {r.done>0&&!r.all&&<button type="button" className="db-donebtn" aria-expanded={showDone} onClick={()=>setShowDone(!showDone)}>✓ 끝낸 일 {r.done}개 {showDone?'접기':'보기'}</button>}
   <div className="db-bar" aria-hidden="true"><i style={{width:pct+'%'}}/></div>
  </section>;
 }

@@ -4,7 +4,7 @@ import {normalizeTeam} from '../dist/server/team-model.js';
 export async function startGuideE2E({owner,srv,step,browser,watch,credentials}){
  const row=await srv.db.q('SELECT owner,data FROM stores LIMIT 1').first(),original=JSON.parse(row.data),state=await owner.context().storageState();
  const c1=await browser.newContext({storageState:state,serviceWorkers:'block',viewport:{width:1280,height:900}}),c2=await browser.newContext({serviceWorkers:'block',viewport:{width:390,height:844}}),a=await c1.newPage(),b=await c2.newPage();watch(a);watch(b);
- const go=p=>p.goto(srv.ORIGIN+'/app',{waitUntil:'networkidle'}),full=p=>p.getByRole('heading',{name:'🎮 사장님 퀘스트',exact:true}).waitFor(),folded=p=>p.locator('.qb-mini').filter({hasText:'사장님 퀘스트'}).waitFor();
+ const go=p=>p.goto(srv.ORIGIN+'/app',{waitUntil:'networkidle'}),full=p=>p.locator('.qb-line').filter({hasText:'사장님 퀘스트'}).waitFor(),folded=p=>p.locator('.qb-line').waitFor({state:'detached'}),later=p=>p.locator('.qb-line').getByRole('button',{name:'내일 할게요',exact:true}).click(),reopen=async p=>{await p.locator('.tut-btn').click();await p.getByRole('button',{name:'🎮 시작 퀘스트 다시 보기',exact:true}).click()};
  const save=async(p,fn)=>{const response=p.waitForResponse(r=>r.url().includes('/start-guide')&&r.request().method()==='PATCH');await fn();const r=await response,d=await r.json();assert.equal(r.status(),200,'guide save: '+JSON.stringify(d));return d};
  try{
   await srv.db.q('DELETE FROM start_guide_preferences WHERE owner=?',row.owner).run();
@@ -13,20 +13,20 @@ export async function startGuideE2E({owner,srv,step,browser,watch,credentials}){
    // A second device needs its own session: logging out a copied token also logs out device A.
    await b.goto(srv.ORIGIN+'/login?role=owner',{waitUntil:'networkidle'});await b.fill('input[type=email]',credentials.email);await b.fill('input[aria-label="비밀번호"]',credentials.password);await b.locator('form button[type=submit]').click();await b.waitForURL(url=>!url.pathname.startsWith('/login'));
    await go(a);await go(b);await full(a);await full(b);
-   await save(a,()=>a.locator('.qb-head').getByRole('button',{name:'접기',exact:true}).click());await folded(a);await b.reload({waitUntil:'networkidle'});await folded(b);
-   await save(b,()=>b.locator('.qb-mini').filter({hasText:'사장님 퀘스트'}).click());await full(b);
-   await a.reload({waitUntil:'networkidle'});await full(a);await a.locator('.qb-node').filter({hasText:'가게 간판 달기'}).click();await a.locator('.qh-hud').getByText('가게 간판 달기').waitFor();
+   await save(a,()=>later(a));await folded(a);await b.reload({waitUntil:'networkidle'});await folded(b);
+   await save(b,()=>reopen(b));await full(b);
+   await a.reload({waitUntil:'networkidle'});await full(a);await a.locator('.qb-line').getByText('가게 간판 달기',{exact:false}).waitFor();await a.locator('.qb-line-go').click();await a.locator('.qh-hud').getByText('가게 간판 달기').waitFor();
    await a.waitForTimeout(850);await b.reload({waitUntil:'networkidle'});await b.locator('.qh-hud').getByText('가게 간판 달기').waitFor();await save(b,()=>b.getByRole('button',{name:'퀘스트 그만하기'}).click());
   });
   await step('시작 안내 · 매장과 다른 계정 분리 · 320/390/768/1440 · 키보드',async()=>{
-   await go(a);await full(a);await save(a,()=>a.locator('.qb-head').getByRole('button',{name:'접기',exact:true}).click());
+   await go(a);await full(a);await save(a,()=>later(a));
    const d=structuredClone(original);d.branches.push({...d.branches[0],id:'guide-other-branch',name:'안내 테스트 별점'});await srv.db.q('UPDATE stores SET data=?,version=version+1 WHERE owner=?',JSON.stringify(d),row.owner).run();
    await a.goto(srv.ORIGIN+'/app?branch=guide-other-branch',{waitUntil:'networkidle'});await full(a);
    const u=await srv.auth.user('guide-e2e-other',{email:'guide-other@example.invalid',password:'Guide-other-2026'});const other=structuredClone(original);other._members=[];other._coowners=[];await srv.db.q('INSERT INTO stores VALUES(?,?,?,?)',u.id,JSON.stringify(other),1,new Date().toISOString()).run();
    await b.goto(srv.ORIGIN+'/logout');await b.waitForURL(/\/login/);await b.goto(srv.ORIGIN+'/login?role=owner',{waitUntil:'networkidle'});await b.fill('input[type=email]',u.email);await b.fill('input[aria-label="비밀번호"]','Guide-other-2026');await b.locator('form button[type=submit]').click();await b.waitForURL(url=>!url.pathname.startsWith('/login'));await b.getByRole('checkbox',{name:'이용약관과 개인정보 처리방침 동의',exact:true}).check();await b.getByRole('button',{name:'동의하고 계속하기'}).click();await go(b);await full(b);
    for(const width of [320,390,768,1440]){await b.setViewportSize({width,height:900});const fits=await b.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1);if(!fits){console.error('Guide overflow diagnostics',JSON.stringify(await b.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,elements:[...document.querySelectorAll('body *')].filter(e=>{const r=e.getBoundingClientRect();return r.right>innerWidth+1&&r.width>0}).map(e=>({tag:e.tagName,cls:e.className,text:e.textContent?.slice(0,70),right:e.getBoundingClientRect().right,width:e.getBoundingClientRect().width})).slice(0,25)}))));await mkdir('ci-logs',{recursive:true});await b.screenshot({path:'ci-logs/guide-overflow-'+width+'.png',fullPage:true})}assert(fits,'guide overflow '+width)}
    await b.setViewportSize({width:390,height:844});await b.addStyleTag({content:'html{font-size:20px}'});assert(await b.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'large font guide overflow');
-   const later=b.locator('.qb-head').getByRole('button',{name:'내일 할게요'});await later.focus();await b.keyboard.press('Enter');await b.getByRole('button',{name:'시작 안내 다시 열기',exact:true}).waitFor();await save(b,()=>b.getByRole('button',{name:'시작 안내 다시 열기',exact:true}).click());await full(b);
+   const laterBtn=b.locator('.qb-line').getByRole('button',{name:'내일 할게요'});await laterBtn.focus();await b.keyboard.press('Enter');await folded(b);await save(b,()=>reopen(b));await full(b);
    await mkdir('ci-logs',{recursive:true});await b.screenshot({path:'ci-logs/start-guide-mobile.png',fullPage:true});
   });
   await step('시작 안내 · 연결 실패 재시도와 다른 기기 충돌 · 업무 화면 유지',async()=>{
@@ -34,9 +34,9 @@ export async function startGuideE2E({owner,srv,step,browser,watch,credentials}){
    await a.route('**/start-guide?*',route=>route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'합성 안내 연결 실패'})}));await go(a);
    try{await a.getByRole('alert').getByText('합성 안내 연결 실패',{exact:false}).waitFor()}catch(e){await mkdir('ci-logs',{recursive:true});await a.screenshot({path:'ci-logs/start-guide-failure.png',fullPage:true});console.error('Guide failure diagnostics',JSON.stringify({requests:guideRequests,alerts:await a.getByRole('alert').allTextContents(),page:await a.locator('body').innerText()}));throw e}finally{a.off('response',trace)}
    await a.getByRole('heading',{name:'우리 가게',exact:false}).first().waitFor();
-   await a.unroute('**/start-guide?*');await a.getByRole('button',{name:'안내 다시 시도'}).click();await folded(a);await save(a,()=>a.locator('.qb-mini').filter({hasText:'사장님 퀘스트'}).click());await full(a);
+   await a.unroute('**/start-guide?*');await a.getByRole('button',{name:'안내 다시 시도'}).click();await folded(a);await save(a,()=>reopen(a));await full(a);
    await srv.db.q('UPDATE start_guide_preferences SET revision=revision+1 WHERE owner=? AND branch_id=?',row.owner,original.branches[0].id).run();
-   await a.locator('.qb-head').getByRole('button',{name:'접기',exact:true}).click();await a.getByRole('alert').getByText('다른 기기에서 안내를 바꿨어요.',{exact:false}).waitFor();await a.getByRole('button',{name:'최신 안내 확인'}).click();await full(a);
+   await later(a);await a.getByRole('alert').getByText('다른 기기에서 안내를 바꿨어요.',{exact:false}).waitFor();await a.getByRole('button',{name:'최신 안내 확인'}).click();await full(a);
   });
   await step('매니저 안내 · 위임 업무만 표시 · 단계 복원 · 권한 회수',async()=>{
    const u=await srv.auth.user('guide-e2e-manager',{email:'guide-manager@example.invalid',password:'Guide-manager-2026',role:'employee'}),d=structuredClone(original);
