@@ -52,7 +52,40 @@ export function periodPrice(plan:PlanId,branches:number,months:1|6|12){
 // 2026-10-10 대표님 결정: 직원 1명당 월 요금(VAT 포함), 지점 칸·결제 기간 할인 없음, 기존 가입자 없음.
 // 홈페이지 요금 카드가 이 값을 쓴다. 앱 결제(toss·saas-api)는 아직 지점 구간 함수를 쓰고 있어서 연결 전까지 따로 둔다.
 export const EMPLOYEE_PRICE={basic:2900,pro:3900} as const;
-export function employeeMonthlyPrice(plan:PlanId,employees=1){return EMPLOYEE_PRICE[plan]*Math.max(1,Math.floor(employees)||1)}
+export function employeeMonthlyPrice(plan:PlanId,employees=1){return employeePrice(plan,employees)}
+export const EMPLOYEE_PRICING_VERSION='employee-monthly-2026-10-11' as const;
+export type BillableInput={ownerId:string;employees:readonly {id:string;status:string}[];members:readonly {userId:string;employeeId:string}[];testEmployeeIds:readonly string[]};
+export type BillingExclusion={employeeId:string;reason:'not-active'|'owner'|'test'|'duplicate-account'};
+/** 직원 수는 서버에 저장된 재직 상태와 인증 연결로만 집계한다. 이름·전화번호를 식별자로 쓰지 않는다. */
+export function billableEmployees(input:BillableInput){
+ if(!input.ownerId||input.employees.length>100000)throw Error('직원 집계 범위를 확인해 주세요.');
+ const ids=new Set<string>(),active=new Set<string>();
+ for(const e of input.employees){if(!e.id||ids.has(e.id))throw Error('중복되거나 잘못된 직원 ID가 있어요. 직원 정보를 확인해 주세요.');ids.add(e.id);if(e.status==='재직')active.add(e.id)}
+ const links=new Map<string,string>();
+ for(const m of input.members){if(!active.has(m.employeeId))continue;if(!m.userId||links.has(m.employeeId)&&links.get(m.employeeId)!==m.userId)throw Error('한 직원에 연결된 계정이 일치하지 않아요. 직원 연결을 확인해 주세요.');links.set(m.employeeId,m.userId)}
+ const tests=new Set(input.testEmployeeIds),seen=new Set<string>(),included:{employeeId:string;identityKey:string}[]=[],excluded:BillingExclusion[]=[];
+ for(const e of input.employees){
+  const account=links.get(e.id);let reason:BillingExclusion['reason']|null=e.status!=='재직'?'not-active':account===input.ownerId?'owner':tests.has(e.id)?'test':null;
+  const identityKey=account?'account:'+account:'employee:'+e.id;
+  if(!reason&&seen.has(identityKey))reason='duplicate-account';
+  if(reason)excluded.push({employeeId:e.id,reason});else{seen.add(identityKey);included.push({employeeId:e.id,identityKey})}
+ }
+ return {count:included.length,included,excluded};
+}
+/** 새 월 요금. 0원은 공급자 결제 대신 청구 없는 이용권 경로에서 처리한다. */
+export function employeePrice(plan:PlanId,count:number){
+ if(!isPlan(plan)||typeof count!=='number'||!Number.isInteger(count)||count<0||count>100000)throw Error('요금제와 과금 직원 수를 확인해 주세요.');
+ return EMPLOYEE_PRICE[plan]*count;
+}
+export type PricingSnapshot={version:typeof EMPLOYEE_PRICING_VERSION;plan:PlanId;unitPrice:number;count:number;amount:number;months:1;vatIncluded:true;countedAt:string;includedEmployeeIds:string[];excluded:BillingExclusion[];identityDigest:string};
+/** 새 견적의 불변 스냅샷. 인증 계정 ID는 공개하지 않고 집계 조건의 해시만 남긴다. */
+export async function createPricingSnapshot(input:BillableInput&{plan:PlanId;countedAt:string}):Promise<PricingSnapshot>{
+ if(!Number.isFinite(Date.parse(input.countedAt)))throw Error('직원 집계 시각을 확인해 주세요.');
+ const r=billableEmployees(input),amount=employeePrice(input.plan,r.count);
+ const identities=r.included.map(e=>e.identityKey).sort(),employeeIds=[...r.included.map(e=>e.employeeId),...r.excluded.filter(e=>e.reason==='duplicate-account').map(e=>e.employeeId)].sort();
+ const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify({identities,employeeIds})));
+ return {version:EMPLOYEE_PRICING_VERSION,plan:input.plan,unitPrice:EMPLOYEE_PRICE[input.plan],count:r.count,amount,months:1,vatIncluded:true,countedAt:new Date(input.countedAt).toISOString(),includedEmployeeIds:r.included.map(e=>e.employeeId),excluded:r.excluded,identityDigest:Array.from(new Uint8Array(digest),x=>x.toString(16).padStart(2,'0')).join('')};
+}
 export function capacityError(state:any,a:any){
  const limits=planLimits(a);
  if(state.branches.length>limits.branches)return `지금 요금은 지점 ${limits.branches}곳 기준이에요. 계정·요금제에서 지점 수를 바꿔 주세요.`;

@@ -31,7 +31,7 @@
 
 ## File Structure
 
-- Create `lib/billing-pricing.ts`: 새 요금 버전, 직원 집계, 가격 스냅샷. DB/화면 없이 테스트 가능한 계산만 담당.
+- Extend `lib/plans.ts`: 새 요금 버전, 직원 집계, 가격 스냅샷. 기존 Node 직접-import 검사와 홈페이지 렌더러가 같은 가격 원본을 쓰도록 공통 가격 모듈을 확장한다. 별도 모듈의 중복 단가와 추가 런타임 빌드 의존성을 피하는 구현 조정이다.
 - Create `app/billing-quotes.ts`: 사장님 권한으로 직원 연결을 조회하고 견적 생성·만료·동일 조건 검증.
 - Create `app/billing-fulfill.ts`: 공급자 승인 후 같은 주문의 이용권 반영을 재시도하는 단일 경로.
 - Create `supabase/migrations/20261011110000_employee_pricing.sql`: 견적 테이블과 주문 스냅샷·반영 시각, RLS/revoke 포함.
