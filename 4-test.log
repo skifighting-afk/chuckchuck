@@ -4,6 +4,11 @@
 
 PASS: overnight duration, breaks, Korean month boundaries and wage validation.
 
+── check-home-seo
+(node:2986) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+PASS: homepage search/social metadata, visible FAQ/prices, canonical domains and private app indexing boundary
+
 ── check-app-recovery
 PASS: normal workspace remains intact; lazy-load failure has accessible recovery without raw errors.
 
