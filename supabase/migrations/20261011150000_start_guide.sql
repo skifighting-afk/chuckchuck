@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS start_guide_preferences (
  user_id TEXT NOT NULL,
- owner TEXT NOT NULL REFERENCES stores(owner) ON DELETE CASCADE,
+ owner TEXT NOT NULL REFERENCES stores(owner) ON UPDATE CASCADE ON DELETE CASCADE,
  branch_id TEXT NOT NULL,
  role TEXT NOT NULL CHECK(role IN ('owner','manager','employee')),
  guide_kind TEXT NOT NULL CHECK(guide_kind IN ('personal','management')),
