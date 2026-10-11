@@ -45,6 +45,12 @@ ok('owner consent required',(await call('/api/contracts',{...create,consent:fals
 ok('wrong owner name rejected',(await call('/api/contracts',{...create,name:'다른이름'},owner)).status===400);
 ok('owner password reauthentication required',(await call('/api/contracts',{...create,password:'wrong'},owner)).status===400);
 r=await call('/api/contracts',create,owner);ok('owner signature freezes and creates request',r.status===201);let id=r.data.id;
+ok('anonymous document overview denied',(await call('/api/contracts?summary=1')).status===401);
+ok('staff cannot read employer document overview',(await call('/api/contracts?summary=1',null,staff)).status===403);
+const overview=(await call('/api/contracts?summary=1',null,owner)).data;
+ok('owner overview returns pending employee without contract body',overview.contracts[0].employeeId===employeeId&&overview.contracts[0].status==='waiting'&&!JSON.stringify(overview).includes(document));
+ok('staff cannot read employer payslip overview',(await call('/api/documents?summary=1&runKey=2026-10:branch-main',null,staff)).status===403);
+ok('owner empty month is known empty',(await call('/api/documents?summary=1&runKey=2026-10:branch-main',null,owner)).data.documents.length===0);
 let detail=(await call('/api/contracts?id='+id,null,owner)).data.envelope;
 ok('contract hash matches stored snapshot',await digest(detail.document_json)===detail.document_hash&&detail.ownerSignature.documentHash===detail.document_hash);
 ok('duplicate waiting request blocked',(await call('/api/contracts',create,owner)).status===409);
@@ -57,6 +63,7 @@ ok('different document hash rejected',(await call('/api/contracts',{...sign,docu
 ok('employee consent cannot be skipped',(await call('/api/contracts',{...sign,consent:false},staff)).status===400);
 ok('stale version rejected',(await call('/api/contracts',{...sign,version:0},staff)).status===409);
 await fixture(raw=>{raw.employees[0].wage=14000});ok('changed work conditions block old contract signature',(await call('/api/contracts',sign,staff)).status===409);
+ok('waiting contract with changed terms needs owner action',(await call('/api/contracts?summary=1',null,owner)).data.contracts.find(c=>c.employeeId===employeeId).changed===true);
 await fixture(raw=>{raw.employees[0].wage=13000});
 await q('UPDATE app_users SET email_verified=0 WHERE email=?','staff@example.invalid').run();ok('unverified employee cannot sign',(await call('/api/contracts',sign,staff)).status===400);await q('UPDATE app_users SET email_verified=1 WHERE email=?','staff@example.invalid').run();
 ok('작업 039: non-PNG drawing rejected',(await call('/api/contracts',{...sign,drawing:'data:image/svg+xml;base64,PHN2Zz4='},staff)).status===400);
@@ -109,6 +116,9 @@ ok('revised payroll sends a new immutable copy',(await call('/api/documents',sen
 ok('new revision has independent pending download',(await call('/api/documents',null,staff)).data.documents.every(d=>!d.activity.saved_at));
 // 문서 전달 마무리: 수정본 상태 표시, 다른 저장과 무관한 전송, 계정 미연결 안내, 퇴사 뒤 열람
 ok('latest payslip is marked current',(await call('/api/documents',null,staff)).data.documents.find(d=>d.revision===2).state==='current');
+const slipOverview=(await call('/api/documents?summary=1&runKey='+send.runKey,null,owner)).data.documents;
+ok('overview keeps only latest revision and no wage text',slipOverview.length===1&&slipOverview[0].revision===2&&slipOverview[0].state==='current'&&!slipOverview[0].document);
+ok('overview does not borrow another branch payslip',(await call('/api/documents?summary=1&runKey=2026-09:another',null,owner)).data.documents.length===0);
 ok('older payslip is marked replaced',(await call('/api/documents',null,staff)).data.documents.find(d=>d.revision===1).state==='replaced');
 await fixture(raw=>{raw.payrollRuns[send.runKey].locked=false});
 ok('reopened payroll marks sent payslip as under review',(await call('/api/documents',null,staff)).data.documents.find(d=>d.revision===2).state==='reopened');

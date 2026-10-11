@@ -27,6 +27,21 @@ export async function priorityUxE2E({owner,srv,step,browser}){
    const csv=await readFile(await download.path(),'utf8');assert(csv.startsWith('\uFEFF"성명","직원번호"'),'accountant CSV still downloads');assert(!csv.includes('</table>'),'CSV contains data, not source markup');
    await exports.getByText('급여 자료 내려받기',{exact:true}).click();await mkdir('ci-logs',{recursive:true});await page.screenshot({path:'ci-logs/priority-payroll-mobile.png',fullPage:true});
   });
+  await step('직원별 서류 · 검색 · 월 선택 · 연결 실패와 복구',async()=>{
+   await page.goto(srv.ORIGIN+'/app?screen=contracts',{waitUntil:'networkidle'});
+   const board=page.getByRole('region',{name:'직원별 서류 현황'});
+   await board.locator('article').first().waitFor();await board.locator('[aria-busy="false"]').count();
+   await page.waitForFunction(()=>document.querySelector('.document-overview')?.getAttribute('aria-busy')==='false');
+   const name=await board.locator('article h3').first().innerText();await board.getByRole('searchbox').fill(name);
+   assert.equal(await board.locator('article').count(),1);
+   await board.getByRole('button',{name:'근로조건 수정',exact:true}).click();await page.getByRole('dialog').waitFor();await page.keyboard.press('Escape');
+   await board.getByLabel('명세서 월').fill('2026-01');await board.getByText(/2026-01 명세서와/).waitFor();
+   for(const width of [320,390,768,1440]){await page.setViewportSize({width,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'document board overflow '+width)}
+   await page.route('**/api/contracts?summary=1',route=>route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'Synthetic unavailable status'})}));
+   await board.getByRole('button',{name:'상태 새로 확인',exact:true}).click();await board.getByRole('alert').waitFor();await board.getByText('상태 확인 필요',{exact:true}).first().waitFor();
+   await page.unroute('**/api/contracts?summary=1');await board.getByRole('button',{name:'상태 새로 확인',exact:true}).click();await board.getByRole('alert').waitFor({state:'hidden'});
+   await page.setViewportSize({width:390,height:844});await page.screenshot({path:'ci-logs/priority-documents-mobile.png',fullPage:true});
+  });
   await step('새 화면 연결 실패 · 복구 안내 · 재시도 성공',async()=>{
    const failed=await ctx.newPage();
    try{
