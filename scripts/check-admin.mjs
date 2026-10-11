@@ -35,6 +35,8 @@ let saved=await call('customer','/api/store',{state:customer.data.state,version:
 let fourth=await call('customer','/api/store',{state:{...saved.data.state,employees:[...saved.data.state.employees,employee(3)]},version:saved.data.version},{method:'PUT'});
 ok('no employee limit (fourth employee saves)',fourth.status,200);
 // 지점 수는 고른 요금(지점 1곳)을 넘으면 저장하지 않는다
+// Explicit legacy fixture: new employee-priced accounts have 50 stores independently of price.
+{const d=JSON.parse((await q('SELECT data FROM stores WHERE owner=?',id('customer')).first()).data);delete d._account.pricingVersion;d._account.storeSlots=1;await q('UPDATE stores SET data=? WHERE owner=?',JSON.stringify(d),id('customer')).run();}
 const extra=await call('customer','/api/store',{state:{...fourth.data.state,branches:[...fourth.data.state.branches,{id:'b2',name:'2호점',address:''}]},version:fourth.data.version},{method:'PUT'});
 ok('branch over chosen count gets capacity code',extra.data.code,'CAPACITY_EXCEEDED');
 ok('over branch count never persists',(await call('customer','/api/store')).data.state.branches.length,1);

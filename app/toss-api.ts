@@ -30,7 +30,7 @@ export async function tossApi(request:Request,env:Env){
  const url=new URL(request.url),ready=!!(env.TOSS_CLIENT_KEY&&env.TOSS_SECRET_KEY),call=env.TOSS_FETCH||fetch;
  try{
   if(request.method==='GET'){
-   const linked=await resolveStore(env.DB,user);if(!linked||linked.access!=='owner')return json({ready,clientKey:null,contracts:[]});
+   const linked=await resolveStore(env.DB,user);if(!linked||linked.access!=='owner'||linked.coowner)return json({ready:false,clientKey:null,contracts:[]});
    const now=Date.now(),cur=kMonth(now),months=[cur,kMonth(Date.parse(cur+'-01T00:00:00Z')-86400000),kMonth(Date.parse(cur+'-01T00:00:00Z')-40*86400000)];
    return json({ready,clientKey:ready?env.TOSS_CLIENT_KEY:null,customerKey:'cc_'+(await hash(linked.owner)).slice(0,40),contracts:(await contractsByMonth(env,linked.owner,months)).filter(x=>x.count)});
   }
@@ -50,7 +50,7 @@ export async function tossApi(request:Request,env:Env){
    return json({ok:true,refunded,status:refunded>=p.amount?'refunded':'partial_refund'});
   }
 
-  const linked=await resolveStore(env.DB,user);if(!linked||linked.access!=='owner')return json({error:'결제는 가게를 등록한 사장님만 할 수 있어요.'},403);
+  const linked=await resolveStore(env.DB,user);if(!linked||linked.access!=='owner'||linked.coowner)return json({error:'결제는 가게 대표 계정에서만 할 수 있어요.'},403);
   if(!ready)return json({error:'아직 결제를 받지 않아요. 지금은 무료·체험으로 계속 이용하시면 돼요.',code:'BILLING_NOT_READY'},503);
   const owner=linked.owner,nowIso=new Date().toISOString();
 

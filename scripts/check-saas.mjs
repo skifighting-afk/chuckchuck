@@ -8,6 +8,8 @@ const account=(u,b)=>call(u,'/api/account',b),store=(u,b,m)=>call(u,'/api/store'
 const setup=(plan,storeSlots)=>({action:'onboard',storeName:'테스트 매장',branchName:'본점',ownerName:'테스트 사장',plan,storeSlots,acknowledged:true,dpaAgreed:true});
 // 요금제(2026-10-05): 베이직·프로, 지점 구간 요금(VAT 포함), 직원 수 제한 없음, 30일 체험, 6/12개월 할인
 assert.equal((await account('')).status,401);assert.equal((await account('free',setup('basic'))).status,201);
+// This suite preserves the legacy branch-pricing contract. New employee pricing has its own API suite.
+{const d=JSON.parse((await q('SELECT data FROM stores WHERE owner=?',id('free')).first()).data);delete d._account.pricingVersion;d._account.storeSlots=1;d._account.months=1;await q('UPDATE stores SET data=? WHERE owner=?',JSON.stringify(d),id('free')).run();}
 let a=(await account('free')).data;assert.equal(a.account.status,'trialing');assert.equal(a.account.plan,'basic');assert.equal(a.account.monthlyPrice,9900);assert.equal(a.account.vatIncluded,true);assert.equal(a.account.qr,true,'trial includes QR');
 assert.ok(Math.abs(Date.parse(a.account.trialEndsAt)-Date.now()-30*86400000)<60000,'30-day trial');
 let st=(await store('free')).data;assert.equal(st.state.employees.length,0);assert.equal(st.state.legacy,undefined);assert.equal(st.qrRequired,true);

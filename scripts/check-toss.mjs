@@ -19,6 +19,8 @@ const mock=async(url,init)=>{calls.push({url,body:JSON.parse(init.body||'{}'),au
 const envOff=TT.env,env={...TT.env,TOSS_CLIENT_KEY:'test_ck_x',TOSS_SECRET_KEY:'test_sk_secret',TOSS_FETCH:mock,HQ_NATIVE_USER_ID:id('tossHq')};
 async function call(user,path,body,e=env){const r=await api(new Request('https://qa.local'+path,{method:body?'POST':'GET',headers:{origin:'https://qa.local',...(await headersFor(user))},...(body?{body:JSON.stringify(body)}:{})}),e);return {status:r.status,body:await r.json()}}
 await call('tossBoss','/api/account',{action:'onboard',storeName:'결제 검수',branchName:'본점',ownerName:'가상대표',plan:'basic',storeSlots:1,acknowledged:true,dpaAgreed:true});
+// Existing branch-price customers remain on their original contract until explicit conversion.
+{const d=JSON.parse((await q('SELECT data FROM stores WHERE owner=?',id('tossBoss')).first()).data);delete d._account.pricingVersion;d._account.storeSlots=1;d._account.months=1;await q('UPDATE stores SET data=? WHERE owner=?',JSON.stringify(d),id('tossBoss')).run();}
 ok('no keys → not ready',(await call('tossBoss','/api/billing',undefined,envOff)).body.ready,false);
 ok('no keys → prepare locked',(await call('tossBoss','/api/billing',{action:'prepare',plan:'pro',storeSlots:2,months:6,agreed:true},envOff)).status,503);
 const g=(await call('tossBoss','/api/billing')).body;ok('keys → ready + client key only',[g.ready,g.clientKey,JSON.stringify(g).includes('test_sk')],[true,'test_ck_x',false]);
