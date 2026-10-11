@@ -2,6 +2,3 @@
 > chuckchuck@0.1.0 check
 > tsc --noEmit
 
-app/platform.tsx(90,120): error TS2322: Type '(background?: boolean) => Promise<void>' is not assignable to type 'MouseEventHandler<HTMLButtonElement>'.
-  Types of parameters 'background' and 'event' are incompatible.
-    Type 'MouseEvent<HTMLButtonElement, MouseEvent>' is not assignable to type 'boolean | undefined'.
