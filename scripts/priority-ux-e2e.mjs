@@ -18,7 +18,8 @@ export async function priorityUxE2E({owner,srv,step,browser}){
    await page.evaluate(()=>document.fonts.ready);assert(await page.evaluate(()=>Array.from(document.fonts).some(f=>f.family.includes('ChukAppSans')&&f.status==='loaded')),'Korean font loaded');
    assert.equal((await page.request.get(srv.ORIGIN+'/fonts/pretendard.woff2')).status(),200);
    const overview=page.getByRole('region',{name:'직원별 급여',exact:true}),exports=page.locator('.payroll-exports');
-   assert(await overview.locator('tbody tr').first().evaluate(el=>el.getBoundingClientRect().top<innerHeight-96),'payroll summary leaves first employee visible on mobile');
+   const firstNet=overview.locator('tbody tr').first().locator('td[data-label="실수령액"]');
+   const netBox=await firstNet.evaluate(el=>({bottom:el.getBoundingClientRect().bottom,viewport:innerHeight}));assert(netBox.bottom<netBox.viewport-80,'first employee net amount visible on mobile: '+JSON.stringify(netBox));
    assert(await exports.evaluate(el=>!el.open),'export tools start collapsed');
    assert(await page.evaluate(()=>document.querySelector('.payroll-overview').compareDocumentPosition(document.querySelector('.payroll-exports'))&Node.DOCUMENT_POSITION_FOLLOWING),'employee amounts before export tools');
    await exports.getByText('급여 자료 내려받기',{exact:true}).click();await exports.getByRole('button',{name:'세무사 자료',exact:true}).waitFor();
