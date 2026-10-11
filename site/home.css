@@ -689,3 +689,13 @@ html.anim .hero{height:160vh}.exp-extra{font-size:15px;color:#64795f;line-height
 html.large-text .hero-record-steps b,html.large-text .hero-record-bottom p{font-size:18px}html.large-text .hero-record-steps small,html.large-text .hero-record-note,html.large-text .hero-record-head p,html.large-text .hero-flow-link span{font-size:16px}
 html.reduce .hero-record-steps>button{transition:none}
 @media(prefers-reduced-motion:reduce){.hero-record-steps>button{transition:none}}
+
+/* A missing page has a clear way back, including without JavaScript. */
+.not-found{min-height:100svh;display:grid;place-items:center;padding:32px 20px;background:var(--paper);color:var(--ink)}
+.not-found-card{width:min(100%,600px);padding:40px;border:1px solid #cbd5c7;border-radius:24px;background:var(--sheet);box-shadow:0 24px 60px -40px #123f3390}
+.not-found-brand{display:inline-flex;align-items:center;min-height:44px;font-size:20px;font-weight:800;color:var(--green);text-decoration:none}
+.not-found-code{margin-top:32px;font-size:14px;font-weight:700;letter-spacing:.12em;color:#52655c}
+.not-found h1{font-size:clamp(28px,5vw,40px);line-height:1.35;letter-spacing:-.04em;word-break:keep-all;overflow-wrap:anywhere;margin:12px 0 20px}
+.not-found-card>p:last-of-type{font-size:16px;line-height:1.8;word-break:keep-all;overflow-wrap:anywhere;color:#52655c}
+.not-found nav{display:grid;gap:12px;margin-top:28px}.not-found nav a{min-height:48px}.not-found-help{display:flex;align-items:center;justify-content:center;color:var(--green);font-size:16px;text-underline-offset:4px}
+@media(max-width:400px){.not-found{padding:20px 16px}.not-found-card{padding:28px 20px;border-radius:18px}}
