@@ -26,7 +26,7 @@ export function personalTeam(state:Team,selfId:string):Team{
   ...((state as any).staffAsks?{staffAsks:(state as any).staffAsks.filter((x:any)=>x.employeeId===selfId)}:{}),
   ...((state as any).certificates?{certificates:(state as any).certificates.filter((c:any)=>c.employeeId===selfId)}:{}),
   // 지시서 3주차 023: 내 매장 공개 근무표와 내 확인 기록만
-  ...((state as any).publishedWeeks?{publishedWeeks:Object.fromEntries(Object.entries((state as any).publishedWeeks).filter(([k])=>k.startsWith(self.branchId+':')).map(([k,v]:any)=>[k,{at:v.at,acks:v.acks?.[selfId]?{[selfId]:v.acks[selfId]}:{}}]))}:{}),
+  ...((state as any).publishedWeeks?{publishedWeeks:Object.fromEntries(Object.entries((state as any).publishedWeeks).filter(([k])=>k.startsWith(self.branchId+':')).map(([k,v]:any)=>[k,{at:v.at,...(v.changed?{changed:true}:{}),acks:v.acks?.[selfId]?{[selfId]:v.acks[selfId]}:{}}]))}:{}),
   ...((state as any).advances?{advances:(state as any).advances.filter((x:any)=>x.employeeId===selfId).map(({by,at,...x}:any)=>x)}:{}),
   ...((state as any).events?{events:(state as any).events.filter((x:any)=>!x.branchId||x.branchId===self.branchId)}:{}),
   ...((state as any).dayOffWishes?{dayOffWishes:(state as any).dayOffWishes.filter((x:any)=>x.employeeId===selfId)}:{}),

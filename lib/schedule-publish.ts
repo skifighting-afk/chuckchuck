@@ -5,36 +5,48 @@
 const plus = (d: string, n: number) => new Date(Date.parse(d + 'T00:00:00Z') + n * 86400000).toISOString().slice(0, 10);
 const weekStartOf = (d: string, ws: 'mon' | 'sun' = 'mon') => { const w = new Date(d + 'T00:00:00Z').getUTCDay(); return plus(d, -(ws === 'mon' ? (w + 6) % 7 : w)); };
 
-type Shift = {id: string; employeeId: string; date: string; start: string; end: string; breakMinutes?: number};
-export type Published = Record<string, {at: string; acks: Record<string, string>}>;
+type Shift = {id: string; employeeId: string; date: string; start: string; end: string; breakMinutes?: number;branchId?:string;position?:string;note?:string;kind?:string};
+export type Published = Record<string, {at: string; acks: Record<string, string>; changed?: boolean}>;
 
 export const pubKey = (branchId: string, weekStart: string) => `${branchId}:${weekStart}`;
+export const publicationContextKey = (branchId:string,date:string,ws:'mon'|'sun'='mon') => pubKey(branchId,weekStartOf(date,ws));
 export const keyWeek = (key: string) => key.slice(key.lastIndexOf(':') + 1);
 export const keyBranch = (key: string) => key.slice(0, key.lastIndexOf(':'));
 
 const sig = (shifts: Shift[], emp: string, from: string) => {
   const to = plus(from, 6);
-  return JSON.stringify(shifts.filter(s => s.employeeId === emp && s.date >= from && s.date <= to).map(s => [s.date, s.start, s.end, s.breakMinutes || 0]).sort());
+  return JSON.stringify(shifts.filter(s => s.employeeId === emp && s.date >= from && s.date <= to).map(s => [s.date, s.start, s.end, s.breakMinutes || 0,s.branchId||'',s.position||'',s.note||'',s.kind||'']).sort());
 };
 
 /** 화면용: 이 주 공개 상태와 확인한·안 한 직원 */
-export function publishStatus(pw: Published | undefined, branchId: string, date: string, staff: {id: string; name: string; branchId: string}[], ws: 'mon' | 'sun' = 'mon') {
+export function publishStatus(pw: Published | undefined, branchId: string, date: string, staff: {id: string; name: string; branchId: string; status?: string}[], ws: 'mon' | 'sun' = 'mon') {
   const week = weekStartOf(date, ws), key = pubKey(branchId, week), p = pw?.[key];
-  const here = staff.filter(e => e.branchId === branchId);
-  return {key, week, published: !!p, at: p?.at || null, acked: here.filter(e => p?.acks?.[e.id]), pending: here.filter(e => !p?.acks?.[e.id])};
+  const here = staff.filter(e => e.branchId === branchId && e.status !== '퇴사');
+  return {key, week, published: !!p, changed: !!p?.changed, at: p?.at || null, acked: here.filter(e => p?.acks?.[e.id]), pending: here.filter(e => !p?.acks?.[e.id])};
 }
 
 /** 서버: 사장님 저장분을 합친다. 확인 기록은 서버 것만 믿고, 근무가 바뀐 직원의 확인은 푼다. 새로 공개(또는 다시 공개)된 key를 돌려준다 */
-export function mergePublished(prev: Published | undefined, next: Published | undefined, prevShifts: Shift[], nextShifts: Shift[]) {
+export function mergePublished(prev: Published | undefined, next: Published | undefined, prevShifts: Shift[], nextShifts: Shift[], employees?: {id:string;branchId:string}[]) {
   const out: Published = {}, fresh: string[] = [];
   for (const [key, v] of Object.entries(next || {})) {
     const old = prev?.[key], week = keyWeek(key);
     if (!old || old.at !== v.at) fresh.push(key);
     const acks: Record<string, string> = {};
     for (const [emp, at] of Object.entries(old?.acks || {})) if (!fresh.includes(key) && sig(prevShifts, emp, week) === sig(nextShifts, emp, week)) acks[emp] = at;
-    out[key] = {at: v.at, acks};
+    const ids = new Set(employees ? employees.filter(e=>e.branchId===keyBranch(key)).map(e=>e.id) : [...prevShifts,...nextShifts].map(s=>s.employeeId));
+    const changed = !fresh.includes(key) && (!!old?.changed || [...ids].some(id=>sig(prevShifts,id,week)!==sig(nextShifts,id,week)));
+    out[key] = {at: v.at, acks, ...(changed ? {changed:true} : {})};
   }
   return {published: out, fresh};
+}
+
+/** The server determines current unacknowledged, linked recipients. Never reset acknowledgments to remind. */
+export function scheduleReminderTargets(pw:Published|undefined,key:string,employees:{id:string;branchId:string;status?:string}[],members:{employeeId:string;userId:string}[],audit:{action?:string;at?:string;after?:any}[],now:number){
+ const p=pw?.[key];if(!p)return {ids:[] as string[],unlinked:[] as string[]};
+ const pending=employees.filter(e=>e.branchId===keyBranch(key)&&e.status!=='퇴사'&&!p.acks?.[e.id]);
+ const linked=new Set(members.filter(m=>m.userId).map(m=>m.employeeId));
+ const recently=new Set(audit.filter(a=>a.action==='근무표 미확인 알림 요청'&&Number.isFinite(Date.parse(a.at||''))&&now-Date.parse(a.at!)<3600000).flatMap(a=>Array.isArray(a.after?.ids)?a.after.ids:[]));
+ return {ids:pending.filter(e=>linked.has(e.id)&&!recently.has(e.id)).map(e=>e.id),unlinked:pending.filter(e=>!linked.has(e.id)).map(e=>e.id)};
 }
 
 /** 직원 확인. 공개되지 않은 주면 이유 */

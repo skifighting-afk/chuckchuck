@@ -22,17 +22,20 @@ function GapsInner({s,es,date,branch,onSetup}:{s:Team,es:Team['employees'],date:
 }
 
 /** 023: 사장님 — 이 주 근무표를 직원에게 공개하고 누가 확인했는지 본다 */
-export function PublishBar({s,es,date,branch,busy,save}:{s:Team,es:Team['employees'],date:string,branch:string,busy:boolean,save:(next:Team)=>Promise<any>}){
+export function PublishBar({s,es,date,branch,busy,save,linked=[],remind}:{s:Team,es:Team['employees'],date:string,branch:string,busy:boolean,save:(next:Team)=>Promise<any>,linked?:string[],remind?:(key:string)=>Promise<boolean>}){
  const ws=((s.settings as any).weekStart||'mon') as 'mon'|'sun',staff=es.filter(e=>e.status!=='퇴사');
- const st=publishStatus((s as any).publishedWeeks,branch,date,staff,ws),[open,setOpen]=useState(false);
+ const st=publishStatus((s as any).publishedWeeks,branch,date,staff,ws),[open,setOpen]=useState(false),[confirm,setConfirm]=useState(false),[message,setMessage]=useState('');
  const has=s.shifts.some(x=>staff.some(e=>e.id===x.employeeId)&&x.date>=st.week&&x.date<=datePlus(st.week,6));
- const publish=()=>save({...s,publishedWeeks:{...((s as any).publishedWeeks||{}),[st.key]:{at:new Date().toISOString(),acks:{}}}} as any);
+ const publish=async()=>{if(await save({...s,publishedWeeks:{...((s as any).publishedWeeks||{}),[st.key]:{at:new Date().toISOString(),acks:{}}}} as any)){setConfirm(false);setMessage('')}};
  const range=`${md(st.week)}~${md(datePlus(st.week,6))}`;
- if(!st.published)return <div className="publish-bar"><p><b>{range} 근무표</b> · 아직 직원에게 공개 전이에요. 공개하면 직원에게 알림이 가고, 직원이 확인했는지 볼 수 있어요.</p><button type="button" className="primary" disabled={busy||!has} onClick={publish}>{has?'직원에게 공개':'근무를 먼저 넣어 주세요'}</button></div>;
- return <div className="publish-bar done"><p><b>{range} 근무표 공개됨</b> · {(()=>{const k=new Date(Date.parse(st.at!)+9*3600000).toISOString();return `${md(k.slice(0,10))} ${k.slice(11,16)} 공개`})()} · 확인 {st.acked.length}/{st.acked.length+st.pending.length}명</p>
-  <div className="publish-actions">{st.pending.length>0&&<button type="button" className="secondary" aria-expanded={open} onClick={()=>setOpen(!open)}>미확인 {st.pending.length}명 보기</button>}<button type="button" className="secondary" disabled={busy} onClick={publish} title="바뀐 내용을 다시 알리고 확인을 새로 받아요">다시 공개·알림</button></div>
-  {open&&<p className="publish-pending">아직 확인 안 함: {st.pending.map(e=>e.name).join(', ')}</p>}
-  <small>공개 뒤 근무를 바꾸면 그 직원에게 알림이 가고, 그 직원은 다시 확인해야 해요.</small></div>;
+ const note=<small className="publish-visibility">저장한 근무는 직원 화면에 반영돼요. 공개는 알림과 확인을 요청하는 단계예요.</small>;
+ if(!st.published)return <section className="publish-bar" aria-label="근무표 공개·확인"><p><span className="publish-state">알림 전</span> <b>{range} 근무표</b></p><p>직원에게 새 근무표 알림을 보내고 확인을 받아요.</p><button type="button" className="primary" disabled={busy||!has} onClick={publish}>{busy?'처리 중…':has?'직원에게 공개':'근무를 먼저 넣어 주세요'}</button>{note}</section>;
+ const targets=st.pending.filter(e=>linked.includes(e.id)),unlinked=st.pending.filter(e=>!linked.includes(e.id));
+ return <section className="publish-bar done" aria-label="근무표 공개·확인"><p><span className="publish-state">{st.changed?'공개 후 변경':'공개됨'}</span> <b>{range} 근무표</b> · 확인 {st.acked.length}/{st.acked.length+st.pending.length}명</p>
+  <small>{(()=>{const t=Date.parse(st.at!);if(!Number.isFinite(t))return '공개 시각 확인 필요';const k=new Date(t+9*3600000).toISOString();return `${md(k.slice(0,10))} ${k.slice(11,16)} 공개`})()}{st.changed?' · 변경된 직원은 다시 확인해야 해요.':''}</small>
+  <div className="publish-actions">{st.pending.length>0&&<button type="button" className="secondary" aria-expanded={open} onClick={()=>{setOpen(!open);setMessage('')}}>미확인 {st.pending.length}명 보기</button>}<button type="button" className="secondary" disabled={busy} aria-expanded={confirm} onClick={()=>setConfirm(!confirm)}>다시 공개·알림</button></div>
+  {open&&<div className="publish-recipients"><h3>아직 확인하지 않은 직원</h3><ul>{st.pending.map(e=><li key={e.id}><b>{e.name}</b><span>{linked.includes(e.id)?'알림 요청 가능':'가입 연결 필요'}</span></li>)}</ul><p>재알림 대상 {targets.length}명 · 이미 확인한 {st.acked.length}명은 제외해요.{unlinked.length>0?` 가입 연결 전 ${unlinked.length}명은 앱 알림을 받을 수 없어요.`:''}</p><p>같은 직원에게 최근 1시간 안에 요청했다면 다시 보내지 않아요. 직원의 알림 설정에 따라 수신 여부가 달라요.</p>{remind&&<button type="button" className="primary" disabled={busy||!targets.length} onClick={async()=>{if(await remind(st.key))setMessage('미확인 직원 알림을 요청했어요. 수신·확인 완료를 뜻하지는 않아요.')}}>{busy?'처리 중…':'미확인 직원에게만 알림 요청'}</button>}{message&&<p role="status">{message}</p>}</div>}
+  {confirm&&<div className="publish-confirm"><h3>전체 직원에게 다시 공개할까요?</h3><p>이 주의 모든 확인 기록 {st.acked.length}건을 초기화하고 매장 재직 직원 {staff.length}명에게 새 확인을 요청해요. 미확인 직원에게만 알리려면 위의 미확인 목록을 이용해 주세요.</p><div className="publish-actions"><button type="button" className="primary" disabled={busy} onClick={publish}>전체 확인 초기화·다시 공개</button><button type="button" className="secondary" disabled={busy} onClick={()=>setConfirm(false)}>취소</button></div></div>}{note}</section>;
 }
 
 /** 023: 직원 — 공개된 근무표 확인 */

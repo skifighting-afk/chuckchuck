@@ -1,3 +1,4 @@
+import './check-schedule-publication.mjs';
 import './check-home-work.mjs';
 import './check-task-navigation.mjs';
 import './check-work-context.mjs';
@@ -35,4 +36,5 @@ for(const file of ['check-home-seo','check-home-controls','check-app-recovery','
  await import('./'+file+'.mjs');
 }
 const {closeAll}=await import('./test-db.mjs');await closeAll();
+await import('./check-schedule-publication-api.mjs');
 process.exit(process.exitCode??0);

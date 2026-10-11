@@ -1,3 +1,4 @@
+import {mergePublished} from '../lib/schedule-publish';
 import {notifyUser} from './push-api';
 import type {PushEnv} from '../lib/webpush';
 import {resolveStore} from './saas-api';
@@ -27,6 +28,7 @@ export async function operationsApi(request:Request,env:{DB:D1Database}&PushEnv)
  try{
  const linked=await resolveStore(env.DB,userId);if(!linked)return json({error:'먼저 가게를 등록해 주세요.'},409);if(linked.access==='revoked')return json({error:'이 기능을 쓸 권한이 없어요. 사장님께 확인해 주세요.'},403);
  const {row,access}=linked,data:StoreData=JSON.parse(row.data),ops:Operations=data._operations||{leaves:[],notices:[]};
+ const previousShifts=data.shifts.map(s=>({...s}));
  const self=data.employees.find((e)=>e.id===data._members?.find((m)=>m.userId===userId)?.employeeId);
  const fivePlus=!!data.settings?.fivePlus,asOf=kstToday(),nowIso=new Date().toISOString(),plus=(d:string,n:number)=>new Date(Date.parse(d+'T00:00:00Z')+n*86400000).toISOString().slice(0,10);
  const accrual=(e:Emp)=>{const r=leaveBalanceFor(e,ops.leaves.filter((l)=>l.employeeId===e.id),asOf,fivePlus);let hourly=0;try{hourly=ordinaryHourly(e).hourly}catch{};return {eligible:r.eligible,reason:r.reason,earned:r.earned,used:r.used,remaining:r.remaining,next:r.next,grants:r.grants.length,lastGrant:r.grants.length?{at:r.grants[r.grants.length-1].at,expires:r.grants[r.grants.length-1].expires,days:r.grants[r.grants.length-1].days}:null,unusedPay:r.eligible?unusedLeavePay(r.remaining,hourly):0}};
@@ -151,6 +153,7 @@ export async function operationsApi(request:Request,env:{DB:D1Database}&PushEnv)
   const n=ops.notices.find((n)=>n.id===b.id);if(!n||(access!=='owner'&&((n.branchId!=='all'&&n.branchId!==self?.branchId)||(n.publishAt&&n.publishAt>now)||(n.target&&!(self&&noticeAudience(n.target,[{id:self.id,name:self.name,role:self.role,branchId:self.branchId}],n.branchId).includes(self.id))))))return json({error:'볼 수 없는 공지예요. 목록을 새로고침해 주세요.'},404);
   if(!n.reads.includes(userId))n.reads.push(userId);label='매장 공지 확인';target=n.title;
  }else return json({error:'이 작업은 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},400);
+ if(!same(previousShifts,data.shifts))data.publishedWeeks=mergePublished(data.publishedWeeks,data.publishedWeeks,previousShifts,data.shifts,data.employees).published;
  data._operations=ops;data._audit=[...(data._audit||[]),{id:crypto.randomUUID(),at:now,actor,action:label,target,before:null,after:{id:b.id||null},reason:b.comment||b.reason||''}];
  const result=await env.DB.prepare('UPDATE stores SET data=?,version=?,updated_at=? WHERE owner=? AND version=?').bind(JSON.stringify(data),row.version+1,now,linked.owner,row.version).run();
  if(!result.meta.changes)return json({error:'동시 변경이 있습니다. 새로고침해 주세요.'},409);row.version++;

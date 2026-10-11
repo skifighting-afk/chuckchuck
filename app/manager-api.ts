@@ -1,3 +1,4 @@
+import {mergePublished} from '../lib/schedule-publish';
 import {same} from '../lib/same';
 import {digest} from '../lib/password';
 import {managerPermissions} from '../lib/manager-permissions';
@@ -15,6 +16,7 @@ export async function managerApi(request:Request,env:{DB:D1Database}){
  const d:StoreData=JSON.parse(link.row.data),self=d.employees.find((e)=>e.id===d._members?.find((m)=>m.userId===uid)?.employeeId)!;
  // 지시서 194: 사장님 부재 기간의 대리 승인자는 근무표·출퇴근·휴가·공지 권한을 그 기간 동안 받는다
  const {acting,permissions}=managerPermissions(d,self);
+ const previousShifts=d.shifts.slice();
  const staff=d.employees.filter((e)=>e.branchId===self.branchId&&e.status!=='퇴사'),ids=new Set(staff.map((e)=>e.id));
  const ops:Operations=d._operations||{leaves:[],notices:[]};
  // 지시서 4주차 043: 매니저 권한 세분화 — 출퇴근 현황·연락처·인건비 합계·직원별 급여는 사장님이 켠 것만
@@ -59,6 +61,7 @@ export async function managerApi(request:Request,env:{DB:D1Database}){
   if(ops.notices.length>=500)return json({error:'공지 한도를 확인해 주세요.'},409);
   const n={id:crypto.randomUUID(),branchId:self.branchId,title:b.title.trim(),body:b.body.trim(),author:self.name,createdAt:now,reads:[]};ops.notices.push(n);target=n.id;after=n;
  }
+ if(!same(previousShifts,d.shifts))d.publishedWeeks=mergePublished(d.publishedWeeks,d.publishedWeeks,previousShifts,d.shifts,d.employees).published;
  d._operations=ops;d._audit=[...(d._audit||[]),{id:crypto.randomUUID(),at:now,actor,action:'매니저 '+b.action,target,before,after,reason:'사장님 위임 업무'}];
  const result=await env.DB.prepare('UPDATE stores SET data=?,version=version+1,updated_at=? WHERE owner=? AND version=?').bind(JSON.stringify(d),now,link.owner,link.row.version).run();
  return result.meta.changes?json({ok:true}):json({error:'다른 변경이 있어요. 다시 확인해 주세요.'},409);
