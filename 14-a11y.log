@@ -1,1 +1,9 @@
-접근성 점검 통과: 12개 화면 × 2개 크기 (axe 포함)
+접근성 문제 4건:
+390px /demo?screen=home [axe label-content-name-mismatch] Elements must have their visible text as part of their accessible name — .now | button[aria-label="첫 직원 채용 완료 · 150 XP"] | button[aria-label="첫 근무 넣기 완료 · 150 XP"]
+390px /demo?role=employee [axe label-content-name-mismatch] Elements must have their visible text as part of their accessible name — .now | .done | button[aria-label="내 급여 확인 도전하기 · 50 XP"]
+1280px /demo?screen=home [axe label-content-name-mismatch] Elements must have their visible text as part of their accessible name — .now | button[aria-label="첫 직원 채용 완료 · 150 XP"] | button[aria-label="첫 근무 넣기 완료 · 150 XP"]
+1280px /demo?role=employee [axe label-content-name-mismatch] Elements must have their visible text as part of their accessible name — .now | .done | button[aria-label="내 급여 확인 도전하기 · 50 XP"]
+::error title=접근성::390px /demo?screen=home [axe label-content-name-mismatch] Elements must have their visible text as part of their accessible name — .now | button[aria-label="첫 직원 채용 완료 · 150 XP"] | button[aria-label="첫 근무 넣기 완료 · 150 XP"]
+::error title=접근성::390px /demo?role=employee [axe label-content-name-mismatch] Elements must have their visible text as part of their accessible name — .now | .done | button[aria-label="내 급여 확인 도전하기 · 50 XP"]
+::error title=접근성::1280px /demo?screen=home [axe label-content-name-mismatch] Elements must have their visible text as part of their accessible name — .now | button[aria-label="첫 직원 채용 완료 · 150 XP"] | button[aria-label="첫 근무 넣기 완료 · 150 XP"]
+::error title=접근성::1280px /demo?role=employee [axe label-content-name-mismatch] Elements must have their visible text as part of their accessible name — .now | .done | button[aria-label="내 급여 확인 도전하기 · 50 XP"]

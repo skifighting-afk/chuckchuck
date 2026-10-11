@@ -2303,48 +2303,59 @@ PASS: 메일 없이 비밀번호 찾기.
 71. PASS owner tour 8+ steps, staff 5+
 72. PASS every step has title+body
 73. PASS owner pages exist
-74. PASS owner saves extra fields
-75. PASS extra kept
-76. PASS branch info kept
-77. PASS repeats kept
-78. PASS settings.more kept
-79. PASS staff does not see owner memo/tags/reviews
-80. PASS staff sees praise
-81. PASS staff sees wifi
-82. PASS staff sees today note only
-83. PASS staff sees events
-84. PASS setPref bad value blocked
-85. PASS setPref ok
-86. PASS pref saved, memo intact
-87. PASS dayOffWish past blocked
-88. PASS dayOffWish ok
-89. PASS owner sees wish
-90. PASS second tap removes wish
-91. PASS staff cannot memo
-92. PASS autoClose future blocked
-93. PASS autoClose ok
-94. PASS closed with flag
-95. PASS attMemo ok
-96. PASS memo saved
-97. PASS staff record hides memo
-98. PASS post notice with poll+pdf
-99. PASS staff sees poll + file
-100. PASS vote
-101. PASS bad vote
-102. PASS react
-103. PASS bad emoji
-104. PASS comment
-105. PASS owner sees counts
-106. PASS owner can delete comment
-107. PASS bad pdf rejected
-108. PASS save manual needPhoto
-109. PASS photo required
-110. PASS check with photo
-111. PASS left steps handed over
-112. PASS client error needs origin
-113. PASS scrubbed + deduped
-114. PASS non-HQ cannot read
-115. PASS B101 2h before alert with clock link
+74. PASS quests: owner 9, staff 5, ids unique
+75. PASS quests: every quest has steps+hint+badge, owner pages exist
+76. PASS quests: done keys match quest ids
+77. PASS quests: total XP reaches max level
+78. PASS quests: owner done from records
+79. PASS quests: other branch not done
+80. PASS quests: staff done
+81. PASS quests: summary xp/next/level
+82. PASS quests: demo hides noDemo
+83. PASS quests: level edges
+84. PASS quests: parseFind
+85. PASS owner saves extra fields
+86. PASS extra kept
+87. PASS branch info kept
+88. PASS repeats kept
+89. PASS settings.more kept
+90. PASS staff does not see owner memo/tags/reviews
+91. PASS staff sees praise
+92. PASS staff sees wifi
+93. PASS staff sees today note only
+94. PASS staff sees events
+95. PASS setPref bad value blocked
+96. PASS setPref ok
+97. PASS pref saved, memo intact
+98. PASS dayOffWish past blocked
+99. PASS dayOffWish ok
+100. PASS owner sees wish
+101. PASS second tap removes wish
+102. PASS staff cannot memo
+103. PASS autoClose future blocked
+104. PASS autoClose ok
+105. PASS closed with flag
+106. PASS attMemo ok
+107. PASS memo saved
+108. PASS staff record hides memo
+109. PASS post notice with poll+pdf
+110. PASS staff sees poll + file
+111. PASS vote
+112. PASS bad vote
+113. PASS react
+114. PASS bad emoji
+115. PASS comment
+116. PASS owner sees counts
+117. PASS owner can delete comment
+118. PASS bad pdf rejected
+119. PASS save manual needPhoto
+120. PASS photo required
+121. PASS check with photo
+122. PASS left steps handed over
+123. PASS client error needs origin
+124. PASS scrubbed + deduped
+125. PASS non-HQ cannot read
+126. PASS B101 2h before alert with clock link
 
 ── check-secrets
 1. PASS 비밀값 검사 완료

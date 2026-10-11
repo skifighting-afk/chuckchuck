@@ -7,14 +7,14 @@ PASS public-help · 이전과 0% 다름
 PASS public-refund · 이전과 0% 다름
 PASS public-terms · 이전과 0% 다름
 PASS public-pricing · 이전과 0% 다름
-PASS public-status · 이전과 0.03% 다름
+PASS public-status · 이전과 0.08% 다름
 PASS public-privacy · 이전과 0% 다름
 PASS public-policy · 이전과 0% 다름
 PASS public-news · 이전과 0% 다름
 PASS public-privacy-request · 이전과 0% 다름
 PASS public-accessibility · 이전과 0% 다름
-PASS demo-home · 이전과 0% 다름
-PASS demo-employees · 이전과 0% 다름
+PASS demo-home · 이전과 68.48% 다름
+PASS demo-employees · 이전과 10.38% 다름
 PASS demo-attendance · 이전과 0% 다름
 PASS demo-schedule · 이전과 0% 다름
 PASS demo-payroll · 이전과 0% 다름
@@ -27,7 +27,7 @@ PASS demo-reports · 이전과 0% 다름
 PASS demo-stores · 이전과 0% 다름
 PASS demo-settings · 이전과 0% 다름
 PASS demo-guide · 이전과 0% 다름
-PASS demo-staff · 이전과 0% 다름
+PASS demo-staff · 이전과 32.71% 다름
 PASS hr-hiring-owner · 이전과 0% 다름
 PASS hr-hiring-employee · 이전과 0% 다름
 PASS hr-hiring-manager · 이전과 0% 다름
@@ -112,4 +112,5 @@ PASS hr-settings-manager (큰 글씨)
 PASS hr-export-owner (큰 글씨)
 PASS hr-export-employee (큰 글씨)
 PASS hr-export-manager (큰 글씨)
+이전 실행과 2% 넘게 달라진 화면: demo-home 68.48%, demo-employees 10.38%, demo-staff 32.71%
 390px 화면 57개(보통·큰 글씨): 가로 넘침 없음
