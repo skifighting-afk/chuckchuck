@@ -1,0 +1,6 @@
+Connecting to remote database...
+Do you want to push these migrations to the remote database?
+ • 20261011150000_start_guide.sql
+ [Y/n] 
+Applying migration 20261011150000_start_guide.sql...
+Finished supabase db push.

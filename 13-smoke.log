@@ -1,0 +1,10 @@
+08:34:55 새 화면 확인 65c1f6d
+08:35:06 API 응답 시간 /api/status 200 2786ms · /api/client-error 200 3635ms
+08:35:34 가입·가게 만들기 OK
+08:35:37 로그아웃 OK
+08:35:54 다시 로그인 OK
+08:36:52 HR 9개 기능·권한 설정 운영 API 조회 OK (빈 점검 매장·읽기 전용)
+08:36:59 HR 비로그인 로그인 안내·API 401 차단 OK
+점검 계정 정리 실패: HTTP 400 {"message":"Failed to run sql query: FATAL:  53300: remaining connection slots are reserved for roles with the SUPERUSER attribute\n"}
+배포 후 점검 실패: 점검 계정 정리 실패: HTTP 400 {"message":"Failed to run sql query: FATAL:  53300: remaining connection slots are reserved for roles with the SUPERUSER attribute\n"}
+끝나지 않은 요청: POST https://mklluxpngagiechnfaxe.supabase.co/functions/v1/api/client-error 61733ms
