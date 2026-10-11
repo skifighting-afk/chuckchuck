@@ -135,3 +135,6 @@ body{font-family:'ChukAppSans','Pretendard','Apple SD Gothic Neo','Malgun Gothic
 @media(max-width:600px){.payroll-overview td[data-label="상태"]{min-width:0;display:flex;align-items:center;justify-content:space-between;gap:8px}.payroll-overview td[data-label="상태"] .payroll-stage{max-width:calc(100% - 36px)}.payroll-overview td:first-child>.payroll-type{order:19}}
 .payroll-basis-time{display:block;font-size:.875rem;color:#526359;margin-top:6px;line-height:1.5;word-break:keep-all}
 @media(max-width:600px){.payroll-overview td[data-label="상태"]{flex-wrap:wrap}.payroll-basis-time{width:100%;text-align:right}}
+/* Owner reading preference wins over the shared default hierarchy. */
+.cheok-large-text .t-work .page-heading h1,.cheok-large-text .t-work h1{font-size:2.25rem}
+.cheok-large-text .t-work h2{font-size:1.75rem}.cheok-large-text .t-work h3{font-size:1.375rem}
