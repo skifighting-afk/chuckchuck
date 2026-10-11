@@ -45,7 +45,7 @@ export function OpsView({data,action,busy,branchId,demo,initial,swaps,leaveTab}:
   return <article className="ops-card" key={'w'+w.id}><div className="ops-card-top"><StatusBadge s={w.status}/><span className="ops-kind"><Users size={15} aria-hidden="true"/> {w.kind}</span></div>
    <h3>{w.shift.name} → {w.taker?.name||'?'} · {md(w.shift.date)}</h3>
    <p className="ops-shift">{w.shift.start}–{w.shift.end} 근무{w.counter?` ↔ ${md(w.counter.date)} ${w.counter.start}–${w.counter.end}`:''}</p>
-   <SwapProgress status={w.status} accepted={!!w.taker}/><p className="ops-approval-change">{w.counter?'승인하면 두 근무의 직원을 서로 바꿔요.':'승인하면 해당 근무를 수락한 직원으로 바꿔요.'}</p>
+   <SwapProgress status={w.status} accepted={!!w.taker}/><p className="ops-approval-change">{w.counter?'승인하면 두 근무의 직원을 서로 바꿔요.':'승인하면 해당 근무를 맡을 직원으로 바꿔요.'}</p>
    {imp&&<p className={'ops-impact'+(/52시간/.test(imp)?' warn':'')}>{imp}</p>}
    {w.reason&&<p className="ops-reason">요청 사유: {w.reason}</p>}
    <div className="ops-card-actions"><button type="button" className="ops-no" disabled={busy} onClick={()=>{setReject({type:'swap',id:w.id,name:w.shift.name});setWhy('')}}>반려</button><button type="button" className="ops-yes" disabled={busy} onClick={()=>approve(it)}>승인</button></div></article>;
