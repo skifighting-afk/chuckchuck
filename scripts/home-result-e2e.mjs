@@ -86,6 +86,24 @@ export async function homeResultE2E({browser,step}){
    await page.setViewportSize({width:390,height:844});await page.goto(url+'/features/payroll/',{waitUntil:'networkidle'});await page.screenshot({path:'ci-logs/home-feature-payroll-mobile.png',fullPage:true});
    await page.locator('.feature-breadcrumb a').click();await page.locator('#hero-title').waitFor();assert.equal(page.url(),url+'/');
   });
+  await step('가입 전 시작 순서 · 체험 종료 구분 · 모바일 큰 글씨',async()=>{
+   await page.goto(url,{waitUntil:'networkidle'});
+   const roadmap=page.getByRole('region',{name:'처음 시작도, 순서대로 척척.',exact:true});
+   assert.deepEqual(await roadmap.locator('li h3').allTextContents(),['우리 매장 만들기','직원 연결하기','첫 근무표 공개하기']);
+   assert.equal(await roadmap.getByRole('link').getAttribute('href'),'https://chukchukapp.kr/employee');
+   assert.equal(await page.locator('.trial-ending li').count(),3);assert.match(await page.locator('.trial-ending').innerText(),/조회하고 내려받을/);
+   if(await page.locator('html').evaluate(el=>el.classList.contains('large-text')))await page.locator('#pref-text').click();
+   const textSelector='.trial-ending li,.trial-ending strong,.start-roadmap h2,.start-roadmap h3,.start-roadmap p,.start-roadmap li>span,.start-roadmap a';
+   const normalSizes=await page.locator(textSelector).evaluateAll(els=>els.map(el=>parseFloat(getComputedStyle(el).fontSize)));
+   await page.locator('#pref-text').click();
+   const largeSizes=await page.locator(textSelector).evaluateAll(els=>els.map(el=>parseFloat(getComputedStyle(el).fontSize)));
+   assert.equal(largeSizes.length,normalSizes.length);largeSizes.forEach((size,i)=>assert(size>normalSizes[i],'actual large-text control must enlarge start/trial text '+i));
+   for(const large of [false,true]){
+    await page.evaluate(v=>document.documentElement.style.fontSize=v?'200%':'',large);
+    for(const width of [320,390,768,1440]){await page.setViewportSize({width,height:900});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'start roadmap overflow '+width+' large='+large);assert(await roadmap.locator('h2').evaluate(el=>el.getBoundingClientRect().left>=16),'start roadmap horizontal gutter '+width)}
+   }
+   await page.evaluate(()=>document.documentElement.style.fontSize='');await page.locator('#pref-text').click();await page.setViewportSize({width:390,height:844});await roadmap.scrollIntoViewIfNeeded();await page.screenshot({path:'ci-logs/home-start-roadmap-mobile.png',fullPage:true});
+  });
   await step('움직임 줄이기에서도 기록 흐름을 직접 확인',async()=>{
    const reduced=await browser.newContext({reducedMotion:'reduce',viewport:{width:390,height:844}});
    try{const p=await reduced.newPage();await p.goto(url,{waitUntil:'networkidle'});const flow=p.locator('#hero-record-flow'),play=flow.locator('#hero-flow-play');assert(await play.isDisabled());assert.equal(await play.getAttribute('aria-pressed'),'false');await flow.locator('[data-record-step="1"]').click();assert.equal(await flow.locator('[data-record-step="1"]').getAttribute('aria-pressed'),'true')}finally{await reduced.close()}
