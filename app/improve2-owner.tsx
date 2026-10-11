@@ -159,6 +159,7 @@ export function SettingsMore2({s,busy,save}:{s:Team,busy:boolean,save:Save}){
   <label>지각 몇 번이면 직원 메모에 자동 기록 <select value={f.lateMemo??0} onChange={e=>setF({...f,lateMemo:Number(e.target.value)})}><option value={0}>안 함</option>{[2,3,4,5].map(n=><option key={n} value={n}>이번 달 {n}번</option>)}</select></label>
   <label>매출 대비 인건비 목표(%) <input type="number" min={0} max={100} step={0.5} value={f.laborRatioTarget??''} onChange={e=>setF({...f,laborRatioTarget:e.target.value?Number(e.target.value):undefined})} placeholder="예: 25"/></label>
  </div>
+  <label className="t-check"><input type="checkbox" checked={f.staffRoutine!==false} onChange={e=>setF({...f,staffRoutine:e.target.checked?undefined:false})}/> 직원에게 일과 알림 보내기(출근 시간 10분 지나도 출근 기록이 없을 때 · 전날 저녁 8시 내일 근무 미리 알림)</label>
   <label className="t-check"><input type="checkbox" checked={!!f.digest} onChange={e=>setF({...f,digest:e.target.checked})}/> 미출근·퇴근 누락 알림을 낱개 대신 저녁 9시에 하루 요약으로 받기</label>
   <label>오늘 특별 지시(직원 첫 화면 맨 위, 오늘만) <input maxLength={200} value={f.todayNote?.date===todayK()?f.todayNote.text:''} onChange={e=>setF({...f,todayNote:e.target.value?{date:todayK(),text:e.target.value}:undefined})} placeholder="예: 오늘 3시 위생 점검 — 주방 정리 먼저"/></label>
   <p className="footnote">직원은 직원 화면에서 근무 전 알림 시간을 따로 고를 수 있어요(직원이 고르면 그 값이 먼저).</p>

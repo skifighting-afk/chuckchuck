@@ -114,6 +114,12 @@ ok('B020 after end hint',I.clockInHint([{date:day,start:'10:00',end:'18:00'}],K(
  const st2={settings:{},employees:[{id:'e1',branchId:'b'}],shifts:rs.shifts.filter(x=>x.employeeId==='e1'),attendance:rs.attendance,publishedWeeks:{'b:2026-10-12':{at:'x',acks:{}}}};
  ok('routine: staff',R.staffRoutine(st2,'e1',at('2026-10-15',12)).map(t=>t.id+':'+t.status),['in:done','ack:2026-10-12:todo','out:todo','next:todo']);
  ok('routine: streak allows 1 rest day',[R.streakOf(['2026-10-13','2026-10-14','2026-10-15'],'2026-10-15'),R.streakOf(['2026-10-11','2026-10-13','2026-10-14'],'2026-10-15'),R.streakOf(['2026-10-10'],'2026-10-15'),R.streakOf([],'2026-10-15')],[3,3,0,0]);
+ const sr=R.staffRoutineReminders(rs,at('2026-10-15',12,20));
+ ok('staff reminder: forgot clock-in (e2 only)',[sr.length,sr[0].to,sr[0].url,sr[0].title],[1,'e2','/app?clock=1','출근 찍는 걸 잊으셨나요?']);
+ ok('staff reminder: none before +10m / after end / on leave',[R.staffRoutineReminders(rs,at('2026-10-15',12,5)).length,R.staffRoutineReminders(rs,at('2026-10-15',18,30)).filter(a=>a.key.startsWith('staffin')).length,R.staffRoutineReminders({...rs,approvedLeaves:[{employeeId:'e2',start:'2026-10-15',end:'2026-10-15'}]},at('2026-10-15',12,20)).length],[0,0,0]);
+ const ev=R.staffRoutineReminders({...rs,publishedWeeks:{'b:2026-10-12':{at:'x',acks:{}}}},at('2026-10-15',20,5)).filter(a=>a.key.startsWith('staffeve'));
+ ok('staff reminder: 8pm tomorrow preview + ack nudge',[ev.length,ev[0].to,ev[0].title,ev[0].body.includes('확인했어요')],[1,'e1','내일 10:00 근무가 있어요',true]);
+ ok('staff reminder: owner can turn off',R.staffRoutineReminders({...rs,settings:{more:{staffRoutine:false}}},at('2026-10-15',12,20)).length,0);
 // ── 서버
 const T=await authedTest({domain:'example.invalid'}),{q,headersFor,id}=T,env=T.env;
 async function raw(user,path,body,method){return api(new Request('https://qa.local'+path,{method:method||(body?'POST':'GET'),headers:{origin:'https://qa.local',...(await headersFor(user))},...(body?{body:JSON.stringify(body)}:{})}),env)}

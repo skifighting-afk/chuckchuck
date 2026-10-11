@@ -178,3 +178,35 @@ export function routineReminder(s: Loose, now: number, tol = 5) {
   }
   return out;
 }
+
+/** 서버: 직원 일과 알림 — ① 출근 시간이 10분 지났는데 출근 기록이 없으면 본인에게 한 번 ② 저녁 8시에 내일 근무 미리 알림(+ 안 누른 근무표 확인)
+ *  사장님이 설정에서 끌 수 있다(settings.more.staffRoutine === false). */
+export function staffRoutineReminders(s: Loose, now: number) {
+  const out: Loose[] = [];
+  if (s.settings?.more?.staffRoutine === false) return out;
+  const today = kday(now), m = kmin(now), kh = new Date(now + H9).getUTCHours(), tmr = plus(today, 1);
+  const live = (s.employees || []).filter((e: Loose) => e.status !== '퇴사');
+  const att = s.attendance || [];
+  for (const e of live) {
+    const mine = (s.shifts || []).filter((x: Loose) => x.employeeId === e.id);
+    // ① 출근 잊음
+    for (const x of mine.filter((x: Loose) => x.date === today)) {
+      const st = toMin(x.start), en = toMin(x.end) <= st ? toMin(x.end) + 1440 : toMin(x.end);
+      if (m < st + 10 || m >= en || onLeave(s, e.id, today)) continue;
+      if (att.some((a: Loose) => a.employeeId === e.id && kday(Date.parse(a.start)) === today)) continue;
+      out.push({key: 'staffin:' + (x.id || e.id + ':' + today + ':' + x.start), to: e.id, kind: 'before', url: '/app?clock=1',
+        title: '출근 찍는 걸 잊으셨나요?', body: `${x.start} 출근이에요. 매장 QR을 찍어 출근을 남겨 주세요. 이미 찍었는데 안 보이면 사장님께 정정을 요청해요.`});
+    }
+    // ② 저녁 8시: 내일 근무 미리
+    if (kh === 20) {
+      const t = mine.filter((x: Loose) => x.date === tmr).sort((a: Loose, c: Loose) => a.start.localeCompare(c.start));
+      if (!t.length || onLeave(s, e.id, tmr)) continue;
+      const ws: 'mon' | 'sun' = s.settings?.weekStart === 'sun' ? 'sun' : 'mon', w0 = weekStart(today, ws);
+      const unacked = Object.entries(s.publishedWeeks || {}).some(([k, p]: [string, Loose]) => k.slice(0, k.lastIndexOf(':')) === e.branchId && k.slice(k.lastIndexOf(':') + 1) >= w0 && !p?.acks?.[e.id]);
+      out.push({key: `staffeve:${e.id}:${tmr}`, to: e.id, kind: 'schedule', url: '/app?daily=1',
+        title: `내일 ${t[0].start} 근무가 있어요`,
+        body: `${md(tmr)} ${t.map((x: Loose) => `${x.start}–${x.end}`).join(', ')} · 매장에 오면 출근 QR 찍는 것 잊지 마세요.${unacked ? ' 공개된 근무표에 "확인했어요"도 눌러 주세요.' : ''}`});
+    }
+  }
+  return out;
+}
