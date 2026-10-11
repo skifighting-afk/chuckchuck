@@ -5,7 +5,7 @@
 PASS: overnight duration, breaks, Korean month boundaries and wage validation.
 
 ── check-home-seo
-(node:2950) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(node:2946) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
 (Use `node --trace-warnings ...` to show where the warning was created)
 PASS: homepage search/social metadata, visible FAQ/prices, canonical domains and private app indexing boundary
 
