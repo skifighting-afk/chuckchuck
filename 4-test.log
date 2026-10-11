@@ -725,14 +725,22 @@ start guide rules: 19 passed
 PASS: legacy business guide loads and saves without rewriting business data
 PASS: authentication and business membership required
 PASS: server scope uses opaque identity, defaults and owner quests
-PASS: guide reads and writes reject stale parent account or business context
-PASS: preferences persist across independent reads
-file:///home/runner/work/chuckchuck/chuckchuck/scripts/check-start-guide-api.mjs:22
- assert.equal((await call('guideA','branch2')).data.preferences.mini,false);assert.notEqual((await call('guideB')).data.scope.key,a.data.scope.key);ok('same branch ID in different businesses and separate branches stay isolated');
-                                                                ^
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
 
-TypeError: Cannot read properties of undefined (reading 'mini')
-    at file:///home/runner/work/chuckchuck/chuckchuck/scripts/check-start-guide-api.mjs:22:65
-    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+503 !== 409
+
+    at file:///home/runner/work/chuckchuck/chuckchuck/scripts/check-start-guide-api.mjs:20:115
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: 503,
+  expected: 409,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
 
 Node.js v22.23.3
