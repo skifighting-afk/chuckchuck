@@ -140,7 +140,7 @@ export async function homeResultE2E({browser,step}){
     for(const width of [320,390,768,1440]){
      await page.setViewportSize({width,height:900});
      for(let chapter=0;chapter<8;chapter++){
-      if(width<=800){assert(await chooser.isVisible());await chooser.selectOption(String(chapter));assert(!(await exp.locator('.exp-chapters').isVisible()))}
+      if(width<=800){assert(await exp.locator('#exp-chapter-select').isVisible(),'selector is displayed at '+width);assert(await chooser.isVisible(),'selector has the exact question label at '+width);await chooser.selectOption(String(chapter));assert(!(await exp.locator('.exp-chapters').isVisible()))}
       else await exp.locator(`[data-chapter="${chapter}"]`).click();
       assert.equal(await chooser.inputValue(),String(chapter));assert.equal(await exp.getAttribute('data-chapter'),String(chapter));
       assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'experience overflow '+width+' chapter='+chapter+' large='+large);
