@@ -1,0 +1,15 @@
+.home-first-work{padding:24px;margin:0 0 24px;border:1px solid #b9cebf;border-radius:16px;background:#f4f8f1;color:#153e2d;min-width:0}
+.home-first-work .home-first-kicker{font-size:14px;font-weight:750;margin:0 0 16px;color:#416052}
+.home-first-work ol{list-style:none;padding:0;margin:0 0 20px;display:flex;flex-wrap:wrap;gap:10px 20px}
+.home-first-work li{display:flex;align-items:center;gap:7px;font-size:14px;line-height:1.5;color:#416052}
+.home-first-work li>span:first-child{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;flex:none;border:1px solid #b9cebf;border-radius:50%;background:white}
+.home-first-work li.current{color:#153e2d;font-weight:750}.home-first-work li.current>span:first-child{color:white;background:#153e2d;border-color:#153e2d}
+.home-first-work li.done>span:first-child{background:#d5f792;border-color:#d5f792;color:#153e2d}
+.home-first-work h2{font-size:24px;line-height:1.4;margin:0 0 10px;overflow-wrap:anywhere}
+.home-first-work>p{font-size:16px;line-height:1.7;margin:0 0 18px;overflow-wrap:anywhere}.home-first-work>p.home-first-note{font-size:14px;color:#416052}
+.home-first-work .home-main-action{min-height:48px;font-size:16px;white-space:normal;max-width:100%;line-height:1.5;text-align:left}
+.home-first-work button:focus-visible,.home-extra-guide summary:focus-visible{outline:3px solid #15643f;outline-offset:4px}
+.home-extra-guide{margin:20px 0;border-top:1px solid #dce7df;padding-top:16px}.home-extra-guide summary{min-height:44px;font-size:14px;font-weight:650;color:#416052;cursor:pointer;line-height:1.6;padding:10px 0}
+body.cheok-large-text .home-first-work li,body.cheok-large-text .home-first-work .home-first-kicker,body.cheok-large-text .home-first-work>p,body.cheok-large-text .home-extra-guide summary{font-size:18px}
+body.cheok-large-text .home-first-work h2{font-size:28px}body.cheok-large-text .home-first-work .home-main-action{font-size:20px}
+@media(max-width:600px){.home-first-work{padding:20px 16px}.home-first-work ol{gap:8px 14px}.home-first-work h2{font-size:22px}.home-first-work .home-main-action{width:100%}}
