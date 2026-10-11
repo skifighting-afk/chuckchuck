@@ -100,6 +100,8 @@ test('XLSX references preserve source worksheet row numbers',()=>{
  const rows=sheetRows(xml);
  assert.equal(parseHistory(rows,employees).unmatched[0].line,8);
  assert.equal(parseHistory(rows,employees,{8:'first'}).items[0]?.employeeId,'first');
+ const withGap=sheetRows(xml.replace('<row r="8">','<row r="2"/><row r="8">'));
+ assert.equal(parseHistory(withGap,employees).unmatched[0].line,8,'self-closing blank rows never consume the next data row');
 });
 console.log(`${failures?'FAIL':'PASS'}: ${checks-failures}/${checks} history matching regression cases.`);
 process.exitCode=failures?1:0;

@@ -33,7 +33,8 @@ const withSourceLines=(rows:string[][],sourceLines:number[]):SourceRows=>Object.
 export function sheetRows(sheetXml:string,sharedXml=''):SourceRows{
  const shared=[...sharedXml.matchAll(/<si>([\s\S]*?)<\/si>/g)].map(m=>[...m[1].matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)].map(t=>unxml(t[1])).join(''));
  const rows:string[][]=[],sourceLines:number[]=[];let previousLine=0;
- for(const r of sheetXml.matchAll(/<row\b([^>]*)>([\s\S]*?)<\/row>/g)){
+ for(const r of sheetXml.matchAll(/<row\b([^>]*?)(?:\/>|>([\s\S]*?)<\/row>)/g)){
+  if(r[2]===undefined){previousLine=Number(/\br="(\d+)"/.exec(r[1])?.[1]||previousLine+1);continue}
   const line=Number(/\br="(\d+)"/.exec(r[1])?.[1]||/\br="[A-Z]+(\d+)"/.exec(r[2])?.[1]||previousLine+1);previousLine=line;
   const row:string[]=[];
   for(const c of r[2].matchAll(/<c ([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)){
