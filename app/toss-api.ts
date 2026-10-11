@@ -7,7 +7,9 @@
 import {resolveStore} from './saas-api';
 import {isHQ} from './admin-api';
 import {serverError} from '../lib/errors';
-import {planId,periodPrice,MAX_BRANCHES,CONTRACT_EXTRA_PRICE,plans,type PlanId} from '../lib/plans';
+import {BillingError,createBillingQuote,prepareBillingQuote} from './billing-quotes';
+import {fulfillPlanOrder} from './billing-fulfill';
+import {planId,periodPrice,MAX_BRANCHES,CONTRACT_EXTRA_PRICE,plans,EMPLOYEE_PRICING_VERSION,type PlanId} from '../lib/plans';
 import {TOSS_API,tossAuth,newOrderId,validOrderId,validPaymentKey,applyPlanPaid,contractsDue,tossErrorText} from '../lib/toss';
 
 type Env={DB:D1Database,TOSS_CLIENT_KEY?:string,TOSS_SECRET_KEY?:string,TOSS_FETCH?:typeof fetch,HQ_ADMIN_EMAIL?:string,HQ_NATIVE_USER_ID?:string};
@@ -51,10 +53,17 @@ export async function tossApi(request:Request,env:Env){
   }
 
   const linked=await resolveStore(env.DB,user);if(!linked||linked.access!=='owner'||linked.coowner)return json({error:'결제는 가게 대표 계정에서만 할 수 있어요.'},403);
+  if(b.action==='quote')return json(await createBillingQuote(env.DB,linked.owner,b.plan));
+  if(b.action==='prepare'&&b.kind!=='contracts'&&b.quoteId){
+   const order=await prepareBillingQuote(env.DB,linked.owner,b,ready);
+   const fulfillment=order.noCharge?await fulfillPlanOrder(env.DB,order.orderId):null;
+   return json({...order,...(fulfillment?{paidUntil:fulfillment.periodEnd}:{}),clientKey:ready?env.TOSS_CLIENT_KEY:null,customerKey:'cc_'+(await hash(linked.owner)).slice(0,40)});
+  }
   if(!ready)return json({error:'아직 결제를 받지 않아요. 지금은 무료·체험으로 계속 이용하시면 돼요.',code:'BILLING_NOT_READY'},503);
   const owner=linked.owner,nowIso=new Date().toISOString();
 
   if(b.action==='prepare'){
+   if(b.kind!=='contracts'&&JSON.parse(linked.row.data)._account?.pricingVersion===EMPLOYEE_PRICING_VERSION)throw new BillingError('QUOTE_REQUIRED','현재 직원 수와 금액을 먼저 확인해 주세요.',400);
    let kind:'plan'|'contracts',amount:number,orderName:string,plan='contracts',slots=0,months=0,periodStart:string|null=null;
    if(b.kind==='contracts'){
     if(!/^\d{4}-\d{2}$/.test(String(b.month||'')))return json({error:'결제할 달을 골라 주세요.'},400);
@@ -102,6 +111,6 @@ export async function tossApi(request:Request,env:Env){
    await env.DB.prepare("UPDATE payments SET status='cancelled',fail_reason=? WHERE order_id=? AND owner=? AND status='ready'").bind(String(b.code||'사용자 취소').slice(0,60),b.orderId,owner).run();return json({ok:true});
   }
   return json({error:'이 작업은 처리할 수 없어요. 새로고침한 뒤 다시 시도해 주세요.'},400);
- }catch(e){return serverError('billing',e,'결제를 처리하지 못했어요. 잠시 뒤 다시 시도해 주세요. 돈이 빠져나갔다면 문의하기 → 요금·결제로 알려 주세요.')}
+ }catch(e){if(e instanceof BillingError)return json({error:e.message,code:e.code},e.status);return serverError('billing',e,'결제를 처리하지 못했어요. 잠시 뒤 다시 시도해 주세요. 돈이 빠져나갔다면 문의하기 → 요금·결제로 알려 주세요.')}
 }
 async function hash(s:string){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('toss-customer:'+s));return Array.from(new Uint8Array(b),x=>x.toString(16).padStart(2,'0')).join('')}

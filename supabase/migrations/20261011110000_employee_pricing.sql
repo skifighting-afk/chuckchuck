@@ -12,6 +12,7 @@ create table if not exists billing_quotes (
 create index if not exists billing_quotes_owner on billing_quotes(owner, created_at);
 alter table billing_quotes enable row level security;
 revoke all on billing_quotes from anon, authenticated;
+alter table billing_quotes add column if not exists context jsonb not null default '{}'::jsonb;
 
 alter table payments add column if not exists pricing_version text;
 alter table payments add column if not exists pricing_snapshot jsonb;
