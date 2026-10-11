@@ -12,3 +12,11 @@ export function documentOverview(employees:Employee[],contracts:Contract[]|null,
   return {employee:e,contract,contractId:c?.id,payslip,needsAction:contract.action||payslip.action};
  });
 }
+export type DocumentKind='all'|'contract'|'payslip';
+export function filterDocumentOverview(rows:ReturnType<typeof documentOverview>,filter:{query:string;kind:DocumentKind;state:string;pending:boolean}){
+ const query=filter.query.trim();
+ return rows.filter(row=>{
+  const states=filter.kind==='all'?[row.contract,row.payslip]:[row[filter.kind]];
+  return (!query||row.employee.name.includes(query))&&states.some(status=>(filter.state==='all'||status.label===filter.state)&&(!filter.pending||status.action));
+ });
+}
