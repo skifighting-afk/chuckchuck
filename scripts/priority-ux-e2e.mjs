@@ -147,6 +147,7 @@ export async function priorityUxE2E({owner,staff,srv,step,browser}){
    await page.setViewportSize({width:390,height:844});await page.screenshot({path:'ci-logs/hr-report-readable-mobile.png',fullPage:true});
    await page.goto(srv.ORIGIN+'/demo?role=owner&screen=settings',{waitUntil:'networkidle'});assert.equal(await page.getByText('매출 대비 인건비 목표(%)',{exact:true}).count(),0);
   });
+  await (await import('./home-first-work-e2e.mjs')).homeFirstWorkE2E({page,srv,step});
   await step('홈 핵심 업무 먼저 · 모바일 직원 검색 열기와 복귀',async()=>{
    await page.setViewportSize({width:390,height:844});await page.goto(srv.ORIGIN+'/demo?role=owner&screen=home',{waitUntil:'networkidle'});
    const core=page.getByRole('region',{name:'먼저 확인할 세 가지',exact:true});await core.waitFor();assert.equal(await core.getByRole('button').count(),3);

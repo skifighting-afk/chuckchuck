@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import {homeFirstWork} from '../lib/home-first-work.ts';
+const blank={employees:[],shifts:[],attendance:[]};
+assert.equal(homeFirstWork(blank,'a').next.id,'employees');
+const employee={id:'e',branchId:'a',status:'재직'};
+const started={...blank,employees:[employee,{id:'old',branchId:'a',status:'퇴사'},{id:'other',branchId:'b',status:'재직'}]};
+assert.equal(homeFirstWork(started,'a').next.id,'schedule');
+const shift={id:'s',employeeId:'e',branchId:'a'};
+assert.equal(homeFirstWork({...started,shifts:[{...shift,branchId:'b'}]},'a').next.id,'schedule');
+const planned={...started,shifts:[shift]};
+assert.equal(homeFirstWork(planned,'a').next.id,'attendance');
+assert.equal(homeFirstWork({...planned,attendance:[{employeeId:'other',start:'2026-10-12T00:00:00Z'}]},'a').next.id,'attendance');
+assert.equal(homeFirstWork({...planned,attendance:[{employeeId:'e',start:'invalid'}]},'a').next.id,'attendance');
+assert.equal(homeFirstWork({...planned,attendance:[{employeeId:'e',start:'2026-10-12T00:00:00Z'}]},'a').next,null);
+assert.equal(homeFirstWork({...blank,employees:[{...employee,status:'퇴사'}]},'a').next.id,'employees');
+assert.deepEqual(homeFirstWork(blank,'a').steps.map(x=>x.id),['employees','schedule','attendance']);
+console.log('PASS: first work follows actual selected-store data, excludes retired/other-store entries and never asks for a fabricated clock record.');
