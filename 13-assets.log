@@ -1,1 +1,22 @@
-PASS: public immutable assets, 3 generations / 92 files, HTTP 200 + MIME + SHA-256.
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: chunks/admin-desk-DuKQO5Lu.js must remain available
+
+503 !== 200
+
+    at file:///home/runner/work/chuckchuck/chuckchuck/scripts/check-public-assets.mjs:23:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Promise.all (index 2)
+    at async checkPublicAssets (file:///home/runner/work/chuckchuck/chuckchuck/scripts/check-public-assets.mjs:20:2)
+    at async file:///home/runner/work/chuckchuck/chuckchuck/scripts/check-public-assets.mjs:31:15 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 503,
+  expected: 200,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v22.23.3
