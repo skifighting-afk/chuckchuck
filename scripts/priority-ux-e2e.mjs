@@ -110,7 +110,7 @@ export async function priorityUxE2E({owner,staff,srv,step,browser}){
   });
   await step('반복 저장의 실제 변경 범위 · 휴가만 있는 날짜의 직원 이름',async()=>{
    const saved=await srv.db.q('SELECT owner,data FROM stores LIMIT 1').first(),data=JSON.parse(saved.data),emp=data.employees[0],one={id:'preview-series-one',series:'preview-series',employeeId:emp.id,date:'2099-10-13',start:'09:00',end:'15:00',breakMinutes:30};
-   data.shifts.push(one,{...one,id:'preview-series-two',date:'2099-10-20',start:'10:00',end:'16:00'});data.approvedLeaves=[...(data.approvedLeaves||[]),{employeeId:emp.id,start:'2099-10-14',end:'2099-10-14'}];
+   data.shifts.push(one,{...one,id:'preview-series-two',date:'2099-10-20',start:'10:00',end:'16:00'});data._operations={...data._operations,leaves:[...(data._operations?.leaves||[]),{id:'preview-approved-leave',employeeId:emp.id,start:'2099-10-14',end:'2099-10-14',status:'승인'}]};
    await srv.db.q('UPDATE stores SET data=? WHERE owner=?',JSON.stringify(data),saved.owner).run();
    try{
     await page.goto(srv.ORIGIN+'/app?screen=schedule',{waitUntil:'networkidle'});await page.getByLabel('근무표 날짜',{exact:true}).fill('2099-10-13');
