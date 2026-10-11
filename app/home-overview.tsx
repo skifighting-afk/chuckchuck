@@ -5,21 +5,22 @@ import {todayBoard,budgetStatus,homeAlerts} from '@/lib/close-check';
 import {JoinInbox} from './join-inbox';
 import {QuestBoard} from './quests';
 import {DailyBoard} from './daily';
+import {HomePriorities} from './home-priorities';
 // 가이드 34 → 시작 퀘스트: 실제로 해 봐야 깨지는 미션 보드(app/quests.tsx)
-export function HomeOverview({state,branch,onPayroll,onAttendance,onSchedule,onEmployees,onRegister,onJoin,children,assistant,demo=false,onChanged}:{assistant?:import('react').ReactNode;demo?:boolean;onChanged?:()=>void;children?:import('react').ReactNode;state:Team;branch:string;onPayroll:()=>void;onAttendance:()=>void;onSchedule:()=>void;onEmployees:()=>void;onRegister:()=>void;onJoin?:()=>void}){
+export function HomeOverview({state,branch,onPayroll,onAttendance,onSchedule,onEmployees,onRegister,onRequests,onJoin,children,assistant,demo=false,onChanged}:{assistant?:import('react').ReactNode;demo?:boolean;onChanged?:()=>void;children?:import('react').ReactNode;state:Team;branch:string;onPayroll:()=>void;onAttendance:()=>void;onSchedule:()=>void;onEmployees:()=>void;onRegister:()=>void;onRequests:()=>void;onJoin?:()=>void}){
  const employees=state.employees.filter(e=>e.branchId===branch),ids=new Set(employees.map(e=>e.id)),month=today().slice(0,7),run=state.payrollRuns[month+':'+branch];
  const rows=run?.locked?run.rows:calculate(state,month).filter(e=>e.branchId===branch),total=rows.reduce((sum:number,row:any)=>sum+row.net,0);
  const here=state.attendance.filter(a=>ids.has(a.employeeId));
  const findings=checkDay(today(),state.shifts.filter(x=>ids.has(x.employeeId)),here,((state.settings as any).attendanceTolerance||'normal'),Date.now(),((state as any).approvedLeaves||[]));
  const checklist=<QuestBoard role="owner" state={state} branch={branch} demo={demo}/>;
- if(!employees.length)return <>{!demo&&<JoinInbox onChanged={onChanged||(()=>location.reload())}/>}{checklist}<section className="home-start"><img src="/cheokcheoki-welcome.png" alt="" width="88" height="88"/><h2>직원이 직접 신청하면, 사장님은 수락만</h2><p>직원에게 가입 주소를 알려 주세요. 합류 신청을 확인하고 수락하면 우리 가게에 연결돼요.</p><button className="home-main-action" onClick={onJoin||(()=>location.assign('/staff-requests'))}>직원 가입 안내·신청 확인 →</button><p><button onClick={onRegister}>사장님이 직접 직원 입력하기</button></p></section></>;
+ if(!employees.length)return <>{!demo&&<JoinInbox onChanged={onChanged||(()=>location.reload())}/>}<section className="home-start"><img src="/cheokcheoki-welcome.png" alt="" width="88" height="88"/><h2>직원이 직접 신청하면, 사장님은 수락만</h2><p>직원에게 가입 주소를 알려 주세요. 합류 신청을 확인하고 수락하면 우리 가게에 연결돼요.</p><button className="home-main-action" onClick={onJoin||(()=>location.assign('/staff-requests'))}>직원 가입 안내·신청 확인 →</button><p><button onClick={onRegister}>사장님이 직접 직원 입력하기</button></p></section>{checklist}</>;
  const tolName=((state.settings as any).attendanceTolerance||'normal'),board=todayBoard(state,branch,today(),findings,Date.now(),tolName==='lenient'?10:tolName==='strict'?0:5),alerts=homeAlerts(state,branch,today(),board),budget=budgetStatus(state,branch,month),span=board.hi-board.lo,pos=(h:number)=>((h-board.lo)/span*100)+'%';
  const nowLabel=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric',weekday:'long'}).format(new Date())+' '+new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',hour:'numeric',minute:'2-digit'}).format(new Date());
  const count=(st:string[])=>new Set(board.rows.filter(r=>st.includes(r.status)).map(r=>r.employeeId)).size;
  const groups=[{key:'working',label:'일하는 중',n:count(['working','late','extra'])},{key:'late',label:'그중 늦게 출근',n:count(['late'])},{key:'noshow',label:'출근 기록 없음',n:count(['noshow','missed'])},{key:'planned',label:'출근 전',n:count(['planned'])},{key:'done',label:'퇴근',n:count(['done'])}].filter(g=>g.n>0);
  const ticks=Array.from({length:5},(_,i)=>board.lo+Math.round(span*i/4));
  const shown=board.rows.slice(0,10);
- return <div className="home-overview">{!demo&&<JoinInbox onChanged={onChanged||(()=>location.reload())}/>}<DailyBoard role="owner" state={state} branch={branch} demo={demo}/>{checklist}
+ return <div className="home-overview">{!demo&&<JoinInbox onChanged={onChanged||(()=>location.reload())}/>}<HomePriorities date={today()} staff={new Set(board.rows.map(r=>r.employeeId)).size} total={total} month={month} locked={!!run?.locked} onSchedule={onSchedule} onRequests={onRequests} onPayroll={onPayroll}/>
   {alerts.length>0&&<section className="home-alerts" aria-labelledby="home-alerts-title"><h2 id="home-alerts-title">알림 <b>{alerts.length}</b></h2><ul>{alerts.slice(0,5).map(a=><li key={a.key} className={a.tone}><div><b>{a.title}</b><span>{a.detail}</span></div><button type="button" onClick={onAttendance}>확인</button></li>)}</ul>{alerts.length>5&&<button type="button" className="home-alerts-more" onClick={onAttendance}>알림 {alerts.length-5}건 더 보기</button>}</section>}
   {(()=>{const t=todayLabor(employees as any,here as any,today(),Date.now());return <p className="home-today-cost" aria-label="오늘 인건비"><span>오늘 인건비 지금까지</span><b>약 {won(t.cost)}원</b><small>{t.hours}시간 · 시급×일한 시간, 월급은 하루치</small></p>})()}<button type="button" className="home-pay" onClick={onPayroll}><span className="home-pay-k">{Number(month.slice(5))}월 {run?.locked?'확정':'예상'} 급여</span><span className="home-pay-v">{won(total)}<small>원</small></span><span className="home-pay-note">{run?.locked?'확정된 실수령 합계예요. 송금 내역은 아니에요.':'지금까지 입력된 근무·수당·공제로 계산했어요. 확정 전이에요.'}</span>{budget&&<span className={'home-pay-budget'+(budget.over?' over':budget.near?' near':'')}><i style={{width:Math.min(100,Math.round(budget.ratio*100))+'%'}}/><em>인건비 예산 {Math.round(budget.ratio*100)}% · 근무표 기준 {won(budget.planned)}원 / {won(budget.budget)}원</em></span>}<span className="home-pay-go">급여 자세히 보기</span></button>
   <section className="today-now" aria-labelledby="today-now-title">
@@ -33,6 +34,7 @@ export function HomeOverview({state,branch,onPayroll,onAttendance,onSchedule,onE
    </div>:<p className="today-empty">근무표를 짜 두면 오늘 누가 언제 일하는지 여기서 한눈에 보여요.</p>}
    <div className="today-actions"><button type="button" onClick={onAttendance}>출퇴근 기록 보기</button><button type="button" onClick={onSchedule}>{board.rows.length?'오늘 근무표':'근무표 짜기'}</button></div>
   </section>
+  <DailyBoard role="owner" state={state} branch={branch} demo={demo}/>{checklist}
   {assistant}
   {children}
   <button className="home-schedule-link" onClick={onJoin||(()=>location.assign('/staff-requests'))}>직원 가입 주소 보내기 · 합류 신청 관리 →</button>
