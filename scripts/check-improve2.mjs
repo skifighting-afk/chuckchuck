@@ -78,7 +78,22 @@ ok('B020 after end hint',I.clockInHint([{date:day,start:'10:00',end:'18:00'}],K(
 {const {TOURS}=await import('../lib/tour-steps.ts');const PAGES=['홈','직원 관리','근무 스케줄','출퇴근 기록','급여·명세서','휴가·공지','매장 매뉴얼','인건비 리포트','설정'];
  ok('owner tour 8+ steps, staff 5+',[TOURS.owner.length>=8,TOURS.staff.length>=5],[true,true]);
  ok('every step has title+body',[...TOURS.owner,...TOURS.staff].every(s=>s.title&&s.body&&s.body.length<=160),true);
- ok('owner pages exist',TOURS.owner.every(s=>!s.page||PAGES.includes(s.page))&&(!TOURS.owner.at(-1).action?.page||PAGES.includes(TOURS.owner.at(-1).action.page)),true);}
+ ok('owner pages exist',TOURS.owner.every(s=>!s.page||PAGES.includes(s.page))&&(!TOURS.owner.at(-1).action?.page||PAGES.includes(TOURS.owner.at(-1).action.page)),true);
+ // 시작 퀘스트
+ const Q=await import('../lib/quests.ts');
+ ok('quests: owner 9, staff 5, ids unique',[Q.QUESTS.owner.length,Q.QUESTS.staff.length,new Set(Q.QUESTS.owner.map(q=>q.id)).size,new Set(Q.QUESTS.staff.map(q=>q.id)).size],[9,5,9,5]);
+ ok('quests: every quest has steps+hint+badge, owner pages exist',[...Q.QUESTS.owner,...Q.QUESTS.staff].every(q=>q.steps.length&&q.steps.every(s=>s.hint&&s.find.length)&&q.badge.name&&q.xp>0)&&Q.QUESTS.owner.every(q=>!q.page||PAGES.includes(q.page)),true);
+ ok('quests: done keys match quest ids',[Object.keys(Q.questDone('owner',{},'b','')).sort().join(),Object.keys(Q.questDone('staff',{},'b','me')).sort().join()],[Q.QUESTS.owner.map(q=>q.id).sort().join(),Q.QUESTS.staff.map(q=>q.id).sort().join()]);
+ ok('quests: total XP reaches max level',[Q.levelOf('owner',Q.QUESTS.owner.reduce((n,q)=>n+q.xp,0)).max,Q.levelOf('staff',Q.QUESTS.staff.reduce((n,q)=>n+q.xp,0)).max],[true,true]);
+ const st={branches:[{id:'b',address:'서울 구로구',hours:{open:'10:00',close:'22:00'}},{id:'c',address:''}],employees:[{id:'e1',branchId:'b'},{id:'e2',branchId:'c'}],shifts:[{employeeId:'e1'}],attendance:[{employeeId:'e2'}],publishedWeeks:{'b:2026-10-05':{at:'x',acks:{}}},payrollRuns:{'2026-09:b':{locked:true,branch:'b'}},dayOffWishes:[{employeeId:'e1'}]};
+ const d=Q.questDone('owner',st,'b','',['qr']);
+ ok('quests: owner done from records',[d.store,d.staff,d.shift,d.publish,d.qr,d.clock,d.notice,d.pay],[true,true,true,true,true,false,false,true]);
+ ok('quests: other branch not done',[Q.questDone('owner',st,'c','').store,Q.questDone('owner',st,'c','').publish,Q.questDone('owner',st,'c','').clock],[false,false,true]);
+ ok('quests: staff done',Q.questDone('staff',st,'b','e1',['push']),{push:true,schedule:false,pay:false,wish:true,clock:false});
+ const sm=Q.questSummary('owner',d);ok('quests: summary xp/next/level',[sm.count,sm.xp,sm.next.id,sm.level.level,sm.all],[6,800,'clock',4,false]);
+ ok('quests: demo hides noDemo',[Q.questSummary('staff',{},true).list.some(q=>q.id==='wish'),Q.questSummary('staff',{}).list.some(q=>q.id==='wish')],[false,true]);
+ ok('quests: level edges',[Q.levelOf('owner',0).level,Q.levelOf('owner',149).level,Q.levelOf('owner',150).level,Q.levelOf('owner',275).pct],[1,1,2,50]);
+ ok('quests: parseFind',[Q.parseFind('[role=dialog] field:이름'),Q.parseFind('button.primary==설정 저장'),Q.parseFind('a@@b'),Q.parseFind('.x')],[{scope:'[role=dialog]',css:'',field:'이름'},{scope:'',css:'button.primary',text:'설정 저장',exact:true},{scope:'',css:'a',text:'b'},{scope:'',css:'.x'}]);}
 // ── 서버
 const T=await authedTest({domain:'example.invalid'}),{q,headersFor,id}=T,env=T.env;
 async function raw(user,path,body,method){return api(new Request('https://qa.local'+path,{method:method||(body?'POST':'GET'),headers:{origin:'https://qa.local',...(await headersFor(user))},...(body?{body:JSON.stringify(body)}:{})}),env)}
