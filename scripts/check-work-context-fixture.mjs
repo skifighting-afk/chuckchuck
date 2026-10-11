@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {normalizeTeam} from '../dist/server/team-model.js';
+import {personalTeam} from '../lib/personal-team.ts';
+import {lockedSelfRun} from './work-context-e2e.mjs';
+const data=normalizeTeam(),self=data.employees[0],key='2026-09:'+self.branchId;
+data.payrollRuns[key]=lockedSelfRun(data,self);
+const own=personalTeam(data,self.id);
+assert.equal(own.payrollRuns[key]?.locked,true,'finalized browser fixture survives the real employee authorization filter');
+assert.deepEqual(own.payrollRuns[key].rows.map(row=>row.employeeId),[self.id]);
+assert.equal(typeof own.payrollRuns[key].rows[0].net,'number');
+console.log('PASS: calculated self snapshot reaches the authorized employee finalized view.');
