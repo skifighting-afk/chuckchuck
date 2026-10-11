@@ -48,6 +48,29 @@ export async function homeResultE2E({browser,step}){
    await page.setViewportSize({width:390,height:844});await page.locator('.price-examples').scrollIntoViewIfNeeded();
    await page.screenshot({path:'ci-logs/home-price-comparison-mobile.png'});
   });
+  await step('기능 소개 읽기 · 전후 비교 · 서류 뒤 시작 · 모바일 제목',async()=>{
+   for(const large of [false,true]){
+    await page.goto(url,{waitUntil:'networkidle'});
+    if(await page.locator('html').evaluate(el=>el.classList.contains('large-text'))!==large)await page.locator('#pref-text').click();
+    const stories=page.locator('.feature-story');assert.equal(await stories.count(),8);
+    assert.equal(await page.locator('.feature-secondary-group .feature-story').count(),4);
+    for(const story of await stories.all()){
+     assert.equal(await story.locator('.feature-difference dt').allTextContents().then(v=>v.join('/')),'이전에는/척척사장에서는');
+     assert.equal(await story.locator('figcaption').innerText(),'기능 설명을 위한 예시 화면입니다.');
+    }
+    const start=page.locator('.feature-start .btn');assert.match(await start.getAttribute('href'),/\/signup\?role=owner&plan=basic$/);assert.equal(await start.innerText(),'30일 무료로 시작하기');
+    assert(await page.evaluate(()=>document.querySelector('#feature-documents').compareDocumentPosition(document.querySelector('.feature-start'))&Node.DOCUMENT_POSITION_FOLLOWING));
+    assert(await page.evaluate(()=>document.querySelector('.feature-start').compareDocumentPosition(document.querySelector('.feature-secondary-group'))&Node.DOCUMENT_POSITION_FOLLOWING));
+    for(const width of [320,390,768,1440]){
+     await page.setViewportSize({width,height:900});await page.evaluate(()=>document.fonts.ready);
+     assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'feature stories overflow '+width+' large='+large);
+     for(const heading of await stories.locator('h3').all())assert(await heading.evaluate(el=>el.getBoundingClientRect().height<=parseFloat(getComputedStyle(el).lineHeight)*3+2),'feature title longer than3lines '+width+' large='+large);
+     assert((await start.boundingBox()).height>=48);
+     const xs=await stories.locator('.feature-story-copy').evaluateAll(els=>els.slice(0,4).map(el=>Math.round(el.getBoundingClientRect().left)));assert.equal(new Set(xs).size,1,'core copy shares left axis');
+    }
+   }
+   await page.setViewportSize({width:390,height:844});await page.locator('.feature-start').scrollIntoViewIfNeeded();await page.screenshot({path:'ci-logs/home-feature-clarity-mobile.png'});
+  });
   await step('움직임 줄이기에서도 기록 흐름을 직접 확인',async()=>{
    const reduced=await browser.newContext({reducedMotion:'reduce',viewport:{width:390,height:844}});
    try{const p=await reduced.newPage();await p.goto(url,{waitUntil:'networkidle'});const flow=p.locator('#hero-record-flow'),play=flow.locator('#hero-flow-play');assert(await play.isDisabled());assert.equal(await play.getAttribute('aria-pressed'),'false');await flow.locator('[data-record-step="1"]').click();assert.equal(await flow.locator('[data-record-step="1"]').getAttribute('aria-pressed'),'true')}finally{await reduced.close()}
