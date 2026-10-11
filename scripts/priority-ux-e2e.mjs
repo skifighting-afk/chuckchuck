@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {mkdir,readFile} from 'node:fs/promises';
 import {dayRows} from '../lib/attendance-check.ts';
 import {attendanceEvidence} from '../lib/attendance-display.ts';
-import {normalizeTeam} from '../lib/team-model.ts';
+import {normalizeTeam} from '../dist/server/team-model.js';
 export async function priorityUxE2E({owner,staff,srv,step,browser}){
  const ctx=await browser.newContext({storageState:await owner.context().storageState(),serviceWorkers:'block',viewport:{width:1440,height:900}}),page=await ctx.newPage();
  try{
