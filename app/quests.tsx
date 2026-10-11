@@ -57,6 +57,8 @@ export function QuestHost({role,state,branch,selfId='',demo=false,go}:{role:Ques
  const [active,setActive]=useState<Quest|null>(null),[idx,setIdx]=useState(0),[rect,setRect]=useState<DOMRect|null>(null),[lost,setLost]=useState(false);
  const [party,setParty]=useState<{q:Quest,prevXp:number}|null>(null),[toast,setToast]=useState<Quest|null>(null);
  const idxRef=useRef(0);idxRef.current=idx;
+ // 초기 설정 창(SetupGate)이 퀘스트 중에는 비켜서도록 알린다
+ useEffect(()=>{try{window.dispatchEvent(new CustomEvent('cc-quest-active',{detail:{role,id:active?.id||null}}))}catch{}},[active,role]);
  const activeRef=useRef<Quest|null>(null);activeRef.current=active;
  useEffect(()=>{if(guide.status==='scope-changed'){setActive(null);setRect(null);setParty(null);setToast(null);restored.current=false}},[guide.status]);
  const ping=useCallback((id:string)=>{const p=guide.client?.getSnapshot().data?.preferences.acknowledged||[];if(!p.includes(id))save({pings:[...p,id]})},[guide.client,save]);

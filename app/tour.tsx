@@ -15,7 +15,7 @@ function findTarget(step:TourStep):HTMLElement|null{
  return null;
 }
 
-export function Tour({role,go,auto=true}:{role:TourRole,go?:(page:string)=>void,auto?:boolean}){
+export function Tour({role,go,auto=true,mandatory=false}:{role:TourRole,go?:(page:string)=>void,auto?:boolean,mandatory?:boolean}){
  const guide=useStartGuide(),restored=useRef(false);
  const steps=TOURS[role],[i,setI]=useState(-1),[rect,setRect]=useState<DOMRect|null>(null),card=useRef<HTMLDivElement>(null),lastFocus=useRef<HTMLElement|null>(null);
  const open=i>=0,step=open?steps[i]:null;
@@ -41,7 +41,7 @@ export function Tour({role,go,auto=true}:{role:TourRole,go?:(page:string)=>void,
  // 크기·스크롤이 바뀌면 다시 재기
  useEffect(()=>{if(!step)return;const re=()=>{const el=findTarget(step);setRect(el?el.getBoundingClientRect():null)};addEventListener('resize',re);addEventListener('scroll',re,true);return()=>{removeEventListener('resize',re);removeEventListener('scroll',re,true)}},[i]);
  useLayoutEffect(()=>{if(open)card.current?.focus()},[i,open]);
- useEffect(()=>{if(!open)return;const k=(e:KeyboardEvent)=>{if(e.key==='Escape'){e.preventDefault();close(false)}else if(e.key==='ArrowRight'){e.preventDefault();next()}else if(e.key==='ArrowLeft'){e.preventDefault();prev()}};addEventListener('keydown',k,true);return()=>removeEventListener('keydown',k,true)},[open,i]);
+ useEffect(()=>{if(!open)return;const k=(e:KeyboardEvent)=>{if(e.key==='Escape'){e.preventDefault();if(!mandatory||i>=steps.length-1)close(false)}else if(e.key==='ArrowRight'){e.preventDefault();next()}else if(e.key==='ArrowLeft'){e.preventDefault();prev()}};addEventListener('keydown',k,true);return()=>removeEventListener('keydown',k,true)},[open,i]);
  const next=()=>{if(i>=steps.length-1){close(true);return}setI(i+1)};
  const prev=()=>{if(i>0)setI(i-1)};
  if(!open||!step)return null;
@@ -68,7 +68,7 @@ export function Tour({role,go,auto=true}:{role:TourRole,go?:(page:string)=>void,
    <p id="tour-body" aria-live="polite">{step.body}</p>
    {step.tip&&<p className="tour-tip">💡 {step.tip}</p>}
    <div className="tour-actions">
-    <button type="button" className="tour-skip" onClick={()=>close(false)}>{i===steps.length-1?'닫기':'건너뛰기'}</button>
+    {(!mandatory||i===steps.length-1)&&<button type="button" className="tour-skip" onClick={()=>close(false)}>{i===steps.length-1?'닫기':'건너뛰기'}</button>}
     <span className="tour-count">{i+1} / {steps.length}</span>
     {i>0&&<button type="button" className="secondary" onClick={prev}>이전</button>}
     {action&&i===steps.length-1?<button type="button" className="primary" onClick={()=>{close(true);if(action.page&&go)go(action.page);if(action.href)location.assign(action.href)}}>{action.label}</button>:<button type="button" className="primary" onClick={next}>{i===steps.length-1?'시작하기':'다음'}</button>}

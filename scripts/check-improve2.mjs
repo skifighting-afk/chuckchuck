@@ -120,6 +120,13 @@ ok('B020 after end hint',I.clockInHint([{date:day,start:'10:00',end:'18:00'}],K(
  const ev=R.staffRoutineReminders({...rs,publishedWeeks:{'b:2026-10-12':{at:'x',acks:{}}}},at('2026-10-15',20,5)).filter(a=>a.key.startsWith('staffeve'));
  ok('staff reminder: 8pm tomorrow preview + ack nudge',[ev.length,ev[0].to,ev[0].title,ev[0].body.includes('확인했어요')],[1,'e1','내일 10:00 근무가 있어요',true]);
  ok('staff reminder: owner can turn off',R.staffRoutineReminders({...rs,settings:{more:{staffRoutine:false}}},at('2026-10-15',12,20)).length,0);
+ // 튜토리얼 센터·초기 설정
+ const TU=await import('../lib/tutorials.ts'),QQ=await import('../lib/quests.ts'),PG=['홈','직원 관리','근무 스케줄','출퇴근 기록','급여·명세서','휴가·공지','매장 매뉴얼','인건비 리포트','설정','근로계약서'];
+ ok('tutorials: from points to real quests, every item runnable',[...TU.TUTORIALS.owner.map(t=>[t,'owner']),...TU.TUTORIALS.staff.map(t=>[t,'staff'])].every(([t,r])=>t.href||(t.from?QQ.QUESTS[r].some(q=>q.id===t.from):t.steps?.length)),true);
+ ok('tutorials: owner pages exist',TU.TUTORIALS.owner.every(t=>!t.page||PG.includes(t.page)),true);
+ ok('tutorials: search ignores spaces',[TU.searchTutorials(TU.TUTORIALS.owner,'급 여').map(t=>t.id),TU.searchTutorials(TU.TUTORIALS.owner,'큐알').map(t=>t.id)],[['pay'],['qr']]);
+ const empty={settings:{more:{}},employees:[],shifts:[]};
+ ok('setup: new account needs setup, done flag/old data skip',[TU.setupNeeded(empty,{}),TU.setupNeeded({...empty,settings:{more:{setupDoneAt:'x'}}},{}),TU.setupNeeded({...empty,employees:[{}],shifts:[{}]},{}),TU.setupNeeded(empty,{store:true,staff:true,shift:true})],[true,false,false,false]);
 // ── 서버
 const T=await authedTest({domain:'example.invalid'}),{q,headersFor,id}=T,env=T.env;
 async function raw(user,path,body,method){return api(new Request('https://qa.local'+path,{method:method||(body?'POST':'GET'),headers:{origin:'https://qa.local',...(await headersFor(user))},...(body?{body:JSON.stringify(body)}:{})}),env)}
