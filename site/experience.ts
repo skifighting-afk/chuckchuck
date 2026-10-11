@@ -26,7 +26,8 @@ function render(animate=true){
  const c=chapters[chapter]; host!.dataset.chapter=String(chapter); host!.dataset.step=String(step);
  el('exp-eyebrow').textContent=`${String(chapter+1).padStart(2,'0')} / ${c.name}`;
  el('exp-title').textContent=c.title; el('exp-desc').textContent=c.desc; el('exp-role').textContent=c.roles[step];
- el('exp-screen').innerHTML=c.view(step); el('exp-screen').classList.toggle('exp-enter',animate);
+ const availability=chapter===0?'월간 자동 편성은 개선 예정이에요. 현재는 반복 등록·템플릿·주별 공개를 이용할 수 있어요.':chapter===6?'사진·설명 매뉴얼은 이용할 수 있어요. 영상 매뉴얼은 추가 예정이에요.':'';
+ el('exp-screen').innerHTML=(availability?`<p class="exp-availability">${availability}</p>`:'')+c.view(step); el('exp-screen').classList.toggle('exp-enter',animate);
  el('exp-steps').innerHTML=c.steps.map((v,i)=>`<button type="button" data-step="${i}" aria-current="${i===step?'step':'false'}"><b>${i+1}</b>${v}</button>`).join('');
  el('exp-count').textContent=`${chapter+1} / ${chapters.length}`;
  host!.querySelector('.exp-chapters')!.innerHTML=chapters.map((v,i)=>`<button type="button" data-chapter="${i}" aria-pressed="${i===chapter}"><span>${String(i+1).padStart(2,'0')}</span>${v.name}<i>↗</i></button>`).join('');
