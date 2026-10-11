@@ -35,7 +35,7 @@ if(!appEntry)throw Error('Hashed app entry missing');
 await copyFile('dist/client/'+appEntry,'dist/client/app.js');
 // 작업 010: 묶음 크기 기록(처음 받는 app.js와 필요할 때 받는 조각)
 {const {readdirSync,statSync}=await import('node:fs');const kb=f=>Math.round(statSync(f).size/1024);const chunks=existsSync('dist/client/chunks')?readdirSync('dist/client/chunks').map(f=>[f,kb('dist/client/chunks/'+f)]).sort((a,b)=>b[1]-a[1]):[];console.log(`화면 묶음: app.js ${kb('dist/client/app.js')}KB, 필요할 때 받는 조각 ${chunks.length}개 ${chunks.reduce((n,c)=>n+c[1],0)}KB`);for(const [f,k] of chunks.slice(0,8))console.log(`  ${f} ${k}KB`)}
-const css=await compile(await readFile('app/globals.css','utf8'),{base:path.resolve('app'),onDependency:()=>{}});
+const css=await compile(await readFile('app/globals.css','utf8')+'\n'+await readFile('app/priority-ux.css','utf8'),{base:path.resolve('app'),onDependency:()=>{}});
 const scanner=new Scanner({sources:[{base:path.resolve('.'),pattern:'{app,components,hooks}/**/*.{ts,tsx}',negated:false}]});
 await writeFile('dist/client/app.css',css.build(scanner.scan()));
 for(const f of ['cheokcheoki-guide.png','favicon.svg','cheokcheoki-welcome.png','manifest.webmanifest','sw.js','icon-192.png','icon-512.png','icon-maskable-512.png'])await copyFile('public/'+f,'dist/client/'+f);

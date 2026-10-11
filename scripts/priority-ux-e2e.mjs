@@ -1,0 +1,31 @@
+import assert from 'node:assert/strict';
+import {mkdir} from 'node:fs/promises';
+export async function priorityUxE2E({owner,srv,step,browser}){
+ const ctx=await browser.newContext({storageState:await owner.context().storageState(),serviceWorkers:'block',viewport:{width:1440,height:900}}),page=await ctx.newPage();
+ try{
+  await step('업무 가시성 · 비서 기본 닫힘 · 키보드 열기와 복귀',async()=>{
+   await page.goto(srv.ORIGIN+'/app?screen=payroll',{waitUntil:'networkidle'});
+   const trigger=page.getByRole('button',{name:/척척 비서/}),dialog=page.getByRole('dialog',{name:'척척 비서'});
+   await trigger.waitFor();assert.equal(await dialog.isVisible(),false);
+   assert.equal(await page.evaluate(()=>getComputedStyle(document.body).paddingRight),'0px');
+   await trigger.click();await dialog.waitFor();assert.equal(await page.locator('#ast-q').evaluate(el=>document.activeElement===el),true);
+   await page.keyboard.press('Escape');await dialog.waitFor({state:'hidden'});assert.equal(await trigger.evaluate(el=>document.activeElement===el),true);
+   for(const width of [320,390,768,1440]){
+    await page.setViewportSize({width,height:900});
+    assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'payroll overflow '+width);
+   }
+   await page.setViewportSize({width:390,height:844});await mkdir('ci-logs',{recursive:true});await page.screenshot({path:'ci-logs/priority-payroll-mobile.png',fullPage:true});
+  });
+  await step('새 화면 연결 실패 · 복구 안내 · 재시도 성공',async()=>{
+   const failed=await ctx.newPage();
+   try{
+    await failed.route('**/chunks/team-*.js',route=>route.fulfill({status:503,contentType:'text/javascript',body:'/* synthetic unavailable chunk */'}));
+    await failed.goto(srv.ORIGIN+'/app',{waitUntil:'networkidle'});
+    await failed.getByRole('alert').getByRole('heading',{name:'화면을 다시 불러와 주세요.'}).waitFor();
+    await failed.getByRole('link',{name:'서비스 상태 확인'}).waitFor();
+    await failed.unroute('**/chunks/team-*.js');await failed.getByRole('button',{name:'화면 다시 불러오기',exact:true}).click();
+    await failed.getByRole('button',{name:/척척 비서/}).waitFor();
+   }finally{await failed.close()}
+  });
+ }finally{await ctx.close()}
+}
