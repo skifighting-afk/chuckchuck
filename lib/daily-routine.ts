@@ -4,7 +4,7 @@
 // (테스트가 바로 불러오므로 다른 파일을 import하지 않는다)
 export type RoutineRole = 'owner' | 'staff';
 export type RoutineSlot = 'open' | 'during' | 'close' | 'week' | 'month';
-export type GuideStep = {find: string[]; hint: string; kind: 'click' | 'fill' | 'pick' | 'check'};
+export type GuideStep = {find: string[]; hint: string; kind: 'click' | 'fill' | 'pick' | 'check'; alt?: {find: string[]; hint: string}; none?: string};
 export type RoutineTask = {
   id: string; slot: RoutineSlot; emoji: string; title: string; detail: string;
   status: 'done' | 'todo' | 'wait'; lines?: string[]; warn?: boolean;
@@ -23,15 +23,28 @@ const plus = (d: string, n: number) => new Date(Date.parse(d + 'T00:00:00Z') + n
 const wday = (d: string) => new Date(d + 'T00:00:00Z').getUTCDay();
 const weekStart = (d: string, ws: 'mon' | 'sun') => plus(d, -(ws === 'mon' ? (wday(d) + 6) % 7 : wday(d)));
 const md = (d: string) => `${Number(d.slice(5, 7))}/${Number(d.slice(8, 10))}`;
+const endOf = (x: Loose) => toMin(x.end) <= toMin(x.start) ? toMin(x.end) + 1440 : toMin(x.end);
+/** 영업일 기준 '오늘'과 지금(분): 자정을 넘겨 영업하는 가게·근무는 닫는(끝나는) 시각 전까지 전날로 본다 */
+function bizNow(shifts: Loose[], hours: Loose, now: number) {
+  const d = kday(now), m = kmin(now), y = plus(d, -1);
+  let cut = hours && toMin(hours.close) <= toMin(hours.open) ? toMin(hours.close) : 0;
+  for (const x of shifts) if (x.date === y && toMin(x.end) <= toMin(x.start)) cut = Math.max(cut, toMin(x.end));
+  return m < cut ? {today: y, m: m + 1440, cut} : {today: d, m, cut};
+}
+/** 출퇴근 기록의 영업일과 그날 기준 분 */
+const attDay = (a: Loose, cut: number) => {const t = Date.parse(a.start), m = kmin(t); return m < cut ? {day: plus(kday(t), -1), m: m + 1440} : {day: kday(t), m}};
+/** 기록이 속한 근무(분할 근무면 시작 시각이 들어가는 근무) */
+const shiftFor = (shifts: Loose[], emp: string, day: string, am: number) => {const c = shifts.filter((x: Loose) => x.employeeId === emp && x.date === day); return c.find((x: Loose) => am >= toMin(x.start) - 120 && am <= endOf(x)) || c.sort((a: Loose, b: Loose) => Math.abs(toMin(a.start) - am) - Math.abs(toMin(b.start) - am))[0]};
 const onLeave = (s: Loose, emp: string, d: string) => (s.approvedLeaves || []).some((l: Loose) => l.employeeId === emp && l.start <= d && l.end >= d);
 
 /** 지금이 오픈 전·영업 중·마감 후 중 어디인지(영업시간이 없으면 오늘 근무 시간으로) */
 export function slotNow(s: Loose, branch: string, now: number): RoutineSlot {
-  const b = (s.branches || []).find((x: Loose) => x.id === branch) || {}, today = kday(now), m = kmin(now);
+  const b = (s.branches || []).find((x: Loose) => x.id === branch) || {};
   const ids = new Set((s.employees || []).filter((e: Loose) => e.branchId === branch).map((e: Loose) => e.id));
+  const {today, m} = bizNow((s.shifts || []).filter((x: Loose) => ids.has(x.employeeId)), b.hours, now);
   const sh = (s.shifts || []).filter((x: Loose) => x.date === today && ids.has(x.employeeId));
   let open = b.hours ? toMin(b.hours.open) : sh.length ? Math.min(...sh.map((x: Loose) => toMin(x.start))) : 9 * 60;
-  let close = b.hours ? toMin(b.hours.close) : sh.length ? Math.max(...sh.map((x: Loose) => toMin(x.end) <= toMin(x.start) ? toMin(x.end) + 1440 : toMin(x.end))) : 22 * 60;
+  let close = b.hours ? toMin(b.hours.close) : sh.length ? Math.max(...sh.map(endOf)) : 22 * 60;
   if (close <= open) close += 1440;
   if (m < open) return 'open';
   return m < close - 60 ? 'during' : 'close';
@@ -39,14 +52,15 @@ export function slotNow(s: Loose, branch: string, now: number): RoutineSlot {
 
 /** 사장님 하루 일과 */
 export function ownerRoutine(s: Loose, branch: string, now: number, pings: Iterable<string> = [], tol = 5): RoutineTask[] {
-  const p = new Set(pings), today = kday(now), m = kmin(now), tasks: RoutineTask[] = [];
+  const p = new Set(pings), tasks: RoutineTask[] = [];
   const b = (s.branches || []).find((x: Loose) => x.id === branch) || {}, emps = (s.employees || []).filter((e: Loose) => e.branchId === branch && e.status !== '퇴사');
   if (!emps.length) return tasks;
   const ids = new Set(emps.map((e: Loose) => e.id)), name = (id: string) => emps.find((e: Loose) => e.id === id)?.name || '직원';
+  const {today, m, cut} = bizNow((s.shifts || []).filter((x: Loose) => ids.has(x.employeeId)), b.hours, now);
   const mine = (x: Loose) => (x.branchId ? x.branchId === branch : ids.has(x.employeeId));
   const todayShifts = (s.shifts || []).filter((x: Loose) => x.date === today && mine(x) && ids.has(x.employeeId)).sort((a: Loose, c: Loose) => a.start.localeCompare(c.start));
   const att = (s.attendance || []).filter((a: Loose) => ids.has(a.employeeId));
-  const attToday = att.filter((a: Loose) => kday(Date.parse(a.start)) === today);
+  const attToday = att.filter((a: Loose) => attDay(a, cut).day === today);
   const closedToday = (b.closedDays || []).includes(wday(today));
   // 1) 오늘 근무 확인
   tasks.push({id: 'brief', slot: 'open', emoji: '👀', title: '오늘 근무 확인', check: true, status: p.has('brief') ? 'done' : 'todo',
@@ -65,31 +79,32 @@ export function ownerRoutine(s: Loose, branch: string, now: number, pings: Itera
   // 3) 요청함 비우기(출퇴근 정정·직원 문의)
   const reqs = (s.requests || []).filter((r: Loose) => r.status === '승인 대기' && ids.has(r.before?.employeeId));
   const asks = (s.staffAsks || []).filter((a: Loose) => a.status === '확인 중' && ids.has(a.employeeId));
-  tasks.push({id: 'requests', slot: 'during', emoji: '📥', title: '요청함 비우기', page: reqs.length ? '출퇴근 기록' : '직원 관리',
+  tasks.push({id: 'requests', slot: 'during', emoji: '📥', title: '요청함 비우기', page: reqs.length ? '출퇴근 기록' : '급여·명세서',
     status: reqs.length + asks.length ? 'todo' : 'done',
     detail: reqs.length + asks.length ? [reqs.length ? `출퇴근 정정 ${reqs.length}건` : '', asks.length ? `직원 문의 ${asks.length}건` : ''].filter(Boolean).join(' · ') : '처리할 요청이 없어요',
     steps: reqs.length ? [{find: ['.t-request button.primary@@승인'], hint: '내용을 보고 승인이나 반려를 눌러요', kind: 'click'}] : undefined});
   // 4) 퇴근 누락 정리
   const open = att.filter((a: Loose) => !a.end), stale: Loose[] = [], working: Loose[] = [];
   for (const a of open) {
-    const d = kday(Date.parse(a.start)), sh = (s.shifts || []).find((x: Loose) => x.employeeId === a.employeeId && x.date === d);
-    const endMin = sh ? (toMin(sh.end) <= toMin(sh.start) ? toMin(sh.end) + 1440 : toMin(sh.end)) : null;
+    const {day: d, m: am} = attDay(a, cut), sh = shiftFor(s.shifts || [], a.employeeId, d, am);
+    const endMin = sh ? endOf(sh) : null;
     if (d < today || (endMin !== null && endMin + 30 <= m)) stale.push(a); else working.push(a);
   }
   if (todayShifts.length || attToday.length || stale.length) {
-    const lastEnd = todayShifts.length ? Math.max(...todayShifts.map((x: Loose) => toMin(x.end) <= toMin(x.start) ? toMin(x.end) + 1440 : toMin(x.end))) : 0;
+    const lastEnd = todayShifts.length ? Math.max(...todayShifts.map(endOf)) : 0;
     tasks.push({id: 'clockout', slot: 'close', emoji: '🚪', title: '퇴근 누락 정리', page: '출퇴근 기록', warn: stale.length > 0,
       status: stale.length ? 'todo' : working.length || m < lastEnd ? 'wait' : 'done',
       detail: stale.length ? `퇴근을 안 찍은 기록 ${stale.length}건` : working.length ? `지금 ${working.length}명 근무 중 · 퇴근하면 확인` : m < lastEnd ? `마지막 퇴근 ${hm(lastEnd)}` : '모두 퇴근을 찍었어요',
-      lines: stale.map((a: Loose) => `${name(a.employeeId)} ${md(kday(Date.parse(a.start)))} 출근 뒤 퇴근 기록 없음`),
-      steps: stale.length ? [{find: ['.att-actions button==출퇴근 기록'], hint: '퇴근을 안 찍은 직원은 여기서 퇴근을 남겨요', kind: 'click'}] : undefined});
+      lines: stale.map((a: Loose) => `${name(a.employeeId)} ${md(attDay(a, cut).day)} 출근 뒤 퇴근 기록 없음`),
+      // '현재 시각으로 기록'은 어제 기록이면 20시간 넘는 근무가 되어 급여가 틀린다 → 그날로 가서 '수정 요청'으로 실제 퇴근 시각을 적게 안내
+      steps: stale.length ? [{find: ['input[aria-label="근태 날짜"]'], hint: `퇴근 기록이 없는 날(${md(attDay(stale[0], cut).day)})로 바꿔요`, kind: 'pick'}, {find: ['td button==수정 요청'], hint: '"진행 중"인 줄의 수정 요청을 눌러 실제 퇴근 시각을 적어요', kind: 'click', none: '이 날짜에는 퇴근 누락 기록이 없어요. 날짜를 바꿔 보세요.'}] : undefined});
   }
   // 5) 내일 근무 확인
   const tmr = plus(today, 1), tShifts = (s.shifts || []).filter((x: Loose) => x.date === tmr && mine(x) && ids.has(x.employeeId)).sort((a: Loose, c: Loose) => a.start.localeCompare(c.start));
   const tClosed = (b.closedDays || []).includes(wday(tmr)), empty = !tShifts.length && !tClosed;
-  tasks.push({id: 'tomorrow', slot: 'close', emoji: '🌙', title: '내일 근무 확인', check: !empty, page: empty ? '근무 스케줄' : undefined, warn: empty,
+  tasks.push({id: 'tomorrow', slot: 'close', emoji: '🌙', title: '내일 근무 확인', check: true, page: empty ? '근무 스케줄' : undefined, warn: empty,
     status: p.has('tomorrow') || (tClosed && !tShifts.length) ? 'done' : 'todo',
-    detail: tShifts.length ? `내일 ${new Set(tShifts.map((x: Loose) => x.employeeId)).size}명 근무` : tClosed ? '내일은 정기 휴무예요' : '내일 근무가 비어 있어요',
+    detail: tShifts.length ? `내일 ${new Set(tShifts.map((x: Loose) => x.employeeId)).size}명 근무` : tClosed ? '내일은 정기 휴무예요' : '내일 근무가 비어 있어요 · 쉬는 날이면 확인을 눌러요',
     lines: tShifts.slice(0, 8).map((x: Loose) => `${name(x.employeeId)} ${x.start}–${x.end}`)});
   // 6) 이번 주: 다음 주 근무표 공개(근무표 나오는 요일부터, 기본 목요일)
   const ws: 'mon' | 'sun' = s.settings?.weekStart === 'sun' ? 'sun' : 'mon', due = Number.isInteger(s.settings?.more?.scheduleDue) ? s.settings.more.scheduleDue : 4;
@@ -97,8 +112,8 @@ export function ownerRoutine(s: Loose, branch: string, now: number, pings: Itera
   if (idx(wday(today)) >= idx(due)) {
     const next = plus(weekStart(today, ws), 7), has = (s.shifts || []).some((x: Loose) => ids.has(x.employeeId) && x.date >= next && x.date <= plus(next, 6));
     const pub = !!(s.publishedWeeks || {})[branch + ':' + next];
-    tasks.push({id: 'publish', slot: 'week', emoji: '📣', title: '다음 주 근무표 공개', page: '근무 스케줄', status: pub ? 'done' : 'todo', warn: !has,
-      detail: pub ? `${md(next)}~ 근무표를 공개했어요` : has ? `${md(next)}~ 근무표가 아직 공개 전이에요` : `${md(next)}~ 근무를 먼저 넣어요`,
+    tasks.push({id: 'publish', slot: 'week', emoji: '📣', title: '다음 주 근무표 공개', page: '근무 스케줄', status: pub || (!has && p.has('publish')) ? 'done' : 'todo', warn: !has, check: !has,
+      detail: pub ? `${md(next)}~ 근무표를 공개했어요` : has ? `${md(next)}~ 근무표가 아직 공개 전이에요` : p.has('publish') ? `${md(next)}~ 주는 쉬는 주로 확인했어요` : `${md(next)}~ 근무를 먼저 넣어요 · 쉬는 주면 확인을 눌러요`,
       steps: [{find: ['button@@주간 · 7일'], hint: '주간 보기로 바꿔요', kind: 'click'}, {find: ['button@@다음 주 →'], hint: '다음 주로 넘겨요', kind: 'click'}, {find: ['.publish-bar button.primary'], hint: '"직원에게 공개"를 누르면 끝!', kind: 'click'}]});
   }
   // 7) 이번 달: 지난달 급여 확정(1~15일, 지난달 근무가 있었으면)
@@ -114,10 +129,12 @@ export function ownerRoutine(s: Loose, branch: string, now: number, pings: Itera
 
 /** 직원 하루 일과 */
 export function staffRoutine(s: Loose, selfId: string, now: number, pings: Iterable<string> = []): RoutineTask[] {
-  const p = new Set(pings), today = kday(now), tasks: RoutineTask[] = [];
+  const p = new Set(pings), tasks: RoutineTask[] = [];
   const myShifts = (s.shifts || []).filter((x: Loose) => x.employeeId === selfId).sort((a: Loose, c: Loose) => (a.date + a.start).localeCompare(c.date + c.start));
-  const todayShifts = myShifts.filter((x: Loose) => x.date === today);
-  const att = (s.attendance || []).filter((a: Loose) => a.employeeId === selfId && kday(Date.parse(a.start)) === today);
+  const {today, cut} = bizNow(myShifts, null, now);
+  // 승인된 휴가 날은 출근 일과에서 뺀다
+  const todayShifts = myShifts.filter((x: Loose) => x.date === today && !onLeave(s, selfId, today));
+  const att = (s.attendance || []).filter((a: Loose) => a.employeeId === selfId && attDay(a, cut).day === today);
   const me = (s.employees || []).find((e: Loose) => e.id === selfId) || {};
   if (todayShifts.length) tasks.push({id: 'in', slot: 'open', emoji: '⏱️', title: '출근 찍기', status: att.length ? 'done' : 'todo',
     detail: att.length ? '출근을 찍었어요' : `오늘 ${todayShifts[0].start} 출근 · 매장에서 QR을 찍어요`,
@@ -152,13 +169,14 @@ export function routineFor(role: RoutineRole, s: Loose, branch: string, selfId: 
 }
 
 /** 연속 완주 일수: 완주한 날(YYYY-MM-DD) 목록에서, 쉬는 날 하루는 건너뛰어도 이어진다 */
-export function streakOf(marks: string[], today: string): number {
+export function streakOf(marks: string[], today: string, closedDays: number[] = []): number {
   const days = [...new Set(marks)].filter(d => d <= today).sort().reverse();
   if (!days.length) return 0;
-  const gap = (a: string, b: string) => Math.round((Date.parse(a) - Date.parse(b)) / 86400000);
-  if (gap(today, days[0]) > 2) return 0;
+  // 두 날 사이에 빠진 '영업일' 수(정기 휴무일은 세지 않음). 하루까지는 쉬어도 이어진다
+  const missed = (a: string, b: string) => {let n = 0; for (let d = plus(b, 1); d < a; d = plus(d, 1)) if (!closedDays.includes(wday(d))) n++; return n};
+  if (missed(plus(today, 1), days[0]) > 2) return 0;
   let n = 1;
-  for (let i = 1; i < days.length; i++) {if (gap(days[i - 1], days[i]) <= 2) n++; else break}
+  for (let i = 1; i < days.length; i++) {if (missed(days[i - 1], days[i]) <= 1) n++; else break}
   return n;
 }
 

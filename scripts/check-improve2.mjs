@@ -120,6 +120,16 @@ ok('B020 after end hint',I.clockInHint([{date:day,start:'10:00',end:'18:00'}],K(
  const ev=R.staffRoutineReminders({...rs,publishedWeeks:{'b:2026-10-12':{at:'x',acks:{}}}},at('2026-10-15',20,5)).filter(a=>a.key.startsWith('staffeve'));
  ok('staff reminder: 8pm tomorrow preview + ack nudge',[ev.length,ev[0].to,ev[0].title,ev[0].body.includes('확인했어요')],[1,'e1','내일 10:00 근무가 있어요',true]);
  ok('staff reminder: owner can turn off',R.staffRoutineReminders({...rs,settings:{more:{staffRoutine:false}}},at('2026-10-15',12,20)).length,0);
+ // 점검 보완: 자정 넘는 가게·분할 근무·휴가·쉬는 주·정기 휴무 연속
+ const night={settings:{more:{}},branches:[{id:'n',name:'야간',hours:{open:'18:00',close:'02:00'}}],employees:[{id:'x',name:'야간알바',branchId:'n'}],shifts:[{employeeId:'x',date:'2026-10-15',start:'18:00',end:'02:00'}],attendance:[{employeeId:'x',start:new Date(at('2026-10-15',18)).toISOString()}],requests:[]};
+ ok('routine: overnight store — 01:00 is still the 15th, working not stale',[R.slotNow(night,'n',at('2026-10-16',1)),R.ownerRoutine(night,'n',at('2026-10-16',1)).find(t=>t.id==='clockout').status],['close','wait']);
+ ok('routine: overnight store — after close+30m it is stale',R.ownerRoutine(night,'n',at('2026-10-16',2,40)).find(t=>t.id==='clockout')?.status,'todo');
+ const split={...rs,shifts:[{employeeId:'e1',date:'2026-10-15',start:'09:00',end:'13:00'},{employeeId:'e1',date:'2026-10-15',start:'18:00',end:'22:00'}],attendance:[{employeeId:'e1',start:new Date(at('2026-10-15',17,58)).toISOString()}],requests:[]};
+ ok('routine: split shift — evening clock-in is not flagged after the morning shift',R.ownerRoutine(split,'b',at('2026-10-15',19)).find(t=>t.id==='clockout').status,'wait');
+ ok('routine: staff on approved leave has no clock-in task',R.staffRoutine({...st2,approvedLeaves:[{employeeId:'e1',start:'2026-10-15',end:'2026-10-15'}],attendance:[]},'e1',at('2026-10-15',12)).some(t=>t.id==='in'),false);
+ ok('routine: empty next week can be confirmed as a rest week',[R.ownerRoutine({...rs,shifts:rs.shifts.filter(x=>x.date<'2026-10-19')},'b',at('2026-10-15',12)).find(t=>t.id==='publish').check,R.ownerRoutine({...rs,shifts:rs.shifts.filter(x=>x.date<'2026-10-19')},'b',at('2026-10-15',12),['publish']).find(t=>t.id==='publish').status],[true,'done']);
+ ok('routine: staff-question-only requests open the pay screen',R.ownerRoutine({...rs,requests:[],staffAsks:[{employeeId:'e1',status:'확인 중'}]},'b',at('2026-10-15',12)).find(t=>t.id==='requests').page,'급여·명세서');
+ ok('routine: streak skips regular closed days',[R.streakOf(['2026-10-10','2026-10-13','2026-10-14'],'2026-10-14',[0,1]),R.streakOf(['2026-10-10','2026-10-13','2026-10-14'],'2026-10-14',[])],[3,2]);
  // 튜토리얼 센터·초기 설정
  const TU=await import('../lib/tutorials.ts'),QQ=await import('../lib/quests.ts'),PG=['홈','직원 관리','근무 스케줄','출퇴근 기록','급여·명세서','휴가·공지','매장 매뉴얼','인건비 리포트','설정','근로계약서'];
  ok('tutorials: from points to real quests, every item runnable',[...TU.TUTORIALS.owner.map(t=>[t,'owner']),...TU.TUTORIALS.staff.map(t=>[t,'staff'])].every(([t,r])=>t.href||(t.from?QQ.QUESTS[r].some(q=>q.id===t.from):t.steps?.length)),true);

@@ -4,9 +4,12 @@ import {GuideClient,type GuideDTO} from '../lib/start-guide-client';
 import {START_GUIDE_VERSION,defaultGuidePreferences,type GuidePreferences} from '../lib/start-guide';
 const Context=createContext<GuideClient|null>(null);
 const demos=new Map<string,GuideDTO>();
+/** 체험 화면 '처음 상태로': 퀘스트·안내 기억도 처음으로 */
+export const resetDemoGuides=()=>demos.clear();
 export function StartGuideProvider({context,branch,role='owner',kind='personal',demo=false,children}:{context:string;branch:string;role?:string;kind?:string;demo?:boolean;children:ReactNode}){
  const key=JSON.stringify([context,branch,role,kind,demo,START_GUIDE_VERSION]);
- return <GuideScope key={key} context={context} scopeKey={key} branch={branch} kind={kind} role={role} demo={demo}>{children}</GuideScope>;
+ // key로 감싸면 매장을 바꿀 때 화면 전체가 다시 만들어져 입력 중인 내용이 사라진다 → 안내 저장소(client)만 범위마다 새로 만든다
+ return <GuideScope context={context} scopeKey={key} branch={branch} kind={kind} role={role} demo={demo}>{children}</GuideScope>;
 }
 function GuideScope({context,scopeKey,branch,kind,role,demo,children}:{context:string;scopeKey:string;branch:string;kind:string;role:string;demo:boolean;children:ReactNode}){
  const client=useMemo(()=>new GuideClient('/api/start-guide?branchId='+encodeURIComponent(branch)+'&kind='+kind+'&context='+encodeURIComponent(context),demo?async(_url,init)=>{

@@ -184,6 +184,19 @@ await step('작업 054: 직원 여러 명 붙여넣기 등록',async()=>{
  await owner.locator('.bulk-err').first().waitFor();await owner.click('button:has-text("1명 등록")');
  await owner.getByText(/직원 1명을 '입사 준비'로 등록했어요/).waitFor();await owner.getByText('붙임직원').first().waitFor();
 });
+await step('안내 막대: 입력 창 안에서도 누를 수 있고 창은 그대로 · 다른 탭이면 돌아갈 탭을 짚음',async()=>{
+ await owner.goto(B+'/app',{waitUntil:'networkidle'});
+ await owner.evaluate(()=>dispatchEvent(new CustomEvent('cc-quest-start',{detail:{role:'owner',id:'guide:e2e',guide:{id:'e2e',emoji:'🗓️',title:'근무 넣기 점검',page:'근무 스케줄',steps:[{find:['button.primary@@근무 추가'],hint:'여기',kind:'click'},{find:['[role=dialog] field:근무일'],hint:'날짜',kind:'fill'}]}}})));
+ await owner.locator('.qh-hud').waitFor();await owner.locator('main button.primary',{hasText:'근무 추가'}).click();
+ const hud=owner.locator('[role=dialog] .qh-hud.in-dialog');await hud.waitFor();
+ await hud.getByRole('button',{name:/그만/}).click();await owner.locator('.qh-hud').waitFor({state:'detached'});
+ if(!(await owner.locator('[data-slot=dialog-content]').getByRole('button',{name:/일정 저장/}).count()))throw Error('그만을 누르니 입력 창이 닫힘');
+ await owner.locator('[role=dialog] [data-slot=dialog-close]').click();await owner.locator('[data-slot=dialog-content]').waitFor({state:'detached'});
+ await owner.evaluate(()=>dispatchEvent(new CustomEvent('cc-quest-start',{detail:{role:'owner',id:'staff'}})));
+ await owner.locator('main button.primary',{hasText:'직원 등록'}).first().click();await owner.locator('[role=dialog] .t-stepbar button').nth(1).click();
+ await owner.locator('[role=dialog] .qh-hud.in-dialog small',{hasText:'01 기본 정보'}).waitFor();
+ await owner.locator('[role=dialog] .qh-hud').getByRole('button',{name:/그만/}).click();await owner.locator('[role=dialog] [data-slot=dialog-close]').click();await owner.locator('[data-slot=dialog-content]').waitFor({state:'detached'});
+});
 await (await import('./history-import-e2e.mjs')).historyImportE2E({owner,srv,step});
 await (await import('./billing-pricing-e2e.mjs')).billingPricingE2E({owner,srv,step});
 await (await import('./start-guide-e2e.mjs')).startGuideE2E({owner,srv,step,browser,watch,credentials:OWNER});
