@@ -1,9 +1,0 @@
-│
-◇  Checking project...
-Pushing config to project: chuckchuck (mklluxpngagiechnfaxe)
-Comparison scope: api, auth, database, pooler, realtime, storage
-Remote API config is up to date.
-Remote DB config is up to date.
-Remote Auth config is up to date.
-Remote Storage config is up to date.
-Note: 9 remote properties are not declared in supabase/config.toml and were left unchanged (config push no longer resets undeclared properties to their defaults; run `supabase config diff` to inspect).
