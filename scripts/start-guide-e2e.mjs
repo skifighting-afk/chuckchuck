@@ -32,5 +32,13 @@ export async function startGuideE2E({owner,srv,step,browser,watch}){
    await srv.db.q('UPDATE start_guide_preferences SET revision=revision+1 WHERE owner=? AND branch_id=?',row.owner,original.branches[0].id).run();
    await a.locator('.qb-head').getByRole('button',{name:'접기',exact:true}).click();await a.getByRole('alert').getByText('다른 기기에서 안내를 바꿨어요.',{exact:false}).waitFor();await a.getByRole('button',{name:'최신 안내 확인'}).click();await full(a);
   });
+  await step('매니저 안내 · 위임 업무만 표시 · 단계 복원 · 권한 회수',async()=>{
+   const u=await srv.auth.user('guide-e2e-manager',{email:'guide-manager@example.invalid',password:'Guide-manager-2026',role:'employee'}),d=structuredClone(original);
+   d.employees.push({...structuredClone(d.employees[0]),id:'guide-manager-employee',name:'안내 매니저',access:'중간관리자',managerPermissions:['schedule']});d._members.push({userId:u.id,employeeId:'guide-manager-employee'});await srv.db.q('UPDATE stores SET data=?,version=version+1 WHERE owner=?',JSON.stringify(d),row.owner).run();
+   await b.goto(srv.ORIGIN+'/logout');await b.waitForURL(/\/login/);await b.goto(srv.ORIGIN+'/login?role=employee',{waitUntil:'networkidle'});await b.fill('input[type=email]',u.email);await b.fill('input[aria-label="비밀번호"]','Guide-manager-2026');await b.locator('form button[type=submit]').click();await b.waitForURL(url=>!url.pathname.startsWith('/login'));await b.goto(srv.ORIGIN+'/manager',{waitUntil:'networkidle'});
+   const guide=b.getByRole('region',{name:'매니저 시작 안내'});await guide.getByRole('button',{name:'근무표 등록',exact:true}).waitFor();assert.equal(await guide.getByRole('button',{name:'휴가 신청 확인'}).count(),0);
+   await save(b,()=>guide.getByRole('button',{name:'근무표 등록',exact:true}).click());await guide.getByText('근무표 등록 · 1/4').waitFor();await save(b,()=>guide.getByRole('button',{name:'다음 안내'}).click());await b.reload({waitUntil:'networkidle'});await guide.getByText('근무표 등록 · 2/4').waitFor();assert.deepEqual(JSON.parse((await srv.db.q('SELECT data FROM stores WHERE owner=?',row.owner).first()).data),d);
+   d.employees.at(-1).managerPermissions=[];await srv.db.q('UPDATE stores SET data=?,version=version+1 WHERE owner=?',JSON.stringify(d),row.owner).run();await b.getByRole('button',{name:'새로 확인',exact:true}).click();await guide.getByText('아직 맡은 관리 업무가 없어요.',{exact:false}).waitFor();assert.equal(await guide.getByRole('button',{name:'근무표 등록',exact:true}).count(),0);
+  });
  }finally{await c1.close();await c2.close();await srv.db.q('DELETE FROM stores WHERE owner=?','native:guide-e2e-other').run();await srv.db.q('UPDATE stores SET data=?,version=version+1 WHERE owner=?',JSON.stringify(original),row.owner).run()}
 }
