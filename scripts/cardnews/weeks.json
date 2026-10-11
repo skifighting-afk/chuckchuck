@@ -3,85 +3,350 @@
  "landing": "https://chukchukapp.kr/signup?plan=free&utm_source=meta&utm_medium=paid&utm_campaign=cardnews",
  "weeks": [
   {
-   "no": 1, "id": "w1-minwage", "post": "2026-10-12 20:00", "ad": ["2026-10-13", "2026-10-19"],
-   "type": "돈 계산 · 저장형", "title": "2027 최저임금, 우리 가게 인건비",
+   "no": 1,
+   "id": "w1-minwage",
+   "post": "2026-10-12 20:00",
+   "ad": [
+    "2026-10-13",
+    "2026-10-19"
+   ],
+   "type": "돈 계산 · 저장형",
+   "title": "2027 최저임금, 우리 가게 인건비",
    "hookA": "내년 1월부터 직원 한 명당 월 8만 원 더 나가.",
    "hookB": "사장님, 내년 인건비 계산 아직 안 했지?",
    "why": "지금 사장님들이 제일 예민한 숫자(1만 700원)를 '우리 가게 돈'으로 바꿔 줘서 멈추고, 표가 있어서 저장돼요.",
    "cards": [
-    {"k": "cover", "big": "월 8만 원", "t": "내년 1월부터 직원 한 명당 월 8만 원 더 나가.", "s": "2027 최저임금 1만 700원 · 넘겨서 우리 가게 계산"},
-    {"k": "fact", "big": "10,700원", "t": "2027년 최저시급", "s": "올해 10,320원보다 380원(3.7%) 올라요. 1월 1일 일한 시간부터 적용."},
-    {"k": "fact", "big": "223만 6,300원", "t": "주 40시간 직원 월급 최소", "s": "주휴 포함 월 209시간 기준. 올해보다 약 8만 원 더."},
-    {"k": "table", "t": "알바 한 명, 한 달에 얼마 더?", "rows": [["주 15시간", "약 3만 원"], ["주 20시간", "약 4만 원"], ["주 30시간", "약 6만 원"], ["주 40시간", "약 8만 원"]], "s": "주휴 포함 · 4대보험 사장 부담분은 따로"},
-    {"k": "warn", "t": "1월 1일에 안 바꾸면?", "s": "첫 주부터 체불이에요. 바뀐 시급은 글로 다시 알려 두세요."},
-    {"k": "warn", "t": "월급제 직원 체크", "s": "주 40시간인데 월 223만 6,300원보다 적으면 위반. 식대 등 일부 수당은 계산 범위가 달라서 꼭 확인."},
-    {"k": "app", "t": "척척사장이면 1분", "s": "근무표만 넣으면 새 시급으로 예상 인건비가 바로 나와요. 1월 1일 시급 인상도 미리 예약."},
-    {"k": "cta", "t": "저장해 두고 1월에 꺼내 봐", "q": "내년 대비, 우리 가게는?", "o": ["가격 올린다", "인원 조정한다"]}
+    {
+     "k": "cover",
+     "big": "월 8만 원",
+     "t": "내년 1월부터 직원 한 명당 월 8만 원 더 나가.",
+     "s": "2027 최저임금 1만 700원 · 넘겨서 우리 가게 계산"
+    },
+    {
+     "k": "fact",
+     "big": "10,700원",
+     "t": "2027년 최저시급",
+     "s": "올해 10,320원보다 380원(3.7%) 올라요. 1월 1일 일한 시간부터 적용."
+    },
+    {
+     "k": "fact",
+     "big": "223만 6,300원",
+     "t": "주 40시간 직원 월급 최소",
+     "s": "주휴 포함 월 209시간 기준. 올해보다 약 8만 원 더."
+    },
+    {
+     "k": "table",
+     "t": "알바 한 명, 한 달에 얼마 더?",
+     "rows": [
+      [
+       "주 15시간",
+       "약 3만 원"
+      ],
+      [
+       "주 20시간",
+       "약 4만 원"
+      ],
+      [
+       "주 30시간",
+       "약 6만 원"
+      ],
+      [
+       "주 40시간",
+       "약 8만 원"
+      ]
+     ],
+     "s": "주휴 포함 · 4대보험 사장 부담분은 따로"
+    },
+    {
+     "k": "warn",
+     "t": "1월 1일에 안 바꾸면?",
+     "s": "첫 주부터 체불이에요. 바뀐 시급은 글로 다시 알려 두세요."
+    },
+    {
+     "k": "warn",
+     "t": "월급제 직원 체크",
+     "s": "주 40시간인데 월 223만 6,300원보다 적으면 위반. 식대 등 일부 수당은 계산 범위가 달라서 꼭 확인."
+    },
+    {
+     "k": "app",
+     "t": "척척사장이면 1분",
+     "s": "근무표만 넣으면 새 시급으로 예상 인건비가 바로 나와요. 1월 1일 시급 인상도 미리 예약."
+    },
+    {
+     "k": "cta",
+     "t": "저장해 두고 1월에 꺼내 봐",
+     "q": "내년 대비, 우리 가게는?",
+     "o": [
+      "가격 올린다",
+      "인원 조정한다"
+     ]
+    }
    ],
    "primary": "내년 1월 1일부터 최저시급 1만 700원.\n알바 한 명당 한 달에 얼마 더 나가는지, 표로 정리했어요.\n\n척척사장은 근무표만 넣으면 새 시급으로 인건비가 바로 계산돼요.\n30일 무료 · 카드 등록 없이 시작.",
    "headline": "내년 인건비, 1분이면 계산 끝",
-   "desc": "30일 무료 · 카드 등록 없음"
+   "desc": "30일 무료 · 카드 등록 없음",
+   "higgs": [
+    {
+     "for": "표지",
+     "prompt": "a cute cream-white robot mascot with a rounded TV-like head, big dark-green eyes, pink cheeks, two lime-green check-mark sprouts on top of its head, wearing a deep green apron with a lime double-check logo (use the attached reference image for the character), holding a giant calculator and looking surprised at a long receipt that rolls onto the floor, coins floating around, inside a cozy Korean cafe counter, 3D clay render, soft studio lighting, pastel lime green (#c8f169) and deep forest green (#10251b) palette, cute Korean small-business vibe, clean background, 4:5 vertical, leave the top 45% of the frame empty for text overlay, no text, no letters, no logos"
+    },
+    {
+     "for": "척척사장 카드",
+     "prompt": "a cute cream-white robot mascot with a rounded TV-like head, big dark-green eyes, pink cheeks, two lime-green check-mark sprouts on top of its head, wearing a deep green apron with a lime double-check logo (use the attached reference image for the character), happily pointing at a smartphone that shows a simple green bar chart, sitting on a cafe counter, relaxed mood, 3D clay render, soft studio lighting, pastel lime green (#c8f169) and deep forest green (#10251b) palette, cute Korean small-business vibe, clean background, 4:5 vertical, leave the top 45% of the frame empty for text overlay, no text, no letters, no logos"
+    }
+   ]
   },
   {
-   "no": 2, "id": "w2-illegal5", "post": "2026-10-19 20:00", "ad": ["2026-10-20", "2026-10-26"],
-   "type": "이것도 불법 · 공유형", "title": "사장님이 몰라서 하는 불법 5개",
+   "no": 2,
+   "id": "w2-illegal5",
+   "post": "2026-10-19 20:00",
+   "ad": [
+    "2026-10-20",
+    "2026-10-26"
+   ],
+   "type": "이것도 불법 · 공유형",
+   "title": "사장님이 몰라서 하는 불법 5개",
    "hookA": "사장님들 제일 많이 하는 불법 5개, 몇 개 해당돼?",
    "hookB": "지각비 만 원 받았다가 신고당한다고?",
    "why": "'우리도 하는데?' 싶은 관행이 사실 불법이라는 반전. 사장은 저장하고, 알바는 사장한테 보내서 공유가 터져요.",
    "cards": [
-    {"k": "cover", "big": "불법 5개", "t": "사장님들 제일 많이 하는 불법 5개, 몇 개 해당돼?", "s": "넘기면서 세어 봐"},
-    {"k": "num", "n": "1", "t": "지각비·벌금 떼기", "s": "늦은 시간만큼 빼는 건 OK. 벌금처럼 정해 둔 돈을 떼면 근로기준법 위반(제20조)."},
-    {"k": "num", "n": "2", "t": "알바 3.3%로 처리", "s": "시간 정해 놓고 지시받고 일하면 근로자. 3.3%여도 주휴·퇴직금·4대보험 그대로."},
-    {"k": "num", "n": "3", "t": "수습이라 90%만 주기", "s": "1년 이상 계약 + 단순노무가 아닐 때만 3개월 90%. 편의점·서빙은 수습이어도 100%."},
-    {"k": "num", "n": "4", "t": "8시간 일 시키고 휴게 30분", "s": "4시간에 30분, 8시간이면 1시간 이상. 가게 크기 상관없어요."},
-    {"k": "num", "n": "5", "t": "급여명세서 안 주기", "s": "2021년 11월부터 모든 가게 의무. 안 주면 과태료."},
-    {"k": "app", "t": "척척사장은 처음부터 막아 줘요", "s": "출퇴근 기록대로 계산, 휴게 자동 차감, 명세서는 버튼 한 번에 직원 폰으로."},
-    {"k": "cta", "t": "몇 개 해당됐어?", "q": "솔직하게 댓글로!", "o": ["0~1개", "2개 이상"]}
+    {
+     "k": "cover",
+     "big": "불법 5개",
+     "t": "사장님들 제일 많이 하는 불법 5개, 몇 개 해당돼?",
+     "s": "넘기면서 세어 봐"
+    },
+    {
+     "k": "num",
+     "n": "1",
+     "t": "지각비·벌금 떼기",
+     "s": "늦은 시간만큼 빼는 건 OK. 벌금처럼 정해 둔 돈을 떼면 근로기준법 위반(제20조)."
+    },
+    {
+     "k": "num",
+     "n": "2",
+     "t": "알바 3.3%로 처리",
+     "s": "시간 정해 놓고 지시받고 일하면 근로자. 3.3%여도 주휴·퇴직금·4대보험 그대로."
+    },
+    {
+     "k": "num",
+     "n": "3",
+     "t": "수습이라 90%만 주기",
+     "s": "1년 이상 계약 + 단순노무가 아닐 때만 3개월 90%. 편의점·서빙은 수습이어도 100%."
+    },
+    {
+     "k": "num",
+     "n": "4",
+     "t": "8시간 일 시키고 휴게 30분",
+     "s": "4시간에 30분, 8시간이면 1시간 이상. 가게 크기 상관없어요."
+    },
+    {
+     "k": "num",
+     "n": "5",
+     "t": "급여명세서 안 주기",
+     "s": "2021년 11월부터 모든 가게 의무. 안 주면 과태료."
+    },
+    {
+     "k": "app",
+     "t": "척척사장은 처음부터 막아 줘요",
+     "s": "출퇴근 기록대로 계산, 휴게 자동 차감, 명세서는 버튼 한 번에 직원 폰으로."
+    },
+    {
+     "k": "cta",
+     "t": "몇 개 해당됐어?",
+     "q": "솔직하게 댓글로!",
+     "o": [
+      "0~1개",
+      "2개 이상"
+     ]
+    }
    ],
    "primary": "지각비, 알바 3.3%, 수습 90%…\n'다들 이렇게 하던데?' 하는 것 중에 불법이 꽤 많아요.\n\n척척사장은 출퇴근 기록대로 계산하고 명세서까지 자동으로 보내요.\n30일 무료 · 카드 등록 없이.",
    "headline": "몰라서 하는 불법, 앱이 먼저 막아요",
-   "desc": "30일 무료 · 카드 등록 없음"
+   "desc": "30일 무료 · 카드 등록 없음",
+   "higgs": [
+    {
+     "for": "표지",
+     "prompt": "a cute cream-white robot mascot with a rounded TV-like head, big dark-green eyes, pink cheeks, two lime-green check-mark sprouts on top of its head, wearing a deep green apron with a lime double-check logo (use the attached reference image for the character), nervously holding a checklist with five boxes, a small yellow warning sign floating next to it, convenience store aisle background, 3D clay render, soft studio lighting, pastel lime green (#c8f169) and deep forest green (#10251b) palette, cute Korean small-business vibe, clean background, 4:5 vertical, leave the top 45% of the frame empty for text overlay, no text, no letters, no logos"
+    },
+    {
+     "for": "척척사장 카드",
+     "prompt": "a cute cream-white robot mascot with a rounded TV-like head, big dark-green eyes, pink cheeks, two lime-green check-mark sprouts on top of its head, wearing a deep green apron with a lime double-check logo (use the attached reference image for the character), standing proudly with a green shield in front of it, small icons of a clock, a receipt and a coffee cup floating around, 3D clay render, soft studio lighting, pastel lime green (#c8f169) and deep forest green (#10251b) palette, cute Korean small-business vibe, clean background, 4:5 vertical, leave the top 45% of the frame empty for text overlay, no text, no letters, no logos"
+    }
+   ]
   },
   {
-   "no": 3, "id": "w3-cases", "post": "2026-10-26 20:00", "ad": ["2026-10-27", "2026-11-02"],
-   "type": "사건 판정 · 퀴즈형", "title": "사장 잘못? 알바 잘못? 실제 사건 3개",
+   "no": 3,
+   "id": "w3-cases",
+   "post": "2026-10-26 20:00",
+   "ad": [
+    "2026-10-27",
+    "2026-11-02"
+   ],
+   "type": "사건 판정 · 퀴즈형",
+   "title": "사장 잘못? 알바 잘못? 실제 사건 3개",
    "hookA": "알바 고소한 사장들, 결과는 전부 이랬다.",
    "hookB": "음료 3잔으로 알바 고소한 사장, 결과는?",
    "why": "실화 + 결말 궁금증으로 끝까지 넘기게 하고, 사장 편·알바 편 댓글이 싸우면서 댓글·공유가 같이 올라가요.",
    "cards": [
-    {"k": "cover", "big": "결과는?", "t": "알바 고소한 사장들, 결과는 전부 이랬다.", "s": "실제 사건 3개 · 넘기기 전에 맞혀 봐"},
-    {"k": "case", "n": "사건 1", "t": "음료 몇 잔 마신 알바를 횡령으로 고소", "s": "사장 잘못? 알바 잘못?"},
-    {"k": "verdict", "n": "판정 1", "t": "합의금 돌려주고 고소 취하", "s": "사장 발언 녹취가 공개되며 여론이 뒤집혔어요. 직원 음료 규칙은 글로 남겨 두세요."},
-    {"k": "case", "n": "사건 2", "t": "쉬는 날 앞치마 가지러 온 알바를 무단침입으로", "s": "사장 잘못? 알바 잘못?"},
-    {"k": "verdict", "n": "판정 2", "t": "법원은 무죄", "s": "작은 갈등을 고소로 풀면 사장만 손해예요."},
-    {"k": "case", "n": "사건 3", "t": "말없이 잠수 탄 알바, 월급 안 줌", "s": "사장 잘못? 알바 잘못?"},
-    {"k": "verdict", "n": "판정 3", "t": "그래도 14일 안에 줘야 해요", "s": "일한 만큼 임금과 주휴는 줘야 하고, 손해는 따로 청구해요."},
-    {"k": "app", "t": "다툼은 기록이 이겨요", "s": "척척사장은 출퇴근·근무표·계약서·명세서가 다 남아요. 노동청 서류도 바로 뽑아요."},
-    {"k": "cta", "t": "몇 개 맞혔어?", "q": "댓글로 점수!", "o": ["2개 이상", "1개 이하"]}
+    {
+     "k": "cover",
+     "big": "결과는?",
+     "t": "알바 고소한 사장들, 결과는 전부 이랬다.",
+     "s": "실제 사건 3개 · 넘기기 전에 맞혀 봐"
+    },
+    {
+     "k": "case",
+     "n": "사건 1",
+     "t": "음료 몇 잔 마신 알바를 횡령으로 고소",
+     "s": "사장 잘못? 알바 잘못?"
+    },
+    {
+     "k": "verdict",
+     "n": "판정 1",
+     "t": "합의금 돌려주고 고소 취하",
+     "s": "사장 발언 녹취가 공개되며 여론이 뒤집혔어요. 직원 음료 규칙은 글로 남겨 두세요."
+    },
+    {
+     "k": "case",
+     "n": "사건 2",
+     "t": "쉬는 날 앞치마 가지러 온 알바를 무단침입으로",
+     "s": "사장 잘못? 알바 잘못?"
+    },
+    {
+     "k": "verdict",
+     "n": "판정 2",
+     "t": "법원은 무죄",
+     "s": "작은 갈등을 고소로 풀면 사장만 손해예요."
+    },
+    {
+     "k": "case",
+     "n": "사건 3",
+     "t": "말없이 잠수 탄 알바, 월급 안 줌",
+     "s": "사장 잘못? 알바 잘못?"
+    },
+    {
+     "k": "verdict",
+     "n": "판정 3",
+     "t": "그래도 14일 안에 줘야 해요",
+     "s": "일한 만큼 임금과 주휴는 줘야 하고, 손해는 따로 청구해요."
+    },
+    {
+     "k": "app",
+     "t": "다툼은 기록이 이겨요",
+     "s": "척척사장은 출퇴근·근무표·계약서·명세서가 다 남아요. 노동청 서류도 바로 뽑아요."
+    },
+    {
+     "k": "cta",
+     "t": "몇 개 맞혔어?",
+     "q": "댓글로 점수!",
+     "o": [
+      "2개 이상",
+      "1개 이하"
+     ]
+    }
    ],
    "primary": "알바를 고소했다가 오히려 사장이 손해 본 실제 사건 3개.\n결과 맞혀 보세요.\n\n다툼은 결국 기록 싸움이에요. 척척사장은 출퇴근·계약서·명세서가 전부 남아요.\n30일 무료 · 카드 등록 없이.",
    "headline": "다툼은 기록이 이겨요",
-   "desc": "30일 무료 · 카드 등록 없음"
+   "desc": "30일 무료 · 카드 등록 없음",
+   "higgs": [
+    {
+     "for": "표지",
+     "prompt": "a cute cream-white robot mascot with a rounded TV-like head, big dark-green eyes, pink cheeks, two lime-green check-mark sprouts on top of its head, wearing a deep green apron with a lime double-check logo (use the attached reference image for the character), wearing a tiny judge's black robe and holding a wooden gavel, three closed folders on a desk in front of it, dramatic but cute lighting, 3D clay render, soft studio lighting, pastel lime green (#c8f169) and deep forest green (#10251b) palette, cute Korean small-business vibe, clean background, 4:5 vertical, leave the top 45% of the frame empty for text overlay, no text, no letters, no logos"
+    },
+    {
+     "for": "사건 1",
+     "prompt": "three iced coffee cups on a cafe counter with a magnifying glass over them, cute clay style, 3D clay render, soft studio lighting, pastel lime green (#c8f169) and deep forest green (#10251b) palette, cute Korean small-business vibe, clean background, 4:5 vertical, leave the top 45% of the frame empty for text overlay, no text, no letters, no logos"
+    },
+    {
+     "for": "사건 2",
+     "prompt": "a dark green apron hanging on a hook by a closed shop door at night, gentle moonlight, cute clay style, 3D clay render, soft studio lighting, pastel lime green (#c8f169) and deep forest green (#10251b) palette, cute Korean small-business vibe, clean background, 4:5 vertical, leave the top 45% of the frame empty for text overlay, no text, no letters, no logos"
+    },
+    {
+     "for": "사건 3",
+     "prompt": "an empty employee locker with an open door and a phone showing an unread message bubble, cute clay style, 3D clay render, soft studio lighting, pastel lime green (#c8f169) and deep forest green (#10251b) palette, cute Korean small-business vibe, clean background, 4:5 vertical, leave the top 45% of the frame empty for text overlay, no text, no letters, no logos"
+    }
+   ]
   },
   {
-   "no": 4, "id": "w4-newyear", "post": "2026-11-02 20:00", "ad": ["2026-11-03", "2026-11-09"],
-   "type": "체크리스트 · 저장형", "title": "1월 1일 전에 사장님이 할 일 5개",
+   "no": 4,
+   "id": "w4-newyear",
+   "post": "2026-11-02 20:00",
+   "ad": [
+    "2026-11-03",
+    "2026-11-09"
+   ],
+   "type": "체크리스트 · 저장형",
+   "title": "1월 1일 전에 사장님이 할 일 5개",
    "hookA": "새해 첫 월급부터 체불될 수 있어. 1월 전에 이거 5개.",
    "hookB": "12월에 몰아서 하면 늦어. 사장님 체크 5개.",
    "why": "마감이 있는 체크리스트라 '나중에 보려고' 저장이 몰려요. 연말에 다시 꺼내 보면서 재노출돼요.",
    "cards": [
-    {"k": "cover", "big": "체크 5개", "t": "새해 첫 월급부터 체불될 수 있어. 1월 전에 이거 5개.", "s": "저장해 두고 하나씩"},
-    {"k": "num", "n": "1", "t": "시급을 1만 700원 이상으로", "s": "1월 1일 일한 시간부터. 하루라도 늦으면 체불."},
-    {"k": "num", "n": "2", "t": "바뀐 임금은 글로 알리기", "s": "근로조건이 바뀌면 서면으로 다시 알려 두는 게 안전. 계약서를 새로 쓰면 가장 깔끔."},
-    {"k": "num", "n": "3", "t": "월급제 직원 금액 확인", "s": "주 40시간이면 월 223만 6,300원 이상."},
-    {"k": "num", "n": "4", "t": "남은 연차 정리", "s": "5인 이상이면 연차가 있어요. 안 쓰고 퇴사하면 수당으로 줘야 해요."},
-    {"k": "num", "n": "5", "t": "연말정산 자료 미리", "s": "2월 급여 때 연말정산. 1년 치 급여·공제 내역을 미리 모아 두세요."},
-    {"k": "app", "t": "척척사장은 미리 예약", "s": "1월 1일 시급 일괄 인상을 지금 예약하고, 1년 치 지급 내역도 바로 뽑아요."},
-    {"k": "cta", "t": "몇 개 준비됐어?", "q": "댓글로 숫자만!", "o": ["3개 이상", "2개 이하"]}
+    {
+     "k": "cover",
+     "big": "체크 5개",
+     "t": "새해 첫 월급부터 체불될 수 있어. 1월 전에 이거 5개.",
+     "s": "저장해 두고 하나씩"
+    },
+    {
+     "k": "num",
+     "n": "1",
+     "t": "시급을 1만 700원 이상으로",
+     "s": "1월 1일 일한 시간부터. 하루라도 늦으면 체불."
+    },
+    {
+     "k": "num",
+     "n": "2",
+     "t": "바뀐 임금은 글로 알리기",
+     "s": "근로조건이 바뀌면 서면으로 다시 알려 두는 게 안전. 계약서를 새로 쓰면 가장 깔끔."
+    },
+    {
+     "k": "num",
+     "n": "3",
+     "t": "월급제 직원 금액 확인",
+     "s": "주 40시간이면 월 223만 6,300원 이상."
+    },
+    {
+     "k": "num",
+     "n": "4",
+     "t": "남은 연차 정리",
+     "s": "5인 이상이면 연차가 있어요. 안 쓰고 퇴사하면 수당으로 줘야 해요."
+    },
+    {
+     "k": "num",
+     "n": "5",
+     "t": "연말정산 자료 미리",
+     "s": "2월 급여 때 연말정산. 1년 치 급여·공제 내역을 미리 모아 두세요."
+    },
+    {
+     "k": "app",
+     "t": "척척사장은 미리 예약",
+     "s": "1월 1일 시급 일괄 인상을 지금 예약하고, 1년 치 지급 내역도 바로 뽑아요."
+    },
+    {
+     "k": "cta",
+     "t": "몇 개 준비됐어?",
+     "q": "댓글로 숫자만!",
+     "o": [
+      "3개 이상",
+      "2개 이하"
+     ]
+    }
    ],
    "primary": "1월 1일부터 시급 1만 700원.\n새해 첫 월급부터 체불 안 되게, 연말 전에 할 일 5개 정리했어요.\n\n척척사장은 시급 인상을 미리 예약하고 1년 치 급여 내역도 바로 뽑아요.\n30일 무료 · 카드 등록 없이.",
    "headline": "1월 1일 시급 인상, 지금 예약",
-   "desc": "30일 무료 · 카드 등록 없음"
+   "desc": "30일 무료 · 카드 등록 없음",
+   "higgs": [
+    {
+     "for": "표지",
+     "prompt": "a cute cream-white robot mascot with a rounded TV-like head, big dark-green eyes, pink cheeks, two lime-green check-mark sprouts on top of its head, wearing a deep green apron with a lime double-check logo (use the attached reference image for the character), holding a big wall calendar flipped to January 1st, confetti and a small party hat, warm restaurant interior, 3D clay render, soft studio lighting, pastel lime green (#c8f169) and deep forest green (#10251b) palette, cute Korean small-business vibe, clean background, 4:5 vertical, leave the top 45% of the frame empty for text overlay, no text, no letters, no logos"
+    },
+    {
+     "for": "척척사장 카드",
+     "prompt": "a cute cream-white robot mascot with a rounded TV-like head, big dark-green eyes, pink cheeks, two lime-green check-mark sprouts on top of its head, wearing a deep green apron with a lime double-check logo (use the attached reference image for the character), pressing a big lime-green button on a giant smartphone that shows a calendar with a check mark, 3D clay render, soft studio lighting, pastel lime green (#c8f169) and deep forest green (#10251b) palette, cute Korean small-business vibe, clean background, 4:5 vertical, leave the top 45% of the frame empty for text overlay, no text, no letters, no logos"
+    }
+   ]
   }
- ]
+ ],
+ "higgsNote": "힉스필드: 이미지 생성 → 비율 4:5(1080×1350) → 참고 이미지에 '척척이-프로필-연두.png' 또는 public/cheokcheoki-welcome.png를 넣어 캐릭터를 맞춰요. 글자는 넣지 말고(한글이 깨져요), 위쪽 45%는 비워 두면 Claude가 한글 문구를 얹어요."
 }
