@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
+import {normalizeTeam} from '../lib/team-model.ts';
 export async function startGuideE2E({owner,srv,step,browser,watch,credentials}){
  const row=await srv.db.q('SELECT owner,data FROM stores LIMIT 1').first(),original=JSON.parse(row.data),state=await owner.context().storageState();
  const c1=await browser.newContext({storageState:state,serviceWorkers:'block',viewport:{width:1280,height:900}}),c2=await browser.newContext({serviceWorkers:'block',viewport:{width:390,height:844}}),a=await c1.newPage(),b=await c2.newPage();watch(a);watch(b);
@@ -39,7 +40,7 @@ export async function startGuideE2E({owner,srv,step,browser,watch,credentials}){
   });
   await step('매니저 안내 · 위임 업무만 표시 · 단계 복원 · 권한 회수',async()=>{
    const u=await srv.auth.user('guide-e2e-manager',{email:'guide-manager@example.invalid',password:'Guide-manager-2026',role:'employee'}),d=structuredClone(original);
-   d.employees.push({...structuredClone(d.employees[0]),id:'guide-manager-employee',name:'안내 매니저',access:'중간관리자',managerPermissions:['schedule']});d._members.push({userId:u.id,employeeId:'guide-manager-employee'});await srv.db.q('UPDATE stores SET data=?,version=version+1 WHERE owner=?',JSON.stringify(d),row.owner).run();
+   d.employees.push({...structuredClone(d.employees[0]),id:'guide-manager-employee',name:'안내 매니저',email:u.email,access:'중간관리자',managerPermissions:['schedule']});d._members.push({userId:u.id,employeeId:'guide-manager-employee'});normalizeTeam({...d,attendance:[]});await srv.db.q('UPDATE stores SET data=?,version=version+1 WHERE owner=?',JSON.stringify(d),row.owner).run();
    await b.goto(srv.ORIGIN+'/logout');await b.waitForURL(/\/login/);await b.goto(srv.ORIGIN+'/login?role=employee',{waitUntil:'networkidle'});await b.fill('input[type=email]',u.email);await b.fill('input[aria-label="비밀번호"]','Guide-manager-2026');await b.locator('form button[type=submit]').click();await b.waitForURL(url=>!url.pathname.startsWith('/login'));await b.getByRole('checkbox',{name:'이용약관과 개인정보 처리방침 동의',exact:true}).check();await b.getByRole('button',{name:'동의하고 계속하기'}).click();await b.goto(srv.ORIGIN+'/manager',{waitUntil:'networkidle'});
    const guide=b.getByRole('region',{name:'매니저 시작 안내'});await guide.getByRole('button',{name:'근무표 등록',exact:true}).waitFor();assert.equal(await guide.getByRole('button',{name:'휴가 신청 확인'}).count(),0);
    await save(b,()=>guide.getByRole('button',{name:'근무표 등록',exact:true}).click());await guide.getByText('근무표 등록 · 1/4').waitFor();await save(b,()=>guide.getByRole('button',{name:'다음 안내'}).click());await b.reload({waitUntil:'networkidle'});await guide.getByText('근무표 등록 · 2/4').waitFor();assert.deepEqual(JSON.parse((await srv.db.q('SELECT data FROM stores WHERE owner=?',row.owner).first()).data),d);
