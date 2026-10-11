@@ -1,14 +1,16 @@
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
-export async function startGuideE2E({owner,srv,step,browser,watch}){
+export async function startGuideE2E({owner,srv,step,browser,watch,credentials}){
  const row=await srv.db.q('SELECT owner,data FROM stores LIMIT 1').first(),original=JSON.parse(row.data),state=await owner.context().storageState();
- const c1=await browser.newContext({storageState:state,serviceWorkers:'block',viewport:{width:1280,height:900}}),c2=await browser.newContext({storageState:state,serviceWorkers:'block',viewport:{width:390,height:844}}),a=await c1.newPage(),b=await c2.newPage();watch(a);watch(b);
+ const c1=await browser.newContext({storageState:state,serviceWorkers:'block',viewport:{width:1280,height:900}}),c2=await browser.newContext({serviceWorkers:'block',viewport:{width:390,height:844}}),a=await c1.newPage(),b=await c2.newPage();watch(a);watch(b);
  const go=p=>p.goto(srv.ORIGIN+'/app',{waitUntil:'networkidle'}),full=p=>p.getByRole('heading',{name:'🎮 사장님 퀘스트',exact:true}).waitFor(),folded=p=>p.locator('.qb-mini').filter({hasText:'사장님 퀘스트'}).waitFor();
  const save=async(p,fn)=>{const response=p.waitForResponse(r=>r.url().includes('/start-guide')&&r.request().method()==='PATCH');await fn();const r=await response,d=await r.json();assert.equal(r.status(),200,'guide save: '+JSON.stringify(d));return d};
  try{
   await srv.db.q('DELETE FROM start_guide_preferences WHERE owner=?',row.owner).run();
   const initial=structuredClone(original);initial.branches[0].address='';await srv.db.q('UPDATE stores SET data=?,version=version+1 WHERE owner=?',JSON.stringify(initial),row.owner).run();
   await step('시작 안내 · 두 기기 숨김과 다시 열기 · 마지막 단계 복원',async()=>{
+   // A second device needs its own session: logging out a copied token also logs out device A.
+   await b.goto(srv.ORIGIN+'/login?role=owner',{waitUntil:'networkidle'});await b.fill('input[type=email]',credentials.email);await b.fill('input[aria-label="비밀번호"]',credentials.password);await b.locator('form button[type=submit]').click();await b.waitForURL(url=>!url.pathname.startsWith('/login'));
    await go(a);await go(b);await full(a);await full(b);
    await save(a,()=>a.locator('.qb-head').getByRole('button',{name:'접기',exact:true}).click());await folded(a);await b.reload({waitUntil:'networkidle'});await folded(b);
    await save(b,()=>b.locator('.qb-mini').filter({hasText:'사장님 퀘스트'}).click());await full(b);
