@@ -49,7 +49,7 @@ export async function buildHome({out, site = HOME_ORIGIN, app = APP_ORIGIN, pixe
     CSP: `<meta http-equiv="Content-Security-Policy" content="${csp}">`, SITE: site, BASE: base, APP: app, SEO_TITLE: '척척사장 | 알바 근무표·출퇴근·급여 관리', DESCRIPTION: R.esc(desc), JSONLD: R.jsonLd(site,app),
     TRIAL: String(R.TRIAL_DAYS), LEDGER: R.ledgerHtml(false), FINALE_LEDGER: R.ledgerHtml(true), PHONE_ROWS: R.phoneRowsHtml(),
     PAY_TOTAL: R.money(pay), PAY_TOTAL_RAW: String(pay), CALC_TOY: R.money(R.crewPay()[0].month).slice(0, -1),
-    WORRIES: R.worriesHtml(app), NOT_DOING: R.NOT_DOING.map(x => `<li>${R.esc(x)}</li>`).join(''), FOOTER: R.footerHtml(), PLAN_CARDS: R.planCardsHtml(app),
+    WORRIES: R.worriesHtml(app), NOT_DOING: R.NOT_DOING.map(x => `<li>${R.esc(x)}</li>`).join(''), FOOTER: R.footerHtml(), PLAN_CARDS: R.planCardsHtml(app), PRICE_EXAMPLES: R.priceExamplesHtml(),
     PRICE_START: R.money(R.employeeMonthlyPrice('basic', 1)), CONTRACT_FEE: R.esc(R.contractFeeText()), MINWAGE: minWage, MINWAGE_TEXT: minWage,
   };
   let tpl = await readFile('site/index.html', 'utf8');
