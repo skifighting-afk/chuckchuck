@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+const display=await import('../lib/report-display.ts').catch(()=>({}));
+assert.equal(typeof display.payrollTrendPoint,'function','report uses explicit record and confirmation states');
+const p=display.payrollTrendPoint;
+assert.deepEqual(p('2026-09',[],false,false),{month:'2026-09',gross:0,hours:0,staff:0,hasData:false,status:'기록 없음'});
+assert.deepEqual(p('2026-09',[],true,false),{month:'2026-09',gross:0,hours:0,staff:0,hasData:true,status:'확정 급여'});
+assert.equal(p('2026-09',[{employeeId:'a',gross:0,hours:0}],false,true).status,'예상 급여');
+const salary=p('2026-09',[{employeeId:'a',gross:2300000,hours:0},{employeeId:'b',gross:0,hours:0}],false,false);
+assert.equal(salary.gross,2300000);assert.equal(salary.staff,1);assert.equal(salary.hasData,true);
+const locked=p('2026-09',[{employeeId:'a',gross:1234567,hours:10.5},{employeeId:'a',gross:0,hours:0}],true,false);
+assert.equal(locked.gross,1234567);assert.equal(locked.hours,10.5);assert.equal(locked.staff,1);assert.equal(locked.status,'확정 급여');
+assert.equal(p('2026-09',[{employeeId:'a',gross:0,hours:0}],false,false).hasData,false);
+assert.equal(p('2026-09',[{employeeId:'a',gross:0,hours:2}],false,false).hasData,true);
+console.log('PASS: report distinguishes no records from zero, preserves fixed salary and confirmation basis.');

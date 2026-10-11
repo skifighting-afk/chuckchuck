@@ -171,3 +171,16 @@ body.cheok-large-text .attendance-evidence p{font-size:18px}
 @media(max-width:700px){.month-daybtn{flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:4px;min-height:48px;max-width:100%}.month-count{padding:0;border-radius:0;background:none;overflow-wrap:anywhere;word-break:normal}.month-leave{font-size:12px;white-space:normal;overflow-wrap:anywhere}}
 .month-leave-count{display:none}.month-day-leaves{padding:16px 0;border-top:1px solid #dce7df}.month-day-leaves ul{margin:8px 0 0;padding-left:20px}.schedule-change-group h4{margin:16px 0 8px;font-size:16px;line-height:1.5}
 @media(max-width:700px){.month-leave-count{display:inline}.month-leave-names{display:none}}
+/* Exact report values stay readable; the plot is paired with an accessible table. */
+.report-trend .report-basis{margin:0 0 20px;color:#416052;font-size:15px;line-height:1.6}
+.report-trend .report-bars{height:230px;gap:12px;margin:0 0 20px}
+.report-trend .report-bar .v{font-size:14px;font-variant-numeric:tabular-nums;text-align:center;overflow-wrap:anywhere}
+.report-trend .report-bar .l{font-size:15px}
+.report-trend .report-stage{font-size:14px;line-height:1.5;color:#416052;text-align:center}
+.report-trend .report-bar.empty .b{min-height:0}
+.report-trend-table{min-width:620px;font-variant-numeric:tabular-nums}
+.report-trend-table caption{text-align:left;padding:0 18px 12px;font-weight:700;color:#153e2d}
+.report-basis-state{display:inline-block;white-space:nowrap;border:1px solid #cbd9cf;border-radius:6px;padding:4px 8px;color:#416052;background:#f5f8f4;font-size:14px}
+.report-basis-state.confirmed{color:#153e2d;background:#e4f1e7}
+@media(max-width:600px){.report-trend .report-bars{height:auto;display:flex;flex-direction:column;align-items:stretch;gap:14px}.report-trend .report-bar{height:auto;display:grid;grid-template-columns:40px minmax(0,1fr);align-items:center;gap:4px 10px}.report-trend .report-bar .l{grid-column:1;grid-row:1}.report-trend .report-bar .v{grid-column:1/-1;grid-row:2;text-align:left;font-size:18px}.report-trend .report-stage{grid-column:2;grid-row:1;text-align:right}.report-trend .report-bar .b{display:none}.report-trend .report-bar{border-bottom:1px solid #dce7df;padding-bottom:14px}.report-trend .report-basis{font-size:14px}}
+.cheok-large-text .report-trend .report-basis,.cheok-large-text .report-trend .report-stage,.cheok-large-text .report-trend .report-bar .v,.cheok-large-text .report-trend .report-bar .l,.cheok-large-text .report-basis-state{font-size:18px}

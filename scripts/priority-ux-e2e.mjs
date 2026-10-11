@@ -124,6 +124,24 @@ export async function priorityUxE2E({owner,staff,srv,step,browser}){
     await page.locator('.month-day-leaves').getByText(emp.name,{exact:true}).waitFor();await page.screenshot({path:'ci-logs/schedule-leave-only-mobile.png',fullPage:true});
    }finally{await srv.db.q('UPDATE stores SET data=? WHERE owner=?',saved.data,saved.owner).run()}
   });
+  await step('HR 리포트 · 정확한 값과 근거 · 기록 없음 · 모바일 큰 글씨',async()=>{
+   await page.goto(srv.ORIGIN+'/demo?role=owner&screen=reports',{waitUntil:'networkidle'});
+   const plot=page.getByRole('region',{name:'최근 6개월, 급여가 어떻게 달라졌나요?',exact:true}),table=page.getByRole('region',{name:'월별 급여 정확한 값',exact:true});
+   await plot.waitFor();assert.equal(await table.locator('tbody tr').count(),6);
+   for(const row of await table.locator('tbody tr').all()){
+    const cells=await row.locator('td').allTextContents(),status=cells[3];assert.match(status,/^(예상 급여|확정 급여|기록 없음)$/);
+    if(status!=='기록 없음'){assert.match(cells[0],/^[\d,]+원$/);assert.match(cells[1],/^(?:\d+시간(?: \d+분)?|\d+분)$/);assert.match(cells[2],/^\d+명$/)}else assert.equal(cells[0],'—');
+   }
+   const exact=await table.locator('tbody tr td:first-of-type').allTextContents(),visual=await plot.locator('.report-bar .v').allTextContents();assert.deepEqual(visual,exact.map(v=>v==='—'?'기록 없음':v));
+   assert.equal(await page.getByText(/매출 대비|POS·카드|시간당 매출/).count(),0);
+   for(const width of [320,390,768,1440]){await page.setViewportSize({width,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'report overflow '+width)}
+   await page.locator('.owner-display-settings summary').click();await page.getByRole('button',{name:'글씨 더 크게 보기',exact:true}).click();
+   for(const width of [320,390,768,1440]){await page.setViewportSize({width,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'report large overflow '+width)}
+   await page.getByRole('button',{name:'기본 글씨로 보기',exact:true}).click();await page.locator('.owner-display-settings summary').click();
+   await page.getByLabel('리포트 월',{exact:true}).fill('1999-01');await table.getByText('기록 없음',{exact:true}).first().waitFor();assert.equal(await table.locator('tbody tr').filter({hasText:'기록 없음'}).count(),6);
+   await page.setViewportSize({width:390,height:844});await page.screenshot({path:'ci-logs/hr-report-readable-mobile.png',fullPage:true});
+   await page.goto(srv.ORIGIN+'/demo?role=owner&screen=settings',{waitUntil:'networkidle'});assert.equal(await page.getByText('매출 대비 인건비 목표(%)',{exact:true}).count(),0);
+  });
   await step('직원별 서류 · 검색 · 월 선택 · 연결 실패와 복구',async()=>{
    await page.goto(srv.ORIGIN+'/app?screen=contracts',{waitUntil:'networkidle'});
    const board=page.getByRole('region',{name:'직원별 서류 현황'});
