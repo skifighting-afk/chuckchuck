@@ -7,27 +7,27 @@ PASS public-help · 이전과 0% 다름
 PASS public-refund · 이전과 0% 다름
 PASS public-terms · 이전과 0% 다름
 PASS public-pricing · 이전과 0% 다름
-PASS public-status · 이전과 0.07% 다름
+PASS public-status · 이전과 0.05% 다름
 PASS public-privacy · 이전과 0% 다름
 PASS public-policy · 이전과 0% 다름
 PASS public-news · 이전과 0% 다름
 PASS public-privacy-request · 이전과 0% 다름
 PASS public-accessibility · 이전과 0% 다름
-PASS demo-home · 이전과 0% 다름
-PASS demo-employees · 이전과 0% 다름
-PASS demo-attendance · 이전과 0% 다름
-PASS demo-schedule · 이전과 0% 다름
-PASS demo-payroll · 이전과 0% 다름
-PASS demo-contracts · 이전과 0% 다름
-PASS demo-retirement · 이전과 0% 다름
-PASS demo-outbox · 이전과 0% 다름
-PASS demo-operations · 이전과 0% 다름
-PASS demo-manual · 이전과 0% 다름
-PASS demo-reports · 이전과 0% 다름
-PASS demo-stores · 이전과 0% 다름
-PASS demo-settings · 이전과 0% 다름
-PASS demo-guide · 이전과 0% 다름
-PASS demo-staff · 이전과 0% 다름
+PASS demo-home · 이전과 23.87% 다름
+PASS demo-employees · 이전과 13.31% 다름
+PASS demo-attendance · 이전과 14.37% 다름
+PASS demo-schedule · 이전과 18.56% 다름
+PASS demo-payroll · 이전과 19.31% 다름
+PASS demo-contracts · 이전과 16.47% 다름
+PASS demo-retirement · 이전과 13.92% 다름
+PASS demo-outbox · 이전과 17.26% 다름
+PASS demo-operations · 이전과 23.01% 다름
+PASS demo-manual · 이전과 14.33% 다름
+PASS demo-reports · 이전과 15.92% 다름
+PASS demo-stores · 이전과 10.61% 다름
+PASS demo-settings · 이전과 15.9% 다름
+PASS demo-guide · 이전과 15.53% 다름
+PASS demo-staff · 이전과 18.47% 다름
 PASS hr-hiring-owner · 이전과 0% 다름
 PASS hr-hiring-employee · 이전과 0% 다름
 PASS hr-hiring-manager · 이전과 0% 다름
@@ -112,4 +112,5 @@ PASS hr-settings-manager (큰 글씨)
 PASS hr-export-owner (큰 글씨)
 PASS hr-export-employee (큰 글씨)
 PASS hr-export-manager (큰 글씨)
+이전 실행과 2% 넘게 달라진 화면: demo-home 23.87%, demo-employees 13.31%, demo-attendance 14.37%, demo-schedule 18.56%, demo-payroll 19.31%, demo-contracts 16.47%, demo-retirement 13.92%, demo-outbox 17.26%, demo-operations 23.01%, demo-manual 14.33%, demo-reports 15.92%, demo-stores 10.61%, demo-settings 15.9%, demo-guide 15.53%, demo-staff 18.47%
 390px 화면 57개(보통·큰 글씨): 가로 넘침 없음
