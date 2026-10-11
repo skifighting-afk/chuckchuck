@@ -206,7 +206,8 @@ export async function priorityUxE2E({owner,staff,srv,step,browser}){
    await srv.db.q('UPDATE stores SET data=? WHERE owner=?',JSON.stringify(data),saved.owner).run();
    try{
     await page.goto(srv.ORIGIN+'/app?screen=operations',{waitUntil:'networkidle'});
-    await page.getByRole('tab',{name:/처리할 것/}).click();
+    const tabs=page.getByRole('tab',{name:/처리할 것/});
+    try{await tabs.click()}catch(error){console.error('REQUEST_SCREEN_DIAGNOSTIC',page.url(),await page.locator('body').innerText());await page.screenshot({path:'ci-logs/operations-screen-failure.png',fullPage:true});throw error}
     const card=page.locator('.ops-card').filter({hasText:'단계검사 waiting'});await card.waitFor();
     assert.equal(await card.locator('.ops-progress li.done').count(),2);assert.match(await card.locator('.ops-progress p').innerText(),/사장님 승인/);
     assert.equal((await card.innerText()).split('17:00–20:00').length-1,1,'shift time appears once');
