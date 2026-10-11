@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {latestClockRecord,clockRecordTime} from '../lib/clock-receipt.ts';
+const own={id:'mine',employeeId:'me',start:'2026-10-11T23:10:00Z',end:null};
+const earlier={id:'old',employeeId:'me',start:'2026-10-10T23:00:00Z',end:'2026-10-11T04:00:00Z'};
+const other={id:'other',employeeId:'someone',start:'2026-10-12T23:00:00Z',end:null};
+assert.equal(latestClockRecord([own,other,earlier],'me'),own,'use the latest personal saved record, never another employee');
+assert.equal(latestClockRecord([earlier,own],'me'),own,'input order does not determine latest record');
+assert.equal(latestClockRecord([{...own,start:'invalid'}],'me'),null);
+assert.equal(latestClockRecord([],'me'),null,'never invent a saved timestamp');
+assert.equal(clockRecordTime(own.start),'2026. 10. 12. 08:10');
+assert.equal(clockRecordTime('invalid'),'확인 필요');
+const receipt=await readFile(new URL('../app/clock-receipt.tsx',import.meta.url),'utf8');
+assert(receipt.includes('현재 소속 매장:')&&receipt.includes('기록 당시 매장을 뜻하지 않아요'),'after a transfer, current membership must not be presented as the historical record location');
+console.log('PASS: latest personal saved clock record, no invented timestamps and explicit Korean date/time.');
