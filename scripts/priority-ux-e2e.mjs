@@ -54,4 +54,5 @@ export async function priorityUxE2E({owner,srv,step,browser}){
    }finally{await failed.close()}
   });
  }finally{await ctx.close()}
+ await (await import('./home-result-e2e.mjs')).homeResultE2E({browser,step});
 }

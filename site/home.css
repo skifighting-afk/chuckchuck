@@ -668,3 +668,24 @@ html.anim .hero{height:160vh}.exp-extra{font-size:15px;color:#64795f;line-height
  .hero .cta-row .btn-ghost{min-height:44px;background:transparent;border-color:transparent;text-decoration:underline;text-underline-offset:4px}
  .hero .fine,html.anim .hero .hero-copy .fine{margin-top:8px;font-size:14px}
 }
+
+/* The first screen explains the record behind the amount, without a scroll detour. */
+.hero,html.anim .hero{height:auto}
+.hero-pin,html.anim .hero-pin{position:relative;top:auto;height:auto;min-height:100svh;grid-template-rows:auto;padding-bottom:64px;align-items:center}
+.hero-record{grid-column:2;grid-row:1;min-width:0;max-width:580px;width:100%;justify-self:center;padding:30px;background:var(--sheet);border:1px solid #cbd5c7;border-top:5px solid var(--green);border-radius:24px;box-shadow:0 24px 60px -36px #123f3390;font-variant-numeric:tabular-nums}
+.hero-record-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:24px}
+.hero-record-head p{font-size:14px;color:#52655c;margin:0 0 10px}.hero-record h2{font-size:clamp(25px,2.4vw,36px);line-height:1.3;letter-spacing:-.04em;margin:0}
+.hero-example{font-size:14px;padding:4px 10px;border-radius:99px;background:#e6eddc;color:#355342;white-space:nowrap}
+.hero-record-steps>button{display:grid;grid-template-columns:32px minmax(0,1fr) auto;align-items:center;gap:12px;width:100%;min-height:88px;padding:16px 14px;text-align:left;background:#f5f6ef;border:1px solid #d9dfd1;border-radius:12px;color:var(--ink);cursor:pointer;font:inherit;transition:border-color .4s,background-color .4s,box-shadow .4s}
+.hero-record-steps>button[aria-pressed="true"]{border-color:var(--green);background:#eef5e5;box-shadow:inset 3px 0 var(--green)}
+.hero-step-mark{display:grid;place-items:center;width:30px;height:30px;background:#dce7d3;border-radius:50%;font-size:14px;font-weight:750}.hero-record-steps b{display:block;font-size:16px;line-height:1.45}.hero-record-steps small{display:block;font-size:14px;font-weight:400;line-height:1.6;color:#52655c;margin-top:4px}
+.hero-step-state{font-size:14px;color:var(--green);font-weight:700}.hero-step-amount{font-size:19px;font-weight:800;letter-spacing:-.035em;white-space:nowrap}.hero-step-amount>small{display:inline;font-size:14px;margin-left:2px;color:inherit}
+.hero-flow-link{display:flex;align-items:center;justify-content:flex-end;gap:12px;padding:7px 20px;color:#4d6655;font-size:18px;line-height:1.25}.hero-flow-link span{font-size:14px}
+.hero-record-bottom{display:flex;gap:16px;align-items:center;margin-top:20px}.hero-record-bottom p{font-size:15px;line-height:1.7;margin:0;flex:1;min-width:0}.hero-record-bottom button{flex:none;min-height:44px;max-width:110px;padding:7px 10px;border:1px solid #cbd5c7;border-radius:8px;background:transparent;color:var(--ink);font:inherit;font-size:14px;cursor:pointer}.hero-record-bottom button[hidden]{display:none}.hero-record-bottom button:disabled{opacity:.8;cursor:default}
+.hero-record-note{font-size:14px;line-height:1.7;color:#52655c;border-top:1px solid #d9dfd1;margin:20px 0 0;padding-top:14px}
+@media(max-width:1100px){.hero-pin{column-gap:24px}.hero-record{padding:24px}.hero-record-steps>button{grid-template-columns:28px minmax(0,1fr);gap:10px}.hero-step-amount,.hero-step-state{grid-column:2}.hero-step-mark{width:28px;height:28px;grid-row:1/3;align-self:start}.hero-record h2{font-size:28px}}
+@media(max-width:900px){.hero-pin,html.anim .hero-pin{min-height:0;padding-bottom:48px;grid-template-rows:auto auto}.hero-record{grid-column:1;grid-row:2;max-width:620px}.hero-record-steps>button{grid-template-columns:32px minmax(0,1fr) auto}.hero-step-mark{grid-row:auto}.hero-step-amount,.hero-step-state{grid-column:auto}}
+@media(max-width:600px){.hero-pin,html.anim .hero-pin{padding-top:88px;gap:26px}.hero-record{padding:22px 18px;border-radius:18px}.hero-record h2{font-size:28px}.hero-record-steps>button{grid-template-columns:28px minmax(0,1fr);padding:14px 12px;gap:8px}.hero-step-mark{grid-row:1/3;align-self:start}.hero-step-amount,.hero-step-state{grid-column:2}.hero-record-head{margin-bottom:20px}.hero-record-bottom{align-items:flex-start;gap:10px}.hero-record-bottom button{max-width:90px}.hero-flow-link{padding-inline:8px}}
+html.large-text .hero-record-steps b,html.large-text .hero-record-bottom p{font-size:18px}html.large-text .hero-record-steps small,html.large-text .hero-record-note,html.large-text .hero-record-head p,html.large-text .hero-flow-link span{font-size:16px}
+html.reduce .hero-record-steps>button{transition:none}
+@media(prefers-reduced-motion:reduce){.hero-record-steps>button{transition:none}}
