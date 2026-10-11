@@ -93,7 +93,7 @@ export async function priorityUxE2E({owner,staff,srv,step,browser}){
    const mins=Number(oldStart.slice(0,2))*60+Number(oldStart.slice(3))+15,newStart=String(Math.floor(mins/60)).padStart(2,'0')+':'+String(mins%60).padStart(2,'0');
    await dialog.getByLabel('출근',{exact:true}).fill(newStart);await dialog.getByLabel('퇴근',{exact:true}).fill(oldEnd==='23:00'?'22:45':'23:00');
    await dialog.getByLabel('휴게 (분)',{exact:true}).fill('30');await dialog.getByLabel('근무일',{exact:true}).fill('2099-10-13');
-   const select=dialog.getByLabel('직원',{exact:true}),options=await select.locator('option').evaluateAll(els=>els.map(el=>({value:el.value,selected:el.selected})));await select.selectOption(options.find(o=>!o.selected).value);
+   const select=dialog.getByRole('combobox',{name:'직원',exact:true}),options=await select.evaluate(el=>Array.from(el.options).map(o=>({value:o.value,selected:o.selected}))),other=options.find(o=>!o.selected);assert(other,'demo has another employee option: '+JSON.stringify(options));await select.selectOption(other.value);
    const preview=dialog.getByRole('region',{name:'저장 전 근무 변경 확인',exact:true});await preview.waitFor();assert.match(await preview.innerText(),new RegExp(oldStart));assert.match(await preview.innerText(),new RegExp(newStart));
    for(const key of ['직원','근무일','출근','퇴근','휴게'])await preview.locator('dt').filter({hasText:key}).waitFor();
    for(const width of [320,390,768,1440]){await page.setViewportSize({width,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'schedule preview overflow '+width)}
