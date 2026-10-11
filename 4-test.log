@@ -748,7 +748,8 @@ PASS: failed save keeps confirmed state and retries exact original request
 PASS: other-device conflict shows latest state without reapplying stale patch
 PASS: other account has no prior account preference flash
 PASS: unmounted scope ignores delayed response
-start guide client: 6 passed
+PASS: revoked role removes previously visible guide data
+start guide client: 7 passed
 
 ── check-employee-pricing
 PASS 1. VAT-included employee monthly amounts, including zero
