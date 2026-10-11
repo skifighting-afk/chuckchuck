@@ -4,7 +4,8 @@
 // (테스트가 바로 불러오므로 다른 파일을 import하지 않는다)
 export type QuestRole = 'owner' | 'staff';
 export type QuestStepKind = 'click' | 'fill' | 'pick' | 'check';
-export type QuestStep = {find: string[]; hint: string; kind: QuestStepKind};
+/** alt: 대상이 안 보일 때 대신 짚을 곳(예: 입력 창의 다른 탭에 있을 때 '01 기본 정보'로) · none: 이 화면에 지금 할 일이 없을 때 알려 줄 말 */
+export type QuestStep = {find: string[]; hint: string; kind: QuestStepKind; alt?: {find: string[]; hint: string}; none?: string};
 export type Quest = {
   id: string; chapter: number; emoji: string; title: string; why: string; xp: number;
   badge: {emoji: string; name: string};
@@ -26,18 +27,18 @@ export const QUESTS: Record<QuestRole, Quest[]> = {
   owner: [
     {id: 'store', chapter: 0, emoji: '🏪', title: '가게 간판 달기', why: '주소와 영업시간은 근로계약서·명세서·근무표에 그대로 쓰여요.', xp: 100, minutes: 1,
       badge: {emoji: '🪧', name: '간판 장인'}, page: '설정', steps: [
-        {find: ['field:주소'], hint: '가게 주소를 여기에 적어 주세요', kind: 'fill'},
-        {find: ['.branch-hours fieldset input[type=checkbox]'], hint: '영업시간을 정해 두면 근무표가 그 시간에 맞춰져요. 체크!', kind: 'check'},
+        {find: ['.t-branch-cur field:주소', 'field:주소'], hint: '가게 주소를 여기에 적어 주세요', kind: 'fill'},
+        {find: ['.t-branch-cur .branch-hours fieldset input[type=checkbox]', '.branch-hours fieldset input[type=checkbox]'], hint: '영업시간을 정해 두면 근무표가 그 시간에 맞춰져요. 체크!', kind: 'check'},
         {find: ['button.primary==설정 저장'], hint: '다 적었으면 저장을 눌러요', kind: 'click'},
       ]},
     {id: 'staff', chapter: 0, emoji: '🧑‍🍳', title: '첫 직원 채용', why: '직원이 있어야 근무표·출퇴근·급여가 열려요.', xp: 150, minutes: 2,
       badge: {emoji: '🤝', name: '첫 동료'}, page: '직원 관리', steps: [
         {find: ['button.primary@@직원 등록', 'button.primary@@첫 직원 등록하기'], hint: '여기를 눌러 직원을 등록해요', kind: 'click'},
-        {find: ['[role=dialog] field:이름'], hint: '직원 이름을 적어요', kind: 'fill'},
-        {find: ['[role=dialog] field:이메일'], hint: '명세서·계약서를 받을 이메일이에요', kind: 'fill'},
-        {find: ['[role=dialog] field:연락처'], hint: '휴대폰 번호를 적어요', kind: 'fill'},
-        {find: ['[role=dialog] field:약속한 급여'], hint: '시급이면 시간당 금액이에요. 최저임금보다 낮으면 바로 알려 줘요', kind: 'fill'},
-        {find: ['[role=dialog] button.primary@@직원 등록하기', '[role=dialog] button.primary@@직원 정보 저장'], hint: '저장하면 퀘스트 완료!', kind: 'click'},
+        {find: ['[role=dialog] field:이름'], hint: '직원 이름을 적어요', kind: 'fill', alt: {find: ['[role=dialog] .t-stepbar button@@01 기본 정보'], hint: '「01 기본 정보」 탭으로 돌아가서 입력해요'}},
+        {find: ['[role=dialog] field:이메일'], hint: '명세서·계약서를 받을 이메일이에요', kind: 'fill', alt: {find: ['[role=dialog] .t-stepbar button@@01 기본 정보'], hint: '「01 기본 정보」 탭으로 돌아가서 입력해요'}},
+        {find: ['[role=dialog] field:연락처'], hint: '휴대폰 번호를 적어요', kind: 'fill', alt: {find: ['[role=dialog] .t-stepbar button@@01 기본 정보'], hint: '「01 기본 정보」 탭으로 돌아가서 입력해요'}},
+        {find: ['[role=dialog] field:약속한 급여'], hint: '시급이면 시간당 금액이에요. 최저임금보다 낮으면 바로 알려 줘요', kind: 'fill', alt: {find: ['[role=dialog] .t-stepbar button@@01 기본 정보'], hint: '「01 기본 정보」 탭으로 돌아가서 입력해요'}},
+        {find: ['[role=dialog] button.primary@@직원 등록하기', '[role=dialog] button.primary@@직원 정보 저장'], hint: '저장하면 퀘스트 완료!', kind: 'click', alt: {find: ['[role=dialog] .t-stepbar button@@01 기본 정보'], hint: '「01 기본 정보」 탭으로 돌아가서 입력해요'}},
       ]},
     {id: 'shift', chapter: 1, emoji: '🗓️', title: '첫 근무 넣기', why: '근무표가 있어야 지각·결근을 알아서 챙겨 줘요.', xp: 150, minutes: 1,
       badge: {emoji: '📅', name: '근무표 설계사'}, page: '근무 스케줄', steps: [
@@ -50,7 +51,7 @@ export const QUESTS: Record<QuestRole, Quest[]> = {
       ]},
     {id: 'publish', chapter: 1, emoji: '📣', title: '근무표 공개하기', why: '공개하면 직원 휴대폰에 알림이 가고, 누가 확인했는지 보여요.', xp: 100, minutes: 1,
       badge: {emoji: '📢', name: '확성기'}, page: '근무 스케줄', steps: [
-        {find: ['.publish-bar button.primary'], hint: '여기를 누르면 직원들에게 이번 주 근무표가 공개돼요', kind: 'click'},
+        {find: ['.publish-bar button.primary'], hint: '여기를 누르면 직원들에게 이번 주 근무표가 공개돼요', kind: 'click', none: '이 주 근무표는 이미 공개했어요. 근무를 바꾸면 "다시 공개·알림"으로 다시 알릴 수 있어요.'},
       ]},
     {id: 'qr', chapter: 2, emoji: '📱', title: '출퇴근 QR 띄우기', why: '매장에 붙이거나 태블릿에 띄우면 직원이 찍는 순간 기록돼요.', xp: 100, minutes: 1,
       badge: {emoji: '🔳', name: 'QR 마스터'}, page: '출퇴근 기록', doneSel: ['.t-qr img', '.live-qr'], steps: [
@@ -64,7 +65,7 @@ export const QUESTS: Record<QuestRole, Quest[]> = {
         {find: ['[role=dialog] button.primary@@현재 시각으로 기록'], hint: '누르면 지금 시각으로 남아요', kind: 'click'},
       ]},
     {id: 'notice', chapter: 3, emoji: '📢', title: '첫 공지 올리기', why: '단톡방 대신 공지로 남기면 누가 읽었는지 보여요.', xp: 100, minutes: 1,
-      badge: {emoji: '📌', name: '공지 요정'}, page: '휴가·공지', doneSel: ['.ops-notice'], steps: [
+      badge: {emoji: '📌', name: '공지 요정'}, page: '휴가·공지', doneSel: ['.saas-success@@공지를', '[data-sonner-toast]@@공지를'], steps: [
         {find: ['[role=tab]@@공지'], hint: '공지 탭을 열어요', kind: 'click'},
         {find: ['.ops-notice-form field:제목'], hint: '제목을 적어요. 예: 이번 주 마감 청소 당번', kind: 'fill'},
         {find: ['.ops-notice-form field:내용'], hint: '내용을 적어요', kind: 'fill'},
@@ -78,7 +79,7 @@ export const QUESTS: Record<QuestRole, Quest[]> = {
       ]},
     {id: 'pay', chapter: 4, emoji: '💰', title: '첫 급여 확정', why: '확정하면 근태가 잠기고 임금명세서가 직원에게 가요.', xp: 200, minutes: 2,
       badge: {emoji: '🏆', name: '월급날의 영웅'}, page: '급여·명세서', steps: [
-        {find: ['button.primary@@급여 검토·확정'], hint: '여기를 눌러 이번 달 급여를 검토해요', kind: 'click'},
+        {find: ['button.primary@@급여 검토·확정'], hint: '여기를 눌러 이번 달 급여를 검토해요', kind: 'click', none: '이번 달 급여는 이미 확정했어요. 다른 달은 위의 급여 월을 바꿔서 확정해요.'},
         {find: ['[role=dialog] field:실제 지급 예정일'], hint: '실제로 줄 날짜를 골라요', kind: 'fill'},
         {find: ['[role=dialog] .t-check input[type=checkbox]'], hint: '수당·공제·누락을 확인했으면 체크', kind: 'check'},
         {find: ['[role=dialog] button.primary==급여 확정'], hint: '누르면 급여가 확정돼요', kind: 'click'},
@@ -86,8 +87,8 @@ export const QUESTS: Record<QuestRole, Quest[]> = {
   ],
   staff: [
     {id: 'push', chapter: 0, emoji: '🔔', title: '알림 켜기', why: '근무 전, 근무표가 바뀔 때, 명세서가 왔을 때 알려 줘요.', xp: 50, minutes: 1,
-      badge: {emoji: '🔔', name: '알림 수신 완료'}, page: '내 근무', needs: '.push-toggle', doneSel: ['.push-toggle button@@끄기'], steps: [
-        {find: ['.push-toggle button'], hint: '여기를 누르고 "허용"을 골라요', kind: 'click'},
+      badge: {emoji: '🔔', name: '알림 수신 완료'}, page: '내 근무', needs: '.push-toggle', doneSel: ['.push-toggle button@@끄기', '.push-toggle button@@켜짐'], steps: [
+        {find: ['.push-toggle button'], hint: '여기를 누르고 "허용"을 골라요', kind: 'click', none: '이 기기·브라우저에서는 알림을 켤 수 없어요. 앱을 설치하거나 다른 브라우저로 열어 주세요.'},
       ]},
     {id: 'schedule', chapter: 0, emoji: '📅', title: '내 근무표 보기', why: '언제 일하는지 휴대폰에서 바로 확인해요.', xp: 50, minutes: 1,
       badge: {emoji: '🗓️', name: '일정 체크'}, page: '내 근무', doneOnLastClick: true, steps: [

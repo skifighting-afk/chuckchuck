@@ -7,6 +7,8 @@ import {useEffect,useRef,useState} from 'react';
 import {QUESTS,questDone} from '../lib/quests';
 import {SETUP_STEPS,setupNeeded} from '../lib/tutorials';
 import {startQuest} from './quests';
+import {createPortal} from 'react-dom';
+import {useInertOthers} from './overlay-utils';
 
 export function SetupGate({state,branch,onDone}:{state:any,branch:string,onDone:()=>Promise<any>|void}){
  const done=questDone('owner',state,branch,'',[]);
@@ -14,15 +16,26 @@ export function SetupGate({state,branch,onDone}:{state:any,branch:string,onDone:
  const need=!robot&&setupNeeded(state,done);
  const [active,setActive]=useState(false),[finished,setFinished]=useState(false),[saving,setSaving]=useState(false),shown=useRef(false),card=useRef<HTMLDivElement>(null);
  useEffect(()=>{const h=(e:Event)=>{const d=(e as CustomEvent).detail;if(d?.role==='owner')setActive(!!d.id)};addEventListener('cc-quest-active',h);return()=>removeEventListener('cc-quest-active',h)},[]);
+ // 입력 창(직원 등록 등)이 열려 있으면 그 위를 덮지 않는다(덮으면 창도 이 화면도 누를 수 없음)
+ const [dialogOpen,setDialogOpen]=useState(false);
+ const watch=need||finished;
+ useEffect(()=>{if(!watch)return;const t=setInterval(()=>setDialogOpen(!!document.querySelector('[data-slot=dialog-content][data-state=open]')),400);return()=>clearInterval(t)},[watch]);
  if(need)shown.current=true;
  const allDone=SETUP_STEPS.every(k=>done[k]);
- useEffect(()=>{if(shown.current&&allDone&&!state?.settings?.more?.setupDoneAt)setFinished(true)},[allDone]);// eslint-disable-line
- const open=(need||finished)&&!active;
+ // 다 끝나면 완료 표시를 바로 저장한다(창을 닫지 않고 새로고침해도, 나중에 직원·근무를 지워도 다시 잠기지 않게). 실패하면 다시 시도
+ const doneAt=state?.settings?.more?.setupDoneAt,doneRef=useRef(onDone);doneRef.current=onDone;// 다시 시도할 때 최신 가게 기록으로 저장(옛 기록으로 덮어쓰지 않게)
+ useEffect(()=>{if(!(shown.current&&allDone)||doneAt)return;setFinished(true);let stop=false,t:any;const run=async()=>{let ok:any=false;try{ok=await doneRef.current()}catch{}if(ok===false&&!stop)t=setTimeout(run,5000)};void run();return()=>{stop=true;clearTimeout(t)}},[allDone,!!doneAt]);// eslint-disable-line
+ const open=(need||finished)&&!active&&!dialogOpen;
  useEffect(()=>{if(open)setTimeout(()=>card.current?.focus(),50)},[open]);
+ useInertOthers(card,open);
+ // 키보드: Tab이 이 창 밖(뒤 화면)으로 나가지 않게
+ useEffect(()=>{if(!open)return;const k=(e:KeyboardEvent)=>{if(e.key!=='Tab'||!card.current)return;const f=[...card.current.querySelectorAll<HTMLElement>('a[href],button:not([disabled])')];if(!f.length)return;const a=f[0],z=f[f.length-1],cur=document.activeElement;
+  if(!card.current.contains(cur)){e.preventDefault();a.focus()}else if(e.shiftKey&&(cur===a||cur===card.current)){e.preventDefault();z.focus()}else if(!e.shiftKey&&cur===z){e.preventDefault();a.focus()}};addEventListener('keydown',k,true);return()=>removeEventListener('keydown',k,true)},[open]);
  if(!open)return null;
+ const portal=(n:any)=>typeof document!=='undefined'?createPortal(n,document.body):n;
  const steps=SETUP_STEPS.map(id=>QUESTS.owner.find(q=>q.id===id)!),cur=steps.find(q=>!done[q.id]);
- const finish=async()=>{setSaving(true);try{await onDone()}finally{setSaving(false);setFinished(false)}};
- return <div className="sg-root">
+ const finish=async()=>{if(doneAt){setFinished(false);return}setSaving(true);let ok:any=false;try{ok=await onDone()}catch{}setSaving(false);if(ok!==false)setFinished(false)};
+ return portal(<div className="sg-root">
   <div ref={card} className="sg-card" role="dialog" aria-modal="true" aria-labelledby="sg-title" tabIndex={-1}>
    {finished?<>
     <div className="sg-hero" aria-hidden="true">🎉</div>
@@ -43,5 +56,5 @@ export function SetupGate({state,branch,onDone}:{state:any,branch:string,onDone:
     <p className="sg-foot"><a href="/demo">먼저 예시 화면 둘러보기</a> · <a href="/logout">로그아웃</a></p>
    </>}
   </div>
- </div>;
+ </div>);
 }

@@ -806,10 +806,10 @@ html.native-app body{padding-top:env(safe-area-inset-top);padding-bottom:env(saf
 @keyframes qp-pulse{0%,100%{box-shadow:0 0 0 4px rgba(255,207,51,.35),0 0 18px rgba(255,207,51,.5)}50%{box-shadow:0 0 0 10px rgba(255,207,51,.12),0 0 30px rgba(255,207,51,.75)}}
 @keyframes qp-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 .qh-hud{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;z-index:2147482999;display:flex;align-items:center;gap:10px;max-width:min(560px,calc(100vw - 24px));background:#fff;color:#10251b;border:2px solid #ffcf33;border-radius:999px;padding:6px 6px 6px 14px;box-shadow:0 10px 30px rgba(16,37,27,.25);pointer-events:auto}
-body:has([role=dialog][data-state=open]) .qh-hud{opacity:.92;pointer-events:none}
+
 .qh-emoji{font-size:22px}.qh-text{display:flex;flex-direction:column;min-width:0}.qh-text b{font-size:14px}.qh-text small{font-size:12.5px;color:#4b5d53;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .qh-stop,.qh-back{min-height:48px;min-width:48px;border-radius:999px;border:1px solid #c9d6ce;background:#f4f7f5;color:#10251b;font-weight:700;padding:0 14px;cursor:pointer}.qh-back{background:#15643f;color:#fff;border-color:#15643f}
-@media(max-width:767px){.qh-hud{bottom:auto;top:calc(8px + env(safe-area-inset-top));width:calc(100vw - 24px);border-radius:16px}body:has([role=dialog][data-state=open]) .qh-hud{opacity:0}}
+@media(max-width:767px){.qh-hud{bottom:auto;top:calc(8px + env(safe-area-inset-top));width:calc(100vw - 24px);border-radius:16px}}
 .qh-text{flex:1}.qh-text b,.qh-stop,.qh-back{white-space:nowrap}.qh-text b{overflow:hidden;text-overflow:ellipsis}
 .qh-toast{position:fixed;right:16px;top:76px;z-index:2147482998;display:flex;align-items:center;gap:10px;background:#10251b;color:#fff;border-radius:14px;padding:10px 14px;box-shadow:0 10px 28px rgba(0,0,0,.25);pointer-events:none;animation:qp-in .25s ease-out}
 .qh-toast>span:first-child{font-size:26px}.qh-toast b{display:block;font-size:14px}.qh-toast small{color:#c8f169;font-size:13px}
@@ -919,3 +919,21 @@ li.now .sg-num{background:#15643f;color:#fff}li.done .sg-num{background:#c8f169;
 .qb-line-x{flex:0 0 auto;min-height:48px;min-width:48px;padding:0 6px;border:0;background:none;color:#dceee4;text-decoration:underline;font-size:13px;cursor:pointer}
 @media(max-width:560px){.qb-line{flex-wrap:wrap}.qb-line-meta{flex-basis:calc(100% - 60px)}.qb-line-go{flex:1}}
 .db-donebtn{display:block;margin:10px 0 0;min-height:44px;padding:0 10px;border:0;background:none;color:#15643f;font-weight:700;font-size:14px;cursor:pointer;text-decoration:underline}
+
+/* 안내 막대가 입력 창 안에 들어갈 때(창 맨 위에 붙음) */
+.qh-hud.in-dialog{position:sticky;top:-8px;left:auto;right:auto;bottom:auto;transform:none;width:100%;max-width:none;z-index:5;order:-1;margin:-6px 0 2px;border-radius:14px;box-shadow:0 4px 14px rgba(16,37,27,.15)}
+.qh-hud.none{border-color:#c9d6ce}.qh-hud.none .qh-text small{white-space:normal;color:#3d4d44}
+/* 점검으로 찾은 화면 고침: 누르는 곳 크기·가림·글자 상자 */
+.notice:not(:has(>svg:first-child)){display:block}.notice.notice-text{display:block}
+.link-44{display:inline-flex;align-items:center;min-height:44px}
+.t-toc a{display:flex;align-items:center;min-height:44px}
+.masked-toggle{min-width:44px;min-height:44px}
+@media(max-width:767px){.t-footer{padding-bottom:calc(84px + env(safe-area-inset-bottom))}}
+.wl-name .link-btn{min-width:44px;min-height:44px}
+td>.link-btn,th>.link-btn{min-height:44px;min-width:44px}
+/* 직원 화면: 아래 탭(근무표·급여)을 가리지 않게 안내 막대를 탭 위로 */
+@media(min-width:768px){.t-staff .qh-hud:not(.in-dialog){bottom:calc(84px + env(safe-area-inset-bottom))}}
+/* 입력 창 안 안내 막대: 오른쪽 위 닫기(X) 버튼 자리를 비워 둔다 */
+.t-dialog .qh-hud.in-dialog{width:auto;margin-right:84px}
+/* 안내 저장 오류 상자는 입력 창이 열려 있으면 숨긴다(창 버튼을 가리지 않게) */
+body:has([data-slot=dialog-content][data-state=open]) .start-guide-message{display:none}
