@@ -7,7 +7,7 @@ export async function homeResultE2E({browser,step}){
  const out=await mkdtemp(path.join(tmpdir(),'chuk-result-browser-'));let server,ctx;
  try{
   await buildHomeSite(out);
-  server=createServer(async(req,res)=>{try{const pathname=new URL(req.url,'http://localhost').pathname,file=path.resolve(out,'.'+(pathname==='/'?'/index.html':pathname));if(!file.startsWith(out+path.sep)){res.writeHead(403).end();return}const body=await readFile(file),ext=path.extname(file),types={'.html':'text/html','.js':'application/javascript','.css':'text/css','.woff2':'font/woff2','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp'};res.writeHead(200,{'Content-Type':types[ext]||'application/octet-stream'}).end(body)}catch{if((req.headers.accept||'').includes('text/html'))res.writeHead(404,{'Content-Type':'text/html'}).end(await readFile(path.join(out,'404.html')));else res.writeHead(404).end()}});
+  server=createServer(async(req,res)=>{try{const pathname=new URL(req.url,'http://localhost').pathname,file=path.resolve(out,'.'+(pathname.endsWith('/')?pathname+'index.html':pathname));if(!file.startsWith(out+path.sep)){res.writeHead(403).end();return}const body=await readFile(file),ext=path.extname(file),types={'.html':'text/html','.js':'application/javascript','.css':'text/css','.woff2':'font/woff2','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp'};res.writeHead(200,{'Content-Type':types[ext]||'application/octet-stream'}).end(body)}catch{if((req.headers.accept||'').includes('text/html'))res.writeHead(404,{'Content-Type':'text/html'}).end(await readFile(path.join(out,'404.html')));else res.writeHead(404).end()}});
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const url='http://127.0.0.1:'+server.address().port;
   ctx=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block'});const page=await ctx.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
   await step('홈페이지 기록→시간→급여 · 모바일/큰글씨 · 키보드',async()=>{
@@ -70,6 +70,21 @@ export async function homeResultE2E({browser,step}){
     }
    }
    await page.setViewportSize({width:390,height:844});await page.locator('.feature-start').scrollIntoViewIfNeeded();await page.screenshot({path:'ci-logs/home-feature-clarity-mobile.png'});
+  });
+  await step('검색용 기능 상세 · 실제 주소 · 모바일 · 200% 글씨 · 키보드',async()=>{
+   for(const slug of ['schedule','attendance','payroll','documents']){
+    const response=await page.goto(url+'/features/'+slug+'/',{waitUntil:'networkidle'});assert.equal(response.status(),200);
+    assert.equal(await page.locator('h1').count(),1);await page.locator('.feature-detail-steps li').first().waitFor();assert.equal(await page.locator('.feature-detail-steps li').count(),3);
+    assert.equal(await page.locator('a[aria-current="page"]').getAttribute('href'),'/features/'+slug+'/');assert.match(await page.locator('.feature-detail-hero .btn').first().getAttribute('href'),/\/signup\?role=owner&plan=(basic|pro)$/);
+    const faq=page.locator('.feature-detail-faq details').first(),summary=faq.locator('summary');await summary.focus();await page.keyboard.press('Space');assert.equal(await faq.evaluate(el=>el.open),true,'keyboard opens '+slug+' answer');
+    for(const large of [false,true]){
+     await page.evaluate(large=>document.documentElement.style.fontSize=large?'200%':'100%',large);
+     for(const width of [320,390,768,1440]){await page.setViewportSize({width,height:900});await page.evaluate(()=>document.fonts.ready);assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'feature detail overflow '+slug+' width='+width+' 200%='+large)}
+    }
+    await page.evaluate(()=>document.documentElement.style.fontSize='100%');
+   }
+   await page.setViewportSize({width:390,height:844});await page.goto(url+'/features/payroll/',{waitUntil:'networkidle'});await page.screenshot({path:'ci-logs/home-feature-payroll-mobile.png',fullPage:true});
+   await page.locator('.feature-breadcrumb a').click();await page.locator('#hero-title').waitFor();assert.equal(page.url(),url+'/');
   });
   await step('움직임 줄이기에서도 기록 흐름을 직접 확인',async()=>{
    const reduced=await browser.newContext({reducedMotion:'reduce',viewport:{width:390,height:844}});

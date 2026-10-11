@@ -10,6 +10,7 @@ import {readFile, writeFile, mkdir, copyFile, readdir} from 'node:fs/promises';
 import {existsSync, readFileSync} from 'node:fs';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
+import {buildFeaturePages} from './home-feature-pages.mjs';
 
 const MODULES = ['site/home.ts', 'site/result-flow.ts', 'site/experience.ts', 'site/render.ts', 'lib/plans.ts', 'lib/labor-estimate.ts', 'lib/pay-rules.ts', 'lib/operator.ts', 'app/meta-pixel.ts'];
 const config = existsSync('deploy.config.json') ? JSON.parse(readFileSync('deploy.config.json', 'utf8')) : {};
@@ -62,7 +63,7 @@ export async function buildHome({out, site = HOME_ORIGIN, app = APP_ORIGIN, pixe
   if (!preview && html.includes('noindex')) throw Error('홈페이지에 noindex가 있어요');
   const versioned=html.replace(/home\/site\/home\.js/g,'home/v-'+version+'/site/home.js').replace(/home\/home\.css/g,'home/home-'+version+'.css');
   await writeFile(path.join(out, 'index.html'), versioned);
-  return {html:versioned, pay};
+  return {html:versioned, pay, trial:R.TRIAL_DAYS, contractFee:R.contractFeeText()};
 }
 
 /** 홈페이지 배포 폴더 전체. 알려진 예전 앱 주소만 넘기고, 없는 콘텐츠는 404로 안내한다. */
@@ -71,6 +72,7 @@ export async function buildHomeSite(out = '_site') {
   if (pixelId && !/^\d{15,16}$/.test(pixelId)) throw Error('META_PIXEL_ID는 15~16자리 숫자여야 해요: ' + pixelId);
   await mkdir(out, {recursive: true});
   const r = await buildHome({out, pixelId});
+  const featureUrls=await buildFeaturePages({out,site:HOME_ORIGIN,app:APP_ORIGIN,homeHtml:r.html,trial:r.trial,contractFee:r.contractFee});
   for (const f of ['favicon.svg', 'icon-192.png', 'icon-512.png']) await copyFile('public/' + f, path.join(out, f));
   // 예전 공유 링크는 보존한다. 임의 주소·누락된 파일은 앱으로 보내지 않는다.
   const appRoutes=['app','login','signup','employee','staff-requests','account','start','demo','try','pricing','terms','privacy','refund','policy','accessibility','news','privacy-request','status','help','calculator','logout','verify-email','withdraw','share','kiosk','support','coowner','contracts','manager','qr-screen','hr','admin','admin/login','billing/success','billing/fail'];
@@ -86,7 +88,7 @@ export async function buildHomeSite(out = '_site') {
   await writeFile(path.join(out, '404.html'), `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'"><title>페이지를 찾을 수 없어요 · 척척사장</title><link rel="icon" href="/favicon.svg"><link rel="stylesheet" href="${errorCss}"><script defer src="/home/go-app.js"></script></head><body class="not-found"><main class="not-found-card"><a class="not-found-brand" href="/">척척사장</a><p class="not-found-code">404</p><h1>요청하신 페이지를 찾을 수 없어요.</h1><p>주소가 바뀌었거나 더 이상 제공하지 않는 페이지예요.<br>홈페이지에서 필요한 기능을 다시 찾아보세요.</p><nav aria-label="다음으로 이동"><a class="btn" href="/">홈페이지로 돌아가기</a><a class="btn btn-ghost" href="${APP_ORIGIN}/app">내 매장 열기</a><a class="not-found-help" href="${APP_ORIGIN}/help">도움말 보기 →</a></nav></main></body></html>\n`);
   await writeFile(path.join(out, 'CNAME'), new URL(HOME_ORIGIN).host + '\n');
   await writeFile(path.join(out, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${HOME_ORIGIN}/sitemap.xml\n`);
-  await writeFile(path.join(out, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>${HOME_ORIGIN}/</loc></url>\n</urlset>\n`);
+  await writeFile(path.join(out, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${[HOME_ORIGIN+'/',...featureUrls].map(url=>'  <url><loc>'+url+'</loc></url>').join('\n')}\n</urlset>\n`);
   await writeFile(path.join(out, '.nojekyll'), '');
   return r;
 }
