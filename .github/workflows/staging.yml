@@ -47,7 +47,7 @@ jobs:
           echo "deploy=yes" >> "$GITHUB_OUTPUT"
       - uses: supabase/setup-cli@v1
         if: steps.cfg.outputs.deploy == 'yes'
-        with: {version: latest}
+        with: {version: 2.120.0}
       - name: 스테이징 DB·서버 함수
         if: steps.cfg.outputs.deploy == 'yes'
         run: |

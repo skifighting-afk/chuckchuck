@@ -699,3 +699,13 @@ html.reduce .hero-record-steps>button{transition:none}
 .not-found-card>p:last-of-type{font-size:16px;line-height:1.8;word-break:keep-all;overflow-wrap:anywhere;color:#52655c}
 .not-found nav{display:grid;gap:12px;margin-top:28px}.not-found nav a{min-height:48px}.not-found-help{display:flex;align-items:center;justify-content:center;color:var(--green);font-size:16px;text-underline-offset:4px}
 @media(max-width:400px){.not-found{padding:20px 16px}.not-found-card{padding:28px 20px;border-radius:18px}}
+
+/* Keep the story readable, with the price and next action easy to scan. */
+:root{--copy-leading:1.65;--copy-gap:1rem;--copy-width:42em}
+.hero h1,html.anim .hero h1{font-size:clamp(2rem,4.2vw,3.5rem);line-height:1.18}
+.record-intro h2,.experience-heading h2,.feature-stories-heading h2,.pricing .sec-head h2,.worries h2,.finale h2{font-size:clamp(1.875rem,3.6vw,3rem);line-height:1.25}
+.feature-story h3{font-size:clamp(1.5rem,2.4vw,2rem);line-height:1.35}
+.hero .lede,.record-intro-copy>p,.feature-description,.pricing .sec-head>p,.worries .sec-head>p{max-inline-size:var(--copy-width);line-height:var(--copy-leading);font-weight:400;margin-block:var(--copy-gap);word-break:keep-all;overflow-wrap:anywhere}
+main :is(h1,h2,h3,button,.btn,summary){word-break:keep-all;overflow-wrap:anywhere}
+.hero-price-note,.plan-from{word-break:keep-all;font-variant-numeric:tabular-nums}
+@media(max-width:600px){.hero h1,html.anim .hero h1{font-size:clamp(1.875rem,8.4vw,2.75rem)}.record-intro h2,.experience-heading h2,.feature-stories-heading h2,.pricing .sec-head h2,.worries h2,.finale h2{font-size:clamp(1.75rem,7.8vw,2.25rem)}}

@@ -115,3 +115,26 @@ body{font-family:'ChukAppSans','Pretendard','Apple SD Gothic Neo','Malgun Gothic
  .document-overview-row>.secondary{grid-column:1/-1;justify-self:start}
  .document-overview-tools label{width:100%}.document-overview-tools input{width:100%;min-width:0}
 }
+
+/* A shared reading hierarchy for HR work: name, decision, then explanation. */
+:root{--hr-title:clamp(1.5rem,2.4vw,2rem);--hr-section:clamp(1.25rem,2vw,1.5rem);--hr-body:1rem;--hr-leading:1.65;--hr-paragraph-gap:1rem;--hr-copy-width:42em}
+.t-work h1,.t-work .page-heading h1,.saas-shell main h1,[role=dialog] h1{font-size:var(--hr-title);line-height:1.3;font-weight:750;letter-spacing:-.035em}
+.t-work h2,.saas-shell main h2,[role=dialog] h2{font-size:var(--hr-section);line-height:1.4;font-weight:700;letter-spacing:-.025em}
+.t-work h3,.saas-shell main h3,[role=dialog] h3{font-size:1.125rem;line-height:1.45;font-weight:650}
+.t-work p,.saas-shell main p,[role=dialog] p{line-height:var(--hr-leading);font-weight:400;word-break:keep-all;overflow-wrap:anywhere}
+.t-work .page-heading p,.saas-shell .auth-intro>p,.t-dialog .t-modalbody>p{font-size:var(--hr-body);max-inline-size:var(--hr-copy-width);margin-block:var(--hr-paragraph-gap)}
+.t-work .notice,.t-work .footnote,[role=dialog] .footnote{max-inline-size:var(--hr-copy-width);font-size:.875rem}
+.t-work :is(h1,h2,h3,button,summary),.saas-shell :is(h1,h2,h3,button,summary),[role=dialog] :is(h1,h2,h3,button,summary){word-break:keep-all;overflow-wrap:anywhere}
+.t-work table,.t-work .t-kpis strong,.t-work .t-payhero strong{font-variant-numeric:tabular-nums lining-nums}
+.payroll-type{font-weight:400;line-height:1.6;word-break:keep-all;max-inline-size:22em}
+.payroll-stage{display:inline-block;max-width:100%;padding:4px 8px;border-radius:6px;font-size:.875rem;font-weight:600;line-height:1.5;white-space:normal;word-break:keep-all}
+.payroll-stage.muted{background:#eef1ec;color:#526359}.payroll-stage.amber{background:#fff4d6;color:#765114}.payroll-stage.green{background:#eaf4eb;color:#185b45}
+.payroll-overview th,.payroll-overview td{padding-inline:12px}
+.payroll-overview td[data-label="상태"]{text-align:left;white-space:normal;min-width:105px}
+.payroll-overview th:nth-child(6){text-align:left}
+@media(max-width:600px){.payroll-overview td[data-label="상태"]{min-width:0;display:flex;align-items:center;justify-content:space-between;gap:8px}.payroll-overview td[data-label="상태"] .payroll-stage{max-width:calc(100% - 36px)}.payroll-overview td:first-child>.payroll-type{order:19}}
+.payroll-basis-time{display:block;font-size:.875rem;color:#526359;margin-top:6px;line-height:1.5;word-break:keep-all}
+@media(max-width:600px){.payroll-overview td[data-label="상태"]{flex-wrap:wrap}.payroll-basis-time{width:100%;text-align:right}}
+/* Owner reading preference wins over the shared default hierarchy. */
+.cheok-large-text .t-work .page-heading h1,.cheok-large-text .t-work h1{font-size:2.25rem}
+.cheok-large-text .t-work h2{font-size:1.75rem}.cheok-large-text .t-work h3{font-size:1.375rem}
