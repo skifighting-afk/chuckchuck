@@ -1,3 +1,4 @@
+import './check-task-navigation.mjs';
 import assert from 'node:assert/strict';
 await import('./check-home-first-work.mjs');
 import {seed,duration,hours,payroll,stateSchema} from '../lib/model.ts';
