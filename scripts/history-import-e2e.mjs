@@ -7,6 +7,7 @@ export async function historyImportE2E({owner,srv,step}){
  const store=await srv.db.q('SELECT owner,data FROM stores LIMIT 1').first(),data=JSON.parse(store.data);
  const base=data.employees[0];assert(base,'existing synthetic employee');
  data.branches.push({id:'history-east',name:'가져오기 2호점',address:''});
+ data._account.storeSlots=Math.max(data._account.storeSlots||1,data.branches.length);
  data.employees.push(...[
   {id:'history-first',branchId:'branch-main',email:'history-first@example.invalid'},
   {id:'history-second',branchId:'history-east',email:'history-second@example.invalid'},
