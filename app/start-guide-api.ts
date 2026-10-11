@@ -4,6 +4,7 @@ import {staffGone} from '../lib/staff-access';
 import {QUESTS} from '../lib/quests';
 import {TOURS} from '../lib/tour-steps';
 import {managerPermissions} from '../lib/manager-permissions';
+import {normalizeTeam} from '../lib/team-model';
 import {START_GUIDE_VERSION,defaultGuidePreferences,guideScopeKey,validateGuidePatch,type GuideIdentity,type GuideKind,type GuidePreferences} from '../lib/start-guide';
 import type {PgD1} from '../lib/pg-d1';
 const json=(v:unknown,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store'}});
@@ -11,16 +12,19 @@ class GuideError extends Error{constructor(public status:number,public code:stri
 const deny=()=>{throw new GuideError(403,'GUIDE_FORBIDDEN','현재 매장과 맡은 역할의 안내만 볼 수 있어요.')};
 const managementSteps:Record<string,number>={'manager-schedule':4,'manager-attendance':1,'manager-leave':1,'manager-notices':2};
 function identity(uid:string,owner:string,d:any,branch:string,kind:GuideKind){
+ d={...d,...normalizeTeam(d)};
  const own=owner===uid||(d._coowners||[]).some((c:any)=>c.userId===uid);
  const self=d.employees?.find((e:any)=>e.id===d._members?.find((m:any)=>m.userId===uid)?.employeeId);
  if(!own&&staffGone(self))return deny();
  const role=own?'owner':self.access==='중간관리자'?'manager':'employee';
  if(!d.branches?.some((b:any)=>b.id===branch)||(!own&&self.branchId!==branch)||kind==='management'&&role!=='manager')return deny();
  const qs=QUESTS[own?'owner':'staff'];
- const ids=kind==='management'?managerPermissions(d,self).permissions.filter(p=>['schedule','attendance','leave','notices'].includes(p)).map(p=>'manager-'+p):qs.map(q=>q.id);
+ const managed=kind==='management'?managerPermissions(d,self):null;
+ const context=managed?[uid,owner,'manager',managed.permissions.slice().sort(),managed.acting]:[uid,owner,role];
+ const ids=managed?managed.permissions.filter(p=>['schedule','attendance','leave','notices'].includes(p)).map(p=>'manager-'+p):qs.map(q=>q.id);
  const ack=kind==='management'?['tour']:qs.filter(q=>q.doneSel||q.doneOnLastClick).map(q=>q.id).concat('tour');
  const steps:Record<string,number>={...(kind==='management'?managementSteps:Object.fromEntries(qs.map(q=>[q.id,q.steps.length]))),tour:kind==='management'?1:TOURS[own?'owner':'staff'].length};
- return {scope:{userId:uid,owner,branchId:branch,role,kind,guideVersion:START_GUIDE_VERSION} as GuideIdentity,ids:[...ids,'tour'],ack,steps};
+ return {scope:{userId:uid,owner,branchId:branch,role,kind,guideVersion:START_GUIDE_VERSION} as GuideIdentity,context,ids:[...ids,'tour'],ack,steps};
 }
 const where='user_id=? AND owner=? AND branch_id=? AND role=? AND guide_kind=? AND guide_version=?';
 const args=(s:GuideIdentity)=>[s.userId,s.owner,s.branchId,s.role,s.kind,s.guideVersion];
@@ -37,7 +41,8 @@ export async function startGuideApi(request:Request,env:{DB:D1Database}){
   const url=new URL(request.url),branch=url.searchParams.get('branchId')||'',kind=url.searchParams.get('kind')||'personal';
   if(!branch||branch.length>150||!['personal','management'].includes(kind))return json({error:'안내할 매장을 선택해 주세요.'},400);
   const link=await resolveStore(env.DB,uid);if(!link||link.access==='revoked')return deny();
-  if(request.method==='GET'){const c=identity(uid,link.owner,JSON.parse(link.row.data),branch,kind as GuideKind);const row=await env.DB.prepare('SELECT preferences,revision FROM start_guide_preferences WHERE '+where).bind(...args(c.scope)).first();return json(await view(c,row))}
+  const verifyContext=async(c:ReturnType<typeof identity>)=>{if(url.searchParams.has('context')&&url.searchParams.get('context')!==await digest(JSON.stringify(c.context)))throw new GuideError(409,'GUIDE_SCOPE_CHANGED','계정이나 매장이 바뀌었어요. 화면을 새로고침해 주세요.')};
+  if(request.method==='GET'){const c=identity(uid,link.owner,JSON.parse(link.row.data),branch,kind as GuideKind);await verifyContext(c);const row=await env.DB.prepare('SELECT preferences,revision FROM start_guide_preferences WHERE '+where).bind(...args(c.scope)).first();return json(await view(c,row))}
   if(request.method!=='PATCH')return json({error:'지원하지 않는 요청이에요.'},405);
   if(request.headers.get('origin')!==url.origin)return json({error:'앱에서 다시 시도해 주세요.'},403);
   const raw=await request.text();if(raw.length>8000)return json({error:'안내 설정이 너무 길어요.'},413);
@@ -47,6 +52,7 @@ export async function startGuideApi(request:Request,env:{DB:D1Database}){
    // Business lock serializes preference writes with transfer/revocation and role edits.
    const business=await tx.prepare('SELECT data FROM stores WHERE owner=? FOR UPDATE').bind(link.owner).first<any>();if(!business)return deny();
    const c=identity(uid,link.owner,JSON.parse(business.data),branch,kind as GuideKind),key=await digest(guideScopeKey(c.scope));
+   await verifyContext(c);
    if(b.scopeKey!==key)return json({code:'GUIDE_SCOPE_CHANGED',error:'매장이나 역할이 바뀌었어요. 안내를 다시 확인해 주세요.'},409);
    const p=validateGuidePatch(b.patch,c.ids);
    if(p.acknowledged?.some(id=>!c.ack.includes(id))||p.active&&p.active.step>=(c.steps[p.active.questId]||1))return json({error:'현재 역할에 맞는 안내 단계를 선택해 주세요.'},400);

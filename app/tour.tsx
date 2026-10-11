@@ -19,6 +19,7 @@ export function Tour({role,go,auto=true}:{role:TourRole,go?:(page:string)=>void,
  const guide=useStartGuide(),restored=useRef(false);
  const steps=TOURS[role],[i,setI]=useState(-1),[rect,setRect]=useState<DOMRect|null>(null),card=useRef<HTMLDivElement>(null),lastFocus=useRef<HTMLElement|null>(null);
  const open=i>=0,step=open?steps[i]:null;
+ useEffect(()=>{if(guide.status==='scope-changed'){setI(-1);setRect(null);restored.current=false}},[guide.status]);
  useEffect(()=>{if(!guide.data||restored.current)return;restored.current=true;const a=guide.data.preferences.active;if(a?.questId==='tour')setI(Math.min(a.step,steps.length-1))},[guide.data,steps.length]);
  useEffect(()=>{if(i<0||!guide.data)return;const t=setTimeout(()=>void guide.client?.patch({active:{questId:'tour',step:i}}),400);return()=>clearTimeout(t)},[i,guide.client,!!guide.data]);
  const close=useCallback((done:boolean)=>{const p=guide.client?.getSnapshot().data?.preferences;void guide.client?.patch({active:null,...(done?{acknowledged:[...new Set([...(p?.acknowledged||[]),'tour'])]}:{})});setI(-1);setRect(null);if(done)try{window.dispatchEvent(new CustomEvent('cc-tour-done',{detail:role}))}catch{};lastFocus.current?.focus?.()},[role,guide.client]);

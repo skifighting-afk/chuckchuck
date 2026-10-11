@@ -58,6 +58,7 @@ export function QuestHost({role,state,branch,selfId='',demo=false,go}:{role:Ques
  const [party,setParty]=useState<{q:Quest,prevXp:number}|null>(null),[toast,setToast]=useState<Quest|null>(null);
  const idxRef=useRef(0);idxRef.current=idx;
  const activeRef=useRef<Quest|null>(null);activeRef.current=active;
+ useEffect(()=>{if(guide.status==='scope-changed'){setActive(null);setRect(null);setParty(null);setToast(null);restored.current=false}},[guide.status]);
  const ping=useCallback((id:string)=>{const p=guide.client?.getSnapshot().data?.preferences.acknowledged||[];if(!p.includes(id))save({pings:[...p,id]})},[guide.client,save]);
  useEffect(()=>{if(!guide.data||restored.current)return;restored.current=true;const a=guide.data.preferences.active;if(!a||a.questId==='tour')return;const q=QUESTS[role].find(q=>q.id===a.questId);if(q&&!done[q.id]){setActive(q);setIdx(Math.min(a.step,q.steps.length-1));if(q.page&&go)go(q.page)}},[guide.data,role,go]);
  useEffect(()=>{if(!active||(active as any).guideOnly||!guide.data)return;const t=setTimeout(()=>void guide.client?.patch({active:{questId:active.id,step:idx}}),400);return()=>clearTimeout(t)},[active,idx,guide.client,!!guide.data]);
