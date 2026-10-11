@@ -6,6 +6,7 @@ await import('./check-client-assets.mjs');
 await import('./check-fetch-client-assets.mjs');
 await import('./check-home-result.mjs');
 await import('./check-home-feature-pages.mjs');
+await import('./check-home-start.mjs');
 await import('./check-home-pricing.mjs');
 await import('./check-home-not-found.mjs');
 await import('./check-payroll-display.mjs');
