@@ -57,3 +57,17 @@ body:has(.ast-dock) .month-undo{left:50%}
  .payroll-overview td[data-label]::before{text-align:left;font-weight:500}
  .t-payhero{padding:20px;gap:12px}.t-payhero strong{font-size:clamp(26px,7vw,34px);font-variant-numeric:tabular-nums}
 }
+
+/* One self-hosted font and a payroll summary that stays ahead of export tools. */
+@font-face{font-family:'ChukAppSans';src:url('/fonts/pretendard.woff2') format('woff2');font-weight:100 900;font-display:swap}
+body{font-family:'ChukAppSans','Pretendard','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif}
+.payroll-summary>div:first-child{min-width:0}.payroll-summary strong{white-space:nowrap}
+.payroll-summary small{word-break:keep-all;line-height:1.5}
+.payroll-exports{padding:16px 20px;margin:16px 0}.payroll-exports summary{cursor:pointer;min-height:48px;display:flex;align-items:center;font-weight:700}
+.payroll-exports .actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.payroll-exports p{font-size:14px;line-height:1.6}
+@media(max-width:600px){
+ .payroll-toolbar{gap:8px}.payroll-toolbar input{min-width:0;flex:1 1 140px}.payroll-toolbar .t-grow{display:none}
+ .payroll-summary{display:block;padding:18px}.payroll-summary strong{font-size:clamp(26px,7vw,34px);margin:8px 0 12px}
+ .payroll-summary>div:last-child:not(:first-child){display:flex;align-items:center;justify-content:space-between;gap:12px}
+ .payroll-summary>div:last-child>span{margin:0;text-align:left;white-space:nowrap}.payroll-summary>div:last-child>small{white-space:nowrap}
+}
