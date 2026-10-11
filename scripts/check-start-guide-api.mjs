@@ -4,7 +4,6 @@ import {api} from '../dist/server/index.js';
 import {authedTest} from './test-auth.mjs';
 import {closeAll} from './test-db.mjs';
 const T=await authedTest(),{q,id,env}=T;
-env.START_GUIDE_TEST_DIAGNOSTICS=true;
 const call=async(user,branch='branch-main',body,kind='personal',context)=>{const r=await api(new Request('https://test.local/api/start-guide?branchId='+branch+'&kind='+kind+(context?'&context='+encodeURIComponent(context):''),{method:body?'PATCH':'GET',headers:{origin:'https://test.local',...await T.headersFor(user)},...(body?{body:JSON.stringify(body)}:{})}),env);return {status:r.status,data:await r.json()}};
 const raw=async owner=>JSON.parse((await q('SELECT data FROM stores WHERE owner=?',id(owner)).first()).data);
 const save=async(owner,d)=>q('UPDATE stores SET data=?,version=version+1 WHERE owner=?',JSON.stringify(d),id(owner)).run();
@@ -17,6 +16,7 @@ try{
  let d={...await raw('guideA'),...normalized};const branch=d.branches[0].id;assert.equal(branch,'branch-main');d.branches.push({...d.branches[0],id:'branch2',name:'두 번째 매장'});d.employees[0].access='중간관리자';d.employees[0].managerPermissions=['schedule'];d._members=[{userId:id('manager'),employeeId:d.employees[0].id},{userId:id('employee'),employeeId:d.employees[1].id}];d._coowners=[{userId:id('coowner')}];await save('guideA',d);
  let b={...await raw('guideB'),...normalized};b.branches=structuredClone(d.branches);b.employees=structuredClone(d.employees);b._coowners=[{userId:id('coowner')}];await save('guideB',b);
  assert.equal((await call('')).status,401);assert.equal((await call('outsider')).status,403);ok('authentication and business membership required');
+ assert.equal((await raw('guideA')).attendance,undefined);ok('guide uses the real storage shape with attendance kept in its own table');
  let a=await call('guideA');assert.equal(a.status,200,JSON.stringify(a.data));assert.equal(a.data.scope.role,'owner');assert.equal(a.data.revision,0);assert.equal(a.data.preferences.hideAll,false);assert.equal(JSON.stringify(a).includes(id('guideA')),false);ok('server scope uses opaque identity, defaults and owner quests');
  assert.equal((await call('guideA','branch-main',undefined,'personal','stale-parent-context')).status,409);assert.equal((await call('guideA','branch-main',patch(a,{mini:true}),'personal','stale-parent-context')).status,409);const parent=await api(new Request('https://test.local/api/store',{headers:await T.headersFor('guideA')}),env);assert.equal((await call('guideA','branch-main',undefined,'personal',(await parent.json()).guideContext)).status,200);ok('guide reads and writes reject stale parent account or business context');
  const r=await call('guideA','branch-main',patch(a,{mini:true}));assert.equal(r.status,200);assert.equal(r.data.revision,1);assert.equal((await call('guideA')).data.preferences.mini,true);ok('preferences persist across independent reads');
