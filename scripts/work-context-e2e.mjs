@@ -5,7 +5,7 @@ export function lockedSelfRun(data,self){return {locked:true,month:'2026-09',bra
 export async function workContextE2E({page,staff,browser,srv,step}){
  await step('매장·일주월 고정 맥락 · 실제/휴게/인정/확정 급여 시간 구분',async()=>{
   const saved=await srv.db.q('SELECT owner,data FROM stores LIMIT 1').first(),data=JSON.parse(saved.data);
-  const who=await (await staff.request.get(srv.ORIGIN+'/api/store')).json(),self=data.employees.find(e=>e.id===who.selfId);assert(self);
+  const who=await staff.evaluate(async()=>{const response=await fetch('/api/store');if(!response.ok)throw Error('Staff store request failed: '+response.status);return response.json()}),self=data.employees.find(e=>e.id===who.selfId);assert(self);
   const record={id:'ux-pay-time-proof',employeeId:self.id,start:'2026-09-30T13:00:00.000Z',end:'2026-09-30T17:00:00.000Z',breakMinutes:30,breakStart:null,credit:{start:'2026-09-30T13:15:00.000Z',end:'2026-09-30T17:00:00.000Z',rule:'출근 예정 시각부터'}};
   const context=page.locator('.owner-work-context'),summary='급여 시간 확인 · 3시간 15분';
   const go=screen=>page.goto(srv.ORIGIN+'/app?screen='+screen+'&branch='+encodeURIComponent(self.branchId),{waitUntil:'networkidle'});
