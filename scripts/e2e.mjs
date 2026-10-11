@@ -135,7 +135,7 @@ await step('작업 052: 안드로이드 휴대폰에서 매장 QR 사진으로 �
  await a.setInputFiles('input[type=file]',{name:'qr.png',mimeType:'image/png',buffer:qrPng});
  await a.getByText('QR을 읽었어요.').waitFor();
  const qrFailure='QR을 찍은 지 1분이 지났어요. 매장 화면의 QR을 다시 찍고 바로 기록해 주세요.';
- const rejectQr=async route=>{if(route.request().method()==='POST')await route.fulfill({status:403,contentType:'application/json',body:JSON.stringify({error:qrFailure,code:'QR_REQUIRED'})});else await route.continue()};
+ const rejectQr=async route=>{if(route.request().method()==='POST')await route.fulfill({status:403,contentType:'application/json',headers:{'access-control-allow-origin':B},body:JSON.stringify({error:qrFailure,code:'QR_REQUIRED'})});else await route.continue()};
  await a.route('**/api/store',rejectQr);await a.click('text=출근 기록하기');
  const scanner=a.getByRole('region',{name:'매장 QR 확인',exact:true});await scanner.getByRole('alert').filter({hasText:qrFailure}).waitFor();
  if(await scanner.getByRole('button',{name:'출근 기록하기',exact:true}).count())throw Error('실패한 QR 확인이 성공 상태로 남았어요');
