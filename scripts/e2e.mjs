@@ -200,7 +200,7 @@ await step('안내 막대: 입력 창 안에서도 누를 수 있고 창은 그�
 await (await import('./history-import-e2e.mjs')).historyImportE2E({owner,srv,step});
 await (await import('./billing-pricing-e2e.mjs')).billingPricingE2E({owner,srv,step});
 await (await import('./start-guide-e2e.mjs')).startGuideE2E({owner,srv,step,browser,watch,credentials:OWNER});
-await (await import('./priority-ux-e2e.mjs')).priorityUxE2E({owner,srv,step,browser});
+await (await import('./priority-ux-e2e.mjs')).priorityUxE2E({owner,staff,srv,step,browser});
 
 // Keep the existing PWA registration assertions above. HR fault-injection
 // needs isolated contexts: worker-owned GETs bypass page.route on this fixture.

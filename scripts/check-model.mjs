@@ -8,6 +8,7 @@ await import('./check-home-result.mjs');
 await import('./check-home-pricing.mjs');
 await import('./check-home-not-found.mjs');
 await import('./check-payroll-display.mjs');
+await import('./check-attendance-display.mjs');
 assert.equal(duration('22:00','06:00',60),7);
 assert.equal(duration('10:00','18:00',30),7.5);
 s.attendance=[{id:'boundary',employeeId:'e0',start:'2026-08-31T15:30:00.000Z',end:'2026-08-31T17:30:00.000Z',breakMinutes:30,breakStart:null}];
