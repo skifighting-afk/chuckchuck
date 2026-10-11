@@ -57,7 +57,7 @@ jobs:
           rm -rf backup
           sha256sum chukchuk-db-*.enc | tee checksum.txt
           echo "STAMP=$stamp" >> "$GITHUB_ENV"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: steps.cfg.outputs.enc == 'yes'
         with:
           name: db-backup-${{ env.STAMP }}

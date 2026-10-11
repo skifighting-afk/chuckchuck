@@ -75,7 +75,7 @@ jobs:
           node scripts/coverage.mjs --min 90 2>&1 | tee ci-logs/5-coverage.log
       - name: 배포 파일 보관
         if: steps.build.outcome == 'success'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: function
           path: supabase/functions/api/index.js
@@ -102,7 +102,7 @@ jobs:
           node scripts/client-assets.mjs "$RUNNER_TEMP/previous-client" dist/client
       - name: 다음 배포가 유지할 공개 화면 파일
         if: steps.build.outcome == 'success' && github.event_name != 'pull_request'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: client-assets
           path: dist/client
@@ -114,7 +114,7 @@ jobs:
           path: dist/client
       - name: 기록 보관
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: logs-test
           path: ci-logs
@@ -158,7 +158,7 @@ jobs:
         run: cp e2e-failure-*.png ci-logs/ 2>/dev/null || true
       - name: 기록 보관
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: logs-e2e
           path: ci-logs
@@ -324,7 +324,7 @@ jobs:
         run: cp smoke-failure.png ci-logs/13-smoke-failure.png 2>/dev/null || true
       - name: 기록 보관
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: logs-deploy
           path: ci-logs
