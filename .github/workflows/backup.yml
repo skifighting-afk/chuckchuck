@@ -31,7 +31,7 @@ jobs:
           echo "ok=yes" >> "$GITHUB_OUTPUT"
           # 암호화 비밀번호가 없으면 내려받기만 확인하고 파일은 버린다(공개 저장소에 평문을 올리지 않음).
           if [ -z "$BACKUP_PASSPHRASE" ]; then echo "enc=no" >> "$GITHUB_OUTPUT"; echo "::warning::BACKUP_PASSPHRASE가 없어 백업 파일을 보관하지 않았어요. 내려받기 점검만 했어요 (docs/backup.md)"; else echo "enc=yes" >> "$GITHUB_OUTPUT"; fi
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@v3
         if: steps.cfg.outputs.ok == 'yes'
         with:
           version: latest
