@@ -3,34 +3,14 @@ import {type Team,calculate,today,kdate,won} from '@/lib/team-model';
 import {checkDay} from '@/lib/attendance-check';
 import {todayBoard,budgetStatus,homeAlerts} from '@/lib/close-check';
 import {JoinInbox} from './join-inbox';
-import {useState} from 'react';
-import {startTour} from './tour';
-// 가이드 34: 첫 사용 5단계. 다 끝내거나 '숨기기'를 누르면 사라진다(이 기기에만 기억).
-export function startSteps(state:Team,branch:string){
- const ids=new Set(state.employees.filter(e=>e.branchId===branch).map(e=>e.id));
- return [
-  {key:'store',label:'가게 만들기',done:true},
-  {key:'staff',label:'직원 1명 연결하기',done:ids.size>0},
-  {key:'shift',label:'이번 주 근무표 짜기',done:state.shifts.some(x=>ids.has(x.employeeId))},
-  {key:'clock',label:'첫 출퇴근 기록 받기',done:state.attendance.some(a=>ids.has(a.employeeId))},
-  {key:'pay',label:'첫 급여 확정하기',done:Object.values(state.payrollRuns||{}).some((r:any)=>r?.locked&&r.branch===branch)},
- ];
-}
-function StartChecklist({state,branch,go}:{state:Team,branch:string,go:Record<string,(()=>void)|undefined>}){
- const KEY='chukchuk-start-hidden';const [hidden,setHidden]=useState(()=>{try{return localStorage.getItem(KEY)==='1'}catch{return false}});
- const steps=startSteps(state,branch),left=steps.filter(x=>!x.done);
- if(hidden||!left.length)return null;
- const next=left[0];
- return <section className="start-steps" aria-label="시작하기"><div className="start-steps-head"><b>5분 시작하기 {steps.length-left.length}/{steps.length}</b><small className="start-left">남은 일 {left.length}개 · 약 {left.length*1+1}분</small><button type="button" className="saas-text-button" onClick={()=>startTour('owner')}>🧭 가이드 보기</button><button type="button" className="saas-text-button" onClick={()=>{setHidden(true);try{localStorage.setItem(KEY,'1')}catch{}}}>숨기기</button></div>
-  <ol>{steps.map(x=><li key={x.key} className={x.done?'done':x===next?'next':''}><span aria-hidden="true">{x.done?'✓':''}</span>{x.label}{x===next&&go[x.key]&&<button type="button" onClick={go[x.key]}>지금 하기 →</button>}</li>)}</ol></section>;
-}
+import {QuestBoard} from './quests';
+// 가이드 34 → 시작 퀘스트: 실제로 해 봐야 깨지는 미션 보드(app/quests.tsx)
 export function HomeOverview({state,branch,onPayroll,onAttendance,onSchedule,onEmployees,onRegister,onJoin,children,assistant,demo=false,onChanged}:{assistant?:import('react').ReactNode;demo?:boolean;onChanged?:()=>void;children?:import('react').ReactNode;state:Team;branch:string;onPayroll:()=>void;onAttendance:()=>void;onSchedule:()=>void;onEmployees:()=>void;onRegister:()=>void;onJoin?:()=>void}){
  const employees=state.employees.filter(e=>e.branchId===branch),ids=new Set(employees.map(e=>e.id)),month=today().slice(0,7),run=state.payrollRuns[month+':'+branch];
  const rows=run?.locked?run.rows:calculate(state,month).filter(e=>e.branchId===branch),total=rows.reduce((sum:number,row:any)=>sum+row.net,0);
  const here=state.attendance.filter(a=>ids.has(a.employeeId));
  const findings=checkDay(today(),state.shifts.filter(x=>ids.has(x.employeeId)),here,((state.settings as any).attendanceTolerance||'normal'),Date.now(),((state as any).approvedLeaves||[]));
- const go={staff:onJoin||(()=>location.assign('/staff-requests')),shift:onSchedule,clock:onAttendance,pay:onPayroll};
- const checklist=<StartChecklist state={state} branch={branch} go={go}/>;
+ const checklist=<QuestBoard role="owner" state={state} branch={branch} demo={demo}/>;
  if(!employees.length)return <>{!demo&&<JoinInbox onChanged={onChanged||(()=>location.reload())}/>}{checklist}<section className="home-start"><img src="/cheokcheoki-welcome.png" alt="" width="88" height="88"/><h2>직원이 직접 신청하면, 사장님은 수락만</h2><p>직원에게 가입 주소를 알려 주세요. 합류 신청을 확인하고 수락하면 우리 가게에 연결돼요.</p><button className="home-main-action" onClick={onJoin||(()=>location.assign('/staff-requests'))}>직원 가입 안내·신청 확인 →</button><p><button onClick={onRegister}>사장님이 직접 직원 입력하기</button></p></section></>;
  const tolName=((state.settings as any).attendanceTolerance||'normal'),board=todayBoard(state,branch,today(),findings,Date.now(),tolName==='lenient'?10:tolName==='strict'?0:5),alerts=homeAlerts(state,branch,today(),board),budget=budgetStatus(state,branch,month),span=board.hi-board.lo,pos=(h:number)=>((h-board.lo)/span*100)+'%';
  const nowLabel=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric',weekday:'long'}).format(new Date())+' '+new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',hour:'numeric',minute:'2-digit'}).format(new Date());
