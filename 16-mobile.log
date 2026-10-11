@@ -1,0 +1,115 @@
+PASS public-home
+PASS public-start
+PASS public-login
+PASS public-signup
+PASS public-calculator
+PASS public-help
+PASS public-refund
+PASS public-terms
+PASS public-pricing
+PASS public-status
+PASS public-privacy
+PASS public-policy
+PASS public-news
+PASS public-privacy-request
+PASS public-accessibility
+PASS demo-home
+PASS demo-employees
+PASS demo-attendance
+PASS demo-schedule
+PASS demo-payroll
+PASS demo-contracts
+PASS demo-retirement
+PASS demo-outbox
+PASS demo-operations
+PASS demo-manual
+PASS demo-reports
+PASS demo-stores
+PASS demo-settings
+PASS demo-guide
+PASS demo-staff
+PASS hr-hiring-owner
+PASS hr-hiring-employee
+PASS hr-hiring-manager
+PASS hr-training-owner
+PASS hr-training-employee
+PASS hr-training-manager
+PASS hr-staffing-owner
+PASS hr-staffing-employee
+PASS hr-staffing-manager
+PASS hr-meetings-owner
+PASS hr-meetings-employee
+PASS hr-meetings-manager
+PASS hr-cases-owner
+PASS hr-cases-employee
+PASS hr-cases-manager
+PASS hr-pulse-owner
+PASS hr-pulse-employee
+PASS hr-pulse-manager
+PASS hr-items-owner
+PASS hr-items-employee
+PASS hr-items-manager
+PASS hr-settings-owner
+PASS hr-settings-employee
+PASS hr-settings-manager
+PASS hr-export-owner
+PASS hr-export-employee
+PASS hr-export-manager
+PASS public-home (큰 글씨)
+PASS public-start (큰 글씨)
+PASS public-login (큰 글씨)
+PASS public-signup (큰 글씨)
+PASS public-calculator (큰 글씨)
+PASS public-help (큰 글씨)
+PASS public-refund (큰 글씨)
+PASS public-terms (큰 글씨)
+PASS public-pricing (큰 글씨)
+PASS public-status (큰 글씨)
+PASS public-privacy (큰 글씨)
+PASS public-policy (큰 글씨)
+PASS public-news (큰 글씨)
+PASS public-privacy-request (큰 글씨)
+PASS public-accessibility (큰 글씨)
+PASS demo-home (큰 글씨)
+PASS demo-employees (큰 글씨)
+PASS demo-attendance (큰 글씨)
+PASS demo-schedule (큰 글씨)
+PASS demo-payroll (큰 글씨)
+PASS demo-contracts (큰 글씨)
+PASS demo-retirement (큰 글씨)
+PASS demo-outbox (큰 글씨)
+PASS demo-operations (큰 글씨)
+PASS demo-manual (큰 글씨)
+PASS demo-reports (큰 글씨)
+PASS demo-stores (큰 글씨)
+PASS demo-settings (큰 글씨)
+PASS demo-guide (큰 글씨)
+PASS demo-staff (큰 글씨)
+PASS hr-hiring-owner (큰 글씨)
+PASS hr-hiring-employee (큰 글씨)
+PASS hr-hiring-manager (큰 글씨)
+PASS hr-training-owner (큰 글씨)
+PASS hr-training-employee (큰 글씨)
+PASS hr-training-manager (큰 글씨)
+PASS hr-staffing-owner (큰 글씨)
+PASS hr-staffing-employee (큰 글씨)
+PASS hr-staffing-manager (큰 글씨)
+PASS hr-meetings-owner (큰 글씨)
+PASS hr-meetings-employee (큰 글씨)
+PASS hr-meetings-manager (큰 글씨)
+PASS hr-cases-owner (큰 글씨)
+PASS hr-cases-employee (큰 글씨)
+PASS hr-cases-manager (큰 글씨)
+PASS hr-pulse-owner (큰 글씨)
+PASS hr-pulse-employee (큰 글씨)
+PASS hr-pulse-manager (큰 글씨)
+PASS hr-items-owner (큰 글씨)
+PASS hr-items-employee (큰 글씨)
+PASS hr-items-manager (큰 글씨)
+PASS hr-settings-owner (큰 글씨)
+PASS hr-settings-employee (큰 글씨)
+PASS hr-settings-manager (큰 글씨)
+PASS hr-export-owner (큰 글씨)
+PASS hr-export-employee (큰 글씨)
+PASS hr-export-manager (큰 글씨)
+390px 화면 57개(보통·큰 글씨): 가로 넘침 없음
