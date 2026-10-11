@@ -132,6 +132,41 @@ export async function homeResultE2E({browser,step}){
    await page.evaluate(()=>document.documentElement.style.fontSize='');await page.locator('#pref-text').click();
    await page.screenshot({path:'ci-logs/home-section-navigation-mobile.png'});
   });
+  await step('모바일 기능 선택 · 읽을 수 있는 급여 · 48px 조작 · 가로 화면',async()=>{
+   const chooser=page.getByLabel('어떤 기능이 궁금하세요?',{exact:true}),exp=page.locator('.experience');
+   for(const large of [false,true]){
+    await page.goto(url,{waitUntil:'networkidle'});
+    if((await page.locator('html').evaluate(el=>el.classList.contains('large-text')))!==large)await page.locator('#pref-text').click();
+    for(const width of [320,390,768,1440]){
+     await page.setViewportSize({width,height:900});
+     for(let chapter=0;chapter<8;chapter++){
+      if(width<=800){assert(await chooser.isVisible());await chooser.selectOption(String(chapter));assert(!(await exp.locator('.exp-chapters').isVisible()))}
+      else await exp.locator(`[data-chapter="${chapter}"]`).click();
+      assert.equal(await chooser.inputValue(),String(chapter));assert.equal(await exp.getAttribute('data-chapter'),String(chapter));
+      assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'experience overflow '+width+' chapter='+chapter+' large='+large);
+      if(width<=800){for(const b of await exp.getByRole('button').all()){if(await b.isVisible()){const r=await b.boundingBox();assert(r.height>=47.5&&r.width>=47.5,'touch target '+await b.innerText())}}}
+      if(width===320&&chapter===0){for(const expanded of [false,true]){
+       if(expanded)await exp.locator('#exp-zoom').click();
+       assert(await exp.locator('.exp-days').evaluate(el=>{const parent=el.getBoundingClientRect(),boxes=[...el.querySelectorAll('button')].map(b=>b.getBoundingClientRect());return boxes.every((b,i)=>b.left>=parent.left-.5&&b.right<=parent.right+.5&&(!i||Math.abs(b.top-boxes[i-1].top)>1||b.left-boxes[i-1].right>=7.5))}),'actual day target fit/gap large='+large+' expanded='+expanded);
+       if(expanded)await exp.locator('#exp-zoom').click();
+      }}
+     }
+     if(width<=800){await chooser.selectOption('2');const card=exp.locator('.exp-pay-mobile article').first();assert(await card.isVisible());assert.match(await card.innerText(),/김민지[\s\S]*지급액[\s\S]*1,200,000[\s\S]*실수령액/);assert(await card.locator('dd').evaluateAll(els=>els.every(el=>parseFloat(getComputedStyle(el).fontSize)>=16)),'pay amounts readable');await card.getByRole('button',{name:'김민지 급여 보기',exact:true}).click();assert.equal(await exp.getAttribute('data-step'),'1');assert.equal(await chooser.inputValue(),'2')}
+    }
+   }
+   for(const large of [false,true]){
+    if((await page.locator('html').evaluate(el=>el.classList.contains('large-text')))!==large)await page.locator('#pref-text').click();
+    await page.setViewportSize({width:844,height:390});await exp.locator('[data-chapter="2"]').click();await exp.locator('#exp-zoom').click();
+    await exp.evaluate(el=>{el.scrollTop=el.scrollHeight});
+    assert(await exp.locator('#exp-zoom').evaluate(el=>{const r=el.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight&&r.left>=0&&r.right<=innerWidth}),'expanded close stays reachable after scrolling landscape large='+large);
+    await exp.locator('#exp-next').click();assert.equal(await exp.getAttribute('data-step'),'1');
+    await page.setViewportSize({width:390,height:844});assert.equal(await exp.locator('#exp-zoom').getAttribute('aria-expanded'),'true');
+    await exp.locator('#exp-zoom').click();assert.equal(await exp.locator('#exp-zoom').getAttribute('aria-expanded'),'false');
+    assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'rotate/close overflow');
+   }
+   await page.setViewportSize({width:390,height:844});await chooser.selectOption('2');await exp.locator('.exp-pay-mobile').scrollIntoViewIfNeeded();await page.screenshot({path:'ci-logs/home-experience-payroll-mobile.png'});
+   assert.deepEqual(errors,[]);
+  });
   await step('움직임 줄이기에서도 기록 흐름을 직접 확인',async()=>{
    const reduced=await browser.newContext({reducedMotion:'reduce',viewport:{width:390,height:844}});
    try{const p=await reduced.newPage();await p.goto(url,{waitUntil:'networkidle'});const flow=p.locator('#hero-record-flow'),play=flow.locator('#hero-flow-play');assert(await play.isDisabled());assert.equal(await play.getAttribute('aria-pressed'),'false');await flow.locator('[data-record-step="1"]').click();assert.equal(await flow.locator('[data-record-step="1"]').getAttribute('aria-pressed'),'true')}finally{await reduced.close()}
