@@ -723,8 +723,60 @@ start guide rules: 19 passed
 
 ── check-start-guide-api
 PASS: legacy business guide loads and saves without rewriting business data
+Synthetic guide diagnostics: GuideError: 현재 매장과 맡은 역할의 안내만 볼 수 있어요.
+    at deny (file:///home/runner/work/chuckchuck/chuckchuck/dist/server/index.js:25121:8)
+    at startGuideApi (file:///home/runner/work/chuckchuck/chuckchuck/dist/server/index.js:25215:50)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async api (file:///home/runner/work/chuckchuck/chuckchuck/dist/server/index.js:30528:9)
+    at async call (file:///home/runner/work/chuckchuck/chuckchuck/scripts/check-start-guide-api.mjs:8:84)
+    at async file:///home/runner/work/chuckchuck/chuckchuck/scripts/check-start-guide-api.mjs:19:58 {
+  status: 403,
+  code: 'GUIDE_FORBIDDEN'
+}
 PASS: authentication and business membership required
 PASS: server scope uses opaque identity, defaults and owner quests
+Synthetic guide diagnostics: GuideError: 계정이나 매장이 바뀌었어요. 화면을 새로고침해 주세요.
+    at verifyContext (file:///home/runner/work/chuckchuck/chuckchuck/dist/server/index.js:25217:126)
+    at async startGuideApi (file:///home/runner/work/chuckchuck/chuckchuck/dist/server/index.js:25221:4)
+    at async api (file:///home/runner/work/chuckchuck/chuckchuck/dist/server/index.js:30528:9)
+    at async call (file:///home/runner/work/chuckchuck/chuckchuck/scripts/check-start-guide-api.mjs:8:84)
+    at async file:///home/runner/work/chuckchuck/chuckchuck/scripts/check-start-guide-api.mjs:21:16 {
+  status: 409,
+  code: 'GUIDE_SCOPE_CHANGED'
+}
+Synthetic guide diagnostics: ZodError: [
+  {
+    "code": "invalid_type",
+    "expected": "array",
+    "received": "undefined",
+    "path": [
+      "attendance"
+    ],
+    "message": "Required"
+  }
+]
+    at get error (file:///home/runner/work/chuckchuck/chuckchuck/dist/server/index.js:1375:19)
+    at ZodEffects.parse (file:///home/runner/work/chuckchuck/chuckchuck/dist/server/index.js:1444:16)
+    at normalizeTeam (file:///home/runner/work/chuckchuck/chuckchuck/dist/server/index.js:17659:50)
+    at identity (file:///home/runner/work/chuckchuck/chuckchuck/dist/server/index.js:25132:6)
+    at file:///home/runner/work/chuckchuck/chuckchuck/dist/server/index.js:25233:14
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async scope (file:///home/runner/work/chuckchuck/chuckchuck/node_modules/postgres/src/index.js:259:18)
+    at async Function.begin (file:///home/runner/work/chuckchuck/chuckchuck/node_modules/postgres/src/index.js:242:14)
+    at async startGuideApi (file:///home/runner/work/chuckchuck/chuckchuck/dist/server/index.js:25230:10)
+    at async api (file:///home/runner/work/chuckchuck/chuckchuck/dist/server/index.js:30528:9) {
+  issues: [
+    {
+      code: 'invalid_type',
+      expected: 'array',
+      received: 'undefined',
+      path: [Array],
+      message: 'Required'
+    }
+  ],
+  addIssue: [Function (anonymous)],
+  addIssues: [Function (anonymous)]
+}
 node:internal/modules/run_main:123
     triggerUncaughtException(
     ^
@@ -733,7 +785,7 @@ AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
 
 503 !== 409
 
-    at file:///home/runner/work/chuckchuck/chuckchuck/scripts/check-start-guide-api.mjs:20:115
+    at file:///home/runner/work/chuckchuck/chuckchuck/scripts/check-start-guide-api.mjs:21:115
     at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
   generatedMessage: true,
   code: 'ERR_ASSERTION',
