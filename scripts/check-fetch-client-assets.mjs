@@ -9,7 +9,7 @@ function fixture({pages=[[]],published=[],artifacts=[{id:9,name:'client-assets',
  const calls=[],outputs={};
  const github={rest:{actions:{
   listWorkflowRuns:async args=>{assert.equal(args.status,'completed','a published run can fail a later smoke check');calls.push(['runs',args.page]);return {data:{workflow_runs:pages[(args.page||1)-1]||[]}}},
-  listJobsForWorkflowRun:async args=>{calls.push(['jobs',args.run_id]);return {data:{jobs:[{steps:[{name:'화면 배포 (GitHub Pages)',conclusion:published.includes(args.run_id)?'success':'skipped'}]}]}}},
+  listJobsForWorkflowRun:async args=>{calls.push(['jobs',args.run_id]);return {data:{jobs:[{steps:[{name:'화면 배포 (GitHub Pages)',conclusion:args.filter==='all'&&published.includes(args.run_id)?'success':'skipped'}]}]}}},
   listWorkflowRunArtifacts:async args=>{calls.push(['artifacts',args.run_id]);return {data:{artifacts}}},
   downloadArtifact:async args=>{calls.push(['download',args.artifact_id]);return {data:Buffer.from('public archive')}}
  }}};

@@ -6,8 +6,13 @@ module.exports=async({github,context,core})=>{
  const {data}=await github.rest.actions.listWorkflowRuns({owner,repo,workflow_id:'deploy.yml',branch:'main',status:'completed',per_page:30,page});
  foundHistory ||= data.workflow_runs.length>0;
  for(const run of data.workflow_runs){
-  const jobs=await github.rest.actions.listJobsForWorkflowRun({owner,repo,run_id:run.id,filter:'latest',per_page:100});
-  if(!jobs.data.jobs.some(j=>j.steps?.some(s=>s.name==='화면 배포 (GitHub Pages)'&&s.conclusion==='success')))continue;
+  let published=false;
+  for(let jobPage=1;;jobPage++){
+   const jobs=await github.rest.actions.listJobsForWorkflowRun({owner,repo,run_id:run.id,filter:'all',per_page:100,page:jobPage});
+   published=jobs.data.jobs.some(j=>j.steps?.some(s=>s.name==='화면 배포 (GitHub Pages)'&&s.conclusion==='success'));
+   if(published||jobs.data.jobs.length<100)break;
+  }
+  if(!published)continue;
   const artifacts=await github.rest.actions.listWorkflowRunArtifacts({owner,repo,run_id:run.id,per_page:100});
   const artifact=artifacts.data.artifacts.find(a=>a.name==='client-assets'&&!a.expired)||artifacts.data.artifacts.find(a=>a.name==='github-pages'&&!a.expired);
   if(!artifact)throw Error('The previous published client artifact has expired; restore it before publishing.');
