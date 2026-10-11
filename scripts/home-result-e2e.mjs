@@ -104,6 +104,34 @@ export async function homeResultE2E({browser,step}){
    }
    await page.evaluate(()=>document.documentElement.style.fontSize='');await page.locator('#pref-text').click();await page.setViewportSize({width:390,height:844});await roadmap.scrollIntoViewIfNeeded();await page.screenshot({path:'ci-logs/home-start-roadmap-mobile.png',fullPage:true});
   });
+  await step('홈페이지 목차 · 현재 위치 · 고정 헤더 아래 제목',async()=>{
+   await page.goto(url,{waitUntil:'networkidle'});
+   for(const width of [320,390,768,1024,1440]){
+    await page.setViewportSize({width,height:900});
+    await page.evaluate(()=>scrollTo({top:0,behavior:'instant'}));
+    await page.waitForFunction(()=>document.getElementById('hero-title').getBoundingClientRect().top>=document.getElementById('nav').getBoundingClientRect().bottom+10);
+    const contents=width<=1100?page.getByRole('navigation',{name:'페이지 목차',exact:true}):page.getByRole('navigation',{name:'홈페이지 메뉴',exact:true});
+    assert(await contents.isVisible(),'contents available '+width);
+    for(const id of ['tour','benefits-title','pricing','start-roadmap']){
+     const link=contents.locator('a[href="#'+id+'"]');await link.focus();await page.keyboard.press('Enter');
+     await page.waitForFunction(id=>{const t=document.getElementById(id),nav=document.getElementById('nav');return t.getBoundingClientRect().top>=nav.getBoundingClientRect().bottom+10&&t.getBoundingClientRect().top<nav.getBoundingClientRect().bottom+40},id);
+     await page.waitForFunction(id=>document.querySelector('#nav a[href="#'+id+'"][aria-current="location"]'),id);
+     assert.equal(await contents.locator('[aria-current="location"]').count(),1);
+    }
+    assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'contents overflow '+width);
+   }
+   await page.setViewportSize({width:390,height:844});
+   if(!await page.locator('html').evaluate(el=>el.classList.contains('large-text')))await page.locator('#pref-text').click();
+   await page.evaluate(()=>document.documentElement.style.fontSize='200%');
+   await page.evaluate(()=>scrollTo({top:0,behavior:'instant'}));
+   await page.waitForFunction(()=>document.getElementById('hero-title').getBoundingClientRect().top>=document.getElementById('nav').getBoundingClientRect().bottom+10);
+   const contents=page.getByRole('navigation',{name:'페이지 목차',exact:true});
+   await contents.getByRole('link',{name:'이용 요금',exact:true}).click();
+   await page.waitForFunction(()=>{const top=document.querySelector('#pricing').getBoundingClientRect().top,bottom=document.querySelector('#nav').getBoundingClientRect().bottom;return top>=bottom+10&&top<bottom+40});
+   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'200% contents does not overflow');
+   await page.evaluate(()=>document.documentElement.style.fontSize='');await page.locator('#pref-text').click();
+   await page.screenshot({path:'ci-logs/home-section-navigation-mobile.png'});
+  });
   await step('움직임 줄이기에서도 기록 흐름을 직접 확인',async()=>{
    const reduced=await browser.newContext({reducedMotion:'reduce',viewport:{width:390,height:844}});
    try{const p=await reduced.newPage();await p.goto(url,{waitUntil:'networkidle'});const flow=p.locator('#hero-record-flow'),play=flow.locator('#hero-flow-play');assert(await play.isDisabled());assert.equal(await play.getAttribute('aria-pressed'),'false');await flow.locator('[data-record-step="1"]').click();assert.equal(await flow.locator('[data-record-step="1"]').getAttribute('aria-pressed'),'true')}finally{await reduced.close()}
