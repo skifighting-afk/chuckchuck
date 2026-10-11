@@ -142,6 +142,23 @@ export async function priorityUxE2E({owner,staff,srv,step,browser}){
    await page.setViewportSize({width:390,height:844});await page.screenshot({path:'ci-logs/hr-report-readable-mobile.png',fullPage:true});
    await page.goto(srv.ORIGIN+'/demo?role=owner&screen=settings',{waitUntil:'networkidle'});assert.equal(await page.getByText('매출 대비 인건비 목표(%)',{exact:true}).count(),0);
   });
+  await step('홈 핵심 업무 먼저 · 모바일 직원 검색 열기와 복귀',async()=>{
+   await page.setViewportSize({width:390,height:844});await page.goto(srv.ORIGIN+'/demo?role=owner&screen=home',{waitUntil:'networkidle'});
+   const core=page.getByRole('region',{name:'먼저 확인할 세 가지',exact:true});await core.waitFor();assert.equal(await core.getByRole('button').count(),3);
+   assert(await core.evaluate(el=>el.getBoundingClientRect().bottom<innerHeight),'three priorities before fold');
+   assert(await page.evaluate(()=>document.querySelector('.home-priorities').compareDocumentPosition(document.querySelector('.home-overview .db, .home-overview .db-mini'))&Node.DOCUMENT_POSITION_FOLLOWING),'core before optional boards');
+   await core.getByRole('button',{name:/오늘 근무/}).click();await page.getByRole('region',{name:'일간 근무 시간표',exact:true}).waitFor();
+   await page.goto(srv.ORIGIN+'/demo?role=owner&screen=home',{waitUntil:'networkidle'});await core.getByRole('button',{name:/처리할 요청/}).click();await page.locator('.page-heading h1').filter({hasText:'휴가·공지'}).waitFor();
+   await page.goto(srv.ORIGIN+'/demo?role=owner&screen=home',{waitUntil:'networkidle'});await core.getByRole('button',{name:/월 예상 급여|월 확정 급여/}).click();await page.locator('.payroll-overview').waitFor();
+   const search=page.getByRole('searchbox',{name:'직원 이름으로 찾기',exact:true}),trigger=page.getByRole('button',{name:'직원 찾기',exact:true});assert.equal(await search.isVisible(),false,'mobile search starts collapsed');await trigger.click();await page.waitForFunction(()=>document.activeElement?.id==='global-employee-search');assert.equal(await search.evaluate(el=>document.activeElement===el),true,'opening focuses employee search after its animation frame');
+   await search.fill('예시');await page.getByRole('listbox',{name:'찾은 직원',exact:true}).waitFor();await search.press('Escape');assert.equal(await search.isVisible(),false,'Escape collapses search');await page.waitForFunction(()=>document.activeElement?.classList.contains('gsearch-trigger'));assert.equal(await trigger.evaluate(el=>document.activeElement===el),true,'Escape returns focus after its animation frame');
+   await trigger.click();await search.fill('예시');await page.getByRole('listbox',{name:'찾은 직원',exact:true}).getByRole('button',{name:'근무표',exact:true}).first().click();await page.locator('.page-heading h1').filter({hasText:'근무 스케줄'}).waitFor();assert.equal(await search.isVisible(),false);
+   await page.setViewportSize({width:1440,height:900});await search.waitFor({state:'visible'});assert.equal(await search.isVisible(),true,'desktop search stays visible');await page.goto(srv.ORIGIN+'/demo?role=owner&screen=home',{waitUntil:'networkidle'});
+   for(const width of [320,390,768,1440]){await page.setViewportSize({width,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'home focus overflow '+width)}
+   await page.locator('.owner-display-settings summary').click();await page.getByRole('button',{name:'글씨 더 크게 보기',exact:true}).click();
+   for(const width of [320,390,768,1440]){await page.setViewportSize({width,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'home focus large overflow '+width)}
+   await page.getByRole('button',{name:'기본 글씨로 보기',exact:true}).click();await page.locator('.owner-display-settings summary').click();await page.setViewportSize({width:390,height:844});await page.screenshot({path:'ci-logs/home-priorities-mobile.png',fullPage:true});
+  });
   await step('직원별 서류 · 검색 · 월 선택 · 연결 실패와 복구',async()=>{
    await page.goto(srv.ORIGIN+'/app?screen=contracts',{waitUntil:'networkidle'});
    const board=page.getByRole('region',{name:'직원별 서류 현황'});
