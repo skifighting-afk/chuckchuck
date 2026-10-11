@@ -248,7 +248,7 @@ summary{cursor:pointer;padding-block:4px}
 .home-overview .today-tasks h2{font-size:18px;font-weight:800;padding:16px 20px 6px;margin:0;color:var(--ck-ink)}
 .home-overview .today-tasks .home-task-list{border-top:0;padding:0 20px 8px}
 .home-overview .today-tasks .home-task-list button{align-items:center;min-height:52px;color:var(--ck-ink)}
-.home-overview .today-tasks .home-task-list button span{background:var(--ck-ink);color:#fff;border-radius:10px;padding:8px 12px;font-size:14px;font-weight:600;white-space:nowrap}
+.home-overview .today-tasks .home-task-list button>span:last-child:not(.home-work-label){background:var(--ck-ink);color:#fff;border-radius:10px;padding:8px 12px;font-size:14px;font-weight:600;white-space:nowrap}
 .home-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
 .home-stat{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;background:#fff;border:1px solid var(--ck-line);border-radius:18px;padding:16px;color:var(--ck-ink);min-height:44px}
 .home-stat>span{font-size:14px;color:var(--ck-muted)}

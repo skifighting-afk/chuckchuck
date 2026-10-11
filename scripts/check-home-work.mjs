@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {homeWorkItems} from '../lib/home-work.ts';
+const tasks=[{key:'clockout',label:'퇴근 누락',count:2,target:'attendance'},{key:'contracts',label:'근로계약서 미체결',count:3,target:'contracts'},{key:'leaves',label:'휴가 승인',count:1,target:'operations'}];
+const alerts=[{key:'out-a',title:'가님 퇴근 기록 없음',detail:'어제',target:'attendance'},{key:'out-b',title:'나님 퇴근 기록 없음',detail:'어제',target:'attendance'},{key:'noshow-c',title:'다님 출근 기록 없음',detail:'오늘',target:'attendance'}];
+const work=homeWorkItems(tasks,alerts);
+assert.equal(work.filter(w=>w.key==='clockout').length,0,'detailed overdue records replace the aggregate task');
+assert.equal(work.length,5);assert.equal(work.reduce((n,w)=>n+w.count,0),7);
+assert.equal(work[0].detail,'어제');assert.equal(work[0].target,'attendance');
+assert.deepEqual(homeWorkItems(tasks,[]).map(x=>x.key),['clockout','contracts','leaves'],'no detail means retain aggregate');
+assert.equal(homeWorkItems(tasks,[alerts[0]]).find(x=>x.key==='clockout').count,1,'partial detail preserves remaining overdue records');
+assert.equal(homeWorkItems([],[]).length,0);
+assert.equal(homeWorkItems([], [...alerts,alerts[0]]).length,3,'duplicate source keys appear only once');
+console.log('PASS: one task list retains all work and targets without counting detailed clockout alerts twice.');

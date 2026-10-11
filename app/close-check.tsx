@@ -2,10 +2,11 @@
 // 작업 096 오늘 할 일 · 작업 097 월말 마감 체크리스트 화면
 import {useEffect,useState} from 'react';
 import {type Team} from '../lib/team-model';
-import {todayTasks,monthChecklist,type Target} from '../lib/close-check';
+import {homeWorkItems} from '../lib/home-work';
+import {todayTasks,monthChecklist,type HomeAlert,type Target} from '../lib/close-check';
 export const TARGET_PAGE:Record<Target,string>={attendance:'출퇴근 기록',employees:'직원 관리',operations:'휴가·공지',contracts:'근로계약서',payroll:'급여·명세서',schedule:'근무 스케줄',reports:'인건비 리포트'};
 function useOps(skip=false){const [ops,setOps]=useState<any>(null);useEffect(()=>{if(skip)return;fetch('/api/operations').then(r=>r.ok?r.json():null).then(setOps).catch(()=>{})},[]);return ops}
-export function TodayTasks({s,branch,today,go,demo}:{s:Team,branch:string,today:string,go:(t:Target)=>void,demo?:boolean}){
+export function TodayTasks({s,branch,today,go,demo,alerts=[]}:{s:Team,branch:string,today:string,go:(t:Target)=>void,demo?:boolean;alerts?:HomeAlert[]}){
  const ops=useOps(!!demo),[docs,setDocs]=useState<any[]|null>(null);
  useEffect(()=>{if(!demo)fetch('/api/documents').then(r=>r.ok?r.json():null).then((d:any)=>setDocs(d?.documents||[])).catch(()=>{})},[]);
  const ids=new Set(s.employees.filter(e=>e.branchId===branch).map(e=>e.id));
@@ -13,9 +14,9 @@ export function TodayTasks({s,branch,today,go,demo}:{s:Team,branch:string,today:
  // 확정된 급여 중 가장 최근 달에서 아직 명세서를 안 보낸 직원 수
  const runs=Object.entries(s.payrollRuns).filter(([k,r]:[string,any])=>r.locked&&k.endsWith(':'+branch)).sort((a,b)=>a[0]<b[0]?1:-1),latest:any=runs[0];
  const unsent=latest&&docs?latest[1].rows.filter((r:any)=>!docs.some(d=>d.run_key===latest[0]&&d.employee_id===r.employeeId&&d.state==='current')).length:0;
- const tasks=todayTasks(s,branch,today,{pendingLeaves,pendingSwaps,unsentPayslips:unsent});
+ const tasks=homeWorkItems(todayTasks(s,branch,today,{pendingLeaves,pendingSwaps,unsentPayslips:unsent}),alerts);
  const total=tasks.reduce((n,t)=>n+t.count,0);
- return <section className="home-tasks today-tasks" aria-labelledby="today-tasks-title"><h2 id="today-tasks-title">오늘 할 일 <strong>{total}건</strong></h2>{tasks.length?<div className="home-task-list">{tasks.map(t=><button key={t.key} onClick={()=>go(t.target)}>{t.label} {t.count}{t.key==='contracts'||t.key==='ending'||t.key==='profile'||t.key==='payslips'?'명':'건'} <span>처리 →</span></button>)}</div>:<p>지금 처리할 일이 없어요. 👍</p>}</section>
+ return <section className="home-tasks today-tasks" aria-labelledby="today-tasks-title"><h2 id="today-tasks-title">오늘 할 일 <strong>{total}건</strong></h2>{tasks.length?<div className="home-task-list">{tasks.map(t=><button key={t.key} onClick={()=>go(t.target)}><span className="home-work-label">{t.label}{t.detail?<small>{t.detail}</small>:<> {t.count}{t.key==='contracts'||t.key==='ending'||t.key==='profile'||t.key==='payslips'?'명':'건'}</>}</span><span>확인 →</span></button>)}</div>:<p>지금 처리할 일이 없어요. 👍</p>}</section>
 }
 export function MonthChecklist({s,branch,month,payDate,go}:{s:Team,branch:string,month:string,payDate?:string,go:(t:Target)=>void}){
  const ops=useOps(),ids=new Set(s.employees.filter(e=>e.branchId===branch).map(e=>e.id));
