@@ -12,7 +12,9 @@ class GuideError extends Error{constructor(public status:number,public code:stri
 const deny=()=>{throw new GuideError(403,'GUIDE_FORBIDDEN','현재 매장과 맡은 역할의 안내만 볼 수 있어요.')};
 const managementSteps:Record<string,number>={'manager-schedule':4,'manager-attendance':1,'manager-leave':1,'manager-notices':2};
 function identity(uid:string,owner:string,d:any,branch:string,kind:GuideKind){
- d={...d,...normalizeTeam(d)};
+ // Attendance is deliberately stored outside stores.data by a DB trigger.
+ // Guide identity only needs the roster, branches and permissions; do not hydrate payroll records under this lock.
+ d={...d,...normalizeTeam({...d,attendance:[]})};
  const own=owner===uid||(d._coowners||[]).some((c:any)=>c.userId===uid);
  const self=d.employees?.find((e:any)=>e.id===d._members?.find((m:any)=>m.userId===uid)?.employeeId);
  if(!own&&staffGone(self))return deny();
@@ -35,7 +37,7 @@ const prefs=(raw:any,c:ReturnType<typeof identity>):GuidePreferences=>{
  return p;
 };
 const view=async(c:ReturnType<typeof identity>,row:any)=>({scope:{key:await digest(guideScopeKey(c.scope)),branchId:c.scope.branchId,role:c.scope.role,kind:c.scope.kind,guideVersion:START_GUIDE_VERSION},preferences:prefs(row?.preferences,c),revision:row?.revision||0,availableQuestIds:c.ids});
-export async function startGuideApi(request:Request,env:{DB:D1Database;START_GUIDE_TEST_DIAGNOSTICS?:boolean}){
+export async function startGuideApi(request:Request,env:{DB:D1Database}){
  const uid=request.headers.get('oai-authenticated-user-id');if(!uid)return json({error:'로그인한 뒤 안내를 이어가 주세요.'},401);
  try{
   const url=new URL(request.url),branch=url.searchParams.get('branchId')||'',kind=url.searchParams.get('kind')||'personal';
@@ -64,5 +66,5 @@ export async function startGuideApi(request:Request,env:{DB:D1Database;START_GUI
    await tx.prepare('INSERT INTO start_guide_preferences(user_id,owner,branch_id,role,guide_kind,guide_version,preferences,revision,last_request_id,last_request_hash) VALUES(?,?,?,?,?,?,?::text::jsonb,?,?,?) ON CONFLICT(user_id,owner,branch_id,role,guide_kind,guide_version) DO UPDATE SET preferences=excluded.preferences,revision=excluded.revision,last_request_id=excluded.last_request_id,last_request_hash=excluded.last_request_hash,updated_at=now()').bind(...args(c.scope),JSON.stringify(next),revision,b.requestId,hash).run();
    return json(await view(c,{preferences:next,revision}));
   });
- }catch(e){if(env.START_GUIDE_TEST_DIAGNOSTICS)console.error('Synthetic guide diagnostics:',e);if(e instanceof GuideError)return json({error:e.message,code:e.code},e.status);if(e instanceof SyntaxError||e instanceof Error&&e.message==='안내 설정을 확인해 주세요.')return json({error:'안내 설정을 확인해 주세요.'},400);return json({error:'안내를 저장하지 못했어요. 업무는 계속 이용할 수 있어요.'},503)}
+ }catch(e){if(e instanceof GuideError)return json({error:e.message,code:e.code},e.status);if(e instanceof SyntaxError||e instanceof Error&&e.message==='안내 설정을 확인해 주세요.')return json({error:'안내 설정을 확인해 주세요.'},400);return json({error:'안내를 저장하지 못했어요. 업무는 계속 이용할 수 있어요.'},503)}
 }
