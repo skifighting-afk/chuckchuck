@@ -83,4 +83,9 @@ body{font-family:'ChukAppSans','Pretendard','Apple SD Gothic Neo','Malgun Gothic
  .payroll-work .page-heading .actions:empty{display:none}
  .payroll-overview td[data-label="실수령액"]{grid-column:1/-1;grid-row:2;display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e3ebe6}
  .payroll-overview td[data-label="실수령액"] b{font-size:20px}
+ .pc-bulk-body,.pc-bulk-who{min-width:0;max-width:100%}
+ .pc-bulk-who>label:not(.t-check){min-width:0;max-width:100%;flex:1 1 180px}
+ .pc-bulk-who input:not([type=checkbox]):not([type=radio]),.pc-bulk-who select{width:100%;min-width:0;max-width:100%}
+ .pc-bulk-body .actions{min-width:0;flex-wrap:wrap}
+ .pc-bulk-body button,.pc-bulk-who legend{max-width:100%;white-space:normal;overflow-wrap:anywhere}
 }
