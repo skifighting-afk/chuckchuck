@@ -20,6 +20,7 @@ import {checkShift} from '../lib/schedule-rules';
 import {sendAlimtalk} from '../lib/alimtalk-send';
 import {teamSchema,normalizeTeam,calculate,contractText,kdate,attendanceSchema,newMember,applyClock,applyCredit} from '../lib/team-model';
 import {managerApi} from './manager-api';
+import {startGuideApi} from './start-guide-api';
 import {staffJoinApi} from './staff-join-api';
 import {accountApi,resolveStore} from './saas-api';
 import {plans,trialStatus,isPlan,canWrite,capacityError,hasFeature} from '../lib/plans';
@@ -86,6 +87,7 @@ async function route(request:Request,env:Env){
  if(path==='/api/documents')return documentsApi(request,env);
  if(path==='/api/contracts')return contractsApi(request,env);
  if(path==='/api/manager')return managerApi(request,env);
+ if(path==='/api/start-guide')return startGuideApi(request,env);
  if(path==='/api/staff-join')return staffJoinApi(request,env);
  if(path==='/api/account')return accountApi(request,env);
  if(path==='/api/evidence')return evidenceApi(request,env);
