@@ -1,0 +1,36 @@
+name: 카드뉴스 만들기
+
+# scripts/cardnews/weeks.json → 주차별 카드 PNG(1080×1350). 결과는 cardnews-out 브랜치에 올린다(광고·인스타에 그대로 씀).
+on:
+  workflow_dispatch:
+    inputs:
+      week:
+        description: '주차 번호 (비우면 전부)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: 도구 준비 (한글 글꼴 · 화면 찍기)
+        run: |
+          sudo apt-get update -qq >/dev/null && sudo apt-get install -y -qq --no-install-recommends fonts-noto-cjk >/dev/null
+          npm install --no-save --no-audit --no-fund playwright@1.56.0 >/dev/null
+          npx playwright install --with-deps chromium >/dev/null
+      - name: 카드 그리기
+        run: node scripts/cardnews/render.mjs --out cardnews-out ${{ github.event.inputs.week && format('--week {0}', github.event.inputs.week) || '' }}
+      - name: cardnews-out 브랜치에 올리기
+        run: |
+          cd cardnews-out && git init -q && git checkout -q -b cardnews-out
+          git -c user.name=card-bot -c user.email=card-bot@users.noreply.github.com add -A
+          git -c user.name=card-bot -c user.email=card-bot@users.noreply.github.com commit -qm "카드뉴스"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" cardnews-out
