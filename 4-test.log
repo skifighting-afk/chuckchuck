@@ -699,6 +699,64 @@ PASS 11. missing camera has phone fallback
 PASS 12. busy camera explains retry
 12/12 passed
 
+── check-start-guide
+PASS: defaults are fresh independent objects
+PASS: version is fixed
+PASS: all identity dimensions partition scope
+PASS: accept preference patch without business completion
+PASS: reject owner
+PASS: reject role
+PASS: reject done
+PASS: reject unknown
+PASS: reject boolean
+PASS: reject array
+PASS: reject null
+PASS: reject quest
+PASS: reject step
+PASS: reject decimal
+PASS: reject overflow
+PASS: reject ack
+PASS: reject date
+PASS: reject future
+PASS: allow clearing and bounded deferral
+start guide rules: 19 passed
+
+── check-start-guide-api
+PASS: legacy business guide loads and saves without rewriting business data
+PASS: authentication and business membership required
+PASS: guide uses the real storage shape with attendance kept in its own table
+PASS: server scope uses opaque identity, defaults and owner quests
+PASS: guide reads and writes reject stale parent account or business context
+PASS: preferences persist across independent reads
+PASS: same branch ID in different businesses and separate branches stay isolated
+PASS: stale revision returns current settings
+PASS: lost response replay is idempotent; reused ID with changed payload rejected
+PASS: simultaneous device writes conflict without silent overwrite
+PASS: staff scoped to own branch and employee quests
+PASS: business completion cannot be acknowledged or invalid step resumed
+PASS: manager personal and permitted delegated guides separated
+PASS: expired delegation cannot unlock a guide
+PASS: current permissions filter stored guide and reject expired open-screen writes
+PASS: guidance never modifies business records or business version
+PASS: business changed with same branch ID rejects old context write
+PASS: transferred and resigned staff lose previous scope access
+PASS: revoked coowner cannot access preferences
+PASS: direct browser DB access revoked and RLS enabled
+start guide API: 20 passed
+
+── check-start-guide-client
+PASS: new scope starts empty then loads server settings
+PASS: rapid actions serialize with latest confirmed revision
+PASS: failed save keeps confirmed state and retries exact original request
+PASS: other-device conflict shows latest state without reapplying stale patch
+PASS: other account has no prior account preference flash
+PASS: unmounted scope ignores delayed response
+PASS: revoked role removes previously visible guide data
+PASS: retained tab rejects a different account scope and cannot write
+PASS: queued writes and automatic focus refresh cannot bypass conflict confirmation
+PASS: delayed focus refresh cannot overwrite a confirmed preference save
+start guide client: 10 passed
+
 ── check-employee-pricing
 PASS 1. VAT-included employee monthly amounts, including zero
 PASS 2. invalid counts and plans are rejected rather than silently clamped
@@ -1763,6 +1821,9 @@ PASS: 체험 화면 숫자(급여·명세서·임금대장 합계).
 다음 행동이 없는 오류 문구:
 billing-confirm.ts: 주문을 찾을 수 없어요.
 billing-confirm.ts: 주문 금액과 달라 승인하지 않았어요.
+start-guide-api.ts: 지원하지 않는 요청이에요.
+start-guide-api.ts: 안내 설정이 너무 길어요.
+start-guide-api.ts: 이미 처리한 요청의 내용이 바뀌었어요.
 PASS: 오류 번호·로그 개인정보 제거.
 
 ── check-attendance-table
@@ -1885,15 +1946,16 @@ PASS: 오픈·마감 체크 실행.
 10. PASS owner of another store cannot accept
 11. PASS heir password checked
 12. PASS heir accepts
-13. PASS heir now owns store with staff
-14. PASS shift mirror moved
-15. PASS attendance moved
-16. PASS contract moved, body unchanged
-17. PASS owner change still blocked outside transfer
-18. PASS old owner left store
-19. PASS employee still linked
-20. PASS audit has transfer
-21. PASS offer gone after accept
+13. PASS existing guide preferences follow representative transfer
+14. PASS heir now owns store with staff
+15. PASS shift mirror moved
+16. PASS attendance moved
+17. PASS contract moved, body unchanged
+18. PASS owner change still blocked outside transfer
+19. PASS old owner left store
+20. PASS employee still linked
+21. PASS audit has transfer
+22. PASS offer gone after accept
 PASS: 가게 대표 넘기기.
 
 ── check-rate-limit
