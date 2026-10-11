@@ -1,0 +1,12 @@
+import {money,EMPLOYEE_PRICING_VERSION,TRIAL_DAYS} from '../lib/plans';
+import {Checkout,PaymentHistory,RefundEstimate,CancelSubscription,BizStatus,TaxInvoice} from './billing';
+export function AccountBilling({data,reload}:{data:any,reload:()=>Promise<void>}){
+ const a=data.account,current=a.currentSubscription,next=a.nextQuote;
+ const status=({trialing:'30일 무료 체험 중',active:'이용 중',expired:'기간 종료 · 조회·내려받기 가능',cancelled:'해지됨 · 조회·내려받기 가능',legacy:'기존 이용 조건 유지'} as any)[a.status]||a.status;
+ return <>
+  <div className="account-grid"><section className="auth-card"><span className="saas-status">{status}</span><h2>{a.planName||'기존 매장'}</h2>{a.status==='trialing'&&<p>체험 종료 {new Date(a.trialEndsAt).toLocaleDateString('ko-KR')}</p>}<div className="usage-line"><span>등록 매장</span><b>{data.usage.branches}곳</b></div><div className="usage-line"><span>등록 직원</span><b>{data.usage.employees}명</b></div><div className="usage-line"><span>QR 출퇴근</span><b>{a.qr?'사용 중':'프로에서 사용'}</b></div><div className="usage-line"><span>이번 달 근로계약서체결</span><b>{a.contracts.thisMonth}건 · {money(a.contracts.extra*a.contracts.extraPrice)}원</b></div><small>양측 서명 완료 1건당 {money(a.contracts.extraPrice)}원 · VAT 포함</small><p><a href="/app?screen=stores">매장 관리 열기 →</a></p></section>
+  <section className="auth-card billing-current"><h2>현재 이용권</h2>{current?<><strong className="billing-current-amount">{money(current.amount??0)}원</strong><p>{current.months}개월 · {new Date(current.periodStart).toLocaleDateString('ko-KR')} ~ {new Date(current.periodEnd).toLocaleDateString('ko-KR')}</p><p>{current.pricingVersion===EMPLOYEE_PRICING_VERSION?'결제 당시 직원 수와 금액을 유지해요.':'기존 이용 조건과 남은 기간을 유지해요.'}</p><RefundEstimate a={a}/></>:<p>{a.status==='trialing'?`${TRIAL_DAYS}일 체험 중에는 결제하지 않아요.`:'기존 이용 조건을 유지하고 있어요.'}</p>}{next&&<div className="usage-line"><span>현재 직원 기준 다음 예상액</span><b>{next.count}명 · 월 {money(next.amount)}원</b></div>}<small>VAT 포함 · 자동 결제 없음 · 인원 변경은 다음 견적에 반영</small></section></div>
+  {(a.pendingSubscriptions?.length?a.pendingSubscriptions:[a.pendingSubscription].filter(Boolean)).map((p:any)=><div key={p.orderId} className="billing-pending" role="status"><b>다음 이용권 준비 완료</b><p>{new Date(p.periodStart).toLocaleDateString('ko-KR')}부터 {p.plan==='pro'?'프로':'베이직'} · {money(p.periodPrice)}원. 현재 이용권이 끝나면 적용돼요.</p></div>)}
+  <Checkout a={a} reload={reload}/><PaymentHistory payments={data.payments} reload={reload}/><CancelSubscription a={a} reload={reload}/><BizStatus a={a} reload={reload}/><TaxInvoice a={a} reload={reload}/>
+ </>;
+}

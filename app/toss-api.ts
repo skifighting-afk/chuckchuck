@@ -49,6 +49,12 @@ export async function tossApi(request:Request,env:Env){
 
   const linked=await resolveStore(env.DB,user);if(!linked||linked.access!=='owner'||linked.coowner)return json({error:'결제는 가게 대표 계정에서만 할 수 있어요.'},403);
   if(b.action==='quote')return json(await createBillingQuote(env.DB,linked.owner,b.plan));
+  if(b.action==='recover'){
+   const p=await env.DB.prepare('SELECT order_id,amount,payment_key FROM payments WHERE order_id=? AND owner=?').bind(typeof b.orderId==='string'?b.orderId:'',linked.owner).first<any>();
+   if(!p?.payment_key)return json({error:'이 주문은 고객센터에서 확인이 필요해요. 주문번호를 알려 주세요.'},409);
+   if(!ready)return json({error:'승인 조회 연결을 준비하고 있어요. 새로 결제하지 말고 잠시 뒤 같은 주문을 확인해 주세요.'},503);
+   return await confirmPayment(env,linked.owner,{orderId:p.order_id,amount:p.amount,paymentKey:p.payment_key});
+  }
   if(b.action==='prepare'&&b.kind!=='contracts'&&b.quoteId){
    const order=await prepareBillingQuote(env.DB,linked.owner,b,ready);
    const fulfillment=order.noCharge?await fulfillPlanOrder(env.DB,order.orderId):null;

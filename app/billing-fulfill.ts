@@ -7,6 +7,8 @@ export async function fulfillPlanOrder(db:D1Database,orderId:string,now=Date.now
   const p=await tx.prepare('SELECT * FROM payments WHERE order_id=? FOR UPDATE').bind(orderId).first<any>();
   if(!p||p.kind!=='plan'||!['paid','no_charge'].includes(p.status))throw new BillingError('ORDER_NOT_APPROVED','승인 상태를 먼저 확인해 주세요.');
   if(p.fulfilled_at)return {fulfilled:true,periodStart:p.period_start,periodEnd:p.period_end};
+  // Old paid rows already recorded their entitlement bounds before this fulfillment column existed.
+  if(!p.pricing_version&&p.period_start&&p.period_end){await tx.prepare('UPDATE payments SET fulfilled_at=? WHERE order_id=?').bind(new Date(now).toISOString(),p.order_id).run();return {fulfilled:true,periodStart:p.period_start,periodEnd:p.period_end}}
   const row=await tx.prepare('SELECT data FROM stores WHERE owner=? FOR UPDATE').bind(p.owner).first<any>();
   if(!row)throw new BillingError('STORE_NOT_FOUND','결제는 확인됐지만 매장을 찾을 수 없어요. 고객센터에 주문번호를 알려 주세요.');
   const data=JSON.parse(row.data),at=Date.parse(p.paid_at||'')||now;

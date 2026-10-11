@@ -49,7 +49,8 @@ export function activatePendingSubscription(account:any,now=Date.now()){
  while(queue.length&&Date.parse(queue[0].periodStart)<=now){
   const {periodEnd,orderId,...subscription}=queue.shift();
   const {cancelAt,cancelRequestedAt,cancelReason,paymentFailedAt,pendingSubscription,pendingSubscriptions,...rest}=current;
-  current={...rest,...subscription};changed=true;
+  const keepCancel=cancelAt&&Date.parse(cancelAt)>Date.parse(subscription.periodStart)?{cancelAt,cancelRequestedAt,cancelReason}:{};
+  current={...rest,...subscription,...keepCancel};changed=true;
  }
  if(!changed)return account;
  return queue.length?{...current,pendingSubscription:queue[0],pendingSubscriptions:queue}:current;

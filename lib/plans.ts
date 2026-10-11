@@ -1,6 +1,6 @@
-// 요금제 (2026-10-05 대표님 결정: 매니지와 같은 구조, 가격은 VAT 포함)
-// 베이직·프로 2가지, 지점 수 구간별 월 요금, 6지점부터 지점당 3,900원 추가. 직원 수 제한 없음.
-// 30일 무료 체험(카드 등록 없음, 자동 결제 없음, 체험 중에는 프로 기능 전부). 6개월 10%·12개월 20% 할인.
+// Current pricing: VAT-included monthly price per active employee, defined by EMPLOYEE_PRICE below.
+// Branch tiers and 6/12-month discounts remain only to preserve legacy subscriptions/orders.
+// 30-day free trial, no card registration and no automatic payment.
 // 전자근로계약서는 무료 제공 없이 체결(양측 서명 완료)된 계약서 1건마다 3,000원(VAT 포함) — 2026-10-10 대표님 결정. 결제 연결 전에는 사용량·청구 예정액만 표시.
 export const plans = {
  basic:{id:'basic',name:'베이직',tiers:[[1,9900],[3,14900],[5,18900]] as [number,number][],extraPerBranch:3900,qr:false,description:'근무표 · 급여 자동 계산 · 명세서 · 전자계약 · 대장'},
@@ -49,8 +49,7 @@ export function periodPrice(plan:PlanId,branches:number,months:1|6|12){
  const d=PERIODS.find(x=>x.months===months)?.discount??0;
  return Math.floor(monthlyPrice(plan,branches)*months*(1-d)/10)*10;
 }
-// 2026-10-10 대표님 결정: 직원 1명당 월 요금(VAT 포함), 지점 칸·결제 기간 할인 없음, 기존 가입자 없음.
-// 홈페이지 요금 카드가 이 값을 쓴다. 앱 결제(toss·saas-api)는 아직 지점 구간 함수를 쓰고 있어서 연결 전까지 따로 둔다.
+// Shared homepage/app prices. Existing paid periods keep their original amount and terms.
 export const EMPLOYEE_PRICE={basic:2900,pro:3900} as const;
 export function employeeMonthlyPrice(plan:PlanId,employees=1){return employeePrice(plan,employees)}
 export const EMPLOYEE_PRICING_VERSION='employee-monthly-2026-10-11' as const;
@@ -120,6 +119,14 @@ export function refundQuote(paid:number,months:1|6|12,periodStart:string,cancelA
  const total=Math.max(1,Math.round((+endD-start)/DAY)),used=Math.max(0,Math.min(total,Math.ceil((cancelAt-start)/DAY)));
  const refund=Math.max(0,Math.floor((paid-paid*used/total)/10)*10);
  return {usedDays:used,totalDays:total,refund,formula:`${paid.toLocaleString('ko-KR')}원 − ${used}일/${total}일 사용분 = ${refund.toLocaleString('ko-KR')}원`};
+}
+/** Refund estimate uses the original paid ledger, never today's employee count or price table. */
+export function refundFromPayment(p:{amount:number,period_start:string,period_end:string,refunded_amount?:number},now=Date.now()){
+ const start=Date.parse(p.period_start),end=Date.parse(p.period_end),refunded=p.refunded_amount||0;
+ if(!Number.isFinite(start)||!Number.isFinite(end)||end<=start||!Number.isInteger(p.amount)||p.amount<0||!Number.isInteger(refunded)||refunded<0)return null;
+ const total=Math.max(1,Math.ceil((end-start)/DAY)),used=Math.max(0,Math.min(total,Math.ceil((now-start)/DAY)));
+ const refund=Math.max(0,Math.min(p.amount-refunded,Math.floor((p.amount-p.amount*used/total)/10)*10));
+ return {usedDays:used,totalDays:total,refund,formula:`${money(p.amount)}원 − ${used}일/${total}일 사용분 · 누적 환불 ${money(refunded)}원 반영`};
 }
 /** 작업 069: 사업자등록번호 검증(국세청 검증식) */
 export function validBizNo(v:string){

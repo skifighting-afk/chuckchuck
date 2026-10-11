@@ -11,7 +11,7 @@ import {hydrateAttendance} from './attendance-store';
 import {currentSubscription,nextEmployeeEstimate} from './billing-quotes';
 import {activatePendingStore} from './billing-fulfill';
 import {LEGAL,consentCurrent} from '../lib/legal';
-import {plans,planId,TRIAL_DAYS,trialStatus,planLimits,monthlyPrice,periodPrice,capacityError,branchCount,MAX_BRANCHES,CONTRACTS_FREE_PER_MONTH,CONTRACT_EXTRA_PRICE,trialNotice,validBizNo,graceLeft,EMPLOYEE_PRICING_VERSION} from '../lib/plans';
+import {plans,planId,TRIAL_DAYS,trialStatus,planLimits,monthlyPrice,periodPrice,capacityError,branchCount,MAX_BRANCHES,CONTRACTS_FREE_PER_MONTH,CONTRACT_EXTRA_PRICE,trialNotice,validBizNo,graceLeft,EMPLOYEE_PRICING_VERSION,refundFromPayment} from '../lib/plans';
 type Env={DB:D1Database,HQ_ADMIN_EMAIL?:string,HQ_NATIVE_USER_ID?:string,NTS_API_KEY?:string};
 const json=(v:unknown,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 /** 지시서 108·145: 이 계정이 들어갈 수 있는 가게 — 내 가게, 공동 관리자로 초대받은 가게, 직원으로 일하는 가게 */
@@ -51,7 +51,7 @@ export function accountView(a:any,contractsThisMonth=0,context?:{ownerId:string,
  const nextQuote=plan&&context?nextEmployeeEstimate(context.ownerId,context.data,plan):null;
  const employeePricing=a?.pricingVersion===EMPLOYEE_PRICING_VERSION;
  return {plan,planName:plan?plans[plan].name:null,deletion:a?.deletion||null,status:trialStatus(a),trialEndsAt:a?.trialEndsAt||null,createdAt:a?.createdAt||null,autoRenew:false,
-  pricingVersion:a?.pricingVersion||null,currentSubscription:currentSubscription(a),pendingSubscription:a?.pendingSubscription||null,nextQuote,
+  pricingVersion:a?.pricingVersion||null,currentSubscription:currentSubscription(a),pendingSubscription:a?.pendingSubscription||null,pendingSubscriptions:a?.pendingSubscriptions||[],nextQuote,
   storeSlots:branches,limits:planLimits(a),months,monthlyPrice:employeePricing?nextQuote?.amount??a?.pricingSnapshot?.amount??0:plan?monthlyPrice(plan,branches):0,periodPrice:a?.periodPrice??(employeePricing?nextQuote?.amount??0:plan?periodPrice(plan,branches,months as 1|6|12):0),vatIncluded:true,qr:plan==='pro'||trialStatus(a)==='trialing',
   notice:trialNotice(a),graceLeft:graceLeft(a),cancelAt:a?.cancelAt||null,bizCheck:a?.bizCheck||null,transfer:a?.transfer&&Date.parse(a.transfer.expiresAt)>Date.now()?{toEmail:a.transfer.toEmail,expiresAt:a.transfer.expiresAt}:null,periodStart:a?.periodStart||null,billing:a?.billing||null,invoiceRequests:(a?.invoiceRequests||[]).slice(-24),
   contracts:{thisMonth:contractsThisMonth,free:CONTRACTS_FREE_PER_MONTH,extra:Math.max(0,contractsThisMonth-CONTRACTS_FREE_PER_MONTH),extraPrice:CONTRACT_EXTRA_PRICE}};
@@ -78,7 +78,8 @@ export async function accountApi(request:Request,env:Env){
     if(add.length){data._outbox=[...box,...add.map((e:any)=>({id:crypto.randomUUID(),key:'expiry:'+e.id+':'+e.endDate,to:email,subject:`[척척사장] ${e.name}님 기간제 계약이 ${e.endDate}에 끝나요`,body:`${data.store?.name||''} ${e.name}님의 근로계약이 ${e.endDate}에 끝나요.\n\n계속 일한다면 새 계약서를 작성해 서명받고, 끝난다면 마지막 급여와 퇴직금 대상 여부를 확인해 주세요.\n(기간제 근로자를 2년 넘게 쓰면 기간의 정함이 없는 근로자로 봅니다 — 기간제법 제4조)`,status:'발송 대기',createdAt:new Date().toISOString(),providerId:null}))].slice(-500);
      const r=await env.DB.prepare('UPDATE stores SET data=?,version=version+1,updated_at=? WHERE owner=? AND version=?').bind(JSON.stringify(data),new Date().toISOString(),linked.owner,linked.row.version).run();if(!r.meta.changes)data._outbox=box}}
    const v:any=view(data);
-   if(linked?.access==='owner'&&!linked.coowner)v.payments=(await env.DB.prepare('SELECT order_id,plan,store_slots,months,amount,status,method,receipt_url,paid_at,period_start,period_end,refunded_amount FROM payments WHERE owner=? ORDER BY created_at DESC LIMIT 24').bind(id).all<any>()).results;
+   if(linked?.access==='owner'&&!linked.coowner)v.payments=(await env.DB.prepare('SELECT order_id,plan,store_slots,months,amount,status,method,receipt_url,paid_at,period_start,period_end,refunded_amount,pricing_version,pricing_snapshot,fulfilled_at,kind,created_at FROM payments WHERE owner=? ORDER BY created_at DESC LIMIT 24').bind(id).all<any>()).results;
+   if(v.account?.currentSubscription){const paid=v.payments?.find((p:any)=>p.order_id===v.account.currentSubscription.orderId);v.account.refundEstimate=paid?refundFromPayment(paid):null}
    if(linked?.access==='owner'){const rows=await env.DB.prepare('SELECT n.id,n.kind,n.title,n.body,n.effective_at,c.agreed_at FROM service_notices n LEFT JOIN service_notice_consents c ON c.notice_id=n.id AND c.user_id=? WHERE n.effective_at>=? ORDER BY n.effective_at').bind(id,new Date(Date.now()-90*86400000).toISOString().slice(0,10)).all<any>();v.serviceNotices=rows.results.map((r:any)=>({id:r.id,kind:r.kind,title:r.title,body:r.body,effectiveAt:r.effective_at,agreedAt:r.agreed_at||null}))}
    // 작업 057: 나에게 넘겨진 가게(이메일 확인된 계정만)
    if(email&&v.user.emailVerified&&linked?.access!=='owner'){const rows=await env.DB.prepare("SELECT owner,data FROM stores WHERE lower(try_jsonb(data)#>>'{_account,transfer,toEmail}')=lower(?)").bind(email).all<any>();v.transferOffers=rows.results.map((r:any)=>{const d=JSON.parse(r.data);return Date.parse(d._account.transfer.expiresAt)>Date.now()?{owner:r.owner,storeName:d.store?.name||'',fromEmail:d._account.transfer.fromEmail||'',expiresAt:d._account.transfer.expiresAt}:null}).filter(Boolean)}
@@ -192,7 +193,9 @@ export async function accountApi(request:Request,env:Env){
    // 작업 018: 해지 신청 — 이번 결제 기간이 끝날 때까지 쓰고, 그 뒤로는 조회·내려받기만
    if(trialStatus(data._account)!=='active'||!data._account.periodStart)return json({error:'결제 중인 이용권이 없어요. 체험 중이면 \'체험 그만두기\'를 이용해 주세요.'},400);
    if(typeof b.reason!=='string'||b.reason.length>500)return json({error:'해지 사유는 500자 이내로 적어 주세요.'},400);
-   const end=new Date(Date.parse(data._account.periodStart));end.setUTCMonth(end.getUTCMonth()+(data._account.months||1));
+   const lastPending=data._account.pendingSubscriptions?.at(-1)||data._account.pendingSubscription;
+   const paidEnd=Date.parse(lastPending?.periodEnd||data._account.paidUntil||'');
+   const end=new Date(Number.isFinite(paidEnd)?paidEnd:Date.parse(data._account.periodStart));if(!Number.isFinite(paidEnd))end.setUTCMonth(end.getUTCMonth()+(data._account.months||1));
    data._account.cancelAt=end.toISOString();data._account.cancelRequestedAt=new Date().toISOString();data._account.cancelReason=b.reason.trim();
   }else if(b.action==='undoCancel'){
    if(!data._account.cancelAt||Date.parse(data._account.cancelAt)<=Date.now())return json({error:'되돌릴 해지 예약이 없어요. 새로고침해서 상태를 확인해 주세요.'},400);

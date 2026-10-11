@@ -51,4 +51,18 @@ await test('quote identity digest is stable under row order but changes when ide
 await test('snapshots reject an invalid count timestamp',async()=>{
  await assert.rejects(()=>P.createPricingSnapshot({ownerId:'owner',employees:[],members:[],testEmployeeIds:[],plan:'basic',countedAt:'invalid'}));
 });
+await test('refund estimates use original payment amount, period bounds and accumulated refunds',async()=>{
+ const payment={amount:10000,period_start:'2026-01-31T00:00:00+09:00',period_end:'2026-02-28T00:00:00+09:00',refunded_amount:0};
+ assert.equal(P.refundFromPayment(payment,Date.parse('2026-02-14T00:00:00+09:00')).refund,5000);
+ assert.equal(P.refundFromPayment({...payment,refunded_amount:8000},Date.parse('2026-02-14T00:00:00+09:00')).refund,2000);
+ assert.equal(P.refundFromPayment(payment,Date.parse('2026-01-01T00:00:00+09:00')).refund,10000);
+ assert.equal(P.refundFromPayment(payment,Date.parse('2026-03-01T00:00:00+09:00')).refund,0);
+ assert.equal(P.refundFromPayment({...payment,period_end:'invalid'}),null);
+});
+await test('scheduled cancellation survives next-period activation when its end is later',async()=>{
+ const {activatePendingSubscription}=await import('../lib/toss.ts');
+ const next={plan:'pro',periodStart:'2026-10-15T00:00:00Z',paidUntil:'2026-11-15T00:00:00Z',periodEnd:'2026-11-15T00:00:00Z',status:'active'};
+ const result=activatePendingSubscription({plan:'basic',cancelAt:next.paidUntil,cancelReason:'사용자 예약',pendingSubscription:next},Date.parse('2026-10-15T00:00:00Z'));
+ assert.equal(result.cancelAt,next.paidUntil);assert.equal(result.plan,'pro');
+});
 console.log(`PASS: employee pricing ${checks} cases.`);

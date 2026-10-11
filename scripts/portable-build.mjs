@@ -1,5 +1,6 @@
 // 화면(dist/client → GitHub Pages)과 서버 함수(supabase/functions/api/index.js), 테스트용 서버 묶음(dist/server)을 만든다.
 import {build} from 'rolldown';
+import {EMPLOYEE_PRICE,money} from '../lib/plans.ts';
 import {compile} from '@tailwindcss/node';
 import {Scanner} from '@tailwindcss/oxide';
 import {readFile,writeFile,mkdir,copyFile,readdir,rm} from 'node:fs/promises';
@@ -54,7 +55,7 @@ const site='https://'+(appDomain?.trim()||'chukchukapp.kr');
 const esc=v=>v.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 const PUBLIC_PAGES=[
  ['/','index.html','척척사장 · 직원 출근부터 월급 정리까지','앱 설치 없이 휴대폰으로 쓰는 작은 가게 매장 관리. 직원 등록, 근무표, QR 출퇴근, 급여 계산과 명세서, 전자근로계약서까지. 30일 무료, 카드 등록 없음.'],
- ['/pricing','pricing.html','요금 안내 · 척척사장','베이직 월 9,900원부터, 프로(매장 QR 출퇴근) 월 14,900원부터(1지점, VAT 포함). 직원 수 제한 없이 지점 수로만 정해요. 30일 무료.'],
+ ['/pricing','pricing.html','요금 안내 · 척척사장',`베이직 직원 1명당 월 ${money(EMPLOYEE_PRICE.basic)}원, 프로 ${money(EMPLOYEE_PRICE.pro)}원(VAT 포함). 재직 직원만 집계하고 직원 0명은 0원. 30일 무료.`],
  ['/calculator','calculator.html','주휴수당·인건비 계산기 · 척척사장','시급과 근무 시간만 넣으면 주휴수당, 월 인건비, 4대보험 사장님 부담까지 바로 계산해요. 로그인 없이 무료.'],
  ['/help','help.html','자주 묻는 질문 · 척척사장','출퇴근 QR, 근무표, 급여 계산, 근로계약서, 요금과 체험에 대해 자주 묻는 질문을 모았어요.'],
  ['/start','start.html','시작하기 · 척척사장','사장님은 가게를 만들고, 직원은 가입 링크로 합류해요.'],

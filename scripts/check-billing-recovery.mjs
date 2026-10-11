@@ -65,5 +65,8 @@ try{
  r=await billing('hq',{action:'refund',requestId,orderId:p.orderId,amount:1000,reason:'합성 부분 환불'});assert.equal(r.status,200);assert.equal(r.data.refunded,1000);assert.equal((await q('SELECT refunded_amount FROM payments WHERE order_id=?',p.orderId).first()).refunded_amount,1000);
  const repeatedRefund=await billing('hq',{action:'refund',requestId,orderId:p.orderId,amount:1000,reason:'합성 부분 환불'});assert.equal(repeatedRefund.data.already,true);
  const cancels=calls.filter(x=>x.url.endsWith('/cancel'));assert.equal(cancels[0].key,cancels[1].key);ok('uncertain refund preserves the original intent and idempotency key');
+ await setup('historical');d=await raw('historical');d._account={...d._account,pricingVersion:undefined,status:'active',plan:'pro',months:6,storeSlots:2,periodPrice:107460,periodStart:new Date(Date.now()-86400000).toISOString(),paidUntil:new Date(Date.now()+150*86400000).toISOString(),lastOrderId:'cc-historical-123456'};await save('historical',d);
+ await q("INSERT INTO payments(id,owner,order_id,plan,store_slots,months,amount,status,period_start,period_end,payment_key,paid_at,created_at) VALUES(?,?,'cc-historical-123456','pro',2,6,107460,'paid',?,?,?, ?,?)",crypto.randomUUID(),id('historical'),d._account.periodStart,d._account.paidUntil,'pk_synthetic_1234567890',d._account.periodStart,d._account.periodStart).run();
+ r=await confirm('historical',{orderId:'cc-historical-123456',amount:107460});assert.equal(r.status,200);assert.equal((await raw('historical'))._account.paidUntil,d._account.paidUntil);ok('pre-migration paid legacy transaction never extends an already applied historical period');
  console.log(`PASS: billing recovery ${passed}/${passed}.`);
 }finally{await closeAll()}
