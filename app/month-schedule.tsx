@@ -3,6 +3,7 @@
 // 키보드: 막대에서 Space로 잡고, 방향키로 옮기고, Space로 놓기. Esc는 취소.
 'use client';
 import {empColor} from '../lib/schedule-bulk';
+import {leaveNamesForDay} from '../lib/schedule-display';
 import {useEffect,useMemo,useRef,useState} from 'react';
 import {type Team} from '../lib/team-model';
 import {PUBLIC_HOLIDAYS} from '../lib/holidays';
@@ -81,6 +82,7 @@ export function MonthSchedule({state,employees,anchor,today,onPick,onSave,onMont
    {name(x.employeeId)} <i>{x.start.slice(0,2)}–{x.end.slice(0,2)}</i></button>};
  const target=drag?.over||kb?.date||'';
  const dayList=picked?state.shifts.filter(x=>ids.has(x.employeeId)&&x.date===picked).sort((a,b)=>a.start.localeCompare(b.start)):[];
+ const dayLeaves=picked?leaveNamesForDay(leaves,employees,picked):[];
  return <div className="month-sched" ref={root}>
   <p className="month-sum">{Number(month.slice(5))}월 근무 {shifts.length}개 · 예정 근무시간 {Math.round(hours)}시간</p>
   <div className="month-grid" role="grid" aria-label={`${Number(month.slice(5))}월 근무표`}>
@@ -90,9 +92,9 @@ export function MonthSchedule({state,employees,anchor,today,onPick,onSave,onMont
     return <div role="gridcell" key={d} data-date={d} className={'month-cell'+(out?' out':'')+(d===today?' today':'')+(hol||dow===0?' sun':'')+(dragging?(no?' drop-no':' drop-ok'):'')+(isTarget?' drop-target':'')+(picked===d?' picked':'')} title={no||undefined}>
      <button type="button" className="month-daybtn" onClick={()=>{if(mobile){setPicked(picked===d?'':d)}else onPick(d)}} aria-label={`${Number(d.slice(5,7))}월 ${Number(d.slice(8))}일${hol?' '+hol:''} 근무 ${list.length}개${leaves.some(l=>l.start<=d&&d<=l.end)?' · 휴가 있음':''}${mobile?' · 누르면 근무 목록':' · 누르면 그날 시간표'}`} aria-expanded={mobile?picked===d:undefined}>
       <span className="month-day">{Number(d.slice(8))}{hol&&<small>{hol}</small>}</span>
-      {list.length>0&&<span className="month-count">{list.slice(0,2).map(x=>name(x.employeeId).slice(-2)).join('·')}{list.length>2?` +${list.length-2}`:''}</span>}
+      {list.length>0&&<span className="month-count">{new Set(list.map(x=>x.employeeId)).size}명 · {list.length}근무</span>}
      </button>
-     {(()=>{const off=leaves.filter(l=>l.start<=d&&d<=l.end).map(l=>name(l.employeeId)).filter(Boolean);return off.length?<span className="month-leave">휴가 {off.join('·')}</span>:null})()}
+     {(()=>{const off=leaveNamesForDay(leaves,employees,d);return off.length?<span className="month-leave"><span className="month-leave-names">휴가 {off.join('·')}</span><span className="month-leave-count">휴가 {off.length}명</span></span>:null})()}
      <span className="month-list">{list.slice(0,4).map(x=>bar(x,'cell'))}{list.length>4&&<button type="button" className="month-more" onClick={()=>onPick(d)}>+{list.length-4}</button>}</span>
      {isTarget&&no&&<span className="month-why" aria-hidden="true">{no}</span>}
     </div>})}
@@ -100,6 +102,7 @@ export function MonthSchedule({state,employees,anchor,today,onPick,onSave,onMont
   {mobile&&picked&&<section ref={el=>{if(el&&el.dataset.day!==picked){el.dataset.day=picked;requestAnimationFrame(()=>el.scrollIntoView({block:'nearest',behavior:'smooth'}))}}} className="month-daylist" aria-label={`${dayLabel(picked)} 근무`}>
    <div className="month-daylist-head"><b>{dayLabel(picked)} 근무 {dayList.length}개</b><button type="button" onClick={()=>onPick(picked)}>그날 시간표 보기 →</button></div>
    {dayList.length?<div className="month-daylist-bars">{dayList.map(x=>bar(x,'list'))}</div>:<p>잡힌 근무가 없어요.</p>}
+   {dayLeaves.length>0&&<div className="month-day-leaves"><b>승인된 휴가 {dayLeaves.length}명</b><ul>{dayLeaves.map((name,i)=><li key={i}>{name}</li>)}</ul></div>}
    {canMove&&dayList.length>0&&<p className="footnote">근무를 꾹 눌러 위 달력의 다른 날로 끌면 옮겨져요.</p>}
   </section>}
   {drag&&<div className="month-ghost" style={{left:drag.x,top:drag.y}} aria-hidden="true">{drag.label}{drag.over&&blocked.get(drag.over)?<small>{blocked.get(drag.over)}</small>:drag.over&&drag.over!==drag.from?<small>{dayLabel(drag.over)}로</small>:null}</div>}

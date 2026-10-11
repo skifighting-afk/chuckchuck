@@ -149,3 +149,25 @@ body{font-family:'ChukAppSans','Pretendard','Apple SD Gothic Neo','Malgun Gothic
 .t-staff .attendance-evidence{margin-top:.65rem}
 body.cheok-large-text .attendance-evidence p{font-size:18px}
 @media(max-width:600px){.att-table .attendance-evidence{min-width:13rem}.staff-attendance-today{padding:16px}.t-staff .t-row:has(.attendance-evidence){flex-wrap:wrap}.t-staff .t-row:has(.attendance-evidence) .t-grow{flex-basis:100%}}
+/* Schedule tools follow the day's work; auxiliary actions stay available on demand. */
+.schedule-tools{margin:0 0 18px;border:1px solid #d4dfd2;border-radius:12px;background:#f5f8f4}
+.schedule-tools summary{padding:12px 16px;min-height:48px;cursor:pointer;font-weight:600;color:#153e2d}
+.schedule-tool-actions{display:flex;flex-wrap:wrap;gap:10px;padding:0 16px 16px}
+.schedule-tool-actions>*{max-width:100%}
+.daily-range{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:16px 20px;border-bottom:1px solid #dce7df}
+.daily-range p{margin:0;font-size:14px;line-height:1.65}.daily-range button{min-height:48px}
+.daily-grid{min-width:var(--daily-width,1200px)}
+.daily-hours{grid-template-columns:repeat(var(--daily-hours,24),1fr)}
+.daily-tracks{background:repeating-linear-gradient(to right,transparent 0,transparent calc(100% / var(--daily-hours,24) - 1px),#dce7df calc(100% / var(--daily-hours,24) - 1px),#dce7df calc(100% / var(--daily-hours,24)))}
+.schedule-preview{margin:16px 0;padding:16px;border:1px solid #b5c8ba;border-radius:12px;background:#f5f8f4}
+.schedule-preview h3{margin:0 0 12px}.schedule-preview dl{margin:0}.schedule-preview dl>div{display:grid;grid-template-columns:5rem 1fr;gap:12px;padding:12px 0;border-top:1px solid #d4dfd2}
+.schedule-preview dt{font-weight:600}.schedule-preview dd{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0;min-width:0}
+.schedule-preview dd>span{overflow-wrap:anywhere;min-width:0;font-variant-numeric:tabular-nums}
+.schedule-preview dd small{display:block;font-size:14px;color:#526359;margin-bottom:4px}
+.schedule-preview p{font-size:14px;line-height:1.65;margin:12px 0 0}
+.month-count{font-size:12px;white-space:normal;line-height:1.5;font-variant-numeric:tabular-nums}
+.cheok-large-text .daily-range p,.cheok-large-text .schedule-preview dd small,.cheok-large-text .schedule-preview p{font-size:18px}
+@media(max-width:600px){.schedule-primary .t-inline{display:flex;flex-wrap:wrap;width:100%;gap:8px}.schedule-primary input{max-width:100%;min-width:0}.schedule-preview dl>div{grid-template-columns:1fr;gap:6px}.schedule-tool-actions{display:grid;grid-template-columns:1fr}.schedule-tool-actions button{white-space:normal;width:100%;min-height:48px}.month-count{display:block;font-size:12px;overflow-wrap:anywhere}}
+@media(max-width:700px){.month-daybtn{flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:4px;min-height:48px;max-width:100%}.month-count{padding:0;border-radius:0;background:none;overflow-wrap:anywhere;word-break:normal}.month-leave{font-size:12px;white-space:normal;overflow-wrap:anywhere}}
+.month-leave-count{display:none}.month-day-leaves{padding:16px 0;border-top:1px solid #dce7df}.month-day-leaves ul{margin:8px 0 0;padding-left:20px}.schedule-change-group h4{margin:16px 0 8px;font-size:16px;line-height:1.5}
+@media(max-width:700px){.month-leave-count{display:inline}.month-leave-names{display:none}}

@@ -76,6 +76,54 @@ export async function priorityUxE2E({owner,staff,srv,step,browser}){
    }finally{await employeeCtx.close()}
    }finally{await srv.db.q('UPDATE stores SET data=? WHERE owner=?',saved.data,saved.owner).run();await srv.db.q('DELETE FROM attendance_records WHERE id=?',fixtureId).run()}
   });
+  await step('근무표 도구 정리 · 시간 범위 · 고정 직원명 · 변경 전후 · 월간 요약',async()=>{
+   await page.goto(srv.ORIGIN+'/demo?role=owner&screen=schedule',{waitUntil:'networkidle'});
+   const tools=page.locator('.schedule-tools');assert.equal(await tools.evaluate(el=>el.open),false);
+   await page.getByLabel('근무표 날짜',{exact:true}).waitFor();
+   await tools.locator('summary').focus();await page.keyboard.press('Space');assert(await tools.evaluate(el=>el.open));await tools.getByRole('button',{name:'템플릿',exact:true}).waitFor();
+   await tools.locator('summary').click();
+   const wrap=page.getByRole('region',{name:'일간 근무 시간표',exact:true}),person=wrap.locator('.daily-person').first();
+   const initial=await person.evaluate(el=>el.getBoundingClientRect().left);await wrap.evaluate(el=>el.scrollLeft=el.scrollWidth);
+   assert(Math.abs(await person.evaluate(el=>el.getBoundingClientRect().left)-initial)<2,'employee remains fixed when timetable scrolls');await wrap.evaluate(el=>el.scrollLeft=0);
+   assert(await page.locator('.daily-hours>span:not(.daily-end)').count()<24,'working range trims empty night hours');
+   await page.getByRole('button',{name:'24시간 전체 보기',exact:true}).click();assert.equal(await page.locator('.daily-hours>span:not(.daily-end)').count(),24);
+   await page.getByRole('button',{name:'근무 시간 중심으로',exact:true}).click();
+   await wrap.locator('.daily-bar').first().click();const dialog=page.getByRole('dialog',{name:'근무 일정',exact:true});
+   const oldStart=await dialog.getByLabel('출근',{exact:true}).inputValue(),oldEnd=await dialog.getByLabel('퇴근',{exact:true}).inputValue();
+   const mins=Number(oldStart.slice(0,2))*60+Number(oldStart.slice(3))+15,newStart=String(Math.floor(mins/60)).padStart(2,'0')+':'+String(mins%60).padStart(2,'0');
+   await dialog.getByLabel('출근',{exact:true}).fill(newStart);await dialog.getByLabel('퇴근',{exact:true}).fill(oldEnd==='23:00'?'22:45':'23:00');
+   await dialog.getByLabel('휴게 (분)',{exact:true}).fill('30');await dialog.getByLabel('근무일',{exact:true}).fill('2099-10-13');
+   const select=dialog.getByRole('combobox',{name:'직원',exact:true}),options=await select.evaluate(el=>Array.from(el.options).map(o=>({value:o.value,selected:o.selected}))),other=options.find(o=>!o.selected);assert(other,'demo has another employee option: '+JSON.stringify(options));await select.selectOption(other.value);
+   const preview=dialog.getByRole('region',{name:'저장 전 근무 변경 확인',exact:true});await preview.waitFor();assert.match(await preview.innerText(),new RegExp(oldStart));assert.match(await preview.innerText(),new RegExp(newStart));
+   for(const key of ['직원','근무일','출근','퇴근','휴게'])await preview.locator('dt').filter({hasText:key}).waitFor();
+   for(const width of [320,390,768,1440]){await page.setViewportSize({width,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'schedule preview overflow '+width)}
+   await dialog.getByRole('button',{name:'닫기',exact:true}).click();
+   await page.setViewportSize({width:390,height:844});await page.getByRole('button',{name:'월간 · 한 달 미리 보기',exact:true}).click();
+   await page.locator('.month-count').first().waitFor();assert.match(await page.locator('.month-count').first().innerText(),/\d+명 · \d+근무/);
+   await page.locator('.month-cell').filter({has:page.locator('.month-count')}).first().getByRole('button').first().click();await page.locator('.month-daylist').waitFor();
+   await page.screenshot({path:'ci-logs/schedule-month-summary-mobile.png',fullPage:true});
+   await page.getByRole('button',{name:'일간 · 시간별로 보기',exact:true}).click();
+   await page.locator('.owner-display-settings summary').click();await page.getByRole('button',{name:'글씨 더 크게 보기',exact:true}).click();
+   for(const width of [320,390,768,1440]){await page.setViewportSize({width,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'schedule large overflow '+width)}
+   await page.getByRole('button',{name:'기본 글씨로 보기',exact:true}).click();await page.locator('.owner-display-settings summary').click();
+   await page.setViewportSize({width:390,height:844});await page.screenshot({path:'ci-logs/schedule-tools-mobile.png',fullPage:true});
+  });
+  await step('반복 저장의 실제 변경 범위 · 휴가만 있는 날짜의 직원 이름',async()=>{
+   const saved=await srv.db.q('SELECT owner,data FROM stores LIMIT 1').first(),data=JSON.parse(saved.data),emp=data.employees[0],one={id:'preview-series-one',series:'preview-series',employeeId:emp.id,date:'2099-10-13',start:'09:00',end:'15:00',breakMinutes:30};
+   data.shifts.push(one,{...one,id:'preview-series-two',date:'2099-10-20',start:'10:00',end:'16:00'});data._operations={...data._operations,leaves:[...(data._operations?.leaves||[]),{id:'preview-approved-leave',employeeId:emp.id,start:'2099-10-14',end:'2099-10-14',status:'승인'}]};
+   await srv.db.q('UPDATE stores SET data=? WHERE owner=?',JSON.stringify(data),saved.owner).run();
+   try{
+    await page.goto(srv.ORIGIN+'/app?screen=schedule',{waitUntil:'networkidle'});await page.getByLabel('근무표 날짜',{exact:true}).fill('2099-10-13');
+    await page.getByRole('region',{name:'일간 근무 시간표',exact:true}).locator('.daily-bar').first().click();
+    const dialog=page.getByRole('dialog',{name:'근무 일정',exact:true});await dialog.getByLabel('이 날 이후 같은 반복 근무도 모두 바꾸기',{exact:true}).check();
+    const preview=dialog.getByRole('region',{name:'저장 전 근무 변경 확인',exact:true});await preview.getByText(/반복 근무 1개의 값/).waitFor();await preview.getByRole('heading',{name:emp.name+' · 2099-10-20',exact:true}).waitFor();
+    assert.match(await preview.innerText(),/10:00/);assert.match(await preview.innerText(),/09:00/);
+    await dialog.getByLabel('근무일',{exact:true}).fill('2099-10-15');assert.equal(await preview.locator('dt').filter({hasText:'근무일'}).count(),0,'series ignores date edit just as save does');
+    await dialog.getByRole('button',{name:'닫기',exact:true}).click();await page.getByLabel('근무표 날짜',{exact:true}).fill('2099-10-14');await page.setViewportSize({width:390,height:844});
+    await page.getByRole('button',{name:'월간 · 한 달 미리 보기',exact:true}).click();await page.getByRole('button',{name:/10월 14일.*휴가 있음/}).click();
+    await page.locator('.month-day-leaves').getByText(emp.name,{exact:true}).waitFor();await page.screenshot({path:'ci-logs/schedule-leave-only-mobile.png',fullPage:true});
+   }finally{await srv.db.q('UPDATE stores SET data=? WHERE owner=?',saved.data,saved.owner).run()}
+  });
   await step('직원별 서류 · 검색 · 월 선택 · 연결 실패와 복구',async()=>{
    await page.goto(srv.ORIGIN+'/app?screen=contracts',{waitUntil:'networkidle'});
    const board=page.getByRole('region',{name:'직원별 서류 현황'});

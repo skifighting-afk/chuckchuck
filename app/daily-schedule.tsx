@@ -2,6 +2,7 @@
 // 근무 스케줄 일간 보기. 막대를 누르면 수정, 끌면(휴대폰은 꾹 누른 뒤) 시간·직원 바꾸기(지시서 3주차 021).
 // '복사' 켜거나 Alt·Ctrl을 누른 채 끌면 복사. 15분 단위로 맞춘다. 막히면 이유를 보여 주고 저장하지 않는다.
 import {useRef,useState} from 'react';
+import {dailyRange,barGeometry} from '../lib/schedule-display';
 import {type Team,datePlus} from '../lib/team-model';
 import {editBlockReason} from '../lib/schedule-move';
 import {checkShift} from '../lib/schedule-rules';
@@ -10,7 +11,7 @@ import {empColor} from '../lib/schedule-bulk';
 const minutes=(v:string)=>Number(v.slice(0,2))*60+Number(v.slice(3));
 const hm=(m:number)=>{m=((m%1440)+1440)%1440;return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')};
 type Shift=Team['shifts'][number];
-export function DailySchedule({state,employees,date,onEdit,onSave}:{state:Team,employees:Team['employees'],date:string,onEdit:(shift:Shift)=>void,onSave?:(shifts:Team['shifts'])=>Promise<boolean>}){
+export function DailySchedule({state,employees,date,onEdit,onSave,branch}:{state:Team,branch?:string,employees:Team['employees'],date:string,onEdit:(shift:Shift)=>void,onSave?:(shifts:Team['shifts'])=>Promise<boolean>}){
  const rows=employees.map(employee=>({employee,segments:state.shifts.filter(s=>s.employeeId===employee.id).flatMap(shift=>{
   const start=minutes(shift.start),end=minutes(shift.end),overnight=end<start;
   if(shift.date===date)return [{shift,start,end:overnight?1440:end,continued:false,overnight}];
@@ -18,13 +19,15 @@ export function DailySchedule({state,employees,date,onEdit,onSave}:{state:Team,e
   return [];
  }).sort((a,b)=>a.start-b.start)}));
  const [copy,setCopy]=useState(false),[drag,setDrag]=useState<{id:string,x:number,y:number,label:string,why:string|null}|null>(null),[msg,setMsg]=useState(''),[undo,setUndo]=useState<{shifts:Team['shifts'],text:string}|null>(null);
+ const [full,setFull]=useState(false);
+ const range=dailyRange(rows.flatMap(r=>r.segments),state.branches.find(b=>b.id===(branch||employees[0]?.branchId))?.hours,full),hourCount=(range.to-range.from)/60;
  const suppress=useRef(false),ut=useRef<any>(null),canMove=!!onSave;
  const name=(id:string)=>employees.find(e=>e.id===id)?.name||'';
  // 지시서 3주차 025: 승인된 휴가인 직원은 빈 줄 대신 '휴가'
  const onLeave=(id:string)=>((state as any).approvedLeaves||[]).some((l:any)=>l.employeeId===id&&l.start<=date&&date<=l.end);
  // 끌어 놓은 결과(새 근무)와 막힌 이유
  function plan(sh:Shift,dx:number,trackW:number,targetEmp:string|null,isCopy:boolean){
-  const d=Math.round(dx/trackW*1440/15)*15,len=(minutes(sh.end)-minutes(sh.start)+1440)%1440||1440;
+  const d=Math.round(dx/trackW*(range.to-range.from)/15)*15,len=(minutes(sh.end)-minutes(sh.start)+1440)%1440||1440;
   const st=Math.max(0,Math.min(1440-15,minutes(sh.start)+d));
   const cand={...sh,id:isCopy?'copy':sh.id,employeeId:targetEmp||sh.employeeId,start:hm(st),end:hm(st+len)};
   const why=editBlockReason(state,cand,isCopy?undefined:sh.id)||checkShift(cand,state.shifts.filter(x=>isCopy||x.id!==sh.id),employees.find(e=>e.id===cand.employeeId) as any,((state.settings as any).weekStart||'mon')).find(c=>c.level==='block')?.text||null;
@@ -48,8 +51,9 @@ export function DailySchedule({state,employees,date,onEdit,onSave}:{state:Team,e
   addEventListener('pointermove',mv);addEventListener('pointerup',up);addEventListener('pointercancel',up);
  }
  return <><div className="simple-instruction"><b>오늘 누가, 몇 시에 일하나요?</b><p>{date} · 근무 예정 직원 {rows.filter(r=>r.segments.length).length}명. 막대를 누르면 근무 시간을 수정할 수 있어요.{canMove?' 끌면 시간·직원을 바꿔요(휴대폰은 꾹 누른 뒤).':''}</p></div>
+  <div className="daily-range"><p>표시 시간 <b>{hm(range.from)}–{range.to===1440?'24:00':hm(range.to)}</b> · 등록된 근무는 모두 보여요.</p><button type="button" className="secondary" aria-pressed={full} onClick={()=>setFull(!full)}>{full?'근무 시간 중심으로':'24시간 전체 보기'}</button></div>
   {canMove&&<div className="daily-tools"><label className="daily-copy"><input type="checkbox" checked={copy} onChange={e=>setCopy(e.target.checked)}/> 끌어서 복사하기</label><small>PC는 Alt·Ctrl을 누른 채 끌어도 복사돼요. 15분 단위로 맞춰요.</small></div>}
-  <p className="table-scroll-help" id="daily-help">왼쪽은 직원, 위쪽은 시간이에요. 표가 잘리면 옆으로 밀어 보세요. 휴게시간의 위치는 표시하지 않아요.</p><div className="t-tablewrap" tabIndex={0} role="region" aria-label="일간 근무 시간표" aria-describedby="daily-help"><div className="daily-grid"><div className="daily-row daily-head"><strong>직원 / 업무</strong><div className="daily-hours">{Array.from({length:24},(_,h)=><span key={h}>{String(h).padStart(2,'0')}시</span>)}<span className="daily-end">24시</span></div></div>{rows.map(({employee,segments})=><div className="daily-row" key={employee.id} data-emp={employee.id}><div className="daily-person"><b>{employee.name}</b><small>{employee.role}</small></div><div className="daily-tracks" style={{height:Math.max(1,segments.length)*64+16}}>{segments.length===0?<span className={'daily-empty'+(onLeave(employee.id)?' leave':'')}>{onLeave(employee.id)?'휴가 (승인됨)':'등록된 근무 없음'}</span>:segments.map((seg,i)=><button key={seg.shift.id} className={'daily-bar'+(drag?.id===seg.shift.id?' lifting':'')} style={{left:`${seg.start/14.4}%`,width:`${Math.max(seg.end-seg.start,1)/14.4}%`,top:8+i*64,borderLeftColor:empColor(employee.id,employees.map(x=>x.id))}} onPointerDown={e=>{if(!seg.continued)down(e,seg.shift)}} onContextMenu={e=>{if(canMove)e.preventDefault()}} onClick={()=>{if(suppress.current){suppress.current=false;return}onEdit(seg.shift)}}><span className="sr-only">{employee.name} {seg.shift.date} </span><span>{seg.continued?'전날부터 → ':''}{seg.shift.start}–{seg.overnight?'다음 날 ':''}{seg.shift.end}</span><small> 휴게 {seg.shift.breakMinutes}분</small><span className="sr-only"> 수정</span></button>)}</div></div>)}</div></div>
+  <p className="table-scroll-help" id="daily-help">왼쪽은 직원, 위쪽은 시간이에요. 표가 잘리면 옆으로 밀어 보세요. 휴게시간의 위치는 표시하지 않아요.</p><div className="t-tablewrap" tabIndex={0} role="region" aria-label="일간 근무 시간표" aria-describedby="daily-help"><div className="daily-grid" style={{'--daily-hours':hourCount,'--daily-width':Math.max(650,hourCount*56+150)+'px'} as React.CSSProperties}><div className="daily-row daily-head"><strong>직원 / 업무</strong><div className="daily-hours">{Array.from({length:hourCount},(_,h)=><span key={h}>{String(range.from/60+h).padStart(2,'0')}시</span>)}<span className="daily-end">{range.to/60}시</span></div></div>{rows.map(({employee,segments})=><div className="daily-row" key={employee.id} data-emp={employee.id}><div className="daily-person"><b>{employee.name}</b><small>{employee.role}</small></div><div className="daily-tracks" style={{height:Math.max(1,segments.length)*64+16}}>{segments.length===0?<span className={'daily-empty'+(onLeave(employee.id)?' leave':'')}>{onLeave(employee.id)?'휴가 (승인됨)':'등록된 근무 없음'}</span>:segments.map((seg,i)=><button key={seg.shift.id} className={'daily-bar'+(drag?.id===seg.shift.id?' lifting':'')} style={{left:`${barGeometry(seg,range).left}%`,width:`${barGeometry(seg,range).width}%`,top:8+i*64,borderLeftColor:empColor(employee.id,employees.map(x=>x.id))}} onPointerDown={e=>{if(!seg.continued)down(e,seg.shift)}} onContextMenu={e=>{if(canMove)e.preventDefault()}} onClick={()=>{if(suppress.current){suppress.current=false;return}onEdit(seg.shift)}}><span className="sr-only">{employee.name} {seg.shift.date} </span><span>{seg.continued?'전날부터 → ':''}{seg.shift.start}–{seg.overnight?'다음 날 ':''}{seg.shift.end}</span><small> 휴게 {seg.shift.breakMinutes}분</small><span className="sr-only"> 수정</span></button>)}</div></div>)}</div></div>
   {drag&&<div className={'month-ghost'+(drag.why?' no':'')} style={{left:drag.x,top:drag.y}} aria-hidden="true">{drag.label}{drag.why&&<small>{drag.why}</small>}</div>}
   <p className="sr-only" role="status" aria-live="polite">{msg}</p>{msg&&!undo&&!drag&&<p className="month-msg" aria-hidden="true">{msg}</p>}
   {undo&&<div className={'month-undo'+(drag?' dim':'')} role="status"><span>{undo.text}</span><button type="button" onClick={async()=>{const u=undo;setUndo(null);clearTimeout(ut.current);if(await onSave!(u.shifts))setMsg('되돌렸어요.')}}>되돌리기</button></div>}
