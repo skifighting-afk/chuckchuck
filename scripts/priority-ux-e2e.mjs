@@ -161,16 +161,25 @@ export async function priorityUxE2E({owner,staff,srv,step,browser}){
   });
   await step('직원별 서류 · 검색 · 월 선택 · 연결 실패와 복구',async()=>{
    await page.goto(srv.ORIGIN+'/app?screen=contracts',{waitUntil:'networkidle'});
-   const board=page.getByRole('region',{name:'직원별 서류 현황'});
+   const board=page.getByRole('region',{name:'직원별 근로계약서·급여명세서'});
    await board.locator('article').first().waitFor();await board.locator('[aria-busy="false"]').count();
    await page.waitForFunction(()=>document.querySelector('.document-overview')?.getAttribute('aria-busy')==='false');
-   const name=await board.locator('article h3').first().innerText();await board.getByRole('searchbox').fill(name);
+   const total=await board.locator('article').count(),name=await board.locator('article h3').first().innerText();await board.getByRole('searchbox').fill(' '+name+' ');
    assert.equal(await board.locator('article').count(),1);
    await board.getByRole('button',{name:'근로조건 수정',exact:true}).click();await page.getByRole('dialog').waitFor();await page.keyboard.press('Escape');
-   await board.getByLabel('명세서 월').fill('2026-01');await board.getByText(/2026-01 명세서와/).waitFor();
-   for(const width of [320,390,768,1440]){await page.setViewportSize({width,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'document board overflow '+width)}
+   await board.getByLabel('찾을 문서',{exact:true}).selectOption('contract');
+   const contractState=await board.locator('article .document-state b').first().innerText();await board.getByLabel('문서 상태',{exact:true}).selectOption(contractState);assert.equal(await board.locator('article').count(),1);
+   await board.getByLabel('찾을 문서',{exact:true}).selectOption('payslip');assert.equal(await board.getByLabel('문서 상태',{exact:true}).inputValue(),'all','kind change resets incompatible state');
+   await board.getByRole('searchbox').fill('필터검사없는직원');assert.equal(await board.locator('article').count(),0);await board.getByText(/선택한 조건에 해당하는 직원이 없어요/).waitFor();
+   await board.getByRole('button',{name:'검색 조건 초기화',exact:true}).click();assert.equal(await board.locator('article').count(),total);assert.equal(await board.getByLabel('찾을 문서',{exact:true}).inputValue(),'all');
+   await board.getByLabel('급여명세서 월',{exact:true}).fill('2026-01');await board.getByText(/2026-01 급여명세서와/).waitFor();
+   for(const large of [false,true]){
+    if(large){await page.locator('.owner-display-settings summary').click();await page.getByRole('button',{name:'글씨 더 크게 보기',exact:true}).click()}
+    for(const width of [320,390,768,1440]){await page.setViewportSize({width,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'document board overflow '+width+' large='+large)}
+   }
+   await page.getByRole('button',{name:'기본 글씨로 보기',exact:true}).click();await page.locator('.owner-display-settings summary').click();
    await page.route('**/api/contracts?summary=1',route=>route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'Synthetic unavailable status'})}));
-   await board.getByRole('button',{name:'상태 새로 확인',exact:true}).click();await board.getByRole('alert').waitFor();await board.getByText('상태 확인 필요',{exact:true}).first().waitFor();
+   await board.getByRole('button',{name:'상태 새로 확인',exact:true}).click();await board.getByRole('alert').waitFor();await board.locator('.document-overview-rows').getByText('상태 확인 필요',{exact:true}).first().waitFor();
    await page.unroute('**/api/contracts?summary=1');await board.getByRole('button',{name:'상태 새로 확인',exact:true}).click();await board.getByRole('alert').waitFor({state:'hidden'});
    await page.setViewportSize({width:390,height:844});await page.screenshot({path:'ci-logs/priority-documents-mobile.png',fullPage:true});
   });
