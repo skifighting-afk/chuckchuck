@@ -22,6 +22,20 @@ export async function priorityUxE2E({owner,srv,step,browser}){
    const netBox=await firstNet.evaluate(el=>({bottom:el.getBoundingClientRect().bottom,viewport:innerHeight}));assert(netBox.bottom<netBox.viewport-80,'first employee net amount visible on mobile: '+JSON.stringify(netBox));
    assert(await exports.evaluate(el=>!el.open),'export tools start collapsed');
    assert(await page.evaluate(()=>document.querySelector('.payroll-overview').compareDocumentPosition(document.querySelector('.payroll-exports'))&Node.DOCUMENT_POSITION_FOLLOWING),'employee amounts before export tools');
+   const employeeRows=overview.locator('tbody tr');assert(await employeeRows.count()>0);
+   for(const row of await employeeRows.all()){
+    const time=await row.locator('td[data-label="실근무"]').innerText();assert.match(time,/^(?:−)?(?:\d+시간(?: \d+분)?|\d+분)$/,'duration uses minutes, not decimal hours');
+    assert.match(await row.locator('.payroll-type').innerText(),/^(?:시급 · 출퇴근 기록 기준|월급 · 등록 조건 기준|일급 · 근무일 기준|급여 유형 확인 필요)$/);
+    assert.match(await row.locator('td[data-label="상태"]').innerText(),/예상 · (?:검토 전|확인 필요)|확정 · 지급 기록 전|지급 기록 · /);
+   }
+   const titleSize=await page.locator('.page-heading h1').evaluate(el=>parseFloat(getComputedStyle(el).fontSize));assert(titleSize>=24&&titleSize<=32,'shared readable app title');
+   await page.locator('.owner-display-settings summary').click();await page.getByRole('button',{name:'글씨 더 크게 보기',exact:true}).click();
+   const largeTitle=await page.locator('.page-heading h1').evaluate(el=>parseFloat(getComputedStyle(el).fontSize));assert(largeTitle>titleSize,'owner large text also enlarges heading');
+   for(const width of [320,390,768,1440]){await page.setViewportSize({width,height:900});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'readable payroll large text overflow '+width)}
+   await page.getByRole('button',{name:'기본 글씨로 보기',exact:true}).click();await page.locator('.owner-display-settings summary').click();await page.setViewportSize({width:390,height:844});
+   assert((await overview.locator('table').evaluate(el=>getComputedStyle(el).fontVariantNumeric)).includes('tabular-nums'));
+   await overview.getByRole('button',{name:'계산 근거',exact:true}).first().click();const basis=page.getByRole('dialog');await basis.locator('.pay-basis').waitFor();
+   const basisTime=await basis.locator('.pay-basis>h3').last().innerText();assert.doesNotMatch(basisTime,/\d+\.\d+시간/);await page.keyboard.press('Escape');
    await exports.getByText('급여 자료 내려받기',{exact:true}).click();await exports.getByRole('button',{name:'세무사 자료',exact:true}).waitFor();
    const [download]=await Promise.all([page.waitForEvent('download'),exports.getByRole('button',{name:'세무사 자료',exact:true}).click()]);
    const csv=await readFile(await download.path(),'utf8');assert(csv.startsWith('\uFEFF"성명","직원번호"'),'accountant CSV still downloads');assert(!csv.includes('</table>'),'CSV contains data, not source markup');

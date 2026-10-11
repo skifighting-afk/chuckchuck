@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {durationLabel,payrollStage,payrollTypeLabel,payrollBasisLabel} from '../lib/payroll-display.ts';
+for(const [hours,label] of [[0,'0분'],[1,'1시간'],[272/60,'4시간 32분'],[1.999999,'2시간'],[-1.5,'−1시간 30분'],[NaN,'—'],[Infinity,'—']]) assert.equal(durationLabel(hours),label);
+const row={employeeId:'a',payType:'시급',warnings:[]};
+assert.deepEqual(payrollStage(row),{label:'예상 · 검토 전',tone:'muted'});
+assert.deepEqual(payrollStage({...row,warnings:['퇴근 누락']}),{label:'예상 · 확인 필요',tone:'amber'});
+assert.deepEqual(payrollStage(row,{locked:true,paid:{}}),{label:'확정 · 지급 기록 전',tone:'green'});
+assert.deepEqual(payrollStage(row,{locked:true,paid:{a:'2026-10-10'}}),{label:'지급 기록 · 2026-10-10',tone:'green'});
+assert.equal(payrollTypeLabel(row,{payType:'월급'},true),'시급 · 출퇴근 기록 기준');
+assert.equal(payrollTypeLabel({},{payType:'월급'},true),'급여 유형 확인 필요');
+assert.equal(payrollTypeLabel({},{payType:'월급'},false),'월급 · 등록 조건 기준');
+assert.equal(payrollTypeLabel({payType:'일급'}),'일급 · 근무일 기준');
+assert.equal(payrollBasisLabel(),'현재 저장된 기록 기준');
+assert.equal(payrollBasisLabel({locked:true,at:'2026-08-31T15:30:00Z'}),'2026-09-01 확정 기준');
+assert.equal(payrollBasisLabel({locked:true,at:'invalid'}),'확정 당시 기록 기준');
+console.log('PASS: minute duration, truthful payroll stage and historical pay type.');
