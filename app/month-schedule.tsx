@@ -90,9 +90,9 @@ export function MonthSchedule({state,employees,anchor,today,onPick,onSave,onMont
     return <div role="gridcell" key={d} data-date={d} className={'month-cell'+(out?' out':'')+(d===today?' today':'')+(hol||dow===0?' sun':'')+(dragging?(no?' drop-no':' drop-ok'):'')+(isTarget?' drop-target':'')+(picked===d?' picked':'')} title={no||undefined}>
      <button type="button" className="month-daybtn" onClick={()=>{if(mobile){setPicked(picked===d?'':d)}else onPick(d)}} aria-label={`${Number(d.slice(5,7))}월 ${Number(d.slice(8))}일${hol?' '+hol:''} 근무 ${list.length}개${leaves.some(l=>l.start<=d&&d<=l.end)?' · 휴가 있음':''}${mobile?' · 누르면 근무 목록':' · 누르면 그날 시간표'}`} aria-expanded={mobile?picked===d:undefined}>
       <span className="month-day">{Number(d.slice(8))}{hol&&<small>{hol}</small>}</span>
-      {list.length>0&&<span className="month-count">{list.slice(0,2).map(x=>name(x.employeeId).slice(-2)).join('·')}{list.length>2?` +${list.length-2}`:''}</span>}
+      {list.length>0&&<span className="month-count">{new Set(list.map(x=>x.employeeId)).size}명 · {list.length}근무</span>}
      </button>
-     {(()=>{const off=leaves.filter(l=>l.start<=d&&d<=l.end).map(l=>name(l.employeeId)).filter(Boolean);return off.length?<span className="month-leave">휴가 {off.join('·')}</span>:null})()}
+     {(()=>{const off=leaves.filter(l=>l.start<=d&&d<=l.end).map(l=>name(l.employeeId)).filter(Boolean);return off.length?<span className="month-leave">휴가 {off.length}명</span>:null})()}
      <span className="month-list">{list.slice(0,4).map(x=>bar(x,'cell'))}{list.length>4&&<button type="button" className="month-more" onClick={()=>onPick(d)}>+{list.length-4}</button>}</span>
      {isTarget&&no&&<span className="month-why" aria-hidden="true">{no}</span>}
     </div>})}
