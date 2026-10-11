@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+const {START_GUIDE_VERSION:V,defaultGuidePreferences,guideScopeKey,validateGuidePatch}=await import('../lib/start-guide.ts');
+const now=Date.parse('2026-10-11T00:00:00Z'), allowed=['store','shift','tour'];
+let count=0;
+const test=(name,fn)=>{fn();count++;console.log('PASS: '+name)};
+test('defaults are fresh independent objects',()=>{const a=defaultGuidePreferences(),b=defaultGuidePreferences();a.acknowledged.push('tour');assert.deepEqual(b,{mini:false,hideAll:false,deferredUntil:null,active:null,acknowledged:[]})});
+test('version is fixed',()=>assert.equal(V,'2026-10-11-v2'));
+test('all identity dimensions partition scope',()=>{const a={userId:'u',owner:'o',branchId:'b',role:'owner',kind:'personal',guideVersion:V};const keys=[guideScopeKey(a),...Object.keys(a).map(k=>guideScopeKey({...a,[k]:a[k]+'2'}))];assert.equal(new Set(keys).size,7);assert.notEqual(guideScopeKey({...a,userId:'a:b',owner:'c'}),guideScopeKey({...a,userId:'a',owner:'b:c'}))});
+test('accept preference patch without business completion',()=>assert.deepEqual(validateGuidePatch({mini:true,active:{questId:'shift',step:2},acknowledged:['tour','tour']},allowed,now),{mini:true,active:{questId:'shift',step:2},acknowledged:['tour']}));
+for(const [name,input] of Object.entries({owner:{owner:'other'},role:{role:'owner'},done:{completed:['shift']},unknown:{extra:true},boolean:{mini:'true'},array:[],null:null,quest:{active:{questId:'forbidden',step:0}},step:{active:{questId:'shift',step:-1}},decimal:{active:{questId:'shift',step:1.5}},overflow:{active:{questId:'shift',step:101}},ack:{acknowledged:['forbidden']},date:{deferredUntil:'bad'},future:{deferredUntil:new Date(now+31*86400000).toISOString()}}))test('reject '+name,()=>assert.throws(()=>validateGuidePatch(input,allowed,now)));
+test('allow clearing and bounded deferral',()=>assert.deepEqual(validateGuidePatch({active:null,deferredUntil:new Date(now+86400000).toISOString(),hideAll:false},allowed,now),{active:null,deferredUntil:'2026-10-12T00:00:00.000Z',hideAll:false}));
+console.log(`start guide rules: ${count} passed`);
