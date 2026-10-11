@@ -659,7 +659,7 @@ html.anim .hero{height:160vh}.exp-extra{font-size:15px;color:#64795f;line-height
 
 .trial-ending{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));list-style:none;padding:24px 0;margin:24px 0;gap:24px;border-block:1px solid var(--line);font-size:1rem;line-height:1.8}
 .trial-ending strong{display:block;margin-bottom:6px;color:var(--ink);font-size:1rem}
-.start-roadmap{padding-block:88px;border-top:1px solid var(--line)}
+.start-roadmap{padding:88px var(--gut);max-width:1440px;margin-inline:auto;border-top:1px solid var(--line)}
 .start-roadmap-heading{display:flex;justify-content:space-between;align-items:end;gap:32px;margin-bottom:40px}
 .start-roadmap h2{font-size:clamp(2rem,3.8vw,3.25rem);line-height:1.2;letter-spacing:-.045em}
 .start-roadmap-heading>p,.start-roadmap li p{font-size:1rem;line-height:1.8;color:var(--muted)}
@@ -668,6 +668,9 @@ html.anim .hero{height:160vh}.exp-extra{font-size:15px;color:#64795f;line-height
 .start-roadmap li>span{display:inline-flex;background:var(--lime);color:var(--ink);border-radius:50%;width:36px;height:36px;align-items:center;justify-content:center;font-size:.875rem;font-weight:800}
 .start-roadmap h3{font-size:1.25rem;line-height:1.4;margin:18px 0 10px}
 .start-employee{margin-top:28px;font-size:1rem;line-height:1.8}.start-employee a{display:inline-flex;align-items:center;min-height:48px;font-weight:700;text-decoration:underline;text-underline-offset:4px}
+html.large-text .trial-ending,html.large-text .trial-ending strong,html.large-text .start-roadmap-heading>p,html.large-text .start-roadmap li p,html.large-text .start-employee{font-size:1.17rem}
+html.large-text .start-roadmap h2{font-size:clamp(2.34rem,4.45vw,3.8rem)}
+html.large-text .start-roadmap h3{font-size:1.46rem}html.large-text .start-roadmap li>span{font-size:1.025rem}
 @media(max-width:800px){.trial-ending{grid-template-columns:1fr;gap:20px}.start-roadmap{padding-block:56px}.start-roadmap-heading{display:block;margin-bottom:28px}.start-roadmap-heading>p{margin-top:18px}.start-roadmap ol{grid-template-columns:1fr;gap:28px}.start-roadmap li{padding-top:16px}.start-roadmap h3{margin-top:12px}.start-employee a{display:flex}}
 /* Keep the decision together: product, employee price, trial and action. */
 @media(max-width:600px){
