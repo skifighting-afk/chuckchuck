@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {mkdir,readFile} from 'node:fs/promises';
 import {dayRows} from '../lib/attendance-check.ts';
 import {attendanceEvidence} from '../lib/attendance-display.ts';
+import {normalizeTeam} from '../lib/team-model.ts';
 export async function priorityUxE2E({owner,staff,srv,step,browser}){
  const ctx=await browser.newContext({storageState:await owner.context().storageState(),serviceWorkers:'block',viewport:{width:1440,height:900}}),page=await ctx.newPage();
  try{
@@ -190,7 +191,7 @@ export async function priorityUxE2E({owner,staff,srv,step,browser}){
   });
   await step('휴가 승인 영향 · 대타 단계 · 실제 승인과 취소 결과',async()=>{
    const saved=await srv.db.q('SELECT owner,data FROM stores LIMIT 1').first(),data=JSON.parse(saved.data);
-   const requester=data.employees.find(e=>e.status!=='퇴사'),taker={...requester,id:'ux-swap-taker',name:'단계 확인 동료'};
+   const requester=data.employees.find(e=>e.status!=='퇴사'),taker={...requester,id:'ux-swap-taker',name:'단계 확인 동료',email:'ux-swap-taker@example.invalid'};
    assert(requester);data.employees.push(taker);
    const date=new Date(Date.now()+9*3600000+86400000).toISOString().slice(0,10),branchId=requester.branchId;
    data.shifts=data.shifts.filter(s=>s.employeeId!==requester.id||s.date!==date);
@@ -203,6 +204,7 @@ export async function priorityUxE2E({owner,staff,srv,step,browser}){
     if(status==='승인 대기')w.taker={id:taker.id,name:taker.name,at:new Date().toISOString()};data._operations.swaps.push(w);return w;
    };
    const waiting=make('waiting','17:00','20:00','승인 대기'),open=make('open','10:00','12:00','구하는 중');
+   normalizeTeam({...data,attendance:[]});
    await srv.db.q('UPDATE stores SET data=? WHERE owner=?',JSON.stringify(data),saved.owner).run();
    try{
     await page.goto(srv.ORIGIN+'/app?screen=operations',{waitUntil:'networkidle'});
