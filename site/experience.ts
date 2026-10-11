@@ -48,7 +48,7 @@ host.addEventListener('click',e=>{const b=(e.target as Element).closest<HTMLButt
  else if(b.id==='exp-export'){const gross=wageKind==='월급'?2500000:1200000,cut=deduct==='3.3%'?gross*.033:deduct==='4대보험'?112000:0;const url=URL.createObjectURL(new Blob(['\uFEFF직원,임금방식,지급액,공제액,실수령액\r\n김민지,'+wageKind+','+gross+','+cut+','+(gross-cut)+'\r\n'],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='척척사장-예시급여.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);el('exp-feedback').textContent='예시 급여표를 내려받았어요. 실제 직원 자료는 포함하지 않습니다.'}
 });
 host.addEventListener('change',e=>{pause();const t=e.target as HTMLSelectElement;if(t.id==='exp-wage')wageKind=t.value;if(t.id==='exp-deduct')deduct=t.value;if(t.id==='exp-branch'){branch=t.value;step=1}render(false)});
-host.addEventListener('focusin',()=>pause());
+host.addEventListener('focusin',e=>{if((e.target as Element).closest('#exp-play'))return;pause()});
 document.addEventListener('click',e=>{const a=(e.target as Element).closest<HTMLAnchorElement>('[data-tour-chapter]');if(!a)return;const n=Number(a.dataset.tourChapter);if(!Number.isInteger(n)||n<0||n>=chapters.length)return;pause();chapter=n;step=0;render();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){host!.classList.remove('exp-expanded');el('exp-zoom').textContent='화면 확대';el('exp-zoom').setAttribute('aria-expanded','false')}});
 new IntersectionObserver(([entry])=>{visible=entry.isIntersecting;deadline=Date.now()+6500},{threshold:.15}).observe(host);
