@@ -2,10 +2,11 @@
 > chuckchuck@0.1.0 test
 > node scripts/check-model.mjs
 
+PASS: employee document overview isolates branch/revision, paper/electronic, retired and unknown states.
 PASS: overnight duration, breaks, Korean month boundaries and wage validation.
 
 ── check-home-seo
-(node:2721) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(node:2694) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
 (Use `node --trace-warnings ...` to show where the warning was created)
 PASS: homepage search/social metadata, visible FAQ/prices, canonical domains and private app indexing boundary
 
@@ -966,88 +967,96 @@ PASS 19. owner consent required
 PASS 20. wrong owner name rejected
 PASS 21. owner password reauthentication required
 PASS 22. owner signature freezes and creates request
-PASS 23. contract hash matches stored snapshot
-PASS 24. duplicate waiting request blocked
-PASS 25. unrelated employee cannot read document
-PASS 26. unrelated employee cannot download document
-PASS 27. employee sees own signing request
-PASS 28. owner cannot sign on behalf of employee
-PASS 29. different document hash rejected
-PASS 30. employee consent cannot be skipped
-PASS 31. stale version rejected
-PASS 32. changed work conditions block old contract signature
-PASS 33. unverified employee cannot sign
-PASS 34. 작업 039: non-PNG drawing rejected
-PASS 35. 작업 039: oversized drawing rejected
-PASS 36. both signatures commit without pretending email sent
-PASS 37. 작업 039: hand signature kept with hash
-PASS 38. 작업 039: list omits image but flags it
-PASS 39. unconfigured delivery is marked setup required
-PASS 40. signed status reaches employee current contract
-PASS 41. repeated signature is rejected
-PASS 42. signed request cannot be withdrawn
-PASS 43. database prevents changing signed document snapshot
-PASS 44. failed email is not marked delivered
-PASS 45. provider acceptance is distinct from employee receipt
-PASS 46. copy email contains actual immutable signed HTML
-PASS 47. duplicate delivery does not resend accepted email
-PASS 48. owner cannot confirm employee received copy
-PASS 49. employee receipt requires explicit checkbox
-PASS 50. employee can record receipt
-PASS 51. signature and delivery history retained
-PASS 52. download contains both names, timestamps and hash
-PASS 53. former employee can retain previously signed copy
-PASS 54. ended trial cannot create new electronic contract
-PASS 55. ended trial retains old copies
-PASS 56. cross origin contract mutation rejected
-PASS 57. outsider cannot read image document
-PASS 58. owner cannot mark employee download
-PASS 59. save confirmation requires prior download
-PASS 60. employee view records receipt separately
-PASS 61. download request does not pretend saved
-PASS 62. explicit employee save is recorded
-PASS 63. owner sees employee document activity
-PASS 64. employee cannot send payroll
-PASS 65. owner sends locked payslip in app
-PASS 66. repeat send idempotent
-PASS 67. employee sees own sent payroll
-PASS 68. app payslip includes employee number and pay date
-PASS 69. outsider sees no payroll
-PASS 70. outsider cannot fetch payroll by id
-PASS 71. unlocked payroll cannot send
-PASS 72. revised payroll sends a new immutable copy
-PASS 73. new revision has independent pending download
-PASS 74. latest payslip is marked current
-PASS 75. older payslip is marked replaced
-PASS 76. reopened payroll marks sent payslip as under review
-PASS 77. unrelated store writes do not block sending
-PASS 78. owner list carries activity without per-row queries
-PASS 79. unlinked employee gives a clear message
-PASS 80. former employee still opens own payslip copy
-PASS 81. cross origin document action denied
-PASS 82. new contract revision can be requested
-PASS 83. unsigned contract image is blocked
-PASS 84. in-app signing works with password without email service
-PASS 85. app signing sends no email
-PASS 86. app signature preserves truthful email verification state
-PASS 87. no change right after signing
-PASS 88. phone-only change is not a term change
-PASS 89. wage change detected with before/after
-PASS 90. change note has no blank brackets
-PASS 91. unsupported method
-PASS 92. oversized body
-PASS 93. broken JSON
-PASS 94. unknown action
-PASS 95. bad hand-signature on create
-PASS 96. incomplete contract blocked with list
-PASS 97. new waiting contract after change
-PASS 98. decline needs reason
-PASS 99. owner cannot decline for employee
-PASS 100. employee declines with reason
-PASS 101. employee cannot withdraw
-PASS 102. owner withdraws
-PASS 103. stranger cannot open
-103/103 passed; no external email or real signatures sent.
+PASS 23. anonymous document overview denied
+PASS 24. staff cannot read employer document overview
+PASS 25. owner overview returns pending employee without contract body
+PASS 26. staff cannot read employer payslip overview
+PASS 27. owner empty month is known empty
+PASS 28. contract hash matches stored snapshot
+PASS 29. duplicate waiting request blocked
+PASS 30. unrelated employee cannot read document
+PASS 31. unrelated employee cannot download document
+PASS 32. employee sees own signing request
+PASS 33. owner cannot sign on behalf of employee
+PASS 34. different document hash rejected
+PASS 35. employee consent cannot be skipped
+PASS 36. stale version rejected
+PASS 37. changed work conditions block old contract signature
+PASS 38. waiting contract with changed terms needs owner action
+PASS 39. unverified employee cannot sign
+PASS 40. 작업 039: non-PNG drawing rejected
+PASS 41. 작업 039: oversized drawing rejected
+PASS 42. both signatures commit without pretending email sent
+PASS 43. 작업 039: hand signature kept with hash
+PASS 44. 작업 039: list omits image but flags it
+PASS 45. unconfigured delivery is marked setup required
+PASS 46. signed status reaches employee current contract
+PASS 47. repeated signature is rejected
+PASS 48. signed request cannot be withdrawn
+PASS 49. database prevents changing signed document snapshot
+PASS 50. failed email is not marked delivered
+PASS 51. provider acceptance is distinct from employee receipt
+PASS 52. copy email contains actual immutable signed HTML
+PASS 53. duplicate delivery does not resend accepted email
+PASS 54. owner cannot confirm employee received copy
+PASS 55. employee receipt requires explicit checkbox
+PASS 56. employee can record receipt
+PASS 57. signature and delivery history retained
+PASS 58. download contains both names, timestamps and hash
+PASS 59. former employee can retain previously signed copy
+PASS 60. ended trial cannot create new electronic contract
+PASS 61. ended trial retains old copies
+PASS 62. cross origin contract mutation rejected
+PASS 63. outsider cannot read image document
+PASS 64. owner cannot mark employee download
+PASS 65. save confirmation requires prior download
+PASS 66. employee view records receipt separately
+PASS 67. download request does not pretend saved
+PASS 68. explicit employee save is recorded
+PASS 69. owner sees employee document activity
+PASS 70. employee cannot send payroll
+PASS 71. owner sends locked payslip in app
+PASS 72. repeat send idempotent
+PASS 73. employee sees own sent payroll
+PASS 74. app payslip includes employee number and pay date
+PASS 75. outsider sees no payroll
+PASS 76. outsider cannot fetch payroll by id
+PASS 77. unlocked payroll cannot send
+PASS 78. revised payroll sends a new immutable copy
+PASS 79. new revision has independent pending download
+PASS 80. latest payslip is marked current
+PASS 81. overview keeps only latest revision and no wage text
+PASS 82. overview does not borrow another branch payslip
+PASS 83. older payslip is marked replaced
+PASS 84. reopened payroll marks sent payslip as under review
+PASS 85. unrelated store writes do not block sending
+PASS 86. owner list carries activity without per-row queries
+PASS 87. unlinked employee gives a clear message
+PASS 88. former employee still opens own payslip copy
+PASS 89. cross origin document action denied
+PASS 90. new contract revision can be requested
+PASS 91. unsigned contract image is blocked
+PASS 92. in-app signing works with password without email service
+PASS 93. app signing sends no email
+PASS 94. app signature preserves truthful email verification state
+PASS 95. no change right after signing
+PASS 96. phone-only change is not a term change
+PASS 97. wage change detected with before/after
+PASS 98. change note has no blank brackets
+PASS 99. unsupported method
+PASS 100. oversized body
+PASS 101. broken JSON
+PASS 102. unknown action
+PASS 103. bad hand-signature on create
+PASS 104. incomplete contract blocked with list
+PASS 105. new waiting contract after change
+PASS 106. decline needs reason
+PASS 107. owner cannot decline for employee
+PASS 108. employee declines with reason
+PASS 109. employee cannot withdraw
+PASS 110. owner withdraws
+PASS 111. stranger cannot open
+111/111 passed; no external email or real signatures sent.
 
 ── check-pay-rules
 PASS 1. overnight shift worked hours
@@ -2521,7 +2530,7 @@ PASS: 메일 없이 비밀번호 찾기.
 149. PASS client error needs origin
 150. PASS scrubbed + deduped
 151. PASS non-HQ cannot read
-152. PASS B101 (skipped near midnight)
+152. PASS B101 2h before alert with clock link
 
 ── check-secrets
 1. PASS 비밀값 검사 완료
