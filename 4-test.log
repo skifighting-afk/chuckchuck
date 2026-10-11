@@ -723,76 +723,1844 @@ start guide rules: 19 passed
 
 ── check-start-guide-api
 PASS: legacy business guide loads and saves without rewriting business data
-Synthetic guide diagnostics: GuideError: 현재 매장과 맡은 역할의 안내만 볼 수 있어요.
-    at deny (file:///home/runner/work/chuckchuck/chuckchuck/dist/server/index.js:25121:8)
-    at startGuideApi (file:///home/runner/work/chuckchuck/chuckchuck/dist/server/index.js:25215:50)
-    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
-    at async api (file:///home/runner/work/chuckchuck/chuckchuck/dist/server/index.js:30528:9)
-    at async call (file:///home/runner/work/chuckchuck/chuckchuck/scripts/check-start-guide-api.mjs:8:84)
-    at async file:///home/runner/work/chuckchuck/chuckchuck/scripts/check-start-guide-api.mjs:19:58 {
-  status: 403,
-  code: 'GUIDE_FORBIDDEN'
-}
 PASS: authentication and business membership required
+PASS: guide uses the real storage shape with attendance kept in its own table
 PASS: server scope uses opaque identity, defaults and owner quests
-Synthetic guide diagnostics: GuideError: 계정이나 매장이 바뀌었어요. 화면을 새로고침해 주세요.
-    at verifyContext (file:///home/runner/work/chuckchuck/chuckchuck/dist/server/index.js:25217:126)
-    at async startGuideApi (file:///home/runner/work/chuckchuck/chuckchuck/dist/server/index.js:25221:4)
-    at async api (file:///home/runner/work/chuckchuck/chuckchuck/dist/server/index.js:30528:9)
-    at async call (file:///home/runner/work/chuckchuck/chuckchuck/scripts/check-start-guide-api.mjs:8:84)
-    at async file:///home/runner/work/chuckchuck/chuckchuck/scripts/check-start-guide-api.mjs:21:16 {
-  status: 409,
-  code: 'GUIDE_SCOPE_CHANGED'
-}
-Synthetic guide diagnostics: ZodError: [
-  {
-    "code": "invalid_type",
-    "expected": "array",
-    "received": "undefined",
-    "path": [
-      "attendance"
-    ],
-    "message": "Required"
-  }
-]
-    at get error (file:///home/runner/work/chuckchuck/chuckchuck/dist/server/index.js:1375:19)
-    at ZodEffects.parse (file:///home/runner/work/chuckchuck/chuckchuck/dist/server/index.js:1444:16)
-    at normalizeTeam (file:///home/runner/work/chuckchuck/chuckchuck/dist/server/index.js:17659:50)
-    at identity (file:///home/runner/work/chuckchuck/chuckchuck/dist/server/index.js:25132:6)
-    at file:///home/runner/work/chuckchuck/chuckchuck/dist/server/index.js:25233:14
-    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
-    at async scope (file:///home/runner/work/chuckchuck/chuckchuck/node_modules/postgres/src/index.js:259:18)
-    at async Function.begin (file:///home/runner/work/chuckchuck/chuckchuck/node_modules/postgres/src/index.js:242:14)
-    at async startGuideApi (file:///home/runner/work/chuckchuck/chuckchuck/dist/server/index.js:25230:10)
-    at async api (file:///home/runner/work/chuckchuck/chuckchuck/dist/server/index.js:30528:9) {
-  issues: [
-    {
-      code: 'invalid_type',
-      expected: 'array',
-      received: 'undefined',
-      path: [Array],
-      message: 'Required'
-    }
-  ],
-  addIssue: [Function (anonymous)],
-  addIssues: [Function (anonymous)]
-}
-node:internal/modules/run_main:123
-    triggerUncaughtException(
-    ^
+PASS: guide reads and writes reject stale parent account or business context
+PASS: preferences persist across independent reads
+PASS: same branch ID in different businesses and separate branches stay isolated
+PASS: stale revision returns current settings
+PASS: lost response replay is idempotent; reused ID with changed payload rejected
+PASS: simultaneous device writes conflict without silent overwrite
+PASS: staff scoped to own branch and employee quests
+PASS: business completion cannot be acknowledged or invalid step resumed
+PASS: manager personal and permitted delegated guides separated
+PASS: expired delegation cannot unlock a guide
+PASS: current permissions filter stored guide and reject expired open-screen writes
+PASS: guidance never modifies business records or business version
+PASS: business changed with same branch ID rejects old context write
+PASS: transferred and resigned staff lose previous scope access
+PASS: revoked coowner cannot access preferences
+PASS: direct browser DB access revoked and RLS enabled
+start guide API: 20 passed
 
-AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+── check-start-guide-client
+PASS: new scope starts empty then loads server settings
+PASS: rapid actions serialize with latest confirmed revision
+PASS: failed save keeps confirmed state and retries exact original request
+PASS: other-device conflict shows latest state without reapplying stale patch
+PASS: other account has no prior account preference flash
+PASS: unmounted scope ignores delayed response
+PASS: revoked role removes previously visible guide data
+PASS: retained tab rejects a different account scope and cannot write
+PASS: queued writes and automatic focus refresh cannot bypass conflict confirmation
+PASS: delayed focus refresh cannot overwrite a confirmed preference save
+start guide client: 10 passed
 
-503 !== 409
+── check-employee-pricing
+PASS 1. VAT-included employee monthly amounts, including zero
+PASS 2. invalid counts and plans are rejected rather than silently clamped
+PASS 3. unlinked employees and equal names remain separate people
+PASS 4. the same authenticated account across stores is counted once
+PASS 5. nonactive employees, owner and protected test IDs are excluded
+PASS 6. stale inactive account links do not affect active employees
+PASS 7. corrupt duplicate employee IDs or conflicting account links stop the quote
+PASS 8. employee and account IDs have separate identity namespaces
+PASS 9. snapshots pin current count, prices and timestamp without exposing account IDs
+PASS 10. quote identity digest is stable under row order but changes when identities change
+PASS 11. snapshots reject an invalid count timestamp
+PASS 12. refund estimates use original payment amount, period bounds and accumulated refunds
+PASS 13. scheduled cancellation survives next-period activation when its end is later
+PASS: employee pricing 13 cases.
 
-    at file:///home/runner/work/chuckchuck/chuckchuck/scripts/check-start-guide-api.mjs:21:115
-    at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
-  generatedMessage: true,
-  code: 'ERR_ASSERTION',
-  actual: 503,
-  expected: 409,
-  operator: 'strictEqual',
-  diff: 'simple'
-}
+── check-pricing-ui
+PASS: public pricing renders 0 employees with both actual monthly amounts
+PASS: public pricing renders 1 employees with both actual monthly amounts
+PASS: public pricing renders 5 employees with both actual monthly amounts
+PASS: public pricing metadata matches employee prices
 
-Node.js v22.23.3
+── check-billing-quotes
+PASS: new account has employee pricing, monthly period, 50 stores and 0 employee estimate
+PASS: account estimate follows server employment, account deduplication, owner and test exclusions
+PASS: additive migration preserves legacy 6/12 month amounts and period bounds
+PASS: legacy subscription shows original amount separately; reads never convert or extend it
+PASS: direct plan change cannot overwrite a paid legacy subscription
+PASS: quote snapshots are server-only with RLS and revoked public privileges
+PASS: staff and coowners cannot obtain billing quotes
+PASS: server quote ignores client amount, count and test exclusions, expires in 15 minutes and hides auth IDs
+PASS: conversion consent, immutable prepared order and quote retry are protected
+PASS: expired quotes, changed employees and changed account plan require reconfirmation
+PASS: unrelated edits keep quote valid and simultaneous prepare creates one order
+PASS: zero employees creates and fulfills one internal no-charge order without supplier calls
+PASS: billing snapshots and legacy protection 12/12.
+
+── check-billing-recovery
+PASS 1: Korean month-end, leap year and year boundary clamp
+PASS 2: lost approval response recovers through lookup without a second approval request
+PASS 3: supplier idempotency processing response remains recoverable
+PASS 4: parallel and sequential confirmed retries apply entitlement once
+PASS 5: approved payment survives transactional entitlement failure and resumes without paying again
+PASS 6: simultaneous first confirms approve and fulfill one order
+PASS 7: mismatched supplier order ID never grants access, valid recheck recovers
+PASS 8: paid legacy period stays intact; next period activates through common permission resolution
+PASS 9: repeated 0-price quotes cannot stockpile free future periods before hiring
+PASS 10: uncertain refund preserves the original intent and idempotency key
+PASS 11: pre-migration paid legacy transaction never extends an already applied historical period
+PASS: billing recovery 11/11.
+
+── check-billing-edgecases
+PASS: distinct simultaneous zero quotes cannot queue multiple free periods
+PASS: pre-send confirmation loss recovers from supplier missing
+PASS: pre-send confirmation loss recovers from supplier ready
+PASS: old uncertain confirmation never replays outside supplier idempotency window
+PASS: remaining prorated refund deducts all prior refunds
+PASS: partial refund before fulfillment still allows the paid entitlement to recover
+PASS: purchasing Basic preserves remaining Pro trial and queues its month
+PASS: full refund removes queued entitlement without moving later paid periods or cancel boundary
+PASS: coowner store/export/backup cannot retrieve billing snapshot or billing audit
+Billing review regressions: 9 passed; 0 failed.
+
+── check-saas
+PASS: 연차 자동 계산 반영.
+PASS: approved leave blocks shifts; overlapping shifts blocked.
+PASS: 요금제(베이직·프로 지점 구간 요금, VAT 포함, 직원 수 제한 없음, 30일 체험, 6·12개월 할인, QR은 프로, 체험 종료 후 조회만, 예전 무료 고객 보호).
+PASS: 세금계산서 정보·발행 요청.
+PASS: 기간제 만료 안내 메일 준비.
+PASS: 결제 내역.
+PASS: 해지 예약.
+PASS: 사업자등록번호 입력.
+
+── check-simple-join
+1. PASS owner creates short code
+2. PASS 8 unambiguous characters
+3. PASS grouped lowercase normalizes
+4. PASS short link copy retains code
+5. PASS old long link paste remains supported
+6. PASS foreign website is not accepted as store link
+7. PASS short link routes to employee signup
+8. PASS short link prepopulates correct code
+9. PASS invalid short link 404
+10. PASS anonymous cannot inspect join terms
+11. PASS code alone cannot read staff data
+12. PASS formatted short code finds correct store
+13. PASS short code permits application
+14. PASS application still waits for owner
+15. PASS pending employee still cannot access store
+16. PASS reopening code does not rotate or invalidate it
+17. PASS employee cannot create store code
+18. PASS old code becomes 8 characters
+19. PASS previous code preserved as alias
+20. PASS previous shared link still finds correct store
+21. PASS new short code finds same store
+22. PASS pause join
+23. PASS paused code refuses preview
+24. PASS paused code refuses apply
+25. PASS resumed code works
+26. PASS bad period rejected
+27. PASS 7-day expiry set
+28. PASS expired code refused
+29. PASS renew gives new code without expiry
+30. PASS old code stops after renew
+31. PASS new code works
+31/31 simple join checks passed
+
+── check-simulation
+1. PASS entry route /app
+2. PASS entry route /signup?plan=free
+3. PASS entry route /employee?code=example
+4. PASS entry route /staff-requests
+5. PASS entry route /app/
+6. PASS entry route /start
+7. PASS entry route /try
+8. PASS entry route /account
+9. PASS unknown route stays 404
+10. PASS anonymous denied
+11. PASS free store creation
+12. PASS owner role
+13. PASS make shared code
+14. PASS one branch code
+15. PASS invalid code
+16. PASS employee request
+17. PASS duplicate request idempotent
+18. PASS pending cannot see store
+19. PASS pending visible to self
+20. PASS pending response hides wage
+21. PASS other employee sees no requests
+22. PASS owner receives one request
+23. PASS employee cannot approve
+24. PASS stale approval blocked
+25. PASS owner accepts
+26. PASS employee connected
+27. PASS employee access
+28. PASS wage set by owner on approval
+29. PASS employee cannot change account
+30. PASS ordinary save preserves joins
+31. PASS join code survives save
+32. PASS staff stays linked
+33. PASS second request
+34. PASS reject request
+35. PASS rejected cannot access
+36. PASS rejected own status
+37. PASS retry after rejection
+38. PASS upgrade starter
+39. PASS paid contract queue allowed
+40. PASS employee cannot use manager API
+41. PASS owner delegates manager duties
+42. PASS manager permission selection
+43. PASS manager payload hides wage
+44. PASS manager cannot grant own roles
+45. PASS manager cannot manage foreign employee
+46. PASS delegated manager adds shift
+47. PASS unassigned approval blocked
+48. PASS manager can post branch notice
+49. PASS revoked permission blocked immediately
+50. PASS stranger cannot withdraw application
+51. PASS employee withdraws pending application
+52. PASS withdrawn status visible
+53. PASS withdraw twice blocked
+54. PASS apply again after withdrawal
+55. PASS owner accepts reapplied employee
+56. PASS overlapping correction blocked
+57. PASS valid correction submitted
+58. PASS duplicate pending correction blocked
+59. PASS manager sees colleague request
+60. PASS manager cannot alter finalized payroll
+61. PASS manager approves valid correction
+62. PASS employee sees updated end
+63. PASS approval cannot repeat
+64. PASS employee sees approval status
+Scenario checks: 64 passed
+
+── check-verified-contracts
+PASS 1. email configuration status is honest
+PASS 2. verification requires authenticated account
+PASS 3. unconfigured verification is not marked sent
+PASS 4. verification email is sent through provider adapter
+PASS 5. verification token is in fragment, not request query
+PASS 6. verification token is stored hashed
+PASS 7. repeated send is rate limited
+PASS 8. visiting status does not consume emailed token
+PASS 9. verification proof confirms correct email
+PASS 10. verified state appears on existing session
+PASS 11. verification token cannot be reused
+PASS 12. expired verification proof rejected
+PASS 13. provider failure has no usable verification token
+PASS 14. recovery mail is delegated to Supabase Auth with same-site reset link
+PASS 15. owner sees linked employee and paid contract access
+PASS 16. anonymous contract list denied
+PASS 17. employee cannot create employer request
+PASS 18. unfinished template cannot be requested
+PASS 19. owner consent required
+PASS 20. wrong owner name rejected
+PASS 21. owner password reauthentication required
+PASS 22. owner signature freezes and creates request
+PASS 23. contract hash matches stored snapshot
+PASS 24. duplicate waiting request blocked
+PASS 25. unrelated employee cannot read document
+PASS 26. unrelated employee cannot download document
+PASS 27. employee sees own signing request
+PASS 28. owner cannot sign on behalf of employee
+PASS 29. different document hash rejected
+PASS 30. employee consent cannot be skipped
+PASS 31. stale version rejected
+PASS 32. changed work conditions block old contract signature
+PASS 33. unverified employee cannot sign
+PASS 34. 작업 039: non-PNG drawing rejected
+PASS 35. 작업 039: oversized drawing rejected
+PASS 36. both signatures commit without pretending email sent
+PASS 37. 작업 039: hand signature kept with hash
+PASS 38. 작업 039: list omits image but flags it
+PASS 39. unconfigured delivery is marked setup required
+PASS 40. signed status reaches employee current contract
+PASS 41. repeated signature is rejected
+PASS 42. signed request cannot be withdrawn
+PASS 43. database prevents changing signed document snapshot
+PASS 44. failed email is not marked delivered
+PASS 45. provider acceptance is distinct from employee receipt
+PASS 46. copy email contains actual immutable signed HTML
+PASS 47. duplicate delivery does not resend accepted email
+PASS 48. owner cannot confirm employee received copy
+PASS 49. employee receipt requires explicit checkbox
+PASS 50. employee can record receipt
+PASS 51. signature and delivery history retained
+PASS 52. download contains both names, timestamps and hash
+PASS 53. former employee can retain previously signed copy
+PASS 54. ended trial cannot create new electronic contract
+PASS 55. ended trial retains old copies
+PASS 56. cross origin contract mutation rejected
+PASS 57. outsider cannot read image document
+PASS 58. owner cannot mark employee download
+PASS 59. save confirmation requires prior download
+PASS 60. employee view records receipt separately
+PASS 61. download request does not pretend saved
+PASS 62. explicit employee save is recorded
+PASS 63. owner sees employee document activity
+PASS 64. employee cannot send payroll
+PASS 65. owner sends locked payslip in app
+PASS 66. repeat send idempotent
+PASS 67. employee sees own sent payroll
+PASS 68. app payslip includes employee number and pay date
+PASS 69. outsider sees no payroll
+PASS 70. outsider cannot fetch payroll by id
+PASS 71. unlocked payroll cannot send
+PASS 72. revised payroll sends a new immutable copy
+PASS 73. new revision has independent pending download
+PASS 74. latest payslip is marked current
+PASS 75. older payslip is marked replaced
+PASS 76. reopened payroll marks sent payslip as under review
+PASS 77. unrelated store writes do not block sending
+PASS 78. owner list carries activity without per-row queries
+PASS 79. unlinked employee gives a clear message
+PASS 80. former employee still opens own payslip copy
+PASS 81. cross origin document action denied
+PASS 82. new contract revision can be requested
+PASS 83. unsigned contract image is blocked
+PASS 84. in-app signing works with password without email service
+PASS 85. app signing sends no email
+PASS 86. app signature preserves truthful email verification state
+PASS 87. no change right after signing
+PASS 88. phone-only change is not a term change
+PASS 89. wage change detected with before/after
+PASS 90. change note has no blank brackets
+PASS 91. unsupported method
+PASS 92. oversized body
+PASS 93. broken JSON
+PASS 94. unknown action
+PASS 95. bad hand-signature on create
+PASS 96. incomplete contract blocked with list
+PASS 97. new waiting contract after change
+PASS 98. decline needs reason
+PASS 99. owner cannot decline for employee
+PASS 100. employee declines with reason
+PASS 101. employee cannot withdraw
+PASS 102. owner withdraws
+PASS 103. stranger cannot open
+103/103 passed; no external email or real signatures sent.
+
+── check-pay-rules
+PASS 1. overnight shift worked hours
+PASS 2. night hours prorated by break
+PASS 3. week starts on Monday
+PASS 4. september has 18 Mon-Thu shifts
+PASS 5. weekly holiday pay by weeks ending in month
+PASS 6. night premium for 5+ workplaces
+PASS 7. no overtime under 8h/day and 40h/week
+PASS 8. small workplace: weekly holiday pay still applies
+PASS 9. small workplace: no night premium, with a note
+PASS 10. weekly overtime beyond 40h
+PASS 11. daily overtime beyond 8h
+PASS 12. daily and weekly overtime not double counted
+PASS 13. under 15h a week: no weekly holiday pay
+PASS 14. pension 4.75%
+PASS 15. health 3.595%
+PASS 16. long-term care 13.14% of health premium, floored to 10 won
+PASS 17. employment 0.9%
+PASS 18. only enrolled insurances are deducted
+PASS 19. base + weekly holiday + 추석(9/24) holiday + night premium in earnings
+PASS 20. insurance deductions added
+PASS 21. income tax from 간이세액표 when salary is above the 0원 band
+PASS 22. manual entry replaces the automatic line
+PASS 23. automatic calculation is off by default behaviour
+PASS 24. below minimum wage warning
+PASS 25. payslip has every required item
+PASS 26. payslip shows employee number
+PASS 27. night premium line carries its hours
+PASS 28. missing items are detected
+PASS: 법정수당(주휴·연장·야간)·4대보험 자동 계산.
+PASS 29. 8h work needs 60 min break
+PASS 30. 9-18 with 60 min break is fine
+PASS 31. 9-17:30 with 30 min break is short (8h work)
+PASS 32. overnight 22-03 without break is short (5h work)
+PASS 33. 3h shift needs no break
+PASS 34. attendance shortfalls counted
+PASS 35. payroll warns about short breaks
+PASS: 휴게시간 법정 기준 경고.
+PASS 36. complete contract has nothing missing
+PASS 37. missing duties and holiday are named
+PASS 38. fixed-term needs an end date
+PASS 39. part-time needs weekly hours
+PASS: 근로계약서 필수 기재사항 검사.
+PASS 40. age from birth month
+PASS 41. adults get no minor warnings
+PASS 42. minor without documents is reminded
+PASS 43. under 15 needs an employment permit
+PASS 44. minor 8h day flagged
+PASS 45. minor night work flagged
+PASS 46. documents checked: no document warning
+PASS: 18세 미만 직원 보호 점검.
+PASS 47. this year rates are registered (update lib/pay-rules.ts RATES — see docs/RATES-UPDATE.md)
+PASS 48. unregistered year warns on payroll
+PASS: 요율 연간 갱신 경고.
+PASS 49. ledger only includes requested period
+PASS 50. ledger filters by branch
+PASS 51. ledger has 시행령 27조 items
+PASS 52. ledger extracts overtime and night hours
+PASS 53. ledger marks reopened month
+PASS 54. ledger csv has BOM and per-item columns
+PASS 55. ledger csv neutralizes formulas
+PASS 56. csv cell escapes leading minus and quotes
+PASS: 임금대장(근로기준법 제48조, 시행령 제27조).
+PASS 57. guide year has registered rates
+PASS 58. guide shows the same minimum wage as payroll
+PASS 59. guide shows monthly minimum (209h)
+PASS 60. guide shows the same insurance rates as payroll
+PASS 61. every guide item links an official https source
+PASS: 근로기준 안내 숫자·출처.
+PASS 62. calc weekly hours and 주휴 (20h → 4h)
+PASS 63. calc monthly = week × 4.345
+PASS 64. under 15h no 주휴
+PASS 65. 5+ overtime (2h×5 + 0) and night 50%
+PASS 66. under 5 no premiums
+PASS 67. employee insurance uses payroll rates
+PASS 68. employer adds stability 0.25% and industrial
+PASS 69. under 60h/month pension·health excluded
+PASS 70. 3.3% = 3% + 0.3% each floored
+PASS 71. below minimum wage flagged
+PASS: 인건비 계산기.
+PASS 72. repeat counts Mon/Wed/Fri for one month
+PASS 73. repeat skips day with overlapping shift
+PASS 74. repeat never exceeds cap
+PASS 75. repeated shifts do not conflict
+PASS 76. copy week moves dates by 7 days
+PASS 77. copy week skips overlapping overnight shift
+PASS 78. template keeps weekday
+PASS 79. template applies only to active employees
+PASS 80. conflict finder sees overnight overlap
+PASS: 근무표 반복·복사·템플릿.
+PASS 81. late 12m and early 20m flagged
+PASS 82. within 5m tolerance is normal
+PASS 83. overnight shift matched
+PASS 84. no record after shift end = 결근
+PASS 85. record without shift = 예정 외 출근
+PASS 86. lenient 10m still flags 12m late
+PASS 87. strict flags 3m late
+PASS 88. future shift not yet 미출근
+PASS 89. summary counts
+PASS: 지각·조퇴·미출근 표시.
+PASS 90. week start Monday splits the week (no 주휴)
+PASS 91. week start Sunday groups Sun–Sat (주휴 16h)
+PASS: 주 시작요일.
+PASS 92. probation 90% only before end date (10-15)
+PASS 93. all hours inside probation at 90%
+PASS 94. contract under 1 year: no probation discount + warning
+PASS 95. simple labor: no probation discount
+PASS 96. tax-free meal excluded from insurance base (pension floor 410,000 from 2026-07)
+PASS 97. tax-free over 200,000 warns
+PASS: 수습 감액·비과세 수당.
+PASS 98. 3,000천원 1명 = 74,350 / 지방 7,430
+PASS 99. 3,010천원 3명 = 31,940 (같은 구간)
+PASS 100. 5,000천원 2명 = 306,710
+PASS 101. 월 76만원 이하는 0
+PASS 102. 자녀 1명 20,830 공제
+PASS 103. 자녀 3명 45,830+33,330 공제
+PASS 104. 80% 선택
+PASS 105. 1천만원 정확히 = 표 맨 끝 값
+PASS 106. 1,200만원(1천만원 초과 구간) = 기준 + 2백만×98%×35% + 25,000
+PASS 107. 가족 12명 = 11명 − (10명−11명)
+PASS: 근로소득 간이세액표.
+PASS 108. pension floor 400,000 before July 2026
+PASS 109. pension floor 410,000 from July 2026
+PASS 110. pension cap 6,370,000 / 6,590,000
+PASS 111. pension base truncates below 1,000
+PASS 112. health employee cap 4,591,740
+PASS: 4대보험 상·하한.
+PASS 113. holiday 10h = 8h×50% + 2h×100%
+PASS 114. holiday hours not also counted as overtime
+PASS 115. under 5: no holiday premium + note
+PASS 116. labor day is a holiday even under 5
+PASS 117. 2026 has 21 public holiday entries incl. 6/3 election
+PASS: 휴일근로 가산.
+PASS 118. absent week: no 주휴 + week listed
+PASS 119. owner can accept as 개근
+PASS 120. approved leave day is not absence
+PASS: 주휴 개근 판단.
+PASS 121. monthly 40h → 209h
+PASS 122. daily wage ÷ contract hours
+PASS 123. monthly worker overtime 3h at 통상시급 10,000
+PASS 124. monthly wage already includes 주휴
+PASS: 일급·월급 통상시급.
+PASS 125. average 4.8 but 5+ days ≥ half → 5명 이상
+PASS 126. average 5.2 but under-5 days ≥ half → 5명 미만
+PASS 127. window is previous month
+PASS: 상시 근로자 수.
+PASS 128. 5명 미만은 미적용
+PASS 129. 주 15시간 미만 미적용
+PASS 130. 1년 미만: 개근 개월마다 1일 (1/15 입사 → 10/5까지 8일)
+PASS 131. 입사 1개월 되는 날 1일 발생
+PASS 132. 1년 미만 최대 11일
+PASS 133. 1년 되는 날 15일 추가(월 개근분 11일은 각 1년 동안 유효)
+PASS 134. 월 개근분은 발생 1년 뒤 소멸
+PASS 135. 3년차 16일
+PASS 136. 21년차 25일 상한
+PASS 137. 주 20시간은 비례(1년차 7.5일)
+PASS 138. 말일 입사: 1/31 → 2/28 발생
+PASS 139. 다음 발생 예정
+PASS 140. 승인된 연차만 차감
+PASS 141. 퇴사자는 퇴사일 기준
+PASS 142. 미사용 연차수당 = 일수 × 8시간 × 통상시급
+PASS: 연차 자동 발생.
+PASS 143. 월요일 2명: 가능 시간을 다 덮는 a·c (b는 14시까지라 제외)
+PASS 144. 화요일: c는 주 5.5시간 상한이라 a
+PASS 145. 토요일 밤샘 근무도 가능 시간이 덮으면 배정
+PASS 146. 모두 채움
+PASS 147. 이미 있는 근무는 인원에 포함, 휴가자는 제외 → 못 채운 1명
+PASS 148. 적게 일한 직원부터
+PASS: 근무 가능 시간 초안.
+PASS 149. PDF header/trailer
+PASS 150. two pages
+PASS 151. startxref points to xref
+PASS 152. every xref offset points to its object
+PASS 153. empty input refused
+PASS: PDF 저장.
+PASS 154. 오늘 할 일: 정정·휴가·대타·퇴근 누락·계약·명세서·만료
+PASS 155. 보건증 30일 안 만료는 오늘 할 일
+PASS 156. 보건증 만료가 멀면 표시 안 함
+PASS 157. 오늘 출근 중인 사람은 퇴근 누락이 아님
+PASS 158. 0건 항목은 숨김
+PASS 159. 마감: 퇴근 누락·정정·휴가·최저시급·계약 확인 필요
+PASS 160. 마감: 지급일 평일이면 통과
+PASS 161. 지급일 토요일 경고
+PASS 162. 지급일 공휴일(개천절) 경고
+PASS 163. 지급일 평일은 문제 없음
+PASS: 오늘 할 일·월말 마감·지급일.
+PASS 164. 비과세 제외 기준 200만원
+PASS 165. 국민연금 사장님 = 근로자와 같은 4.75%
+PASS 166. 건강보험 3.595%, 장기요양 13.14%
+PASS 167. 고용보험 0.9% + 0.25%
+PASS 168. 산재 업종 요율
+PASS 169. 사업소득은 사장님 부담 없음
+PASS 170. 미가입 보험은 제외, 산재는 가입 여부와 무관
+PASS: 사장님 부담 4대보험.
+PASS 171. 10/11 입사: 31일 중 21일
+PASS 172. 10/15 퇴사: 15일
+PASS 173. 만근은 월급 그대로
+PASS: 중도 입·퇴사 일할.
+PASS 174. 제목 줄·빈 줄 건너뜀
+PASS 175. 날짜·금액 정리, 이메일 소문자
+PASS 176. 월급 기본 40시간·정규직
+PASS 177. 여러 오류를 한 줄에 모두 알려 줌
+PASS 178. 기존 직원 이메일 중복 차단
+PASS 179. 근무장소·사업주 채움
+PASS 180. 이메일·연락처 필수
+PASS 181. 등록 결과가 저장 검사를 통과
+PASS: 직원 일괄 등록.
+PASS 182. 휴대폰 가운데 가림
+PASS 183. 이메일 앞 한 글자만
+PASS 184. 주소는 시·구까지만
+PASS 185. 빈 값은 빈 값
+PASS: 연락처 가리기.
+PASS 186. 체험 10일 남음은 안내 없음
+PASS 187. 7일 전 안내
+PASS 188. 1일 전 안내
+PASS 189. 체험 끝
+PASS 190. 월 중간 프로 전환: 남은 16일분 차액
+PASS 191. 내리면 차감(음수)
+PASS 192. 12개월 중 90일 사용 환불
+PASS 193. 기간 다 쓰면 환불 0
+PASS 194. 사업자번호 검증
+PASS: 체험 안내·차액·환불·사업자번호.
+PASS 195. 질문 30개 이상
+PASS 196. 질문 중복 없음
+PASS 197. 답이 모두 있음
+PASS: 도움말.
+PASS 198. 통과 기준 데이터
+PASS 199. 중복 직원
+PASS 200. 3.3%는 사업소득만
+PASS 201. 4대보험 자동은 근로소득만
+PASS 202. 공제 없음은 근거 필요
+PASS 203. 없는 지점
+PASS 204. 보험 제외는 사유 필요
+PASS 205. 이메일 중복
+PASS 206. 없는 직원의 근무
+PASS 207. 동시에 두 번 출근
+PASS 208. 잘못된 날짜 거부
+PASS 209. 휴게가 근무보다 긴 근무 거부
+PASS 210. 옛 데이터 변환: 수당·공제·메모 보존
+PASS 211. 이미 새 형식이면 그대로 검사
+PASS 212. 표준 계약서 문구에 핵심 조건
+PASS 213. 직접 쓴 계약서 + 전자서명 기록
+PASS 214. 빠진 항목 목록
+PASS 215. 퇴직금: 1년 이상·주 15시간 이상이면 대상, 평균임금과 통상임금 중 큰 값
+PASS 216. 퇴직금: 1년 미만·독립 용역은 대상 아님
+PASS 217. 통상시급: 일급인데 근무시간 없음
+PASS 218. 통상시급: 월급인데 주 소정시간 0
+PASS 219. 통상시급: 월급 주 40시간 = 월급 ÷ 209시간
+PASS 220. 사업소득 3.3% 원천징수
+PASS 221. 일급 수습 감액 계산식
+PASS 222. 지정 주휴일(월) 근무는 휴일 가산
+PASS: 급여 모듈 경계 사례.
+PASS 223. 비어 있으면 손서명 없음
+PASS 224. PNG만
+PASS 225. base64 문자 검사
+PASS 226. PNG 머리 검사
+PASS 227. 크기 제한
+PASS: 손서명 이미지 검사.
+PASS 228. 2027년은 2026 표
+PASS 229. 2024년(표 없음)도 2026 표
+PASS: 세액표 연도 대체.
+PASS 230. 템플릿 8종, 변수 모두 본문에 있음
+PASS 231. 변수 채우기
+PASS 232. 변수 빠지면 오류
+PASS 233. 키가 없으면 보내지 않음
+PASS 234. 잘못된 번호 거부
+PASS 235. 설정되면 대행사로 전송
+PASS: 알림톡 뼈대.
+PASS 236. 정규 서식 제목·근로개시일
+PASS 237. 2025 추가 문구: 공휴일·근로자의 날
+PASS 238. 임금지급일 휴일 전날·교부 제17조·사회보험 원칙
+PASS 239. 1일 시간 계산(주 40시간 ÷ 5일)
+PASS 240. 기간제 서식
+PASS 241. 단시간 서식: 요일별 근로시간
+PASS 242. 연소근로자 서식: 7시간·35시간, 가족관계증명서, 제67조
+PASS: 2025 표준 근로계약서.
+PASS 243. 키가 없으면 미확인
+PASS 244. 형식이 틀리면 미확인
+PASS 245. 계속사업자
+PASS 246. 휴업·폐업
+PASS 247. 등록되지 않은 번호
+PASS 248. 조회 실패도 가입은 막지 않음(미확인)
+PASS: 사업자 상태조회.
+PASS 249. 약관·방침 판이 동의 판과 같음
+PASS 250. docs/legal 문서가 코드와 같음(node scripts/legal-md.mjs)
+PASS 251. 이전 판 목록에 지금 판이 있음
+PASS 252. 처리위탁 조항은 #processing
+PASS 253. 개인정보 처리방침에 Supabase
+PASS 254. 개인정보 처리방침에 Resend
+PASS 255. 개인정보 처리방침에 국외 이전
+PASS 256. 개인정보 처리방침에 보호책임자
+PASS 257. 개인정보 처리방침에 휴가 증빙
+PASS 258. 개인정보 처리방침에 결제 기록
+PASS 259. 개인정보 처리방침에 118
+PASS 260. 개인정보 처리방침에 제3자 제공
+PASS 261. 개인정보 처리방침에 파기 절차
+PASS 262. 개인정보 처리방침에 파기 방법
+PASS 263. 개인정보 처리방침에 자동화된 결정
+PASS 264. 개인정보 처리방침에 쿠키
+PASS 265. 개인정보 처리방침에 안전성 확보
+PASS 266. 개인정보 처리방침에 privacy@supabase.com
+PASS 267. 개인정보 처리방침에 거부 방법
+PASS 268. 검토 전이면 표시
+PASS 269. 운영자 정보 9줄, 빈 값은 확인 필요
+PASS 270. 빠진 항목 목록
+PASS 271. 사업자번호 표기·공정위 링크
+PASS: 운영자 정보·약관·개인정보 처리방침.
+PASS 272. 홈페이지 베이직 직원 1명당 요금 = 앱
+PASS 273. 홈페이지 프로 직원 1명당 요금 = 앱
+PASS 274. 홈페이지에 지점 추가 요금 없음
+PASS 275. 홈페이지 계약서 추가 요금 = 앱
+PASS 276. 홈페이지에 예전 요금제 이름 없음
+PASS 277. 홈페이지가 예전 임시 주소를 가리키지 않음
+PASS: 홈페이지 요금 = 앱 요금.
+PASS 278. 2027 최저임금 10,700원
+PASS 279. 2027 국민연금 근로자 5%
+PASS 280. 2027 건강보험 동결 3.595%
+PASS 281. 2027 국민연금 200만원 → 100,000
+PASS 282. 2027 건강보험 200만원 → 71,900
+PASS 283. 2027 고용보험 200만원 → 18,000
+PASS 284. 2027 장기요양은 아직 미발표로 표시
+PASS 285. 2026년 미발표 요율이 1월 31일 넘게 남아 있지 않음 (docs/RATES-UPDATE.md)
+WARN: 미발표 요율 — 2026: 없음 / 2027: 장기요양보험. 발표되면 lib/pay-rules.ts RATES를 고치고 pending에서 빼세요.
+PASS 286. 12월에 다음 해 최저임금 미리 경고
+PASS 287. 11월에는 미리 경고 안 함
+PASS: 2027년 요율.
+PASS 288. 정상 명세서는 문제 없음
+PASS 289. 계산 근거 없는 야간수당은 확정 전에 걸림
+PASS 290. 고정 상여는 계산방법 없어도 됨
+PASS 291. 빈 계산방법은 "(계산방법: )"로 찍지 않음
+PASS 292. 지급일 없으면 걸림
+PASS: 명세서 필수 기재사항 확정·발송 점검.
+PASS 293. 인터넷 오류 두 번 뒤 성공
+PASS 294. 다시 보냈는데 이미 출근 → 앞 요청이 저장된 것으로 성공
+PASS 295. 첫 요청부터 이미 출근이면 실패로 알림
+PASS 296. QR 오류(403)는 다시 보내지 않음
+PASS 297. 계속 실패하면 포기 표시
+PASS 298. 다시 보내기는 움직이는 QR 유효시간(60초) 안에 끝남
+PASS: 출퇴근 다시 보내기.
+PASS 299. 2027 공휴일 등록
+PASS 300. 2027 설날 대체공휴일 2/9, 추석 9/15
+PASS 301. 노동절은 5명 미만도 유급휴일, 대체공휴일(5/3)은 5명 이상만
+PASS 302. 2026년 공휴일이 등록돼 있음 (lib/holidays.ts)
+PASS: 2027년 공휴일.
+PASS 303. 달력 파일 형식
+PASS 304. 한국 시간으로 시작·끝
+PASS 305. 밤샘 근무는 다음 날 끝
+PASS 306. 쉼표는 이스케이프
+PASS: 근무표 달력 파일.
+PASS 307. 하루 9시간×5일 = 연장 5시간(주 45시간과 같음, 겹쳐 세지 않음)
+PASS 308. 20~02시 근무 = 야간 4시간
+PASS 309. 가산 없는 직원은 목록에서 빠짐
+PASS 310. 다음 주 근무는 세지 않음
+PASS: 근무표 가산수당 미리 보기.
+PASS 311. 예상 인건비 = 근무표 9시간 × 시급
+PASS 312. 예산 없으면 표시 안 함
+PASS 313. 예산 90% 넘으면 경고
+PASS 314. 예산 여유 있으면 오늘 할 일 없음
+PASS: 인건비 예산.
+PASS 315. 재직증명서: 이름·기간·업무·용도·발급일
+PASS 316. 생년월만, 주민번호 칸 없음
+PASS 317. 퇴사자는 경력증명서로 기간 끝 표시
+PASS 318. 퇴사자 재직증명서는 막음
+PASS: 재직·경력증명서.
+PASS 319. 퇴직일은 마지막 근무 다음 날
+PASS 320. 1년·주15시간 이상이면 퇴직금 14일 안 지급
+PASS 321. 국민연금·고용보험 상실신고는 다음 달 15일
+PASS 322. 건강보험 상실신고 14일
+PASS 323. 1년 미만은 퇴직금 대상 아님, 보험 미가입이면 신고 항목 없음
+PASS 324. 문서로 만들기
+PASS: 퇴사 정리.
+PASS 325. 지각 2번 35분, 결근 1번
+PASS 326. 같은 요일(월) 반복 표시
+PASS: 한 달 근태 요약.
+PASS 327. A01 근로소득 1명·소득세 합계
+PASS 328. A25 사업소득 3% + 지방 0.3%
+PASS 329. 그달 입사는 취득, 그달 퇴사는 상실
+PASS 330. CSV에 주민번호는 빈칸(직접 기입)
+PASS: 신고 자료.
+PASS 331. 카페는 오픈·마감 예시 2개, 모든 지점에 보임
+PASS 332. 업종을 안 고르면 기본 예시
+PASS: 업종별 매뉴얼 예시.
+PASS 333. 확정한 그해 달만 더함
+PASS 334. 비과세·과세 대상 나눔
+PASS 335. 공제 항목별 합계
+PASS 336. CSV 머리말
+PASS: 연간 급여 합계.
+PASS 337. 단시간(주 20시간 계약) 25시간 근무: 5시간 × 50% 가산
+PASS 338. 5명 미만이면 단시간 초과 가산 없음
+PASS 339. 계약 40시간이면 25시간은 가산 없음
+PASS 340. 장기요양 = 건강보험료 × 0.9448/7.19
+PASS 341. 주휴는 계약 20시간 기준(25시간 일해도 20/40×8)
+PASS: 급여 계산 점검(단시간 초과·장기요양).
+PASS 342. 근무 중
+PASS 343. 늦게 온 사람은 늦음과 분
+PASS 344. 아직 안 온 사람은 예정
+PASS 345. 끝난 근무에 기록 없으면 미출근
+PASS 346. 자정 넘는 근무는 26시까지 그림
+PASS 347. 지금 위치 표시
+PASS 348. 근무표 없는 출근도 막대로
+PASS 349. 근무표 없이 왔다 간 기록
+PASS 350. 퇴근한 사람은 퇴근 시각
+PASS 351. 밤에는 지금 표시가 범위 밖이면 없음
+PASS: 홈 오늘 근무 막대.
+PASS 352. A1 근무표대로 출근한 날은 확인 권장 0건(중간에 다시 출근해도)
+PASS 353. A3 한 직원은 한 줄
+PASS 354. A3 제목과 일하는 중 숫자가 같음
+PASS 355. A2 문제 없으면 비서도 문제 없음
+PASS 356. A1 근무표에 없는 직원이 출근하면 확인 권장 1건
+PASS 357. A2 비서도 같은 건수와 이름
+PASS: 지시서 1라운드 A (A1~A3).
+PASS 358. 옮기면 날짜만 바뀌고 직원·시간·휴게 그대로
+PASS 359. 다른 직원이 같은 시간에 일해도 옮길 수 있음
+PASS 360. 같은 직원 시간이 겹치는 날은 막고 이유
+PASS 361. 자정 넘는 근무와 다음 날 아침 겹침도 막음
+PASS 362. 승인된 휴가일은 막음
+PASS 363. 확정된 급여월로는 옮길 수 없음
+PASS 364. 다른 직원은 그 달 확정과 무관
+PASS 365. 되돌리기 문구
+PASS: 지시서 1라운드 B (근무 옮기기 규칙).
+PASS 366. 주방 직원에겐 홀 전용 안 보임
+PASS 367. 분류 칩
+PASS 368. 검색은 단계 글에서도
+PASS 369. 바뀜·새·확인함
+PASS: 지시서 1라운드 D (매뉴얼 규칙).
+PASS 370. 허용 5분: 10:05 출근은 정상
+PASS 371. 10:06 출근은 지각 6분
+PASS 372. 예정 13:00, 지금 13:25, 기록 없음 → 미출근 25분
+PASS 373. 예정 끝이 지나도 기록 없으면 결근
+PASS 374. 승인된 휴가일은 결근 아님
+PASS 375. 퇴근 안 찍고 끝+허용 지나면 미퇴근
+PASS 376. 조퇴 + 지각 한 줄에 두 개
+PASS 377. 휴게 중
+PASS 378. 근무표에 없는 출근은 예정 외
+PASS 379. 확인 권장도 같은 판정
+PASS 380. 예정 10:00, 09:50 출근 → 인정 출근 10:00
+PASS 381. 찍은 시각부터 규칙이면 09:50
+PASS 382. 5분 단위는 직원에게 유리하게(출근 내림·퇴근 올림)
+PASS 383. 늦게 퇴근 예정 시각까지 규칙
+PASS 384. 원본 시각은 그대로, 인정 시각 따로
+PASS 385. 급여 시간은 인정 시간(8시간)
+PASS 386. 규칙을 바꿔도 지난 기록은 다시 계산하지 않음
+PASS: 지시서 2라운드 (상태 배지·인정 시간).
+PASS 387. 101 근무 1시간 전 알림(직원)
+PASS 388. 001 예정 +10분 전에는 미출근 알림 없음
+PASS 389. 001 예정 +10분 지나면 사장님께 미출근
+PASS 390. 출근했으면 미출근 알림 없음
+PASS 391. 002 예정 퇴근 +30분 전에는 없음
+PASS 392. 002 +30분 지나면 직원·사장님 둘 다
+PASS 393. 휴가인 직원은 알림 없음
+PASS 394. 117 급여일 3일 전 미확정 알림
+PASS 395. 024 바뀐 직원에게만(지난 근무 삭제는 무시)
+PASS 396. 알림톡 설정 없으면 안 보냄
+PASS 397. 알림톡 요청 모양
+PASS 398. 심사 안 된 템플릿은 안 보냄
+PASS: 지시서 2주차 (알림 검사·근무표 변경·알림톡).
+PASS 399. 엑셀 제목 줄+2줄
+PASS 400. 앞 0 빠진 휴대폰 번호 복구
+PASS 401. 엑셀 날짜 숫자 → 날짜
+PASS 402. 따옴표·쉼표 글자 그대로
+PASS 403. 엑셀에서 읽은 두 명 모두 등록 가능
+PASS 404. 일련번호 변환
+PASS 405. CSV 따옴표·빈 줄
+PASS 406. 탭 CSV
+PASS: 직원 엑셀 파일 읽기.
+PASS 407. 출근 시각 지났는데 기록 없음
+PASS 408. 허용 오차 안이면 아직 예정
+PASS 409. 알림: QR 안 찍음이 맨 앞
+PASS 410. 알림: 지각·퇴근 누락
+PASS 411. 비서 홈 안내
+PASS 412. 비서 출퇴근 기록 안내
+PASS 413. 비서 근무 스케줄 안내
+PASS 414. 비서 급여·명세서 안내
+PASS 415. 비서 직원 관리 안내
+PASS 416. 비서 휴가·공지 안내
+PASS 417. 비서 홈: 지금 상황 요약
+PASS 418. 비서 출퇴근: 알림 그대로
+PASS 419. 직원 없으면 가입 링크 안내
+PASS 420. 질문 검색: 주휴수당
+PASS 421. 질문 검색: 짧은 말은 무시
+PASS: 홈 알림·척척 비서.
+PASS 422. 칸 보기: 지급·공제 항목
+PASS 423. 칸 보기: 합계·실지급
+PASS 424. 칸 보기: 기본 정보
+PASS 425. 글에서 읽은 것과 원래 값이 같음
+PASS 426. 공제 없음
+PASS 427. 명세서가 아닌 글은 null
+PASS: 명세서 칸 보기.
+PASS 428. 휴게 시작 30분
+PASS 429. 30분 지나면 휴게 아님
+PASS 430. 휴게 끝을 안 눌러도 퇴근 때 30분만 빠짐
+PASS 431. 일찍 끝내면 실제 쉰 20분
+PASS 432. 지난 휴게가 정리된 뒤 새 휴게 가능
+PASS 433. 길이 없는 휴게는 끝낼 때까지
+PASS 434. 정리하면 60분
+PASS 435. 모르는 기록
+PASS: 휴게 자동 끝.
+PASS 436. 9시부터 6시 → 09:00–18:00
+PASS 437. 오후 2시~10시
+PASS 438. 09:00-15:30
+PASS 439. 9시 반부터 3시
+PASS 440. 밤 10시부터 2시(다음 날)
+PASS 441. 시간 없으면 null
+PASS 442. 내일·모레
+PASS 443. 10월 8일 · 10/8
+PASS 444. 수요일 · 다음주 월요일
+PASS 445. 8일(지난 날이면 다음 달)
+PASS 446. 날짜 없으면 null
+PASS 447. 시급·월급 만원
+PASS 448. 법정 휴게
+PASS 449. 임금 바꾸기 카드(긴 이름 우선)
+PASS 450. 최저시급 경고
+PASS 451. 근무 넣기 카드
+PASS 452. 임금+근무 한 번에
+PASS 453. 없는 이름은 새 직원 등록
+PASS 454. 확정 전이면 급여 화면으로
+PASS 455. 지난달 확정분 모두 보내기
+PASS 456. 한 명만 보내기
+PASS 457. 명세서 보기
+PASS 458. QR · 계약서
+PASS 459. 누가 일해
+PASS 460. 인건비
+PASS 461. 개인 급여
+PASS 462. 도움말
+PASS 463. 모르는 말
+PASS 464. FAQ로 답
+PASS 465. 분석: 주 15시간 경계
+PASS 466. 분석: 1년 근속 임박
+PASS 467. 분석: 다음 주 비었음
+PASS 468. 주휴 질문
+PASS 469. 분석해줘
+PASS: 척척 비서 말 알아듣기·분석.
+PASS 470. 계약서 말한 직원 기억
+PASS 471. 이름 없이 말해도 방금 그 직원
+PASS 472. 계약서 이어서 만들기 버튼
+PASS 473. 기억 없으면 이름 물어봄
+PASS 474. 이름만 답하면 아까 부탁 처리(한 글자 틀려도)
+PASS 475. 이름만 쓰면 직원 요약
+PASS 476. 그 직원 명세서
+PASS: 척척 비서 앞 대화 기억.
+PASS 477. 질문 100가지 이상
+PASS 478. 예시 질문마다 자기 항목으로 감
+PASS 479. 100가지 모두 답이 나옴
+PASS 480. 내일 근무자
+PASS 481. 최저시급 미달 찾기
+PASS 482. 퇴근 누락
+PASS 483. 18세 미만
+PASS 484. 곧 1년
+PASS 485. 노무 상식: 주휴 조건
+PASS 486. 질문은 명령으로 안 감
+PASS 487. 계약서 안 쓴 직원 목록
+PASS 488. 명령은 그대로
+PASS 489. 개인 주휴는 개인 답
+PASS: 척척 비서 질문 100가지.
+PASS 490. 127 연소자 밤 근무 막음
+PASS 491. 127 연소자 하루 7시간 초과 막음
+PASS 492. 127 연소자 주 35시간 초과 막음
+PASS 493. 성인 낮 근무는 막지 않음
+PASS 494. 114 주 15시간 처음 넘길 때만 경고
+PASS 495. 주 시간 합계(일요일 시작)
+PASS 496. 022 점심 11~12시 1명이라 부족
+PASS 497. 022 저녁 3명은 필요+1 넘어 과잉
+PASS 498. 022 다른 요일 필요 인원은 무시
+PASS 499. 021 같은 직원 겹치면 막음
+PASS 500. 021 휴가인 직원에게 끌어 넣기 막음
+PASS 501. 021 확정된 달은 막음
+PASS 502. 023 처음 공개는 알림 대상, 사장님이 보낸 확인은 무시
+PASS 503. 023 직원 확인
+PASS 504. 023 다른 매장 근무표는 확인 못 함
+PASS 505. 023 근무 바뀐 직원만 확인 풀림
+PASS 506. 023 다시 공개하면 모두 다시 확인
+PASS 507. 023 확인 현황(내 매장 직원만)
+PASS 508. 023 직원 할 일: 안 한 이번 주 이후 공개분
+PASS 509. 107 마감 요일 10시 이후 안 낸 직원에게만
+PASS: 지시서 3주차 (근무표 규칙·필요 인원·공개 확인·마감 알림).
+PASS 510. 지난달 계산
+PASS 511. 지난달 대비: 30% 넘으면 표시, 신규·빠짐
+PASS 512. 지난달 자료 없으면 표시 없음
+PASS 513. 지급 완료 기록
+PASS 514. 지급 완료 취소
+PASS 515. 확정 전·모르는 직원은 지급 완료 못 함
+PASS 516. 확정 해제: 잠금 풀고 지난 내용·이력 남기고 지급 기록은 지움
+PASS 517. 재확정 비교: 바뀐 직원만
+PASS 518. 재확정 이력
+PASS 519. 일괄 수당: 같은 이름은 바꾸고 없으면 새로
+PASS 520. 일괄 수당 막힘
+PASS: 지시서 4주차 (급여 마감 도우미).
+PASS 521. 보건증 30일 전 사장님·직원 둘 다
+PASS 522. 기간제 계약 7일 전
+PASS 523. 수습 끝 1일 전(8/8 입사 2개월 → 10/7까지)
+PASS 524. 아침 9시 전·기한 아닌 날은 없음
+PASS 525. 서류 알림 종류
+PASS 526. 정기 휴무일 경고
+PASS 527. 영업시간 2시간 넘게 벗어나면 경고, 준비 1시간은 괜찮음
+PASS 528. 자정 넘는 영업시간
+PASS 529. 명부 거르기·세기(퇴사자는 보관함)
+PASS 530. 명부 CSV는 수식 막음
+PASS: 지시서 5주차 (서류 기한·휴무일·명부).
+PASS 531. 6개월 목록(해 넘김)
+PASS 532. 요일·시간대 평균(10월 월요일 4번)
+PASS 533. 근무표 대비 실제(차이 큰 순)
+PASS 534. 인건비율
+PASS 535. 요약: 증감·인건비율 높음·차이 큰 직원
+PASS 536. 진행 중인 달은 증감 대신 안내
+PASS: 지시서 6주차 (리포트 추이·요일 시간대·근무표 대비·인건비율).
+PASS 537. 월급 최저임금 환산 미달 경고(209시간)
+PASS 538. 16시간 넘는 기록·짧은 기록
+PASS 539. 3.3% 사업소득인데 매주 15시간 넘음
+PASS 540. 임금 0원·소득 미검토
+PASS 541. 5명 이상: 주 52시간 넘김
+PASS: 지시서 7주차 (월급 최저임금 환산·급여 정확도 점검).
+PASS 542. 주휴 진행: 기록 11시간 + 남은 근무 5시간이면 넘는다고 안내
+PASS 543. 주휴 진행: 모자라면 모자라다고
+PASS 544. 내 근무 달력: 상태 글자
+PASS: 지시서 8주차 (직원 화면 주휴 진행·근무 달력).
+PASS 545. 계약서 없이 일하면 위험
+PASS 546. 일하기 전·독립 용역은 표시 안 함
+PASS 547. 기간제 2년 넘김
+PASS 548. 기간제 2년 60일 전 안내
+PASS 549. 계약 끝난 뒤 계속 일함
+PASS 550. 기간제 종료일 빈칸
+PASS: 지시서 9주차 (근로계약 점검).
+PASS 551. 체험 결제 문의엔 체험 FAQ
+PASS 552. 짧거나 엉뚱하면 추천 없음
+PASS 553. 대화 기록 읽기(깨진 값은 빈 목록)
+PASS: 지시서 10주차 (문의 추천·대화).
+PASS 554. 3년 지난 퇴사자만
+PASS 555. 연락처 지우고 이름 가림
+PASS 556. 내 자료: 내 것만
+PASS: 지시서 11주차 (개인정보 보존·내 자료).
+PASS 557. 입사 체크 4단계(서류만 끝)
+PASS 558. 다 끝나면 숨김
+PASS 559. 퇴사일 전까지는 접속, 지나면 차단
+PASS: 지시서 5주차 보완 (입사 체크·퇴사일 차단).
+PASS 560. 아침 브리핑: 인원·첫 근무·할 일
+PASS 561. 주간 리포트: 지난주 시간·인건비·빠진 출근
+PASS 562. 오늘 인건비(시급 2시간 + 월급 하루치)
+PASS: 지시서 6주차 보완 (브리핑·주간·오늘 인건비).
+PASS 563. POS 매출 파일 월별 합계(합계 줄 무시)
+PASS 564. 제목 없는 파일도
+PASS 565. 직원 화면 다국어
+PASS 566. 시간 읽기
+PASS 567. 표 붙여넣기
+PASS 568. 표: 없는 직원 안내
+PASS 569. 한 줄씩
+PASS 570. 날짜 제목
+PASS 571. 급여 설명: 첫 줄 실수령
+PASS 572. 급여 설명: 지난달 비교
+PASS 573. 급여 설명: 보험
+PASS 574. 시각 있는 매출: 시간대별
+PASS 575. 적정 인원: 화 12시 평균 12만 → 2명
+PASS 576. 시각 없는 파일은 시간대 없음
+PASS: POS 매출 파일 읽기.
+PASS 577. 5명 이상: 평소 근무 요일 공휴일 하루치
+PASS 578. 5명 미만은 없음
+PASS: 공휴일 유급휴일수당.
+PASS 579. 퇴직금: 7~9월 확정 급여, 92일
+PASS 580. 퇴직금: 달 중간 퇴직은 일할, 10월 미확정 표시
+PASS: 퇴직금 자동 채움.
+PASS 581. 10월 기한: 원천세 10/12(10일 토요일→월), 4대보험, 사업소득 간이, 취득·상실
+PASS 582. 영업일 계산(공휴일 건너뜀)
+PASS 583. 3월엔 연말정산·보수총액
+PASS 584. 2주 안 기한만
+PASS 585. 두루누리: 10명 미만·270만 미만·가입
+PASS 586. 10명 이상이면 대상 아님
+PASS: 신고 기한·취득상실·두루누리.
+PASS 587. 6자리 코드
+PASS 588. 지금·직전 1분 코드 통과, 고정·움직이는 QR 매장 모두
+PASS 589. 2분 지난 코드·틀린 코드·다른 매장 거절
+PASS: 매장 코드 출퇴근.
+PASS 590. 서식 5종
+PASS 591. 해고예고: 30일 뒤·제26조·예고수당 안내
+PASS 592. 사직서는 직원이 쓰는 서류 안내
+PASS: 서식함.
+PASS 593. 의무교육: 올해 기록·안 들은 직원
+PASS 594. 5명 이상이면 산업안전
+PASS: 법정 의무교육.
+PASS 595. 결제 실패 7일 유예 동안은 그대로 씀
+PASS 596. 유예 지나면 조회만
+PASS: 결제 실패 유예.
+PASS 597. 엑셀: 시트 7개·글자 이스케이프·숫자 칸
+PASS: 엑셀 내보내기.
+PASS 598. 인상 방식
+PASS 599. 예약 인상: 지금 시급은 그대로, 이력에 남김, 이미 높은 직원은 제외
+PASS 600. 그날이 되면 반영
+PASS 601. 달 중간 인상: 날짜별로 나눠 계산
+PASS: 시급 인상·예약·달 중간 변경.
+PASS 602. 반복 고치기: 이 날 이후만
+PASS 603. 반복 지우기: 이 날 이후만
+PASS 604. 한 주 하루 뒤로: 막힌 건 건너뜀
+PASS 605. 겹치면 안 옮김
+PASS 606. 하루 지우기
+PASS: 반복 고치기·통째로 옮기기.
+PASS 607. 겸직: 주방으로 잡은 날은 주방 시급
+PASS: 겸직 포지션 시급.
+PASS 608. 근무표 변경 이력 요약
+PASS: 근무표 변경 이력.
+PASS 609. 월급 결근 1일·지각 30분 공제(통상시급 기준)
+PASS 610. 인센티브: 매출 500만 × 2% = 10만
+PASS: 결근 공제·인센티브.
+PASS 611. 소급: 다음 해 1월에 넣음
+PASS 612. 연간 지급 내역
+PASS 613. 세무사 양식: 주휴 칸·차인지급액
+PASS: 소급·연간 내역·세무사 양식.
+PASS 614. 3일 넘은 요청만
+PASS: 오래된 요청.
+
+── check-claims
+PASS: 과장·허위 문구 검사 (화면·홈페이지).
+
+── check-withdraw
+1. PASS owner store created
+2. PASS anonymous cannot withdraw
+3. PASS withdraw needs typed confirmation
+4. PASS withdraw needs current password
+5. PASS owner must export before withdrawing
+6. PASS owner exports store data
+7. PASS owner schedules deletion after export
+8. PASS deletion scheduled 30 days later
+9. PASS second schedule rejected
+10. PASS owner sees pending deletion
+11. PASS employee sees store closing date
+12. PASS store is read-only while deletion pending
+13. PASS cancel withdrawal
+14. PASS cancel clears pending deletion
+15. PASS deletion row removed on cancel
+16. PASS cancel without pending rejected
+17. PASS employee withdraws immediately
+18. PASS employee app account removed
+19. PASS employee login account removed
+20. PASS employee unlinked from store
+21. PASS employee records stay with owner
+22. PASS employee withdrawal audited
+23. PASS due store purged
+24. PASS sent payslips purged with store
+25. PASS owner accounts removed
+26. PASS deletion marked done
+27. PASS daily purge removes due withdrawn store
+28. PASS sent payslips stay immutable outside store purge
+28/28 passed
+
+── check-demo
+PASS 1. 2026-10-04: demo state passes the store schema
+PASS 2. 2026-10-04: only synthetic contacts
+PASS 3. 2026-10-04: last month confirmed with today's calculation
+PASS 4. 2026-10-04: every row adds up (gross, deductions, net)
+PASS 5. 2026-10-04: 35-hour weekly worker gets 주휴수당
+PASS 6. 2026-10-04: 12-hour weekend worker gets no 주휴수당
+PASS 7. 2026-10-04: insured worker has 4대보험 lines
+PASS 8. 2026-10-04: excluded part-timer only has 고용보험
+PASS 9. 2026-10-04: payslips have every required item
+PASS 10. 2026-10-04: wage ledger total equals payroll total
+PASS 11. 2026-10-04: someone is at work at noon
+PASS 12. 2026-10-04: no clock-in or clock-out in the future (A1·A3)
+PASS 13. 2026-02-15: demo state passes the store schema
+PASS 14. 2026-02-15: only synthetic contacts
+PASS 15. 2026-02-15: last month confirmed with today's calculation
+PASS 16. 2026-02-15: every row adds up (gross, deductions, net)
+PASS 17. 2026-02-15: 35-hour weekly worker gets 주휴수당
+PASS 18. 2026-02-15: 12-hour weekend worker gets no 주휴수당
+PASS 19. 2026-02-15: insured worker has 4대보험 lines
+PASS 20. 2026-02-15: excluded part-timer only has 고용보험
+PASS 21. 2026-02-15: payslips have every required item
+PASS 22. 2026-02-15: wage ledger total equals payroll total
+PASS 23. 2026-02-15: someone is at work at noon
+PASS 24. 2026-02-15: no clock-in or clock-out in the future (A1·A3)
+PASS 25. 2026-03-31: demo state passes the store schema
+PASS 26. 2026-03-31: only synthetic contacts
+PASS 27. 2026-03-31: last month confirmed with today's calculation
+PASS 28. 2026-03-31: every row adds up (gross, deductions, net)
+PASS 29. 2026-03-31: 35-hour weekly worker gets 주휴수당
+PASS 30. 2026-03-31: 12-hour weekend worker gets no 주휴수당
+PASS 31. 2026-03-31: insured worker has 4대보험 lines
+PASS 32. 2026-03-31: excluded part-timer only has 고용보험
+PASS 33. 2026-03-31: payslips have every required item
+PASS 34. 2026-03-31: wage ledger total equals payroll total
+PASS 35. 2026-03-31: someone is at work at noon
+PASS 36. 2026-03-31: no clock-in or clock-out in the future (A1·A3)
+PASS: 체험 화면 숫자(급여·명세서·임금대장 합계).
+
+── check-error-messages
+다음 행동이 없는 오류 문구:
+billing-confirm.ts: 주문을 찾을 수 없어요.
+billing-confirm.ts: 주문 금액과 달라 승인하지 않았어요.
+start-guide-api.ts: 지원하지 않는 요청이에요.
+start-guide-api.ts: 안내 설정이 너무 길어요.
+start-guide-api.ts: 이미 처리한 요청의 내용이 바뀌었어요.
+PASS: 오류 번호·로그 개인정보 제거.
+
+── check-attendance-table
+1. PASS 12,000 records move into the attendance table
+2. PASS store JSON no longer carries attendance
+3. PASS screen gets only the recent window
+4. PASS window marker is not sent to the screen
+5. PASS save without attendance keeps every record
+6. PASS editing attendance through save is refused
+7. PASS clock-in adds one record and keeps old ones
+8. PASS oldest record (3 years ago) still stored
+9. PASS finalize for a month outside the window uses that month's records
+10. PASS records outside the window survive the save
+11. PASS payroll with a zero-wage worker is refused
+12. PASS export includes every attendance record
+13. PASS store purge removes attendance records
+13/13 passed
+
+── check-swaps
+1. PASS employee sees only own upcoming shifts
+2. PASS colleagues exclude self and other branch
+3. PASS past shift rejected
+4. PASS cannot request others shift
+5. PASS open 대타 request
+6. PASS status 구하는 중
+7. PASS duplicate blocked
+8. PASS other branch cannot see it
+9. PASS overlapping colleague blocked
+10. PASS requester cannot take own
+11. PASS ben accepts
+12. PASS waiting approval
+13. PASS employee cannot approve
+14. PASS owner approves
+15. PASS shift moved to ben
+16. PASS audit logged
+17. PASS targeted 교대
+18. PASS non-target cannot accept
+19. PASS 교대 needs my shift
+20. PASS ben already works sa at overlapping time
+21. PASS ben accepts 교대
+22. PASS changed shift cannot be approved
+23. PASS owner approves 교대
+24. PASS shifts exchanged
+25. PASS owner assigns
+26. PASS owner cancels
+27. PASS cancel leaves shift unchanged
+PASS: 대타·교대 요청·수락·승인·충돌 차단.
+28. PASS mirror matches after swaps
+29. PASS mirror follows deletion
+30. PASS employee submits availability
+31. PASS own availability visible
+32. PASS invalid time rejected
+33. PASS colleague cannot see it
+34. PASS owner sees it
+35. PASS unread list names branch staff
+36. PASS reader moves to read list
+37. PASS staff do not see who read
+38. PASS 업무별 공지: 받는 사람만 집계
+39. PASS 대상 아닌 직원은 공지가 안 보임
+40. PASS 대상 직원은 보임
+41. PASS 예약 공지는 사장님에게 예약으로
+42. PASS 예약 시각 전에는 직원에게 안 보임
+43. PASS 지난 시각으로 예약 불가
+44. PASS 다시 알리기
+45. PASS 10분 안에 또 알리기는 막음
+46. PASS 직원은 다시 알리기 불가
+47. PASS 휴가 신청
+48. PASS 사장님은 근무 목록을 받아 영향 계산
+49. PASS 반려는 사유가 있어야
+50. PASS 승인
+51. PASS 승인하면 그날 근무가 근무표에서 빠짐
+52. PASS 뺀 근무를 기록
+
+── check-manual
+1. PASS anonymous blocked
+2. PASS employee cannot upload
+3. PASS fake PNG rejected
+4. PASS svg rejected
+5. PASS image uploaded
+6. PASS empty step rejected
+7. PASS unknown image rejected
+8. PASS owner saves manual
+9. PASS employee sees own branch + all
+10. PASS other branch sees only all
+11. PASS employee loads image
+12. PASS other branch cannot load image
+13. PASS employee marks read
+14. PASS employee cannot edit
+15. PASS owner sees read count
+16. PASS store save keeps manuals
+17. PASS owner deletes
+18. PASS unused image removed
+PASS: 매장 매뉴얼(작성 권한·지점 범위·사진 검사·확인 표시·정리).
+19. PASS 분류·대상 저장
+20. PASS 주방 직원에게 홀 전용 매뉴얼이 안 보임
+21. PASS 주방 직원에게 주방 매뉴얼은 보임
+22. PASS 사장님 화면: 받는 사람 수
+23. PASS 읽음
+24. PASS 고치면 다시 안 읽음 + 수정 내용 + 고친 날이 만든 날보다 뒤(바뀜)
+25. PASS 없는 분류는 기타
+26. PASS 체크 0단계는 거절
+27. PASS 직원 체크 저장
+28. PASS 내 체크 기록이 보임
+29. PASS 사장님은 체크 기록을 봄
+30. PASS 다른 직원은 남의 인증 사진 못 봄
+31. PASS 본인은 인증 사진 봄
+32. PASS 가짜 사진 거절
+PASS: 오픈·마감 체크 실행.
+
+── check-transfer
+1. PASS employee cannot start transfer
+2. PASS store name must match
+3. PASS password required
+4. PASS cannot transfer to self
+5. PASS transfer requested
+6. PASS owner sees pending
+7. PASS heir sees offer
+8. PASS unrelated user sees nothing
+9. PASS wrong account cannot accept
+10. PASS owner of another store cannot accept
+11. PASS heir password checked
+12. PASS heir accepts
+13. PASS existing guide preferences follow representative transfer
+14. PASS heir now owns store with staff
+15. PASS shift mirror moved
+16. PASS attendance moved
+17. PASS contract moved, body unchanged
+18. PASS owner change still blocked outside transfer
+19. PASS old owner left store
+20. PASS employee still linked
+21. PASS audit has transfer
+22. PASS offer gone after accept
+PASS: 가게 대표 넘기기.
+
+── check-rate-limit
+PASS: 요청 제한(계정당 저장 분당 300, IP당 분당 600).
+
+── check-push
+1. PASS RFC 8291 예시와 같은 암호문
+2. PASS VAPID 서명이 공개키로 검증됨
+3. PASS VAPID aud는 푸시 서버 주소
+4. PASS 키가 없으면 공개키 없음
+5. PASS 키가 없으면 구독 거부
+6. PASS http 주소 구독 거부
+7. PASS 구독 저장
+8. PASS 내 기기 1대
+9. PASS 휴가 결과 알림 1건 전송
+10. PASS 암호화 본문과 VAPID 머리말
+11. PASS 기기에서 풀린 알림 내용
+12. PASS 만료된 구독은 지움
+13. PASS 알림함에 지난 알림이 쌓임
+14. PASS 다른 사람 알림은 안 보임
+15. PASS 읽음 처리
+16. PASS 모두 읽음
+17. PASS 받을 알림 저장(모르는 종류는 버림)
+18. PASS 끈 종류(휴가)는 오지 않음
+19. PASS 로그인 없으면 막힘
+PASS: 웹 푸시.
+
+── check-ops-alert
+PASS: 서버 오류 알림 (10분 3건 · 1시간 1번 · 개인정보 없음).
+
+── check-cron
+PASS: 서비스 상태(/api/status).
+PASS: 10분 알림 검사(한 번만 보내기).
+PASS: 서명 대기 계약서 다시 알림.
+PASS: 매주 자동 백업.
+PASS: 예약 인상 자동 반영.
+PASS: 근무표 자동 게시.
+PASS: 마감 체크 누락·공지 재알림.
+PASS: 광고성 정보 동의 재확인.
+PASS: 생일·입사 기념일.
+PASS: 매일 작업 (비밀값·체험 종료 알림 7일·1일 각 한 번).
+
+── check-support
+PASS: 문의하기 (내 문의만 보기·본사만 답변·하루 10건·추가 질문·해결).
+
+── check-staff-docs
+1. PASS anonymous blocked
+2. PASS ID card kind refused
+3. PASS fake PNG refused
+4. PASS staff uploads own
+5. PASS staff cannot upload for coworker
+6. PASS owner sees staff doc
+7. PASS other staff cannot list
+8. PASS other staff cannot open file
+9. PASS owner opens image
+10. PASS owner uploads for staff
+11. PASS staff lists own
+12. PASS staff cannot delete owner upload
+13. PASS staff deletes own upload
+PASS: 직원 서류 보관함 (본인·사장님만, 사진 검사).
+
+── check-staff-asks
+1. PASS pay question needs month/message
+2. PASS staff sends pay question
+3. PASS staff sends profile change
+4. PASS staff sees only own asks
+5. PASS profile change ignores non-allowed fields
+6. PASS staff cannot answer
+7. PASS owner applies profile change
+8. PASS member updated
+9. PASS owner must write answer for pay question
+10. PASS owner answers pay question
+11. PASS staff sees answer
+12. PASS certificate request
+13. PASS one certificate request a day
+14. PASS offline clock needs valid time
+15. PASS offline clock queued as ask
+16. PASS owner approves offline clock
+17. PASS attendance created at saved time
+PASS: 직원 요청(명세서 문의·정보 변경·증명서).
+
+── check-coowner
+1. PASS staff cannot invite coowner
+2. PASS owner makes invite
+3. PASS owner cannot accept own invite
+4. PASS staff of same store cannot become coowner
+5. PASS other owner accepts
+6. PASS token single use
+7. PASS cara sees two stores, now on boss store
+8. PASS coowner has owner access
+9. PASS viewing coowned store never overwrites own store
+10. PASS coowner cannot change plan
+11. PASS switch back to own store
+12. PASS own store now
+13. PASS cannot switch to foreign store
+14. PASS owner lists coowners
+15. PASS owner removes coowner
+16. PASS removed coowner sees only own store
+PASS: 공동 관리자·가게 전환.
+
+── check-att-extras
+1. PASS distance ~111m per 0.001 lat
+2. PASS geo off → null
+3. PASS geo missing coords
+4. PASS geo inside
+5. PASS geo accuracy capped at 100m
+6. PASS shared device found
+7. PASS same person twice is not shared
+8. PASS approval rule caps at schedule before approval
+9. PASS approval rule pays actual after approval
+10. PASS pending overtime minutes
+11. PASS approved has no pending
+12. PASS planned break kept as span
+13. PASS break minutes
+14. PASS break spans helper
+15. PASS manual break span
+16. PASS filter late
+17. PASS filter absent
+18. PASS filter geo
+19. PASS range rows header + 1
+20. PASS range rows break text
+21. PASS calendar worst status wins
+22. PASS block mode: no location → 400
+23. PASS block mode: far away → 400
+24. PASS block mode: inside → 200
+25. PASS geo saved without coordinates
+26. PASS device saved
+27. PASS staff clocks out
+28. PASS warn mode: far away still records
+29. PASS warn mode flags
+30. PASS invalid device not stored
+31. PASS open record cannot be approved
+32. PASS staff cannot approve overtime
+33. PASS owner approves overtime
+34. PASS approval stored with name
+35. PASS audit logged
+36. PASS owner undoes approval
+37. PASS approval removed
+PASS: 출퇴근 위치·기기·연장 승인·휴게 구간.
+
+── check-schedule-more
+1. PASS 7th consecutive day warns
+2. PASS 6 days no consecutive warn
+3. PASS short rest warns
+4. PASS enough rest no warn
+5. PASS 8h+ warns only fivePlus
+6. PASS PUT with open shift ok
+7. PASS audit open shift
+8. PASS staff sees open shift
+9. PASS far branch staff does not see
+10. PASS far branch staff cannot take
+11. PASS amy takes open shift
+12. PASS shift added to amy
+13. PASS owner sees assigned
+14. PASS second take refused
+PASS: 근무표 경고·빈 근무 선착순.
+
+── check-pay-more
+1. PASS owner records advance
+2. PASS advance audit
+3. PASS advance becomes deduction
+4. PASS net reduced
+5. PASS staff sees own advance without author
+6. PASS locked month advance cannot be removed
+7. PASS locked month advance cannot be added
+PASS: 가불·선지급.
+
+── check-store-log
+1. PASS fridge 7 is out of range
+2. PASS freezer -20 ok
+3. PASS cash diff
+4. PASS handover needs text
+5. PASS staff writes handover
+6. PASS far branch sees no handover
+7. PASS staff logs temps
+8. PASS staff logs cash
+9. PASS bad photo refused
+10. PASS incident with photo
+11. PASS owner sees all kinds
+12. PASS owner opens photo
+13. PASS other staff cannot open photo
+14. PASS staff cannot change status
+15. PASS owner resolves
+16. PASS staff cannot assign task
+17. PASS owner assigns task
+18. PASS staff sees own task
+19. PASS other staff cannot finish it
+20. PASS staff finishes task
+21. PASS staff cannot request sign
+22. PASS owner requests sign
+23. PASS staff sees doc without others
+24. PASS sign needs agree + exact name
+25. PASS staff signs
+26. PASS cannot sign twice
+27. PASS owner sees 1 of 2 signed
+28. PASS signed doc cannot be deleted
+29. PASS remind unsigned
+30. PASS audit has sign
+31. PASS owner PUT ok
+32. PASS logs survive PUT
+33. PASS bad quiz refused
+34. PASS owner saves quiz manual
+35. PASS staff gets quiz without answers
+36. PASS wrong answer reported by number
+37. PASS all correct passes
+38. PASS staff marked passed
+39. PASS owner sees pass
+40. PASS order needs item
+41. PASS staff requests order
+42. PASS complaint
+43. PASS owner cannot write anonymous
+44. PASS anonymous suggestion
+45. PASS suggestion has no author
+46. PASS audit has no author for suggestion
+47. PASS owner answers suggestion
+48. PASS other staff sees answered suggestion
+49. PASS same-branch staff sees answered suggestion
+50. PASS order status by owner
+51. PASS staff messages owner
+52. PASS owner sees message
+53. PASS owner replies
+54. PASS owner marks read
+55. PASS staff sees thread with read mark
+56. PASS other staff sees no messages
+PASS: 매장 일지·할 일·서명 서류.
+
+── check-history-matching
+1. PASS ambiguous normalized names never select the last employee
+2. PASS an explicit in-scope employee selection resolves only the chosen row
+3. PASS a stale or foreign manual selection cannot fall back to a name
+4. PASS a stable employee ID preserves a match after the employee name changes
+5. PASS an unknown file employee ID never silently falls back to a matching name
+6. PASS a branch column disambiguates equal names without merging people
+7. PASS an explicit ID that conflicts with the file branch needs review
+8. PASS ID-only files can identify the correct employee
+9. PASS payroll import uses the same matching guard as schedule import
+10. PASS unique-name legacy files retain their existing import result
+11. PASS a row is excluded only after an explicit exclusion choice
+12. PASS duplicate employee IDs are not silently resolved
+13. PASS a nonempty record without identity stays unresolved until mapped or excluded
+14. PASS original values remain available to distinguish equal-name records
+15. PASS legacy descriptive name headers still match without confusing employee ID
+16. PASS CSV references preserve physical lines across blanks and quoted newlines
+17. PASS XLSX references preserve source worksheet row numbers
+PASS: 17/17 history matching regression cases.
+
+── check-history
+1. PASS excel serial date
+2. PASS dotted date
+3. PASS excel time fraction
+4. PASS 오후 time
+5. PASS attendance kind
+6. PASS 2 items + 1 problem
+7. PASS overnight record
+8. PASS shift kind
+9. PASS pay kind
+10. PASS unknown header
+11. PASS staff cannot import
+12. PASS import adds and skips
+13. PASS imported as owner input
+14. PASS audit import
+15. PASS owner has no calendar
+16. PASS staff makes feed
+17. PASS feed is public calendar
+18. PASS new link revokes old
+19. PASS off revokes
+20. PASS bad token
+21. PASS inspection sheets
+22. PASS attendance in bundle
+23. PASS roster has staff
+PASS: 달력 구독·기록 가져오기·근로감독 묶음.
+
+── check-franchise
+1. PASS support hours split
+2. PASS cost split by hours
+3. PASS compliance numbers
+4. PASS add shift
+5. PASS delete shift
+6. PASS deleted shift in trash
+7. PASS staff sees no trash
+8. PASS restore shift
+9. PASS shift back, trash empty
+10. PASS restore twice fails
+11. PASS owner sees own store
+12. PASS not my store refused
+13. PASS broadcast to own store
+14. PASS staff sees HQ notice
+15. PASS staff cannot broadcast
+16. PASS wrong skill key
+17. PASS unlinked asks to link
+18. PASS code is 6 digits
+19. PASS bad code
+20. PASS link with code
+21. PASS code single use
+22. PASS linked answers
+23. PASS status linked
+24. PASS staff link answers staff-only
+PASS: 지원 근무·준수 현황·여러 가게·휴지통·카카오톡 비서.
+
+── check-kiosk
+1. PASS owner makes kiosk link
+2. PASS kiosk lists branch staff only
+3. PASS kiosk shows no private data
+4. PASS no pin yet
+5. PASS easy pin refused
+6. PASS staff sets pin
+7. PASS wrong pin
+8. PASS kiosk clock in
+9. PASS attendance created via kiosk
+10. PASS audit kiosk
+11. PASS kiosk clock out
+12. PASS bad token
+13. PASS kiosk off
+14. PASS staff writes late reason
+15. PASS reason visible to owner
+16. PASS other staff cannot
+17. PASS absence alert at 9am
+18. PASS once a month
+PASS: 키오스크·지각 사유·결근 누적 알림.
+
+── check-open-api
+1. PASS staff cannot make keys
+2. PASS owner makes key
+3. PASS no key
+4. PASS bad key
+5. PASS employees read
+6. PASS range required
+7. PASS range limit
+8. PASS shifts read
+9. PASS attendance read
+10. PASS payroll needs month
+11. PASS payroll read
+12. PASS unknown path
+13. PASS key listed with last use
+14. PASS private webhook refused
+15. PASS add hook returns secret once
+16. PASS webhook sent on clock
+17. PASS webhook signed
+18. PASS revoked key stops
+19. PASS staff cannot log pii
+20. PASS owner pii log
+21. PASS audit has pii view
+22. PASS video must be https
+23. PASS video-only step ok
+24. PASS staff sees video url
+PASS: 오픈 API·웹훅·개인정보 열람 기록·매뉴얼 동영상.
+
+── check-totp
+1. PASS RFC 6238 T=59
+2. PASS RFC 6238 T=1111111109
+3. PASS base32 round trip
+4. PASS verify current
+5. PASS verify replay blocked
+6. PASS wrong code
+7. PASS jwt session id
+8. PASS status off
+9. PASS setup gives secret + uri
+10. PASS enable needs right code
+11. PASS enabled with 10 backup codes
+12. PASS this session still works
+13. PASS login asks for code
+14. PASS password-only session blocked
+15. PASS store blocked too
+16. PASS wrong code refused
+17. PASS backup code works once
+18. PASS session now allowed
+19. PASS used backup code refused
+20. PASS status shows 9 left
+21. PASS disable from unverified session refused
+22. PASS disable from verified session
+23. PASS after disable password login works
+24. PASS register with marketing
+25. PASS marketing on at signup
+26. PASS turn off shows time
+27. PASS default off
+28. PASS under-14/consent required
+PASS: 2단계 인증.
+
+── check-share
+PASS: 세무사 공유 링크 (확정 급여만·끄기·만료·열람 기록·토큰 해시만 저장).
+
+── check-password
+1. PASS 직원은 남의 비밀번호 초기화 못 함
+2. PASS 사장님이 직원 임시 비밀번호 발급
+3. PASS 예전 비밀번호로는 로그인 안 됨
+4. PASS 임시 비밀번호로 로그인
+5. PASS 로그인하면 새 비밀번호를 정하라고 함
+6. PASS 쉬운 비밀번호는 안 됨
+7. PASS 새 비밀번호 저장
+8. PASS 바꾼 뒤에는 다시 묻지 않음
+9. PASS 사장님 기록에 초기화가 남음
+10. PASS 본사가 아니면 이메일로 초기화 못 함
+11. PASS 본사가 사장님 임시 비밀번호 발급
+12. PASS 본사 발급은 접근 기록에 남음
+13. PASS 로그인 없이 비밀번호 찾기 요청
+14. PASS 요청은 본사 문의함으로
+15. PASS 전화번호 없으면 거절
+16. PASS 같은 곳에서 한 시간 3번까지
+PASS: 메일 없이 비밀번호 찾기.
+
+── check-improve2
+1. PASS B005 break ends in 5 min
+2. PASS B006 no break after 4h → staff + owner
+3. PASS B006 silent once rested
+4. PASS B014 16h open record
+5. PASS B015 digest drops owner per-event alerts
+6. PASS B015 off keeps all
+7. PASS B015 digest text
+8. PASS B035 ack reminder after 24h
+9. PASS B035 acked → none
+10. PASS B058 only in December
+11. PASS B058 december lists low wage
+12. PASS B058 no next-year rate → silent
+13. PASS B090 visa 30 days
+14. PASS B101 staff pref first
+15. PASS B101 store default
+16. PASS B101 off
+17. PASS B010·B018 punctuality
+18. PASS B018 habit text
+19. PASS B022 copy month to same nth weekday
+20. PASS B022 missing 5th week skipped
+21. PASS B023·B034 week load over max
+22. PASS B024 weekend count
+23. PASS B027 break suggestion
+24. PASS B032 shift kind
+25. PASS B033 candidates exclude busy & over max
+26. PASS B033 available first
+27. PASS B038 changed cells
+28. PASS B040 grid header + rows
+29. PASS B039 holiday premium 5+
+30. PASS B039 under 5 none
+31. PASS B046 rounding
+32. PASS B055 transfer check
+33. PASS B067 durunuri
+34. PASS B067 10+ none
+35. PASS B069 pay period 16th
+36. PASS B069 default
+37. PASS B070 payday next month
+38. PASS B070 short month
+39. PASS B073 readiness
+40. PASS B086 missing info
+41. PASS B079 tenure
+42. PASS B088 history months
+43. PASS B092 until next
+44. PASS B133 weekday cost
+45. PASS B132 ratio over target
+46. PASS B136 swap trend
+47. PASS B140 yoy
+48. PASS B151 late memo rule once a month
+49. PASS B153 repeats due
+50. PASS B158 slash
+51. PASS B188 referral code stable
+52. PASS B196 scrub
+53. PASS B200 secret patterns
+54. PASS B200 clean text
+55. PASS B065 budget 90%
+56. PASS B065 no budget
+57. PASS B050 daily worker rows
+58. PASS B044 pay calendar
+59. PASS B054 account changed after last pay
+60. PASS B054 paid since
+61. PASS B052 progress
+62. PASS B152 friday reminder
+63. PASS B152 published → none
+64. PASS B152 not friday
+65. PASS B020 no shift hint
+66. PASS B020 too early hint
+67. PASS B020 on time no hint
+68. PASS B020 after end hint
+69. PASS B056 juhu skipped reason
+70. PASS B056 no juhu reason
+71. PASS owner tour 8+ steps, staff 5+
+72. PASS every step has title+body
+73. PASS owner pages exist
+74. PASS quests: owner 9, staff 5, ids unique
+75. PASS quests: every quest has steps+hint+badge, owner pages exist
+76. PASS quests: done keys match quest ids
+77. PASS quests: total XP reaches max level
+78. PASS quests: owner done from records
+79. PASS quests: other branch not done
+80. PASS quests: staff done
+81. PASS quests: summary xp/next/level
+82. PASS quests: demo hides noDemo
+83. PASS quests: level edges
+84. PASS quests: parseFind
+85. PASS routine: owner tasks at noon (Thu)
+86. PASS routine: late staff found
+87. PASS routine: requests/clockout wait/tomorrow
+88. PASS routine: slot by hours
+89. PASS routine: evening — stale clock-out todo, rest done
+90. PASS routine: reminder at close hour only
+91. PASS routine: reminder lists left
+92. PASS routine: closed tomorrow ok, no staff → none
+93. PASS routine: payroll month task
+94. PASS routine: staff
+95. PASS routine: streak allows 1 rest day
+96. PASS staff reminder: forgot clock-in (e2 only)
+97. PASS staff reminder: none before +10m / after end / on leave
+98. PASS staff reminder: 8pm tomorrow preview + ack nudge
+99. PASS staff reminder: owner can turn off
+100. PASS owner saves extra fields
+101. PASS extra kept
+102. PASS branch info kept
+103. PASS repeats kept
+104. PASS settings.more kept
+105. PASS staff does not see owner memo/tags/reviews
+106. PASS staff sees praise
+107. PASS staff sees wifi
+108. PASS staff sees today note only
+109. PASS staff sees events
+110. PASS setPref bad value blocked
+111. PASS setPref ok
+112. PASS pref saved, memo intact
+113. PASS dayOffWish past blocked
+114. PASS dayOffWish ok
+115. PASS owner sees wish
+116. PASS second tap removes wish
+117. PASS staff cannot memo
+118. PASS autoClose future blocked
+119. PASS autoClose ok
+120. PASS closed with flag
+121. PASS attMemo ok
+122. PASS memo saved
+123. PASS staff record hides memo
+124. PASS post notice with poll+pdf
+125. PASS staff sees poll + file
+126. PASS vote
+127. PASS bad vote
+128. PASS react
+129. PASS bad emoji
+130. PASS comment
+131. PASS owner sees counts
+132. PASS owner can delete comment
+133. PASS bad pdf rejected
+134. PASS save manual needPhoto
+135. PASS photo required
+136. PASS check with photo
+137. PASS left steps handed over
+138. PASS client error needs origin
+139. PASS scrubbed + deduped
+140. PASS non-HQ cannot read
+141. PASS B101 2h before alert with clock link
+
+── check-secrets
+1. PASS 비밀값 검사 완료
+
+── check-toss
+1. PASS order id format
+2. PASS bad order id
+3. PASS period from today
+4. PASS renewal continues from paidUntil
+5. PASS paid clears cancel
+6. PASS contracts due
+7. PASS error text known
+8. PASS paid period over → expired
+9. PASS paid period live → active
+10. PASS no keys → not ready
+11. PASS no keys → prepare locked
+12. PASS keys → ready + client key only
+13. PASS needs agreement
+14. PASS server sets amount (ignores client amount)
+15. PASS wrong amount rejected
+16. PASS rejected order cannot be reused
+17. PASS other owner cannot confirm
+18. PASS confirm ok
+19. PASS toss called with secret basic auth + server amount
+20. PASS account active pro 2 slots 6 months
+21. PASS payment recorded
+22. PASS second confirm is idempotent
+23. PASS no second toss call
+24. PASS history shows payment
+25. PASS toss reject → 402 + next action
+26. PASS no contracts → nothing to pay
+27. PASS owner cannot refund
+28. PASS HQ partial refund
+29. PASS refund over balance blocked
+
+── check-native
+1. PASS RS256 signature verifies
+2. PASS RS256 header
+3. PASS ES256 signature verifies
+4. PASS ES256 header
+5. PASS token check ios
+6. PASS token check bad
+7. PASS token check android
+8. PASS android sent
+9. PASS fcm url + bearer
+10. PASS fcm data url
+11. PASS android gone
+12. PASS ios sent
+13. PASS apns topic + push type
+14. PASS ios gone
+15. PASS no keys skipped
+16. PASS bad token rejected
+17. PASS ios token saved
+18. PASS stored
+19. PASS notify sends to app device
+20. PASS remove all
+21. PASS removed
+22. PASS app id
+23. PASS web dir
+24. PASS capacitor versions pinned (no ^ ~)
+25. PASS entry allows app origins
+
+> chuckchuck@0.1.0 check:function
+> node scripts/check-supabase-function.mjs
+
+PASS: Supabase 함수 — CORS·출처 차단, 가입·로그인·로그아웃, 신원 헤더 위조 차단, 매장 등록, 비밀번호 재설정, 직원 역할, 본사 권한.
