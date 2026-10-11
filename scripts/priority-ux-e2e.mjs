@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {mkdir,readFile} from 'node:fs/promises';
 import {dayRows} from '../lib/attendance-check.ts';
 import {attendanceEvidence} from '../lib/attendance-display.ts';
+import {normalizeTeam} from '../dist/server/team-model.js';
 export async function priorityUxE2E({owner,staff,srv,step,browser}){
  const ctx=await browser.newContext({storageState:await owner.context().storageState(),serviceWorkers:'block',viewport:{width:1440,height:900}}),page=await ctx.newPage();
  try{
@@ -188,6 +189,50 @@ export async function priorityUxE2E({owner,staff,srv,step,browser}){
    await board.getByRole('button',{name:'상태 새로 확인',exact:true}).click();await board.getByRole('alert').waitFor();await board.locator('.document-overview-rows').getByText('상태 확인 필요',{exact:true}).first().waitFor();
    await page.unroute('**/api/contracts?summary=1');await board.getByRole('button',{name:'상태 새로 확인',exact:true}).click();await board.getByRole('alert').waitFor({state:'hidden'});
    await page.setViewportSize({width:390,height:844});await page.screenshot({path:'ci-logs/priority-documents-mobile.png',fullPage:true});
+  });
+  await step('휴가 승인 영향 · 대타 단계 · 실제 승인과 취소 결과',async()=>{
+   const saved=await srv.db.q('SELECT owner,data FROM stores LIMIT 1').first(),data=JSON.parse(saved.data);
+   const requester=data.employees.find(e=>e.status!=='퇴사'),taker={...requester,id:'ux-swap-taker',name:'단계 확인 동료',email:'ux-swap-taker@example.invalid'};
+   assert(requester);data.employees.push(taker);
+   const date=new Date(Date.now()+9*3600000+86400000).toISOString().slice(0,10),branchId=requester.branchId;
+   data.shifts=data.shifts.filter(s=>s.employeeId!==requester.id||s.date!==date);
+   for(const run of Object.values(data.payrollRuns||{}))if(run.month===date.slice(0,7))run.locked=false;
+   data._operations??={leaves:[],notices:[],swaps:[]};data._operations.swaps??=[];
+   data._operations.leaves=data._operations.leaves.filter(l=>l.employeeId!==requester.id||l.end<date||l.start>date);
+   const make=(id,start,end,status)=>{
+    const shift={id:'ux-'+id,employeeId:requester.id,branchId,date,start,end,breakMinutes:0};data.shifts.push(shift);
+    const w={id:'ux-swap-'+id,kind:'대타',branchId,shift:{...shift,name:requester.name},targetId:null,targetName:'',reason:'단계검사 '+id,status,at:new Date().toISOString(),by:requester.name};
+    if(status==='승인 대기')w.taker={id:taker.id,name:taker.name,at:new Date().toISOString()};data._operations.swaps.push(w);return w;
+   };
+   const waiting=make('waiting','17:00','20:00','승인 대기'),open=make('open','10:00','12:00','구하는 중');
+   normalizeTeam({...data,attendance:[]});
+   await srv.db.q('UPDATE stores SET data=? WHERE owner=?',JSON.stringify(data),saved.owner).run();
+   try{
+    await page.goto(srv.ORIGIN+'/app?screen=operations',{waitUntil:'networkidle'});
+    const tabs=page.getByRole('tab',{name:/처리할 것/});
+    try{await tabs.click()}catch(error){console.error('REQUEST_SCREEN_DIAGNOSTIC',page.url(),await page.locator('body').innerText());await page.screenshot({path:'ci-logs/operations-screen-failure.png',fullPage:true});throw error}
+    const card=page.locator('.ops-card').filter({hasText:'단계검사 waiting'});await card.waitFor();
+    assert.equal(await card.locator('.ops-progress li.done').count(),2);assert.match(await card.locator('.ops-progress p').innerText(),/사장님 승인/);
+    assert.equal((await card.innerText()).split('17:00–20:00').length-1,1,'shift time appears once');
+    await card.getByText('승인하면 해당 근무를 맡을 직원으로 바꿔요.',{exact:true}).waitFor();
+    await card.getByRole('button',{name:'승인',exact:true}).click();await card.waitFor({state:'hidden'});
+    await page.getByRole('tab',{name:'대타·교대',exact:true}).click();
+    const result=page.locator('article.ops-request').filter({hasText:'단계검사 waiting'});await result.waitFor();
+    assert.equal(await result.locator('.ops-progress li.done').count(),4);await result.getByText(/승인 결과를 근무표에 반영/).waitFor();
+    assert.match(await result.locator('.ops-followup').innerText(),/근무 스케줄/);assert.equal(await result.getByRole('button',{name:'요청 취소',exact:true}).count(),0);
+    const actual=JSON.parse((await srv.db.q('SELECT data FROM stores WHERE owner=?',saved.owner).first()).data);assert.equal(actual.shifts.find(s=>s.id===waiting.shift.id).employeeId,taker.id);
+    const openCard=page.locator('article.ops-request').filter({hasText:'단계검사 open'});assert.equal(await openCard.locator('.ops-progress li.done').count(),1);await openCard.getByRole('button',{name:'직원 지정',exact:true}).click();
+    const assign=page.getByRole('dialog');await assign.getByRole('radio',{name:/단계 확인 동료/}).click();await assign.getByRole('button',{name:'지정하기',exact:true}).click();
+    await openCard.getByText('맡을 직원이 정해졌어요. 사장님 승인을 기다려요.',{exact:true}).waitFor();assert.equal(await openCard.locator('.ops-progress li.done').count(),2);await openCard.getByRole('button',{name:'요청 취소',exact:true}).click();
+    await openCard.getByText('요청을 취소했어요. 근무표는 바꾸지 않았어요.',{exact:true}).waitFor();assert.match(await openCard.locator('.ops-followup').innerText(),/새로 요청/);
+    const cancelled=JSON.parse((await srv.db.q('SELECT data FROM stores WHERE owner=?',saved.owner).first()).data);assert.equal(cancelled.shifts.find(s=>s.id===open.shift.id).employeeId,requester.id);
+    for(const width of [320,390,768,1440]){await page.setViewportSize({width,height:900});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'request stages overflow '+width)}
+    const normalStageSize=await result.locator('.ops-progress li').first().evaluate(el=>parseFloat(getComputedStyle(el).fontSize));
+    await page.locator('.owner-display-settings summary').click();await page.getByRole('button',{name:'글씨 더 크게 보기',exact:true}).click();
+    assert(await result.locator('.ops-progress li').first().evaluate(el=>parseFloat(getComputedStyle(el).fontSize))>normalStageSize,'actual owner setting enlarges stage labels');
+    for(const width of [320,390,768,1440]){await page.setViewportSize({width,height:900});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'large request stages overflow '+width)}
+    await page.getByRole('button',{name:'기본 글씨로 보기',exact:true}).click();await page.locator('.owner-display-settings summary').click();await page.setViewportSize({width:390,height:844});await result.scrollIntoViewIfNeeded();await page.screenshot({path:'ci-logs/operations-stages-mobile.png'});
+   }finally{await srv.db.q('UPDATE stores SET data=? WHERE owner=?',saved.data,saved.owner).run()}
   });
   await step('새 화면 연결 실패 · 복구 안내 · 재시도 성공',async()=>{
    const failed=await ctx.newPage();

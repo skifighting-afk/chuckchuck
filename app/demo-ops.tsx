@@ -1,4 +1,5 @@
 'use client';
+import {RequestFollowup} from './ops-request-progress';
 // 체험 화면의 휴가·공지: 실제 화면(OpsView)과 같은 구성. 버튼을 누르면 체험 안에서만 상태가 바뀐다(저장 없음).
 // 휴가·대타를 승인하면 체험 근무표도 바로 바뀐다.
 import {useMemo,useState} from 'react';
@@ -56,7 +57,7 @@ export function DemoOperations({team,onTeam,branchId,selfId=null,sharedOps,onOps
   if(b.action==='cancelLeave'){setOps((o:any)=>({...o,leaves:o.leaves.map((x:any)=>x.id===b.id?{...x,status:'취소'}:x)}));return}
   toast.info('체험에서는 사장님 승인·반려와 공지만 해 볼 수 있어요.');
  }
- const leaveTab=<section className="panel t-gap"><div className="panel-heading"><h2>휴가 신청 내역</h2></div>{ops.leaves.slice().reverse().map((l:any)=><article className="t-panelbody ops-request" key={l.id}><div className="t-inline"><b>{l.name}</b><StatusBadge s={l.status}/><span>{l.kind} · {l.days}일</span></div><p>{l.start} ~ {l.end}</p><p className="ops-reason">{l.reason}</p>{l.comment&&<p className="footnote">처리: {l.comment}</p>}{l.status==='승인 대기'&&<small className="footnote">'처리할 것'에서 승인·반려해요.</small>}</article>)}</section>;
+ const leaveTab=<section className="panel t-gap"><div className="panel-heading"><h2>휴가 신청 내역</h2></div>{ops.leaves.slice().reverse().map((l:any)=><article className="t-panelbody ops-request" key={l.id}><div className="t-inline"><b>{l.name}</b><StatusBadge s={l.status}/><span>{l.kind} · {l.days}일</span></div><p>{l.start} ~ {l.end}</p><p className="ops-reason">{l.reason}</p>{l.comment&&<p className="footnote">처리: {l.comment}</p>}<RequestFollowup kind="leave" status={l.status} owner={owner}/>{l.status==='승인 대기'&&<small className="footnote">'처리할 것'에서 승인·반려해요.</small>}</article>)}</section>;
  return <><p className="notice">실제 앱과 같은 요청 화면입니다. 직원 요청·동료 수락·사장님 승인을 차례로 체험하세요. 승인하면 체험 근무표가 바로 바뀌어요(새로고침하면 처음으로).</p>
   <OpsView demo data={data} initial={initial} action={action} busy={false} branchId={branchId} swaps={<Swaps data={data} owner={owner} busy={false} action={action} branchId={branchId}/>} leaveTab={leaveTab}/></>;
 }

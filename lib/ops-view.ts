@@ -24,15 +24,20 @@ export function leaveImpact(leave: {employeeId: string; start: string; end: stri
   const me = emps.find(e => e.id === leave.employeeId), role = me?.role || '';
   const mine = shifts.filter(s => s.employeeId === leave.employeeId && s.date >= leave.start && s.date <= leave.end).sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start));
   if (!mine.length) return {removed: [] as OpsShift[], text: '그 기간엔 잡힌 근무가 없어요.', alone: false};
-  // 근무가 있는 날마다, 같은 업무로 겹치는 시간에 일하는 다른 사람 수
+  // Check every interval: a brief overlap cannot cover the entire missing shift.
   let worst: {date: string; left: number} | null = null;
+  const span = (s: OpsShift) => {const a = Date.parse(s.date+'T00:00:00Z') + mins(s.start)*60000;let b = Date.parse(s.date+'T00:00:00Z') + mins(s.end)*60000;if(b<=a)b+=DAY;return [a,b];};
   for (const s of mine) {
-    const left = shifts.filter(x => x.employeeId !== leave.employeeId && x.date === s.date && overlap(x, s) && (!role || emps.find(e => e.id === x.employeeId)?.role === role)).length;
+    const [start,end]=span(s);
+    const others=shifts.filter(x=>{const employee=emps.find(e=>e.id===x.employeeId),[a,b]=span(x);return x.employeeId!==leave.employeeId&&employee&&(!me?.branchId||employee.branchId===me.branchId)&&(!role||employee.role===role)&&a<end&&b>start;});
+    const cuts=[...new Set([start,end,...others.flatMap(x=>span(x).map(t=>Math.max(start,Math.min(end,t))))])].sort((a,b)=>a-b);
+    let left=Infinity;
+    for(let i=0;i<cuts.length-1;i++){const at=(cuts[i]+cuts[i+1])/2;left=Math.min(left,new Set(others.filter(x=>{const [a,b]=span(x);return a<=at&&at<b;}).map(x=>x.employeeId)).size);}
     if (!worst || left < worst.left) worst = {date: s.date, left};
   }
   const where = role ? `${role}에` : '';
-  const head = mine.length === 1 ? `${md(mine[0].date)} ${mine[0].start}–${mine[0].end} 근무가 빠져요. ` : `근무 ${mine.length}개가 근무표에서 빠져요. `;
-  const text = head + (worst!.left === 0 ? `승인하면 ${md(worst!.date)} ${where} 아무도 없어요.` : `그날 ${where} ${worst!.left}명이 남아요.`);
+  const head = `승인하면 근무 ${mine.length}개가 근무표에서 빠져요. `;
+  const text = head + (worst!.left === 0 ? `${md(worst!.date)} ${where} 다른 직원이 없는 시간대가 생겨요.` : `등록된 근무 기준, 같은 매장 ${where} 최소 ${worst!.left}명이 남아요.`);
   return {removed: mine, text: text.replace(/\s+/g, ' ').trim(), alone: worst!.left === 0};
 }
 
@@ -43,7 +48,7 @@ export function swapImpact(swap: {kind: string; shift: OpsShift; taker?: {id: st
   const week = (id: string) => shifts.filter(s => s.employeeId === id && s.date >= from && s.date <= to).reduce((n, s) => n + shiftHours(s), 0);
   const before = week(swap.taker.id), add = shiftHours(swap.shift), minus = swap.counter && swap.counter.date >= from && swap.counter.date <= to ? shiftHours(swap.counter) : 0;
   const after = before + add - minus;
-  const warn = before < 15 && after >= 15 ? ' · 주 15시간을 넘어 주휴수당이 생겨요' : after > 52 ? ' · 주 52시간을 넘어요' : '';
+  const warn = before < 15 && after >= 15 ? ' · 주 15시간 이상: 주휴수당 적용 조건을 확인해 주세요' : after > 52 ? ' · 주 52시간을 넘어요' : '';
   return `${swap.taker.name}님은 그 주 ${hrs(before)}시간에서 ${hrs(after)}시간이 돼요${warn}.`;
 }
 

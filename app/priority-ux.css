@@ -200,3 +200,14 @@ body.cheok-large-text .attendance-evidence p{font-size:18px}
 .clock-receipt-note{font-size:14px;line-height:1.7;color:#416052;margin:0}
 .cheok-large-text .clock-receipt dt,.cheok-large-text .clock-receipt-note,.cheok-large-text .clock-receipt>div>p{font-size:18px}.cheok-large-text .clock-receipt h3,.cheok-large-text .clock-receipt dd{font-size:24px}
 @media(max-width:600px){.clock-receipt{padding:18px 16px}.clock-receipt dl{grid-template-columns:1fr;gap:14px}}
+/* Request status explains whose turn it is and the effect already saved. */
+.ops-progress{margin-block:16px;padding:14px;border:1px solid #d2dfd7;border-radius:12px;background:#f4f8f2}
+.ops-progress ol{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;list-style:none;padding:0;margin:0}
+.ops-progress li{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0;font-size:14px;line-height:1.5;color:#52665b}
+.ops-progress li>span:first-child{display:grid;place-items:center;width:24px;height:24px;flex-shrink:0;border:1px solid #a8b8ae;border-radius:50%}
+.ops-progress .done{color:#15543b;font-weight:700}
+.ops-progress .done>span:first-child{background:#e1efcf;border-color:#8aab71}
+.ops-progress [aria-current=step]{color:#123e2d;font-weight:800;text-decoration:underline;text-underline-offset:4px}
+.ops-progress p,.ops-followup,.ops-approval-change{font-size:14px;line-height:1.7;overflow-wrap:anywhere}
+.ops-progress p{margin:12px 0 0}.ops-followup{margin:14px 0 0;color:#465d50}.ops-approval-change{font-weight:700;margin:12px 0}
+body.cheok-large-text .ops-progress li,body.cheok-large-text .ops-progress p,body.cheok-large-text .ops-followup,body.cheok-large-text .ops-approval-change{font-size:18px}
