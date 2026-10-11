@@ -77,6 +77,9 @@ body{font-family:'ChukAppSans','Pretendard','Apple SD Gothic Neo','Malgun Gothic
 @media(max-width:600px){
  .payroll-work .page-heading{margin-bottom:16px;gap:0}
  .payroll-work .page-heading .t-eyebrow{display:none}
+ .payroll-work .page-heading p{display:none}
+ .payroll-work .owner-display-settings:not([open]){margin-bottom:0}
+ .payroll-toolbar{margin-bottom:16px}
  .payroll-work .page-heading .actions:empty{display:none}
  .payroll-overview td[data-label="실수령액"]{grid-column:1/-1;grid-row:2;display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e3ebe6}
  .payroll-overview td[data-label="실수령액"] b{font-size:20px}
