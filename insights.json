@@ -1,0 +1,118 @@
+{
+ "updatedAt": "2026-10-11T06:33:31.547Z",
+ "username": "chukchukbot_official",
+ "followers": 149,
+ "mediaCount": 5,
+ "reels": [
+  {
+   "id": "18111912734467257",
+   "q": "성수기·비수기 근무표 매번 새로 짜지?",
+   "posted": "2026-10-10T12:28:18+0000",
+   "permalink": "https://www.instagram.com/reel/DeUFUnnj7KL/",
+   "likes": 0,
+   "comments": 0,
+   "views": 11,
+   "reach": 5,
+   "saves": 0,
+   "shares": 0,
+   "avgWatchSec": 4.1
+  },
+  {
+   "id": "17950709685326799",
+   "q": "8시간까지 1.5배, 넘으면 2배.",
+   "posted": "2026-10-09T09:43:45+0000",
+   "permalink": "https://www.instagram.com/reel/DeRNri2AgG4/",
+   "likes": 0,
+   "comments": 0,
+   "views": 182,
+   "reach": 168,
+   "saves": 1,
+   "shares": 0,
+   "avgWatchSec": 2.1
+  },
+  {
+   "id": "18098036417542887",
+   "q": "야간수당은 몇 시부터야?",
+   "posted": "2026-10-08T09:06:12+0000",
+   "permalink": "https://www.instagram.com/reel/DeOkmkXlG5e/",
+   "likes": 0,
+   "comments": 0,
+   "views": 57,
+   "reach": 49,
+   "saves": 0,
+   "shares": 0,
+   "avgWatchSec": 1.6
+  },
+  {
+   "id": "18080965217404054",
+   "q": "지난주 근무표 복사해줘",
+   "posted": "2026-10-07T09:05:44+0000",
+   "permalink": "https://www.instagram.com/reel/DeL_wTRAS5q/",
+   "likes": 0,
+   "comments": 0,
+   "views": 9,
+   "reach": 0,
+   "saves": 0,
+   "shares": 0,
+   "avgWatchSec": 18.2
+  },
+  {
+   "id": "17969300162962078",
+   "q": "연장근로수당은 언제 줘?",
+   "posted": "2026-10-06T09:40:02+0000",
+   "permalink": "https://www.instagram.com/reel/DeJe4pmEihj/",
+   "likes": 0,
+   "comments": 0,
+   "views": 116,
+   "reach": 103,
+   "saves": 0,
+   "shares": 0,
+   "avgWatchSec": 2.4
+  }
+ ],
+ "daily": [
+  {
+   "date": "2026-10-05",
+   "profileViews": 0,
+   "reach": 0,
+   "engaged": 0,
+   "followers": 152
+  },
+  {
+   "date": "2026-10-06",
+   "profileViews": 1,
+   "reach": 94,
+   "engaged": 0,
+   "followers": 152
+  },
+  {
+   "date": "2026-10-07",
+   "profileViews": 0,
+   "reach": 2,
+   "engaged": 0,
+   "followers": 152
+  },
+  {
+   "date": "2026-10-08",
+   "profileViews": 0,
+   "reach": 43,
+   "engaged": 0,
+   "followers": 152
+  },
+  {
+   "date": "2026-10-09",
+   "profileViews": 2,
+   "reach": 161,
+   "engaged": 1,
+   "followers": 151
+  },
+  {
+   "date": "2026-10-10",
+   "profileViews": 4,
+   "reach": 15,
+   "engaged": 1,
+   "followers": 149
+  }
+ ],
+ "warnings": []
+}
