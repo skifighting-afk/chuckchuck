@@ -839,6 +839,7 @@ html.large-text .feature-difference dt,html.large-text .feature-story .feature-p
 
 /* A compact chooser and readable employee amounts for the hand-held tour. */
 .exp-mobile-chooser,.exp-pay-mobile{display:none}
+.exp-expanded .exp-top{position:sticky;top:0;z-index:3;background:#f6f3e8;border-bottom:1px solid #cbd3c6}
 @media(max-width:800px){
  .experience .exp-chapters{display:none}
  .exp-mobile-chooser{display:grid;gap:10px;padding:20px;background:#eeeee3;border-bottom:1px solid #cbd3c6;min-width:0;font-size:1rem;font-weight:700}
@@ -849,7 +850,7 @@ html.large-text .feature-difference dt,html.large-text .feature-story .feature-p
  .experience .exp-label{font-size:.875rem}
  .experience .exp-story>p:last-child{font-size:1rem;line-height:1.75}
  .experience button,.experience select{min-height:48px;min-width:48px;font-size:1rem}
- .experience .exp-days{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+ .experience .exp-days{display:grid;grid-template-columns:repeat(auto-fit,minmax(48px,1fr));gap:8px}
  .experience .exp-panel-title{align-items:flex-start;flex-wrap:wrap}
  .experience .exp-panel p,.experience .exp-phone-card p,.experience .exp-paper p,.experience .exp-split aside p{font-size:1rem;line-height:1.75}
  .experience .exp-person b,.experience .exp-row{font-size:1rem}
