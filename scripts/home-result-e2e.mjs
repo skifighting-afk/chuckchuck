@@ -24,6 +24,30 @@ export async function homeResultE2E({browser,step}){
    const start=page.locator('#hero .cta-row .btn').first();assert((await start.boundingBox()).y+(await start.boundingBox()).height<760,'start action visible with large text');
    await page.screenshot({path:'ci-logs/home-result-mobile-large.png',fullPage:false});assert.deepEqual(errors,[],'homepage scripts load without errors');
   });
+  await step('요금 비교 · 직원 수별 총액 · 모바일과 큰 글씨',async()=>{
+   let normalSizes;
+   for(const large of [false,true]){
+    await page.goto(url,{waitUntil:'networkidle'});
+    if(!large&&await page.locator('html').evaluate(el=>el.classList.contains('large-text')))await page.locator('#pref-text').click();
+    if(large&&!await page.locator('html').evaluate(el=>el.classList.contains('large-text')))await page.locator('#pref-text').click();
+    const pricing=page.locator('#pricing');
+    await page.setViewportSize({width:320,height:900});
+    const sizes=await pricing.locator('.price-examples td,.price-conditions,.plan-contract,.pricing-help').evaluateAll(els=>els.map(el=>parseFloat(getComputedStyle(el).fontSize)));
+    if(!large)normalSizes=sizes;else assert(sizes.every((n,i)=>n>normalSizes[i]),'large setting actually enlarges amounts, contract fees, conditions and help');
+    for(const width of [320,390,768,1440]){
+     await page.setViewportSize({width,height:900});
+     assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'pricing page overflow '+width+' large='+large);
+     for(const cell of await pricing.locator('.price-examples th,.price-examples td').all())assert(await cell.evaluate(el=>el.scrollWidth<=el.clientWidth+1),'price value clipped '+width+' large='+large);
+     const actions=pricing.locator('.plan-start');assert.equal(await actions.count(),2);
+     for(const action of await actions.all()){assert((await action.boundingBox()).height>=48);assert.equal(await action.innerText(),'30일 무료로 시작하기')}
+     const plans=await pricing.locator('.plan').all(),widths=await Promise.all(plans.map(p=>p.evaluate(el=>el.getBoundingClientRect().width)));
+     assert(Math.abs(widths[0]-widths[1])<1,'plan widths match '+width);
+    }
+    assert.match(await pricing.locator('.price-examples').innerText(),/8,700/);assert.match(await pricing.locator('.price-examples').innerText(),/11,700/);
+   }
+   await page.setViewportSize({width:390,height:844});await page.locator('.price-examples').scrollIntoViewIfNeeded();
+   await page.screenshot({path:'ci-logs/home-price-comparison-mobile.png'});
+  });
   await step('움직임 줄이기에서도 기록 흐름을 직접 확인',async()=>{
    const reduced=await browser.newContext({reducedMotion:'reduce',viewport:{width:390,height:844}});
    try{const p=await reduced.newPage();await p.goto(url,{waitUntil:'networkidle'});const flow=p.locator('#hero-record-flow'),play=flow.locator('#hero-flow-play');assert(await play.isDisabled());assert.equal(await play.getAttribute('aria-pressed'),'false');await flow.locator('[data-record-step="1"]').click();assert.equal(await flow.locator('[data-record-step="1"]').getAttribute('aria-pressed'),'true')}finally{await reduced.close()}

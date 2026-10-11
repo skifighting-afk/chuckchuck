@@ -65,7 +65,7 @@ export const WORRIES: {tag: string; q: string; a: string; link?: [string, string
 export const NOT_DOING = ['급여 이체(송금)', '세금 신고', 'GPS 위치 확인', '매출·재고 관리'];
 
 export function worriesHtml(app: string) {
-  return WORRIES.map((w, i) => `<details class="worry"${i === 0 ? ' open' : ''}><summary><span class="tag">${w.tag}</span><span class="q">${esc(w.q)}</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary><p>${esc(w.a)}${w.link ? ` <a href="${app}${w.link[0]}">${w.link[1]}</a>` : ''}</p></details>`).join('');
+  return WORRIES.map((w, i) => `<details class="worry"${i === 0 ? ' open' : ''}><summary><span class="q">${esc(w.q)}</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary><p>${esc(w.a)}${w.link ? ` <a href="${esc(app+w.link[0])}">${esc(w.link[1])}</a>` : ''}</p></details>`).join('');
 }
 
 export function footerHtml() {
@@ -75,8 +75,14 @@ export function footerHtml() {
 export function planCardsHtml(app: string) {
   return (['basic', 'pro'] as PlanId[]).map(id => {
     const p = plans[id];
-    return `<article class="plan${id === 'pro' ? ' pro' : ''}"><div class="plan-head"><b>${p.name}</b>${id === 'pro' ? '<span class="flag">매장 QR 출퇴근</span>' : ''}</div><p class="plan-purpose">${id === 'basic' ? '근무표부터 급여·서류까지 한곳에서' : '직원이 매장에서 직접 찍는 출퇴근까지'}</p><p class="plan-from"><span>직원 1명당 월</span><b>${money(employeeMonthlyPrice(id, 1))}<small>원</small></b><span>부가세 포함</span></p><ul>${PLAN_FEATURES[id].map(f => `<li>${esc(f)}</li>`).join('')}</ul><a class="btn plan-start" href="${esc(app)}/signup?role=owner&amp;plan=${id}">${p.name} ${TRIAL_DAYS}일 무료로 시작</a></article>`;
+    const features=PLAN_FEATURES[id].filter(f=>!f.startsWith('전자근로계약서'));
+    return `<article class="plan${id === 'pro' ? ' pro' : ''}"><div class="plan-head"><h3>${p.name}</h3>${id === 'pro' ? '<span class="flag">매장 QR 출퇴근</span>' : ''}</div><p class="plan-purpose">${id === 'basic' ? '근무표부터 급여·서류까지 한곳에서' : '직원이 매장에서 직접 찍는 출퇴근까지'}</p><p class="plan-from"><span>직원 1명당 월</span><b>${money(employeeMonthlyPrice(id, 1))}<small>원</small></b><span>부가세 포함</span></p><p class="plan-attendance"><b>${id === 'basic' ? '앱 버튼으로 출퇴근' : '매장 QR로 출퇴근'}</b><span>${id === 'basic' ? '직원이 버튼을 눌러 기록해요.' : '직원이 매장의 QR을 직접 찍어요.'}</span></p><ul>${features.map(f => `<li>${esc(f)}</li>`).join('')}</ul><p class="plan-contract">전자근로계약서 <span>${esc(contractFeeText())}</span></p><a class="btn plan-start" data-cta="pricing-${id}" aria-label="${p.name} ${TRIAL_DAYS}일 무료로 시작하기" href="${esc(app)}/signup?role=owner&amp;plan=${id}">${TRIAL_DAYS}일 무료로 시작하기</a></article>`;
   }).join('');
+}
+
+export function priceExamplesHtml() {
+  const rows=[1,3,5,10].map(count=>`<tr><th scope="row">직원 ${count}명</th>${(['basic','pro'] as PlanId[]).map(id=>`<td>${money(employeeMonthlyPrice(id,count))}<span>원</span></td>`).join('')}</tr>`).join('');
+  return `<table class="price-examples"><caption>우리 가게 월 요금 미리 보기 <span>재직 직원 기준 · 부가세 포함</span></caption><thead><tr><th scope="col">직원 수</th><th scope="col">베이직</th><th scope="col">프로</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
 export function jsonLd(site: string, appOrigin = 'https://chukchukapp.kr') {

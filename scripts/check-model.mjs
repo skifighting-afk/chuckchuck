@@ -5,6 +5,7 @@ await import('./check-document-overview.mjs');
 await import('./check-client-assets.mjs');
 await import('./check-fetch-client-assets.mjs');
 await import('./check-home-result.mjs');
+await import('./check-home-pricing.mjs');
 await import('./check-home-not-found.mjs');
 await import('./check-payroll-display.mjs');
 assert.equal(duration('22:00','06:00',60),7);

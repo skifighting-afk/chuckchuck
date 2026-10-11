@@ -709,3 +709,27 @@ html.reduce .hero-record-steps>button{transition:none}
 main :is(h1,h2,h3,button,.btn,summary){word-break:keep-all;overflow-wrap:anywhere}
 .hero-price-note,.plan-from{word-break:keep-all;font-variant-numeric:tabular-nums}
 @media(max-width:600px){.hero h1,html.anim .hero h1{font-size:clamp(1.875rem,8.4vw,2.75rem)}.record-intro h2,.experience-heading h2,.feature-stories-heading h2,.pricing .sec-head h2,.worries h2,.finale h2{font-size:clamp(1.75rem,7.8vw,2.25rem)}}
+
+/* Prices stay comparable, including the extra contract cost. */
+.plan-head h3{font-size:1.75rem;line-height:1.3;letter-spacing:-.04em;margin:0}
+.plan-attendance{display:grid;gap:6px;margin:0 0 22px;line-height:1.65;font-size:1rem}
+.plan-attendance span{font-size:.875rem;color:var(--muted)}
+.plan-contract{font-size:.875rem;line-height:1.65;margin:0 0 24px;padding-top:20px;border-top:1px solid var(--line)}
+.plan-contract span{display:block;font-weight:650;color:var(--ink)}
+.plan ul{flex:1}
+.price-examples-wrap{margin-top:32px;border:1px solid var(--line);border-radius:18px;background:var(--white);overflow:hidden}
+.price-examples{width:100%;border-collapse:collapse;font-size:1rem;font-variant-numeric:tabular-nums;table-layout:fixed}
+.price-examples caption{text-align:left;padding:24px 28px;font-weight:750;font-size:1.125rem;line-height:1.6}
+.price-examples caption span{display:block;font-size:.875rem;font-weight:400;color:var(--muted);margin-top:4px}
+.price-examples th,.price-examples td{padding:16px 28px;border-top:1px solid var(--line);text-align:right;line-height:1.5;white-space:nowrap}
+.price-examples th:first-child{text-align:left}.price-examples thead th{background:#edf1e7;font-size:.875rem}.price-examples tbody th{font-weight:500}
+.price-examples td{font-weight:750}.price-examples td span{font-weight:400;font-size:.875em;margin-left:3px}
+.price-conditions{margin:18px 0 0;font-size:.875rem;line-height:1.65;color:var(--muted)}
+.price-conditions p{margin:8px 0;max-inline-size:var(--copy-width);word-break:keep-all;overflow-wrap:anywhere}
+.pricing-help{display:flex;align-items:center;flex-wrap:wrap;gap:8px 16px;margin:24px 0 0;font-size:.875rem;line-height:1.65}
+.pricing-help a{display:inline-flex;align-items:center;min-height:48px;font-weight:700;text-underline-offset:4px}
+.worry summary{grid-template-columns:minmax(0,1fr) auto}.worry>p{margin-left:0;padding:0 0 24px}
+@media(max-width:550px){.price-examples caption{padding:20px 16px}.price-examples th,.price-examples td{padding:14px 10px;font-size:.875rem}.price-examples th:first-child{width:29%}.plan-attendance{margin-bottom:18px}.plan-contract{margin-bottom:22px}.price-examples td span{display:block;margin:0;font-size:.8125rem}}
+html.large-text .price-examples,html.large-text .plan-attendance{font-size:var(--fs)}
+html.large-text .price-examples caption{font-size:1.375rem}
+html.large-text .price-examples th,html.large-text .price-examples td,html.large-text .price-examples caption span,html.large-text .plan-contract,html.large-text .price-conditions,html.large-text .pricing-help,html.large-text .plan-attendance span{font-size:1.125rem}
