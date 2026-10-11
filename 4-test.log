@@ -4,14 +4,6 @@
 
 PASS: overnight duration, breaks, Korean month boundaries and wage validation.
 
-── check-home-seo
-(node:2683) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
-(Use `node --trace-warnings ...` to show where the warning was created)
-PASS: homepage search/social metadata, visible FAQ/prices, canonical domains and private app indexing boundary
-
-── check-app-recovery
-PASS: normal workspace remains intact; lazy-load failure has accessible recovery without raw errors.
-
 ── check-hr-core
 PASS 1 anonymous HR access is denied
 PASS 2 owner enters HR
@@ -2464,48 +2456,52 @@ PASS: 메일 없이 비밀번호 찾기.
 97. PASS staff reminder: none before +10m / after end / on leave
 98. PASS staff reminder: 8pm tomorrow preview + ack nudge
 99. PASS staff reminder: owner can turn off
-100. PASS owner saves extra fields
-101. PASS extra kept
-102. PASS branch info kept
-103. PASS repeats kept
-104. PASS settings.more kept
-105. PASS staff does not see owner memo/tags/reviews
-106. PASS staff sees praise
-107. PASS staff sees wifi
-108. PASS staff sees today note only
-109. PASS staff sees events
-110. PASS setPref bad value blocked
-111. PASS setPref ok
-112. PASS pref saved, memo intact
-113. PASS dayOffWish past blocked
-114. PASS dayOffWish ok
-115. PASS owner sees wish
-116. PASS second tap removes wish
-117. PASS staff cannot memo
-118. PASS autoClose future blocked
-119. PASS autoClose ok
-120. PASS closed with flag
-121. PASS attMemo ok
-122. PASS memo saved
-123. PASS staff record hides memo
-124. PASS post notice with poll+pdf
-125. PASS staff sees poll + file
-126. PASS vote
-127. PASS bad vote
-128. PASS react
-129. PASS bad emoji
-130. PASS comment
-131. PASS owner sees counts
-132. PASS owner can delete comment
-133. PASS bad pdf rejected
-134. PASS save manual needPhoto
-135. PASS photo required
-136. PASS check with photo
-137. PASS left steps handed over
-138. PASS client error needs origin
-139. PASS scrubbed + deduped
-140. PASS non-HQ cannot read
-141. PASS B101 2h before alert with clock link
+100. PASS tutorials: from points to real quests, every item runnable
+101. PASS tutorials: owner pages exist
+102. PASS tutorials: search ignores spaces
+103. PASS setup: new account needs setup, done flag/old data skip
+104. PASS owner saves extra fields
+105. PASS extra kept
+106. PASS branch info kept
+107. PASS repeats kept
+108. PASS settings.more kept
+109. PASS staff does not see owner memo/tags/reviews
+110. PASS staff sees praise
+111. PASS staff sees wifi
+112. PASS staff sees today note only
+113. PASS staff sees events
+114. PASS setPref bad value blocked
+115. PASS setPref ok
+116. PASS pref saved, memo intact
+117. PASS dayOffWish past blocked
+118. PASS dayOffWish ok
+119. PASS owner sees wish
+120. PASS second tap removes wish
+121. PASS staff cannot memo
+122. PASS autoClose future blocked
+123. PASS autoClose ok
+124. PASS closed with flag
+125. PASS attMemo ok
+126. PASS memo saved
+127. PASS staff record hides memo
+128. PASS post notice with poll+pdf
+129. PASS staff sees poll + file
+130. PASS vote
+131. PASS bad vote
+132. PASS react
+133. PASS bad emoji
+134. PASS comment
+135. PASS owner sees counts
+136. PASS owner can delete comment
+137. PASS bad pdf rejected
+138. PASS save manual needPhoto
+139. PASS photo required
+140. PASS check with photo
+141. PASS left steps handed over
+142. PASS client error needs origin
+143. PASS scrubbed + deduped
+144. PASS non-HQ cannot read
+145. PASS B101 2h before alert with clock link
 
 ── check-secrets
 1. PASS 비밀값 검사 완료
@@ -2571,4 +2567,4 @@ PASS: 메일 없이 비밀번호 찾기.
 > chuckchuck@0.1.0 check:function
 > node scripts/check-supabase-function.mjs
 
-PASS: Supabase 함수 — CORS·출처 차단, 가입·로그인·로그아웃, 신원 헤더 위조 차단, 매장 등록, 비밀번호 재설정, 직원 역할, 본사 권한.
+PASS: Supabase 함수 — CORS·출처 차단, 가입·로그인·로그아웃, 신원 헤더 위조 차단, 매장 등록, 비밀번호 재설정, 직원 역할, 본사 권한, 동시 요청·유휴 연결 반환·재연결.
