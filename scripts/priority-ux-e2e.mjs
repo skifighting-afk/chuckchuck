@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {mkdir} from 'node:fs/promises';
+import {mkdir,readFile} from 'node:fs/promises';
 export async function priorityUxE2E({owner,srv,step,browser}){
  const ctx=await browser.newContext({storageState:await owner.context().storageState(),serviceWorkers:'block',viewport:{width:1440,height:900}}),page=await ctx.newPage();
  try{
@@ -14,7 +14,17 @@ export async function priorityUxE2E({owner,srv,step,browser}){
     await page.setViewportSize({width,height:900});
     assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'payroll overflow '+width);
    }
-   await page.setViewportSize({width:390,height:844});await mkdir('ci-logs',{recursive:true});await page.screenshot({path:'ci-logs/priority-payroll-mobile.png',fullPage:true});
+   await page.setViewportSize({width:390,height:844});
+   await page.evaluate(()=>document.fonts.ready);assert(await page.evaluate(()=>Array.from(document.fonts).some(f=>f.family.includes('ChukAppSans')&&f.status==='loaded')),'Korean font loaded');
+   assert.equal((await page.request.get(srv.ORIGIN+'/fonts/pretendard.woff2')).status(),200);
+   const overview=page.getByRole('region',{name:'직원별 급여',exact:true}),exports=page.locator('.payroll-exports');
+   assert(await overview.locator('tbody tr').first().evaluate(el=>el.getBoundingClientRect().top<innerHeight-96),'payroll summary leaves first employee visible on mobile');
+   assert(await exports.evaluate(el=>!el.open),'export tools start collapsed');
+   assert(await page.evaluate(()=>document.querySelector('.payroll-overview').compareDocumentPosition(document.querySelector('.payroll-exports'))&Node.DOCUMENT_POSITION_FOLLOWING),'employee amounts before export tools');
+   await exports.getByText('급여 자료 내려받기',{exact:true}).click();await exports.getByRole('button',{name:'세무사 자료',exact:true}).waitFor();
+   const [download]=await Promise.all([page.waitForEvent('download'),exports.getByRole('button',{name:'세무사 자료',exact:true}).click()]);
+   const csv=await readFile(await download.path(),'utf8');assert(csv.startsWith('\uFEFF"성명","직원번호"'),'accountant CSV still downloads');assert(!csv.includes('</table>'),'CSV contains data, not source markup');
+   await exports.getByText('급여 자료 내려받기',{exact:true}).click();await mkdir('ci-logs',{recursive:true});await page.screenshot({path:'ci-logs/priority-payroll-mobile.png',fullPage:true});
   });
   await step('새 화면 연결 실패 · 복구 안내 · 재시도 성공',async()=>{
    const failed=await ctx.newPage();
