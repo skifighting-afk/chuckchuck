@@ -6,10 +6,11 @@ import {normalizeJoinCode} from '../lib/join-code';
 import {trackPageView} from './meta-pixel';
 import {installUxHelpers} from './ux-helpers';
 import {installNativeShell,isNativeApp} from './native';
+import {AppRecovery} from './app-recovery';
 installUxHelpers();installNativeShell();
 
 // GitHub Pages는 서버 리디렉션이 없어서, 가게 합류 링크(/j/코드)는 화면에서 옮긴다.
 if(location.pathname.startsWith('/j/')){
  const code=normalizeJoinCode(decodeURIComponent(location.pathname.slice(3)));
  location.replace(code?'/employee?code='+encodeURIComponent(code):'/employee');
-}else{if(!isNativeApp())trackPageView();createRoot(document.getElementById('root')!).render(<Suspense fallback={<div className="t-loading" role="status"><p>불러오는 중…</p><div className="t-skel" aria-hidden="true"><i/><i/><i/><i/></div></div>}><Platform/></Suspense>)}
+}else{if(!isNativeApp())trackPageView();createRoot(document.getElementById('root')!).render(<AppRecovery><Suspense fallback={<div className="t-loading" role="status"><p>불러오는 중…</p><div className="t-skel" aria-hidden="true"><i/><i/><i/><i/></div></div>}><Platform/></Suspense></AppRecovery>)}

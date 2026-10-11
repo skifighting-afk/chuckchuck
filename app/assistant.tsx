@@ -2,6 +2,7 @@
 // 척척 비서(오른쪽 패널): 지금 화면에서 볼 것 + 가게 기록 분석 + 말로 시키기(확인 카드 → 실행).
 // 대화형 AI를 부르지 않고 lib/assistant.ts 규칙으로 읽고 답한다.
 import {useEffect,useMemo,useRef,useState} from 'react';
+import {createPortal} from 'react-dom';
 import {type Team,today} from '../lib/team-model';
 import {assistantBrief,reply,KB,type Action,type Reply,type Memo} from '../lib/assistant';
 import {type Target} from '../lib/close-check';
@@ -18,12 +19,15 @@ const PAGE_CHIPS:Record<string,string[]>={'근무 스케줄':['이번 주 15시�
 const PAGE_OF:Record<Target,string>={attendance:'출퇴근 기록',employees:'직원 관리',operations:'휴가·공지',contracts:'근로계약서',payroll:'급여·명세서',schedule:'근무 스케줄',reports:'인건비 리포트'};
 
 export function AssistantDock({state,branch,page,run}:{state:Team,branch:string,page:string,run:(a:Action)=>Promise<RunResult>}){
+ const [launcher,setLauncher]=useState<HTMLElement|null>(null);
+ const triggerRef=useRef<HTMLButtonElement>(null),dockRef=useRef<HTMLElement>(null);
+ useEffect(()=>{setLauncher(document.getElementById('owner-assistant-launcher'))},[]);
  const [open,setOpen]=useState(false),[list,setList]=useState(false),[q,setQ]=useState(''),[msgs,setMsgs]=useState<Msg[]>(loadLog),[busy,setBusy]=useState(-1),faq=useRef<{q:string,a:string}[]>([]),log=useRef<HTMLDivElement>(null),seq=useRef(1),memo=useRef<Memo>({});
  const brief=useMemo(()=>assistantBrief(state,branch,page,today()).slice(0,4),[state,branch,page]);
  const urgent=brief.filter(b=>b.tone==='red'||b.tone==='amber').length;
  useEffect(()=>{try{sessionStorage.setItem(KEY,JSON.stringify(msgs.slice(-40).map(m=>({from:m.from,lines:m.lines}))))}catch{}},[msgs]);
  useEffect(()=>{log.current?.scrollTo({top:log.current.scrollHeight,behavior:'smooth'})},[msgs]);
- useEffect(()=>{if(!open)return;const k=(e:KeyboardEvent)=>{if(e.key==='Escape')setOpen(false)};addEventListener('keydown',k);return()=>removeEventListener('keydown',k)},[open]);
+ useEffect(()=>{if(!open)return;dockRef.current?.querySelector<HTMLInputElement>('#ast-q')?.focus();const k=(e:KeyboardEvent)=>{if(e.key==='Escape'){e.preventDefault();setOpen(false)}if(e.key==='Tab'){const els=Array.from(dockRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled),a[href],input:not(:disabled),select:not(:disabled),textarea:not(:disabled),[tabindex="0"]')||[]).filter(el=>el.getClientRects().length);const first=els[0],last=els.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus()}}};addEventListener('keydown',k);return()=>{removeEventListener('keydown',k);triggerRef.current?.focus()}},[open]);
  const ask=async(text:string)=>{const raw=text.trim();if(!raw)return;setQ('');const t=expandSlash(raw);
   if(!faq.current.length){try{const {FAQ}=await import('../lib/faq');faq.current=FAQ.flatMap(g=>g.items)}catch{}}
   const nd=t.match(/^(?:공지|공지사항)\s*[:：]\s*(.{2,})$/)||t.match(/^(.{2,}?)\s*(?:라고|이라고)?\s*공지\s*(?:해|써|올려|남겨)/);if(nd){try{sessionStorage.setItem('cc-notice-draft',nd[1].trim().slice(0,3000))}catch{}setMsgs(m=>[...m,{id:seq.current++,from:'me',lines:[raw]},{id:seq.current++,from:'bot',lines:['공지 초안을 만들었어요. 휴가·공지 화면의 새 공지 칸에 넣어 둘게요. 제목과 받는 사람을 확인하고 올려 주세요.',`내용: ${nd[1].trim().slice(0,200)}`],actions:[{type:'go',target:'operations',label:'공지 쓰러 가기'} as any],done:{}}]);return}
@@ -34,10 +38,11 @@ export function AssistantDock({state,branch,page,run}:{state:Team,branch:string,
  };
  const act=async(m:Msg,i:number)=>{const a=m.actions![i];setBusy(m.id*100+i);try{const res=await run(a),text=typeof res==='string'?res:res.text,undo=typeof res==='string'?null:res.undo;setMsgs(list=>list.map(x=>x.id===m.id?{...x,done:{...x.done,[i]:text||'했어요.'},undo:{...x.undo,[i]:undo}}:x))}finally{setBusy(-1)}};
  const revert=async(m:Msg,i:number)=>{const u=m.undo?.[i];if(!u)return;setBusy(m.id*100+i);try{const t=await u();setMsgs(list=>list.map(x=>x.id===m.id?{...x,done:{...x.done,[i]:t},undo:{...x.undo,[i]:null}}:x))}finally{setBusy(-1)}};
+ const trigger=<button ref={triggerRef} type="button" className="ast-fab" aria-expanded={open} aria-controls="ast-dock" onClick={()=>setOpen(true)}><img src="/cheokcheoki-guide.png" alt="" width="36" height="36" onError={e=>{if(e.currentTarget.src.endsWith('/favicon.svg'))e.currentTarget.hidden=true;else e.currentTarget.src='/favicon.svg'}}/><span>척척 비서</span>{urgent>0&&<b aria-label={`확인할 것 ${urgent}건`}>{urgent}</b>}</button>;
  return <>
-  <button type="button" className="ast-fab" aria-expanded={open} aria-controls="ast-dock" onClick={()=>setOpen(true)}><img src="/cheokcheoki-guide.png" alt="" width="36" height="36"/><span>척척 비서</span>{urgent>0&&<b aria-label={`확인할 것 ${urgent}건`}>{urgent}</b>}</button>
-  <aside id="ast-dock" className={'ast-dock'+(open?' open':'')} aria-label="척척 비서">
-   <header className="ast-head"><img src="/cheokcheoki-guide.png" alt="" width="44" height="44"/><div><b>척척 비서</b><small>가게 기록을 읽고 판단해 드려요</small></div>{msgs.length>0&&<button type="button" className="ast-close" onClick={()=>{if(confirm('비서 대화를 지울까요?')){setMsgs([]);try{sessionStorage.removeItem(KEY)}catch{}}}}>대화 지우기</button>}<button type="button" className="ast-close" aria-label="비서 숨기기" onClick={()=>setOpen(false)}>숨기기</button></header>
+  {launcher?createPortal(trigger,launcher):trigger}
+  <aside ref={dockRef} role="dialog" aria-modal={open?true:undefined} id="ast-dock" className={'ast-dock'+(open?' open':'')} aria-label="척척 비서">
+   <header className="ast-head"><img src="/cheokcheoki-guide.png" alt="" width="44" height="44" onError={e=>{if(e.currentTarget.src.endsWith('/favicon.svg'))e.currentTarget.hidden=true;else e.currentTarget.src='/favicon.svg'}}/><div><b>척척 비서</b><small>가게 기록을 읽고 판단해 드려요</small></div>{msgs.length>0&&<button type="button" className="ast-close" onClick={()=>{if(confirm('비서 대화를 지울까요?')){setMsgs([]);try{sessionStorage.removeItem(KEY)}catch{}}}}>대화 지우기</button>}<button type="button" className="ast-close" aria-label="비서 숨기기" onClick={()=>setOpen(false)}>숨기기</button></header>
    <div className="ast-log" ref={log} aria-live="polite">
     <div className="ast-msg bot"><p className="ast-title">{page==='홈'?'오늘 가게':page} · 지금 볼 것</p><ul className="ast-brief">{brief.map((b,i)=><li key={i} className={b.tone||''}>{b.text}{b.target&&PAGE_OF[b.target]!==page&&<button type="button" onClick={()=>{run({type:'go',target:b.target!,label:''});setOpen(false)}}>{PAGE_OF[b.target]} 열기</button>}</li>)}</ul></div>
     {msgs.map(m=><div key={m.id} className={'ast-msg '+m.from+(m.tone?' '+m.tone:'')}>{m.lines.map((l,i)=><p key={i}>{l}</p>)}{m.from==='bot'&&<div className="ast-tools"><button type="button" className="link-btn ast-copy" onClick={()=>{void navigator.clipboard?.writeText(m.lines.join('\n'))}}>복사</button><a className="link-btn ast-copy" href={'/support?category='+encodeURIComponent('오류·문제')+'&body='+encodeURIComponent('척척 비서 답이 이상해요.\n\n물어본 것: '+(msgs[msgs.indexOf(m)-1]?.lines?.[0]||'')+'\n받은 답: '+m.lines.join(' / ').slice(0,600)+'\n\n어디가 틀렸는지: ')}>답이 이상해요</a></div>}{m.actions&&m.actions.length>0&&<div className="ast-acts">{m.actions.map((a,i)=>m.done?.[i]?<span key={i} className="ast-done" role="status">✓ {m.done[i]}{m.undo?.[i]&&<button type="button" className="ast-undo" disabled={busy>=0} onClick={()=>revert(m,i)}>되돌리기</button>}</span>:<button type="button" key={i} disabled={busy>=0} className={i===0?'primary':''} onClick={()=>act(m,i)}>{busy===m.id*100+i?'하는 중…':a.label}</button>)}</div>}</div>)}
