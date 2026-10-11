@@ -7,7 +7,7 @@ PASS public-help · 이전과 0% 다름
 PASS public-refund · 이전과 0% 다름
 PASS public-terms · 이전과 0% 다름
 PASS public-pricing · 이전과 0% 다름
-PASS public-status · 이전과 0.05% 다름
+PASS public-status · 이전과 0.1% 다름
 PASS public-privacy · 이전과 0% 다름
 PASS public-policy · 이전과 0% 다름
 PASS public-news · 이전과 0% 다름
@@ -23,7 +23,7 @@ PASS demo-retirement · 이전과 0% 다름
 PASS demo-outbox · 이전과 0% 다름
 PASS demo-operations · 이전과 0% 다름
 PASS demo-manual · 이전과 0% 다름
-PASS demo-reports · 이전과 20.83% 다름
+PASS demo-reports · 이전과 0% 다름
 PASS demo-stores · 이전과 0% 다름
 PASS demo-settings · 이전과 0% 다름
 PASS demo-guide · 이전과 0% 다름
@@ -112,5 +112,4 @@ PASS hr-settings-manager (큰 글씨)
 PASS hr-export-owner (큰 글씨)
 PASS hr-export-employee (큰 글씨)
 PASS hr-export-manager (큰 글씨)
-이전 실행과 2% 넘게 달라진 화면: demo-reports 20.83%
 390px 화면 57개(보통·큰 글씨): 가로 넘침 없음
