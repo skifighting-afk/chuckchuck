@@ -8,52 +8,49 @@
 
 [33m[INEFFECTIVE_DYNAMIC_IMPORT] [0mapp/att-device.ts is dynamically imported by app/schedule-extras.tsx but also statically imported by app/team.tsx, dynamic import will not move module into another chunk.
 
-화면 묶음: app.js 414KB, 필요할 때 받는 조각 32개 1429KB
-  team-oY-veuJu.js 836KB
-  team-model-CpdL6ihg.js 139KB
-  attendance-scan-DBDdtDUN.js 133KB
-  workspace-CXujXcNS.js 87KB
-  legal-page-BnD2Ayd3.js 38KB
-  capacity-dialog-BSuSBHI7.js 33KB
-  admin-desk-fsyhpeX0.js 28KB
-  staff-join-CV4vlfeD.js 20KB
+화면 묶음: app.js 413KB, 필요할 때 받는 조각 31개 1428KB
+  team-DpqoNzdF.js 836KB
+  team-model-C8836FEt.js 139KB
+  attendance-scan-BXFw-EHR.js 133KB
+  workspace-BygQOCch.js 87KB
+  legal-page-BisBiqDI.js 38KB
+  capacity-dialog-DKfGdK3m.js 33KB
+  admin-desk-I-gu7S-O.js 27KB
+  staff-join-CxTbxyrs.js 20KB
 척척사장 화면·서버 함수 빌드 완료
-PASS 1. 사장님 가입 (약관 동의) (1552ms)
-PASS 2. 가게 만들기 (요금 고르기·처리위탁 동의·30일 체험) (2678ms)
-PASS 3. 가입용 근로조건 정하고 가입 링크 만들기 (1104ms)
-PASS 4. 직원이 링크로 가입하고 합류 신청 (휴대폰) (1816ms)
-PASS 5. 사장님이 합류 신청 수락 → 직원 화면 열림 (1025ms)
-PASS 6. 작업 048: 근무표 반복 등록 → 템플릿 저장 → 다음 주에 붙이기 (3083ms)
-PASS 7. 작업 050: 직원이 근무 가능 시간 제출 → 사장님 초안 화면에서 확인 (3474ms)
-PASS 8. 작업 096: 사장님 홈에 오늘 할 일 (2116ms)
-PASS 9. 가이드 52: 계산기 결과를 이미지로 저장 (664ms)
-PASS 10. 가이드 97: 문의하기 (957ms)
-PASS 11. 작업 100: 도움말 검색 (606ms)
-PASS 12. 매장 매뉴얼: 사장님이 사진과 함께 작성 → 직원이 바로 확인 (3264ms)
-PASS 13. 매장 QR로 출근·퇴근 (QR 없이 누르면 기록 안 됨) (4002ms)
-PASS 14. 직원 출퇴근 정정 요청 (191ms)
-PASS 15. 사장님 정정 승인 → 이력 기록 (1008ms)
-PASS 16. 작업 052: 안드로이드 휴대폰에서 매장 QR 사진으로 출근·퇴근 (4080ms)
-PASS 17. 급여 확정 (지급일·확인 체크) (1970ms)
-PASS 18. 명세서 보내기 → 직원이 열어 봄 (확인 기록) (2128ms)
-PASS 19. 근로계약서: 사장님 서명 → 직원 서명 → 사본 (3350ms)
-PASS 20. 작업 044: 30초마다 바뀌는 QR 화면 (2834ms)
-PASS 21. 작업 051: 어제 퇴근 누락 → 직원 화면 안내 → 정정 요청 (1041ms)
-PASS 22. 작업 054: 직원 여러 명 붙여넣기 등록 (1317ms)
-PASS 23. 가져오기 동명이인·이름 빈 줄 → 원본 확인·직접 연결·명시적 제외 (2272ms)
-PASS 24. 가져오기 직접 연결·제외 초기화 → 재확인 전 저장 차단 (124ms)
-PASS 25. 직원당 공개 요금 0·1·5명 · 320/390/768/1440 화면 (1018ms)
-PASS 26. 서버 과금 인원 · 기존 유료 전환 동의 · 견적 연결 실패 재시도 (839ms)
-PASS 27. 0원 이용 시작 · 공급자 창 없음 · 새로고침 후 기록 유지 (1508ms)
-PASS 28. HR01 채용 결정 → 입사 준비 직원 연결 → 재조회 (3138ms)
-PASS 29. HR03 선배 교육 요청 → 직원 확인 → 재조회 (2946ms)
-PASS 30. HR04 담당자 숙련 확인 → 직원 재확인 요청 (2922ms)
-PASS 31. HR05 희망 근무량 저장 → HR06 편성 근거·검토 (2867ms)
-PASS 32. HR07 비공개 면담 메모 → 공유 요약·직원 확인 (3005ms)
-PASS 33. HR08 실명 상담 → 409 입력 보존 → 답변 재조회 (3235ms)
-PASS 34. HR09 실명 자발 설문 → 응답·분포 재조회 (3020ms)
-PASS 35. HR10 지급2 → 직원 수령 → 부분 반납1 → 재조회 (3837ms)
-PASS 36. HR 담당자 설정 503 입력 보존 → 복구 → 403 화면 차단 (1243ms)
-PASS 37. HR 비로그인 로그인 안내 → 보호 API 401·캐시 차단 (199ms)
-PASS 38. 다시 로그인 (로그아웃 후) (2657ms)
-E2E 38개 흐름 통과
+PASS 1. 사장님 가입 (약관 동의) (1394ms)
+PASS 2. 가게 만들기 (요금 고르기·처리위탁 동의·30일 체험) (2841ms)
+PASS 3. 가입용 근로조건 정하고 가입 링크 만들기 (1679ms)
+PASS 4. 직원이 링크로 가입하고 합류 신청 (휴대폰) (2005ms)
+PASS 5. 사장님이 합류 신청 수락 → 직원 화면 열림 (1023ms)
+PASS 6. 작업 048: 근무표 반복 등록 → 템플릿 저장 → 다음 주에 붙이기 (3131ms)
+PASS 7. 작업 050: 직원이 근무 가능 시간 제출 → 사장님 초안 화면에서 확인 (3459ms)
+PASS 8. 작업 096: 사장님 홈에 오늘 할 일 (2134ms)
+PASS 9. 가이드 52: 계산기 결과를 이미지로 저장 (667ms)
+PASS 10. 가이드 97: 문의하기 (953ms)
+PASS 11. 작업 100: 도움말 검색 (616ms)
+PASS 12. 매장 매뉴얼: 사장님이 사진과 함께 작성 → 직원이 바로 확인 (3265ms)
+PASS 13. 매장 QR로 출근·퇴근 (QR 없이 누르면 기록 안 됨) (3999ms)
+PASS 14. 직원 출퇴근 정정 요청 (196ms)
+PASS 15. 사장님 정정 승인 → 이력 기록 (1015ms)
+PASS 16. 작업 052: 안드로이드 휴대폰에서 매장 QR 사진으로 출근·퇴근 (3715ms)
+PASS 17. 급여 확정 (지급일·확인 체크) (1935ms)
+PASS 18. 명세서 보내기 → 직원이 열어 봄 (확인 기록) (2121ms)
+PASS 19. 근로계약서: 사장님 서명 → 직원 서명 → 사본 (3855ms)
+PASS 20. 작업 044: 30초마다 바뀌는 QR 화면 (3003ms)
+PASS 21. 작업 051: 어제 퇴근 누락 → 직원 화면 안내 → 정정 요청 (1035ms)
+PASS 22. 작업 054: 직원 여러 명 붙여넣기 등록 (1286ms)
+PASS 23. 가져오기 동명이인·이름 빈 줄 → 원본 확인·직접 연결·명시적 제외 (2210ms)
+PASS 24. 가져오기 직접 연결·제외 초기화 → 재확인 전 저장 차단 (119ms)
+PASS 25. HR01 채용 결정 → 입사 준비 직원 연결 → 재조회 (3104ms)
+PASS 26. HR03 선배 교육 요청 → 직원 확인 → 재조회 (2942ms)
+PASS 27. HR04 담당자 숙련 확인 → 직원 재확인 요청 (2928ms)
+PASS 28. HR05 희망 근무량 저장 → HR06 편성 근거·검토 (2868ms)
+PASS 29. HR07 비공개 면담 메모 → 공유 요약·직원 확인 (2953ms)
+PASS 30. HR08 실명 상담 → 409 입력 보존 → 답변 재조회 (3212ms)
+PASS 31. HR09 실명 자발 설문 → 응답·분포 재조회 (3006ms)
+PASS 32. HR10 지급2 → 직원 수령 → 부분 반납1 → 재조회 (3829ms)
+PASS 33. HR 담당자 설정 503 입력 보존 → 복구 → 403 화면 차단 (1238ms)
+PASS 34. HR 비로그인 로그인 안내 → 보호 API 401·캐시 차단 (185ms)
+PASS 35. 다시 로그인 (로그아웃 후) (2865ms)
+E2E 35개 흐름 통과
