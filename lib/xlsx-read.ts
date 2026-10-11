@@ -26,13 +26,18 @@ export async function unzip(buf:ArrayBuffer,want:(name:string)=>boolean):Promise
 }
 const unxml=(s:string)=>s.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&#(\d+);/g,(_,d)=>String.fromCharCode(Number(d))).replace(/&amp;/g,'&');
 const colIndex=(ref:string)=>{let n=0;for(const c of ref.replace(/\d+$/,''))n=n*26+(c.charCodeAt(0)-64);return n-1};
+/** 배열의 기존 값은 그대로 두고, 원본 파일의 시작 줄 번호를 별도 보존한다. */
+export type SourceRows=string[][]&{sourceLines?:number[]};
+const withSourceLines=(rows:string[][],sourceLines:number[]):SourceRows=>Object.defineProperty(rows,'sourceLines',{value:sourceLines});
 /** 시트 XML + 공유 문자열 → 표 */
-export function sheetRows(sheetXml:string,sharedXml=''):string[][]{
+export function sheetRows(sheetXml:string,sharedXml=''):SourceRows{
  const shared=[...sharedXml.matchAll(/<si>([\s\S]*?)<\/si>/g)].map(m=>[...m[1].matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)].map(t=>unxml(t[1])).join(''));
- const rows:string[][]=[];
- for(const r of sheetXml.matchAll(/<row[^>]*>([\s\S]*?)<\/row>/g)){
+ const rows:string[][]=[],sourceLines:number[]=[];let previousLine=0;
+ for(const r of sheetXml.matchAll(/<row\b([^>]*?)(?:\/>|>([\s\S]*?)<\/row>)/g)){
+  if(r[2]===undefined){previousLine=Number(/\br="(\d+)"/.exec(r[1])?.[1]||previousLine+1);continue}
+  const line=Number(/\br="(\d+)"/.exec(r[1])?.[1]||/\br="[A-Z]+(\d+)"/.exec(r[2])?.[1]||previousLine+1);previousLine=line;
   const row:string[]=[];
-  for(const c of r[1].matchAll(/<c ([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)){
+  for(const c of r[2].matchAll(/<c ([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)){
    const attrs=c[1],body=c[2]||'',ref=/r="([A-Z]+\d+)"/.exec(attrs)?.[1],type=/t="(\w+)"/.exec(attrs)?.[1];
    const val=/<v>([\s\S]*?)<\/v>/.exec(body)?.[1];let text='';
    if(type==='s'&&val!==undefined)text=shared[Number(val)]??'';
@@ -40,26 +45,26 @@ export function sheetRows(sheetXml:string,sharedXml=''):string[][]{
    else if(val!==undefined)text=unxml(val);
    const i=ref?colIndex(ref):row.length;while(row.length<i)row.push('');row[i]=text.trim();
   }
-  if(row.some(x=>x))rows.push(row);
+  if(row.some(x=>x)){rows.push(row);sourceLines.push(line)}
  }
- return rows;
+ return withSourceLines(rows,sourceLines);
 }
-export async function readXlsx(buf:ArrayBuffer):Promise<string[][]>{
+export async function readXlsx(buf:ArrayBuffer):Promise<SourceRows>{
  const f=await unzip(buf,n=>n==='xl/sharedStrings.xml'||/^xl\/worksheets\/sheet\d+\.xml$/.test(n)||n==='xl/workbook.xml');
  const sheet=Object.keys(f).filter(n=>n.startsWith('xl/worksheets/')).sort()[0];
  if(!sheet)throw Error('엑셀 파일에서 시트를 찾지 못했어요.');
  return sheetRows(f[sheet],f['xl/sharedStrings.xml']||'');
 }
 /** 따옴표를 지키는 CSV 읽기(쉼표·탭 모두) */
-export function readCsv(text:string):string[][]{
+export function readCsv(text:string):SourceRows{
  text=text.replace(/^﻿/,'');const sep=(text.split('\n')[0].match(/\t/g)||[]).length>(text.split('\n')[0].match(/,/g)||[]).length?'\t':',';
- const rows:string[][]=[];let row:string[]=[],cell='',q=false;
+ const rows:string[][]=[],sourceLines:number[]=[];let row:string[]=[],cell='',q=false,line=1,startLine=1;
  for(let i=0;i<text.length;i++){const c=text[i];
-  if(q){if(c==='"'&&text[i+1]==='"'){cell+='"';i++}else if(c==='"')q=false;else cell+=c;continue}
-  if(c==='"')q=true;else if(c===sep){row.push(cell.trim());cell=''}else if(c==='\n'||c==='\r'){if(c==='\r'&&text[i+1]==='\n')i++;row.push(cell.trim());if(row.some(x=>x))rows.push(row);row=[];cell=''}else cell+=c;
+  if(q){if(c==='\n'||c==='\r'&&text[i+1]!=='\n')line++;if(c==='"'&&text[i+1]==='"'){cell+='"';i++}else if(c==='"')q=false;else cell+=c;continue}
+  if(c==='"')q=true;else if(c===sep){row.push(cell.trim());cell=''}else if(c==='\n'||c==='\r'){if(c==='\r'&&text[i+1]==='\n')i++;row.push(cell.trim());if(row.some(x=>x)){rows.push(row);sourceLines.push(startLine)}row=[];cell='';line++;startLine=line}else cell+=c;
  }
- row.push(cell.trim());if(row.some(x=>x))rows.push(row);
- return rows;
+ row.push(cell.trim());if(row.some(x=>x)){rows.push(row);sourceLines.push(startLine)}
+ return withSourceLines(rows,sourceLines);
 }
 /** 엑셀 일련번호(1900 날짜 체계) → YYYY-MM-DD */
 export const serialDate=(n:number)=>new Date(Date.UTC(1899,11,30)+Math.round(n)*86400000).toISOString().slice(0,10);
