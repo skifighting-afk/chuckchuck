@@ -42,6 +42,19 @@ export function applyPricingPaid(account:any,p:{snapshot:any,orderId:string},now
  return {account:{...rest,...subscription},periodStart:period.start,periodEnd:period.end};
 }
 
+export function activatePendingSubscription(account:any,now=Date.now()){
+ const queue=[...(account?.pendingSubscriptions||[account?.pendingSubscription].filter(Boolean))];
+ if(!queue.length||Date.parse(queue[0].periodStart)>now)return account;
+ let current=account,changed=false;
+ while(queue.length&&Date.parse(queue[0].periodStart)<=now){
+  const {periodEnd,orderId,...subscription}=queue.shift();
+  const {cancelAt,cancelRequestedAt,cancelReason,paymentFailedAt,pendingSubscription,pendingSubscriptions,...rest}=current;
+  current={...rest,...subscription};changed=true;
+ }
+ if(!changed)return account;
+ return queue.length?{...current,pendingSubscription:queue[0],pendingSubscriptions:queue}:current;
+}
+
 export function contractsDue(signedByMonth: Record<string, number>, paidByMonth: Record<string, number>, price: number) {
   return Object.keys(signedByMonth).sort().reverse().map(month => {
     const count = signedByMonth[month] || 0, paid = paidByMonth[month] || 0, due = Math.max(0, count - paid);

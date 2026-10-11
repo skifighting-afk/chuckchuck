@@ -9,6 +9,7 @@ import {isHQ} from './admin-api';
 import {normalizeTeam} from '../lib/team-model';
 import {hydrateAttendance} from './attendance-store';
 import {currentSubscription,nextEmployeeEstimate} from './billing-quotes';
+import {activatePendingStore} from './billing-fulfill';
 import {LEGAL,consentCurrent} from '../lib/legal';
 import {plans,planId,TRIAL_DAYS,trialStatus,planLimits,monthlyPrice,periodPrice,capacityError,branchCount,MAX_BRANCHES,CONTRACTS_FREE_PER_MONTH,CONTRACT_EXTRA_PRICE,trialNotice,validBizNo,graceLeft,EMPLOYEE_PRICING_VERSION} from '../lib/plans';
 type Env={DB:D1Database,HQ_ADMIN_EMAIL?:string,HQ_NATIVE_USER_ID?:string,NTS_API_KEY?:string};
@@ -25,8 +26,9 @@ export async function resolveStore(db:D1Database,userId:string){
   // 지시서 108: 사용자가 고른 가게가 있으면 그 가게부터(들어갈 수 있는 곳일 때만)
   const pref=await db.prepare('SELECT owner FROM user_store_pref WHERE user_id=?').bind(userId).first<any>().catch(()=>null);
   const tryOwner=async(owner:string)=>{
-    const row=await db.prepare('SELECT owner,data,version,updated_at FROM stores WHERE owner=?').bind(owner).first<any>();if(!row)return null;
-    const raw=JSON.parse(row.data);
+    let row=await db.prepare('SELECT owner,data,version,updated_at FROM stores WHERE owner=?').bind(owner).first<any>();if(!row)return null;
+    let raw=JSON.parse(row.data);
+    if(raw._account?.pendingSubscription&&Date.parse(raw._account.pendingSubscription.periodStart)<=Date.now()){row=await activatePendingStore(db,owner)||row;raw=JSON.parse(row.data)}
     if(owner===userId||(raw._coowners||[]).some((c:any)=>c.userId===userId)){row.data=JSON.stringify(await hydrateAttendance(db,owner,raw));return {row,owner,access:'owner' as const,coowner:owner!==userId};}
     const member=raw._members?.find((m:any)=>m.userId===userId);if(!member)return null;
     const data=await hydrateAttendance(db,owner,raw);row.data=JSON.stringify(data);const employee=data.employees?.find((e:any)=>e.id===member.employeeId);
@@ -68,7 +70,7 @@ export async function accountApi(request:Request,env:Env){
   // 이번 달(한국 시간) 체결된(양측 서명 완료) 전자계약서 수 × 건당 요금(결제 연결 전에는 청구 예정액만 안내)
   const monthStart=new Date(Date.parse(new Date(Date.now()+9*3600000).toISOString().slice(0,7)+'-01T00:00:00+09:00')).toISOString();
   const contractsThisMonth=linked?.access==='owner'?Number((await env.DB.prepare("SELECT count(*)::int AS n FROM contract_envelopes WHERE owner_id=? AND status='signed' AND completed_at>=?").bind(id,monthStart).first<any>())?.n||0):0;
-  const view=(d:any)=>({hq:isHQ(request,env),consentRequired,mustChangePassword:!!Number(consentRow?.must_change_password||0),legal:{terms:LEGAL.terms.version,privacy:LEGAL.privacy.version},user:{email,authMethod:id.startsWith('native:')?'email':'chatgpt',role:request.headers.get('oai-authenticated-user-native-role')||'owner',emailVerified:!id.startsWith('native:')||request.headers.get('oai-authenticated-user-email-verified')==='true'},onboarded:!!d,access:linked?.access||'owner',storeName:d?.store?.name||'',industry:d?._account?.industry||null,industryName:industryName(d?._account?.industry),storeClosingAt:d?._account?.deletion?.purgeAt||null,account:linked&&linked.access!=='owner'?null:d?accountView(d._account,contractsThisMonth,{ownerId:linked?.owner||id,data:d}):null,usage:linked&&linked.access!=='owner'?null:d?{employees:d.employees.filter((e:any)=>e.status!=='퇴사').length,branches:d.branches?.length||1,perBranch:d.branches.map((b:any)=>({id:b.id,name:b.name,employees:d.employees.filter((e:any)=>e.branchId===b.id&&e.status!=='퇴사').length}))}:null,billing:{enabled:false,reason:'사업자 정보와 결제 서비스 연결을 준비하고 있어요. 지금은 결제되지 않아요.'}});
+  const view=(d:any)=>({hq:isHQ(request,env),consentRequired,mustChangePassword:!!Number(consentRow?.must_change_password||0),legal:{terms:LEGAL.terms.version,privacy:LEGAL.privacy.version},user:{email,authMethod:id.startsWith('native:')?'email':'chatgpt',role:request.headers.get('oai-authenticated-user-native-role')||'owner',emailVerified:!id.startsWith('native:')||request.headers.get('oai-authenticated-user-email-verified')==='true'},onboarded:!!d,access:linked?.access||'owner',storeName:d?.store?.name||'',industry:d?._account?.industry||null,industryName:industryName(d?._account?.industry),storeClosingAt:d?._account?.deletion?.purgeAt||null,account:linked&&(linked.access!=='owner'||linked.coowner)?null:d?accountView(d._account,contractsThisMonth,{ownerId:linked?.owner||id,data:d}):null,usage:linked&&linked.access!=='owner'?null:d?{employees:d.employees.filter((e:any)=>e.status!=='퇴사').length,branches:d.branches?.length||1,perBranch:d.branches.map((b:any)=>({id:b.id,name:b.name,employees:d.employees.filter((e:any)=>e.branchId===b.id&&e.status!=='퇴사').length}))}:null,billing:{enabled:false,reason:'사업자 정보와 결제 서비스 연결을 준비하고 있어요. 지금은 결제되지 않아요.'}});
   if(request.method==='GET'){
    // 작업 041: 기간제 계약 만료 30일 전 — 사장님 이메일로 보낼 안내를 전송함에 한 번 준비(실제 발송은 메일 서비스 연결 후 전송함에서)
    if(linked?.access==='owner'&&data&&email){const today=new Date(Date.now()+9*3600000).toISOString().slice(0,10),until=new Date(Date.now()+9*3600000+30*86400000).toISOString().slice(0,10);
@@ -76,7 +78,7 @@ export async function accountApi(request:Request,env:Env){
     if(add.length){data._outbox=[...box,...add.map((e:any)=>({id:crypto.randomUUID(),key:'expiry:'+e.id+':'+e.endDate,to:email,subject:`[척척사장] ${e.name}님 기간제 계약이 ${e.endDate}에 끝나요`,body:`${data.store?.name||''} ${e.name}님의 근로계약이 ${e.endDate}에 끝나요.\n\n계속 일한다면 새 계약서를 작성해 서명받고, 끝난다면 마지막 급여와 퇴직금 대상 여부를 확인해 주세요.\n(기간제 근로자를 2년 넘게 쓰면 기간의 정함이 없는 근로자로 봅니다 — 기간제법 제4조)`,status:'발송 대기',createdAt:new Date().toISOString(),providerId:null}))].slice(-500);
      const r=await env.DB.prepare('UPDATE stores SET data=?,version=version+1,updated_at=? WHERE owner=? AND version=?').bind(JSON.stringify(data),new Date().toISOString(),linked.owner,linked.row.version).run();if(!r.meta.changes)data._outbox=box}}
    const v:any=view(data);
-   if(linked?.access==='owner')v.payments=(await env.DB.prepare('SELECT order_id,plan,store_slots,months,amount,status,method,receipt_url,paid_at,period_start,period_end,refunded_amount FROM payments WHERE owner=? ORDER BY created_at DESC LIMIT 24').bind(id).all<any>()).results;
+   if(linked?.access==='owner'&&!linked.coowner)v.payments=(await env.DB.prepare('SELECT order_id,plan,store_slots,months,amount,status,method,receipt_url,paid_at,period_start,period_end,refunded_amount FROM payments WHERE owner=? ORDER BY created_at DESC LIMIT 24').bind(id).all<any>()).results;
    if(linked?.access==='owner'){const rows=await env.DB.prepare('SELECT n.id,n.kind,n.title,n.body,n.effective_at,c.agreed_at FROM service_notices n LEFT JOIN service_notice_consents c ON c.notice_id=n.id AND c.user_id=? WHERE n.effective_at>=? ORDER BY n.effective_at').bind(id,new Date(Date.now()-90*86400000).toISOString().slice(0,10)).all<any>();v.serviceNotices=rows.results.map((r:any)=>({id:r.id,kind:r.kind,title:r.title,body:r.body,effectiveAt:r.effective_at,agreedAt:r.agreed_at||null}))}
    // 작업 057: 나에게 넘겨진 가게(이메일 확인된 계정만)
    if(email&&v.user.emailVerified&&linked?.access!=='owner'){const rows=await env.DB.prepare("SELECT owner,data FROM stores WHERE lower(try_jsonb(data)#>>'{_account,transfer,toEmail}')=lower(?)").bind(email).all<any>();v.transferOffers=rows.results.map((r:any)=>{const d=JSON.parse(r.data);return Date.parse(d._account.transfer.expiresAt)>Date.now()?{owner:r.owner,storeName:d.store?.name||'',fromEmail:d._account.transfer.fromEmail||'',expiresAt:d._account.transfer.expiresAt}:null}).filter(Boolean)}

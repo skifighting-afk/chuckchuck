@@ -54,6 +54,7 @@ try{
  assert.equal((await q("SELECT has_table_privilege('authenticated','billing_quotes','SELECT') AS allowed").first()).allowed,false);
  ok('quote snapshots are server-only with RLS and revoked public privileges');
  assert.equal((await account('staff')).data.account,null);
+ assert.equal((await account('coowner')).data.account,null,'coowners cannot read pricing snapshots via account endpoint');
  assert.equal((await billing('staff',{action:'quote',plan:'basic'})).status,403);
  assert.equal((await billing('coowner',{action:'quote',plan:'basic'})).status,403);
  ok('staff and coowners cannot obtain billing quotes');
