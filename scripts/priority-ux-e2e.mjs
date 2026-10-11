@@ -154,6 +154,9 @@ export async function priorityUxE2E({owner,staff,srv,step,browser}){
   await step('홈 핵심 업무 먼저 · 모바일 직원 검색 열기와 복귀',async()=>{
    await page.setViewportSize({width:390,height:844});await page.goto(srv.ORIGIN+'/demo?role=owner&screen=home',{waitUntil:'networkidle'});
    const core=page.getByRole('region',{name:'먼저 확인할 세 가지',exact:true});await core.waitFor();assert.equal(await core.getByRole('button').count(),3);
+   assert.equal(await page.locator('.home-overview .home-pay,.home-overview .home-alerts').count(),0,'salary and attendance work are not repeated in separate panels');
+   assert.equal(await page.locator('.today-tasks').count(),1,'one combined work list'); const workLabel=page.locator('.home-work-label').first();assert.equal(await workLabel.evaluate(el=>getComputedStyle(el).whiteSpace),'normal','long work labels wrap');assert.equal(await workLabel.evaluate(el=>getComputedStyle(el).backgroundColor),'rgba(0, 0, 0, 0)','work description keeps its white panel background');
+   const routine=page.locator('.home-routine');assert.equal(await routine.getAttribute('open'),null,'optional routine starts closed');assert.equal(await routine.locator('.db,.db-mini').isVisible(),false);await routine.locator('summary').click();assert(await routine.locator('.db,.db-mini').isVisible(),'optional routine remains available');await routine.locator('summary').click();await page.evaluate(()=>window.scrollTo(0,0));
    assert(await core.evaluate(el=>el.getBoundingClientRect().bottom<innerHeight),'three priorities before fold');
    assert(await page.evaluate(()=>document.querySelector('.home-priorities').compareDocumentPosition(document.querySelector('.home-overview .db, .home-overview .db-mini'))&Node.DOCUMENT_POSITION_FOLLOWING),'core before optional boards');
    await core.getByRole('button',{name:/오늘 근무/}).click();await page.getByRole('region',{name:'일간 근무 시간표',exact:true}).waitFor();
@@ -167,6 +170,7 @@ export async function priorityUxE2E({owner,staff,srv,step,browser}){
    await page.locator('.owner-display-settings summary').click();await page.getByRole('button',{name:'글씨 더 크게 보기',exact:true}).click();
    for(const width of [320,390,768,1440]){await page.setViewportSize({width,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'home focus large overflow '+width)}
    await page.getByRole('button',{name:'기본 글씨로 보기',exact:true}).click();await page.locator('.owner-display-settings summary').click();await page.setViewportSize({width:390,height:844});await page.screenshot({path:'ci-logs/home-priorities-mobile.png',fullPage:true});
+   await page.goto(srv.ORIGIN+'/demo?role=owner&screen=home&daily=1',{waitUntil:'networkidle'});await routine.locator('.db,.db-mini').waitFor({state:'visible'});assert.notEqual(await routine.getAttribute('open'),null,'routine notification deep link opens its parent');
   });
   await step('직원별 서류 · 검색 · 월 선택 · 연결 실패와 복구',async()=>{
    await page.goto(srv.ORIGIN+'/app?screen=contracts',{waitUntil:'networkidle'});

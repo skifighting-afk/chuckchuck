@@ -1,3 +1,4 @@
+import './check-home-work.mjs';
 import './check-task-navigation.mjs';
 import './check-work-context.mjs';
 import './check-work-context-fixture.mjs';
