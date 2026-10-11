@@ -179,7 +179,7 @@ export async function priorityUxE2E({owner,staff,srv,step,browser}){
    }
    await page.getByRole('button',{name:'기본 글씨로 보기',exact:true}).click();await page.locator('.owner-display-settings summary').click();
    await page.route('**/api/contracts?summary=1',route=>route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'Synthetic unavailable status'})}));
-   await board.getByRole('button',{name:'상태 새로 확인',exact:true}).click();await board.getByRole('alert').waitFor();await board.getByText('상태 확인 필요',{exact:true}).first().waitFor();
+   await board.getByRole('button',{name:'상태 새로 확인',exact:true}).click();await board.getByRole('alert').waitFor();await board.locator('.document-overview-rows').getByText('상태 확인 필요',{exact:true}).first().waitFor();
    await page.unroute('**/api/contracts?summary=1');await board.getByRole('button',{name:'상태 새로 확인',exact:true}).click();await board.getByRole('alert').waitFor({state:'hidden'});
    await page.setViewportSize({width:390,height:844});await page.screenshot({path:'ci-logs/priority-documents-mobile.png',fullPage:true});
   });
