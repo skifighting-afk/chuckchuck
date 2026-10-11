@@ -12,7 +12,7 @@ import path from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {buildFeaturePages} from './home-feature-pages.mjs';
 
-const MODULES = ['site/home.ts', 'site/result-flow.ts', 'site/experience.ts', 'site/render.ts', 'lib/plans.ts', 'lib/labor-estimate.ts', 'lib/pay-rules.ts', 'lib/operator.ts', 'app/meta-pixel.ts'];
+const MODULES = ['site/home.ts', 'site/section-navigation.ts', 'site/result-flow.ts', 'site/experience.ts', 'site/render.ts', 'lib/plans.ts', 'lib/labor-estimate.ts', 'lib/pay-rules.ts', 'lib/operator.ts', 'app/meta-pixel.ts'];
 const config = existsSync('deploy.config.json') ? JSON.parse(readFileSync('deploy.config.json', 'utf8')) : {};
 const origin = d => 'https://' + String(d || '').trim().replace(/^https?:\/\//, '').replace(/\/+$/, '');
 export const HOME_ORIGIN = origin(process.env.HOME_DOMAIN || config.HOME_DOMAIN || 'chukchuksajang.co.kr');
