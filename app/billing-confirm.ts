@@ -9,14 +9,14 @@ export async function confirmPayment(env:Env,owner:string,b:any){
  if(!validOrderId(b.orderId)||!validPaymentKey(b.paymentKey))return json({error:'결제 주문번호와 인증 정보를 확인해 주세요.'},400);
  let p=await env.DB.prepare('SELECT * FROM payments WHERE order_id=? AND owner=?').bind(b.orderId,owner).first<any>();
  if(!p)return json({error:'주문을 찾을 수 없어요.'},404);
- if(!['ready','confirming','paid','no_charge'].includes(p.status))return json({error:'종료된 주문이에요. 계정 화면에서 내역을 확인해 주세요.'},409);
+ if(!['ready','confirming','paid','partial_refund','no_charge'].includes(p.status))return json({error:'종료된 주문이에요. 계정 화면에서 내역을 확인해 주세요.'},409);
  if(Number(b.amount)!==p.amount){if(!p.pricing_version&&p.status==='ready')await env.DB.prepare("UPDATE payments SET status='failed',fail_reason='금액 불일치' WHERE order_id=? AND status='ready'").bind(p.order_id).run();return json({error:'주문 금액과 달라 승인하지 않았어요.'},400)}
  if(p.payment_key&&p.payment_key!==b.paymentKey)return json({error:'기존 주문의 결제 인증 정보와 달라요.'},400);
  const finish=async(already:boolean)=>{
   if(p.kind==='contracts')return json({ok:true,already,orderId:p.order_id,amount:p.amount,receiptUrl:p.receipt_url,fulfilled:true});
   try{const result=await fulfillPlanOrder(env.DB,p.order_id);return json({ok:true,already,orderId:p.order_id,amount:p.amount,receiptUrl:p.receipt_url,fulfilled:true,paidUntil:result.periodEnd})}catch{return pending(p,true)}
  };
- if(['paid','no_charge'].includes(p.status))return finish(true);
+ if(['paid','partial_refund','no_charge'].includes(p.status))return finish(true);
  const startedAt=new Date().toISOString();
  const claimed=await env.DB.prepare("UPDATE payments SET status='confirming',payment_key=?,confirmation_started_at=? WHERE order_id=? AND status='ready'").bind(b.paymentKey,startedAt,p.order_id).run();
  const call=env.TOSS_FETCH||fetch,headers={Authorization:tossAuth(env.TOSS_SECRET_KEY!),'Content-Type':'application/json'};
@@ -32,7 +32,7 @@ export async function confirmPayment(env:Env,owner:string,b:any){
    await approve();
   }else{
    p=await env.DB.prepare('SELECT * FROM payments WHERE order_id=? AND owner=?').bind(b.orderId,owner).first<any>();
-   if(['paid','no_charge'].includes(p.status))return finish(true);
+   if(['paid','partial_refund','no_charge'].includes(p.status))return finish(true);
    if(p.status!=='confirming')return json({error:'종료된 주문이에요. 내역을 확인해 주세요.'},409);
    await lookup();
    const notApproved=response!.status===404&&details.code==='NOT_FOUND_PAYMENT'||response!.ok&&['READY','IN_PROGRESS'].includes(details.status)&&details.orderId===p.order_id&&details.paymentKey===b.paymentKey&&Number(details.totalAmount)===p.amount;

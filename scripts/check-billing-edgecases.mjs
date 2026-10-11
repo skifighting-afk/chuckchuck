@@ -44,6 +44,13 @@ try{
   const p={amount:10000,period_start:'2026-01-01T00:00:00Z',period_end:'2026-01-31T00:00:00Z',refunded_amount:1000},now=Date.parse('2026-01-16T00:00:00Z');
   assert.equal(refundFromPayment(p,now).refund,4000);assert.equal(refundFromPayment({...p,refunded_amount:5000},now).refund,0);assert.equal(refundFromPayment({...p,refunded_amount:8000},now).refund,0);
  });
+ await test('partial refund before fulfillment still allows the paid entitlement to recover',async()=>{
+  await setup('partial-unfulfilled');const p=await prepare('partial-unfulfilled'),transaction=T.DB.transaction.bind(T.DB);let failOnce=true;
+  T.DB.transaction=fn=>transaction(async tx=>{const prepareSQL=tx.prepare.bind(tx);tx.prepare=sql=>{if(failOnce&&sql.startsWith('UPDATE stores SET data=')){failOnce=false;throw Error('synthetic entitlement write failure')}return prepareSQL(sql)};return fn(tx)});
+  let r;try{r=await confirm('partial-unfulfilled',p)}finally{T.DB.transaction=transaction}assert.equal(r.status,202);
+  assert.equal((await bill('hq-edge',{action:'refund',requestId:crypto.randomUUID(),orderId:p.orderId,amount:1000,reason:'합성 부분 환불'})).status,200);
+  r=await bill('partial-unfulfilled',{action:'recover',orderId:p.orderId});assert.equal(r.status,200,JSON.stringify(r.data));assert.equal(r.data.fulfilled,true);assert.equal((await raw('partial-unfulfilled'))._account.lastOrderId,p.orderId);
+ });
  await test('purchasing Basic preserves remaining Pro trial and queues its month',async()=>{
   await setup('trial-edge');const d=await raw('trial-edge'),end=new Date(Date.now()+20*86400000).toISOString();d._account={...d._account,plan:'pro',status:'trialing',trialEndsAt:end};await save('trial-edge',d);
   const qr=await bill('trial-edge',{action:'quote',plan:'basic'}),p=(await prep('trial-edge',qr.data.quoteId)).data;assert.equal((await confirm('trial-edge',p)).status,200);

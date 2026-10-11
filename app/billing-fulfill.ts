@@ -5,7 +5,7 @@ import {applyPricingPaid,applyPlanPaid,activatePendingSubscription} from '../lib
 export async function fulfillPlanOrder(db:D1Database,orderId:string,now=Date.now()){
  return billingDatabase(db).transaction(async tx=>{
   const p=await tx.prepare('SELECT * FROM payments WHERE order_id=? FOR UPDATE').bind(orderId).first<any>();
-  if(!p||p.kind!=='plan'||!['paid','no_charge'].includes(p.status))throw new BillingError('ORDER_NOT_APPROVED','승인 상태를 먼저 확인해 주세요.');
+  if(!p||p.kind!=='plan'||!['paid','partial_refund','no_charge'].includes(p.status))throw new BillingError('ORDER_NOT_APPROVED','승인 상태를 먼저 확인해 주세요.');
   if(p.fulfilled_at)return {fulfilled:true,periodStart:p.period_start,periodEnd:p.period_end};
   // Old paid rows already recorded their entitlement bounds before this fulfillment column existed.
   if(!p.pricing_version&&p.period_start&&p.period_end){await tx.prepare('UPDATE payments SET fulfilled_at=? WHERE order_id=?').bind(new Date(now).toISOString(),p.order_id).run();return {fulfilled:true,periodStart:p.period_start,periodEnd:p.period_end}}
