@@ -41,12 +41,12 @@ export async function buildHome({out, site = HOME_ORIGIN, app = APP_ORIGIN, pixe
   const PR = await import(pathToFileURL(path.resolve(moduleDir, 'lib/pay-rules.js')).href + '?t=' + Date.now());
   const base = preview ? '' : '/';
   const pay = R.crewTotal();
-  const desc = `앱 설치 없이 휴대폰으로 쓰는 작은 가게 직원 관리. 근무표, 출퇴근, 급여 계산과 명세서, 전자근로계약서까지. 직원 1명당 월 ${R.money(R.employeeMonthlyPrice('basic', 1))}원부터, ${R.TRIAL_DAYS}일 무료, 카드 등록 없음.`;
+  const desc = `카페·식당·편의점 알바 관리. 일간·월간 근무표, QR 출퇴근, 급여 계산, 근로계약서·명세서를 한곳에서 확인하세요. 직원 1명당 월 ${R.money(R.employeeMonthlyPrice('basic', 1))}원부터(VAT 포함). 앱 설치·카드 등록 없이 ${R.TRIAL_DAYS}일 무료.`;
   const fb = pixelId ? {script: ' https://connect.facebook.net', img: ' https://www.facebook.com', connect: ' https://www.facebook.com https://connect.facebook.net'} : {script: '', img: '', connect: ''};
   const csp = ["default-src 'self'", `script-src 'self'${fb.script}`, "style-src 'self'", `img-src 'self' data:${fb.img}`, "font-src 'self'", `connect-src 'self'${fb.connect}`, "object-src 'none'", "base-uri 'self'", `form-action 'self' ${app}`, 'upgrade-insecure-requests'].join('; ');
   const minWage = R.money(PR.ratesFor(2026).minimumWage);
   const vars = {
-    CSP: `<meta http-equiv="Content-Security-Policy" content="${csp}">`, SITE: site, BASE: base, APP: app, DESCRIPTION: R.esc(desc), JSONLD: R.jsonLd(site),
+    CSP: `<meta http-equiv="Content-Security-Policy" content="${csp}">`, SITE: site, BASE: base, APP: app, SEO_TITLE: '척척사장 | 알바 근무표·출퇴근·급여 관리', DESCRIPTION: R.esc(desc), JSONLD: R.jsonLd(site,app),
     TRIAL: String(R.TRIAL_DAYS), LEDGER: R.ledgerHtml(false), FINALE_LEDGER: R.ledgerHtml(true), PHONE_ROWS: R.phoneRowsHtml(),
     PAY_TOTAL: R.money(pay), PAY_TOTAL_RAW: String(pay), CALC_TOY: R.money(R.crewPay()[0].month).slice(0, -1),
     WORRIES: R.worriesHtml(app), NOT_DOING: R.NOT_DOING.map(x => `<li>${R.esc(x)}</li>`).join(''), FOOTER: R.footerHtml(), PLAN_CARDS: R.planCardsHtml(app),
