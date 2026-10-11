@@ -1,0 +1,9 @@
+12:00:21 새 화면 확인 564e7c8
+12:00:32 API 응답 시간 /api/status 200 2542ms · /api/client-error 200 3724ms
+12:01:00 가입·가게 만들기 OK
+12:01:41 점검 계정 삭제 완료
+배포 후 점검 실패: page.waitForURL: Timeout 20000ms exceeded.
+=========================== logs ===========================
+waiting for navigation until "load"
+============================================================
+끝나지 않은 요청: POST https://mklluxpngagiechnfaxe.supabase.co/functions/v1/api/auth 41057ms
