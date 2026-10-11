@@ -837,6 +837,48 @@ html.large-text .feature-difference dt,html.large-text .feature-story .feature-p
  .feature-detail-main h2{font-size:1.5rem}
 }
 
+/* A compact chooser and readable employee amounts for the hand-held tour. */
+.exp-mobile-chooser,.exp-pay-mobile{display:none}
+@media(max-width:800px){
+ .experience .exp-chapters{display:none}
+ .exp-mobile-chooser{display:grid;gap:10px;padding:20px;background:#eeeee3;border-bottom:1px solid #cbd3c6;min-width:0;font-size:1rem;font-weight:700}
+ .exp-mobile-chooser select{width:100%;min-width:0;min-height:52px;padding:12px;font:inherit;color:#103e31;background:#fffef9;border:1px solid #a7b9a5;border-radius:8px}
+ .exp-shell{grid-template-columns:minmax(0,1fr)}
+ .experience .exp-top{flex-wrap:wrap;align-items:flex-start;gap:12px}
+ .experience .exp-top>div{flex-wrap:wrap;gap:8px}
+ .experience .exp-label{font-size:.875rem}
+ .experience .exp-story>p:last-child{font-size:1rem;line-height:1.75}
+ .experience button,.experience select{min-height:48px;min-width:48px;font-size:1rem}
+ .experience .exp-days{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+ .experience .exp-panel-title{align-items:flex-start;flex-wrap:wrap}
+ .experience .exp-panel p,.experience .exp-phone-card p,.experience .exp-paper p,.experience .exp-split aside p{font-size:1rem;line-height:1.75}
+ .experience .exp-person b,.experience .exp-row{font-size:1rem}
+ .experience .exp-person{flex-wrap:wrap;gap:8px}
+ .experience .exp-person>div{flex:1 1 120px}
+ .experience .exp-person small,.experience .exp-badge,.experience .exp-chrome{font-size:.875rem;line-height:1.6}
+ .experience .exp-badge{white-space:normal}
+ .experience .exp-pay-table-wrap{display:none}
+ .experience .exp-pay-summary{grid-template-columns:minmax(0,1fr);gap:8px}
+ .experience .exp-pay-summary>div{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:14px 12px;flex-wrap:wrap}
+ .experience .exp-pay-summary small{font-size:.875rem;margin:0}
+ .experience .exp-pay-summary b{font-size:1.125rem;white-space:normal;font-variant-numeric:tabular-nums}
+ .exp-pay-mobile{display:grid;gap:16px;margin-top:24px}
+ .exp-pay-mobile article{padding:18px 0;border-top:1px solid #cbd3c6}
+ .exp-pay-mobile h5{font-size:1.125rem;margin:0;line-height:1.5}
+ .exp-pay-mobile h5 button{padding:8px 12px;margin-left:-12px;font:inherit;font-weight:800;border:0;background:none;color:#12634b;text-decoration:underline;text-underline-offset:4px}
+ .exp-pay-mobile article>small{font-size:.875rem;color:#526b60}
+ .exp-pay-mobile dl{margin:12px 0 0;display:grid;gap:12px}
+ .exp-pay-mobile dl>div{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:1rem;line-height:1.5}
+ .exp-pay-mobile dd{margin:0;font-size:1.125rem;font-weight:700;font-variant-numeric:tabular-nums}
+ .exp-pay-mobile dl>div:last-child{padding-top:12px;border-top:1px solid #d6ddcf}
+ .experience .exp-bottom{gap:20px;flex-wrap:wrap}
+ .experience #exp-steps{gap:8px;flex-wrap:wrap}
+ .experience #exp-steps button{font-size:.875rem;padding:8px;gap:8px}
+ .experience .exp-controls{gap:8px;flex-wrap:wrap}
+ .experience .exp-select-label{flex-wrap:wrap;gap:8px}
+ html.large-text .experience .exp-row,html.large-text .exp-pay-mobile dl>div{font-size:1.125rem}
+ html.large-text .exp-pay-mobile dd,html.large-text .experience .exp-pay-summary b{font-size:1.25rem}
+}
 /* Short section navigation: one reading marker, with room below the fixed header. */
 .nav .page-sections{display:none}
 .nav nav a[aria-current=location]{color:var(--ink);text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:7px;font-weight:800}
