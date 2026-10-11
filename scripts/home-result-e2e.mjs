@@ -123,9 +123,11 @@ export async function homeResultE2E({browser,step}){
    await page.setViewportSize({width:390,height:844});
    if(!await page.locator('html').evaluate(el=>el.classList.contains('large-text')))await page.locator('#pref-text').click();
    await page.evaluate(()=>document.documentElement.style.fontSize='200%');
+   await page.evaluate(()=>scrollTo({top:0,behavior:'instant'}));
+   await page.waitForFunction(()=>document.getElementById('hero-title').getBoundingClientRect().top>=document.getElementById('nav').getBoundingClientRect().bottom+10);
    const contents=page.getByRole('navigation',{name:'페이지 목차',exact:true});
    await contents.getByRole('link',{name:'이용 요금',exact:true}).click();
-   await page.waitForFunction(()=>document.querySelector('#pricing').getBoundingClientRect().top>=document.querySelector('#nav').getBoundingClientRect().bottom+10);
+   await page.waitForFunction(()=>{const top=document.querySelector('#pricing').getBoundingClientRect().top,bottom=document.querySelector('#nav').getBoundingClientRect().bottom;return top>=bottom+10&&top<bottom+40});
    assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'200% contents does not overflow');
    await page.evaluate(()=>document.documentElement.style.fontSize='');await page.locator('#pref-text').click();
    await page.screenshot({path:'ci-logs/home-section-navigation-mobile.png'});
