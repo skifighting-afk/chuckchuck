@@ -4,7 +4,7 @@ export async function startGuideE2E({owner,srv,step,browser,watch}){
  const row=await srv.db.q('SELECT owner,data FROM stores LIMIT 1').first(),original=JSON.parse(row.data),state=await owner.context().storageState();
  const c1=await browser.newContext({storageState:state,serviceWorkers:'block',viewport:{width:1280,height:900}}),c2=await browser.newContext({storageState:state,serviceWorkers:'block',viewport:{width:390,height:844}}),a=await c1.newPage(),b=await c2.newPage();watch(a);watch(b);
  const go=p=>p.goto(srv.ORIGIN+'/app',{waitUntil:'networkidle'}),full=p=>p.getByRole('heading',{name:'🎮 사장님 퀘스트',exact:true}).waitFor(),folded=p=>p.locator('.qb-mini').filter({hasText:'사장님 퀘스트'}).waitFor();
- const save=async(p,fn)=>{const response=p.waitForResponse(r=>r.url().includes('/start-guide')&&r.request().method()==='PATCH');await fn();return (await response).json()};
+ const save=async(p,fn)=>{const response=p.waitForResponse(r=>r.url().includes('/start-guide')&&r.request().method()==='PATCH');await fn();const r=await response,d=await r.json();assert.equal(r.status(),200,'guide save: '+JSON.stringify(d));return d};
  try{
   await srv.db.q('DELETE FROM start_guide_preferences WHERE owner=?',row.owner).run();
   const initial=structuredClone(original);initial.branches[0].address='';await srv.db.q('UPDATE stores SET data=?,version=version+1 WHERE owner=?',JSON.stringify(initial),row.owner).run();

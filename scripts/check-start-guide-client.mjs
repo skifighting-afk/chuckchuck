@@ -14,4 +14,15 @@ let finish;const c=new GuideClient('/slow',()=>new Promise(r=>finish=r));const l
 let revoked=false;const access=new GuideClient('/permission',async()=>revoked?{ok:false,status:403,json:async()=>({error:'권한 회수'})}:{ok:true,status:200,json:async()=>dto('A')});await access.load();revoked=true;await access.load();assert.equal(access.getSnapshot().data,null);ok('revoked role removes previously visible guide data');
 let identity='A',scopeWrites=0;const retained=new GuideClient('/retained',async(_u,init)=>{if(init)scopeWrites++;return {ok:true,status:200,json:async()=>dto(identity)}});await retained.load();identity='B';await retained.load();assert.equal(retained.getSnapshot().data,null);assert.equal(retained.getSnapshot().status,'scope-changed');await retained.patch({mini:true});assert.equal(scopeWrites,0);ok('retained tab rejects a different account scope and cannot write');
 let conflictWrites=0;const queued=new GuideClient('/queued',async(_u,init)=>{if(!init)return {ok:true,status:200,json:async()=>dto('A')};conflictWrites++;return conflictWrites===1?{ok:false,status:409,json:async()=>({code:'GUIDE_CHANGED',latest:dto('A',1,{...p(),mini:true}),error:'conflict'})}:{ok:true,status:200,json:async()=>dto('A',2)}});await queued.load();await Promise.all([queued.patch({hideAll:true}),queued.patch({mini:false})]);assert.equal(conflictWrites,1);assert.equal(queued.getSnapshot().status,'conflict');assert.equal(queued.getSnapshot().data.preferences.mini,true);await queued.refresh();assert.equal(queued.getSnapshot().status,'conflict');ok('queued writes and automatic focus refresh cannot bypass conflict confirmation');
+let refreshReply,refreshCount=0;
+const focusRace=new GuideClient('/focus-race',async(_u,init)=>{
+ if(init)return {ok:true,status:200,json:async()=>dto('A',1,{...p(),mini:true})};
+ if(++refreshCount===1)return {ok:true,status:200,json:async()=>dto('A')};
+ return new Promise(resolve=>refreshReply=resolve);
+});
+await focusRace.load();const staleRefresh=focusRace.refresh();await focusRace.patch({mini:true});
+refreshReply({ok:true,status:200,json:async()=>dto('A')});await staleRefresh;
+assert.equal(focusRace.getSnapshot().data.preferences.mini,true);
+assert.equal(focusRace.getSnapshot().data.revision,1);
+ok('delayed focus refresh cannot overwrite a confirmed preference save');
 console.log(`start guide client: ${n} passed`);
