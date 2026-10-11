@@ -1,0 +1,26 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {swapProgress,requestFollowup} from '../lib/ops-request-display.ts';
+import {leaveImpact,swapImpact} from '../lib/ops-view.ts';
+assert.deepEqual(swapProgress('구하는 중').done,[true,false,false,false]);
+assert.deepEqual(swapProgress('승인 대기').done,[true,true,false,false]);
+assert.deepEqual(swapProgress('승인').done,[true,true,true,true]);
+assert.deepEqual(swapProgress('반려').done,[true,true,false,false]);
+assert.deepEqual(swapProgress('취소',true).done,[true,true,false,false]);
+assert.doesNotMatch(swapProgress('승인 대기',true).next,/동료가 수락/,'owner assignment must not claim personal acceptance');
+assert.match(swapProgress('승인 대기',true).next,/맡을 직원이 정해/);
+assert.match(await readFile(new URL('../app/priority-ux.css',import.meta.url),'utf8'),/body\.cheok-large-text \.ops-progress li/,'actual app text preference enlarges stage names');
+for(const status of ['반려','취소']){assert.equal(swapProgress(status).ended,true);assert.equal(swapProgress(status).done[3],false);assert.match(requestFollowup('swap',status,false),/새로 요청/)}
+assert.match(requestFollowup('leave','승인',false),/사장님/);assert.match(requestFollowup('swap','승인',true),/근무 스케줄/);
+const emps=[{id:'a',name:'A',role:'홀',branchId:'one'},{id:'b',name:'B',role:'홀',branchId:'one'},{id:'c',name:'C',role:'홀',branchId:'two'}];
+const shift=(id,employeeId,start,end,date='2026-10-16')=>({id,employeeId,date,start,end});
+const leave={employeeId:'a',start:'2026-10-16',end:'2026-10-16'};
+const mine=shift('a','a','17:00','22:00');
+assert.equal(leaveImpact(leave,[mine,shift('b','b','17:00','18:00')],emps).alone,true,'partial overlap leaves an uncovered interval');
+assert.equal(leaveImpact(leave,[mine,shift('c','c','17:00','22:00')],emps).alone,true,'another branch cannot cover this store');
+assert.match(leaveImpact(leave,[mine,shift('b1','b','17:00','22:00'),shift('b2','b','18:00','21:00')],emps).text,/최소 1명/,'same person is not counted twice');
+const overnight=leaveImpact(leave,[shift('a','a','22:00','02:00'),shift('b','b','21:00','23:00'),shift('next','b','00:00','03:00','2026-10-17')],emps);
+assert.equal(overnight.alone,true,'23:00-midnight gap must remain visible');
+assert(!leaveImpact(leave,[mine],emps).text.includes('17:00'),'shift times are listed once in the card');
+assert.match(swapImpact({kind:'대타',shift:mine,taker:{id:'b',name:'B'}},[shift('old','b','09:00','19:00')]),/적용 조건을 확인/);
+console.log('PASS: real swap stages, closed-request paths, no duplicate times and interval/store/person-aware leave impact.');

@@ -3,6 +3,7 @@ import {seed,duration,hours,payroll,stateSchema} from '../lib/model.ts';
 const s=seed();assert.equal(stateSchema.safeParse(s).success,true);
 await import('./check-document-overview.mjs');
 await import('./check-clock-receipt.mjs');
+await import('./check-ops-request-display.mjs');
 await import('./check-client-assets.mjs');
 await import('./check-fetch-client-assets.mjs');
 await import('./check-home-result.mjs');
