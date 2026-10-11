@@ -2,3 +2,9 @@
 > chuckchuck@0.1.0 check
 > tsc --noEmit
 
+app/quests.tsx(61,20): error TS2367: This comparison appears to be unintentional because the types '"error" | "ready" | "loading" | "saving" | "conflict"' and '"scope-changed"' have no overlap.
+app/start-guide-store.tsx(16,65): error TS2339: Property 'refresh' does not exist on type 'GuideClient'.
+app/start-guide-store.tsx(21,151): error TS2367: This comparison appears to be unintentional because the types '"error" | "ready" | "loading" | "saving" | "conflict"' and '"scope-changed"' have no overlap.
+app/start-guide-store.tsx(21,244): error TS2367: This comparison appears to be unintentional because the types '"error" | "ready" | "loading" | "saving" | "conflict"' and '"scope-changed"' have no overlap.
+app/start-guide-store.tsx(21,314): error TS2367: This comparison appears to be unintentional because the types '"error" | "ready" | "loading" | "saving" | "conflict"' and '"scope-changed"' have no overlap.
+app/tour.tsx(22,20): error TS2367: This comparison appears to be unintentional because the types '"error" | "ready" | "loading" | "saving" | "conflict"' and '"scope-changed"' have no overlap.
