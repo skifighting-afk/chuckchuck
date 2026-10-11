@@ -94,6 +94,26 @@ ok('B020 after end hint',I.clockInHint([{date:day,start:'10:00',end:'18:00'}],K(
  ok('quests: demo hides noDemo',[Q.questSummary('staff',{},true).list.some(q=>q.id==='wish'),Q.questSummary('staff',{}).list.some(q=>q.id==='wish')],[false,true]);
  ok('quests: level edges',[Q.levelOf('owner',0).level,Q.levelOf('owner',149).level,Q.levelOf('owner',150).level,Q.levelOf('owner',275).pct],[1,1,2,50]);
  ok('quests: parseFind',[Q.parseFind('[role=dialog] field:이름'),Q.parseFind('button.primary==설정 저장'),Q.parseFind('a@@b'),Q.parseFind('.x')],[{scope:'[role=dialog]',css:'',field:'이름'},{scope:'',css:'button.primary',text:'설정 저장',exact:true},{scope:'',css:'a',text:'b'},{scope:'',css:'.x'}]);}
+ // 하루 일과
+ const R=await import('../lib/daily-routine.ts');const at=(d,h,m=0)=>Date.parse(`${d}T${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:00+09:00`);
+ const rs={settings:{more:{}},branches:[{id:'b',name:'본점',hours:{open:'10:00',close:'22:00'},closedDays:[0]}],employees:[{id:'e1',name:'김민지',branchId:'b'},{id:'e2',name:'이알바',branchId:'b'}],
+  shifts:[{employeeId:'e1',date:'2026-10-15',start:'10:00',end:'16:00'},{employeeId:'e2',date:'2026-10-15',start:'12:00',end:'18:00'},{employeeId:'e1',date:'2026-10-16',start:'10:00',end:'16:00'},{employeeId:'e1',date:'2026-10-19',start:'10:00',end:'16:00'}],
+  attendance:[{employeeId:'e1',start:new Date(at('2026-10-15',9,58)).toISOString()}],requests:[{status:'승인 대기',before:{employeeId:'e2'}}],publishedWeeks:{},payrollRuns:{}};
+ const t1=R.ownerRoutine(rs,'b',at('2026-10-15',12,30)),by=id=>t1.find(t=>t.id===id);
+ ok('routine: owner tasks at noon (Thu)',t1.map(t=>t.id),['brief','arrive','requests','clockout','tomorrow','publish']);
+ ok('routine: late staff found',[by('arrive').status,by('arrive').lines],['todo',['이알바 12:00 출근 예정']]);
+ ok('routine: requests/clockout wait/tomorrow',[by('requests').detail,by('clockout').status,by('tomorrow').detail,by('publish').detail],['출퇴근 정정 1건','wait','내일 1명 근무','10/19~ 근무표가 아직 공개 전이에요']);
+ ok('routine: slot by hours',[R.slotNow(rs,'b',at('2026-10-15',9)),R.slotNow(rs,'b',at('2026-10-15',13)),R.slotNow(rs,'b',at('2026-10-15',21,30))],['open','during','close']);
+ const rs2={...rs,attendance:[{employeeId:'e1',start:new Date(at('2026-10-15',9,58)).toISOString()},{employeeId:'e2',start:new Date(at('2026-10-15',12)).toISOString(),end:new Date(at('2026-10-15',18)).toISOString()}],requests:[],publishedWeeks:{'b:2026-10-19':{at:'x',acks:{}}}};
+ const t2=R.ownerRoutine(rs2,'b',at('2026-10-15',21),['brief','tomorrow']);
+ ok('routine: evening — stale clock-out todo, rest done',t2.map(t=>t.id+':'+t.status),['brief:done','arrive:done','requests:done','clockout:todo','tomorrow:done','publish:done']);
+ ok('routine: reminder at close hour only',[R.routineReminder(rs2,at('2026-10-15',21)).length,R.routineReminder(rs2,at('2026-10-15',22)).length,R.routineReminder({...rs2,settings:{more:{routineHour:-1}}},at('2026-10-15',22)).length],[0,1,0]);
+ ok('routine: reminder lists left',R.routineReminder(rs2,at('2026-10-15',22))[0].body.includes('퇴근 누락 정리'),true);
+ ok('routine: closed tomorrow ok, no staff → none',[R.ownerRoutine(rs,'b',at('2026-10-17',21)).find(t=>t.id==='tomorrow').status,R.ownerRoutine({...rs,employees:[]},'b',at('2026-10-15',12)).length],['done',0]);
+ ok('routine: payroll month task',R.ownerRoutine({...rs,shifts:[...rs.shifts,{employeeId:'e1',date:'2026-09-10',start:'10:00',end:'12:00'}]},'b',at('2026-10-05',12)).find(t=>t.id==='payroll')?.title,'9월 급여 확정');
+ const st2={settings:{},employees:[{id:'e1',branchId:'b'}],shifts:rs.shifts.filter(x=>x.employeeId==='e1'),attendance:rs.attendance,publishedWeeks:{'b:2026-10-12':{at:'x',acks:{}}}};
+ ok('routine: staff',R.staffRoutine(st2,'e1',at('2026-10-15',12)).map(t=>t.id+':'+t.status),['in:done','ack:2026-10-12:todo','out:todo','next:todo']);
+ ok('routine: streak allows 1 rest day',[R.streakOf(['2026-10-13','2026-10-14','2026-10-15'],'2026-10-15'),R.streakOf(['2026-10-11','2026-10-13','2026-10-14'],'2026-10-15'),R.streakOf(['2026-10-10'],'2026-10-15'),R.streakOf([],'2026-10-15')],[3,3,0,0]);
 // ── 서버
 const T=await authedTest({domain:'example.invalid'}),{q,headersFor,id}=T,env=T.env;
 async function raw(user,path,body,method){return api(new Request('https://qa.local'+path,{method:method||(body?'POST':'GET'),headers:{origin:'https://qa.local',...(await headersFor(user))},...(body?{body:JSON.stringify(body)}:{})}),env)}
