@@ -722,15 +722,17 @@ PASS: allow clearing and bounded deferral
 start guide rules: 19 passed
 
 ── check-start-guide-api
+PASS: legacy business guide loads and saves without rewriting business data
 PASS: authentication and business membership required
 PASS: server scope uses opaque identity, defaults and owner quests
+PASS: guide reads and writes reject stale parent account or business context
 PASS: preferences persist across independent reads
-file:///home/runner/work/chuckchuck/chuckchuck/scripts/check-start-guide-api.mjs:20
+file:///home/runner/work/chuckchuck/chuckchuck/scripts/check-start-guide-api.mjs:22
  assert.equal((await call('guideA','branch2')).data.preferences.mini,false);assert.notEqual((await call('guideB')).data.scope.key,a.data.scope.key);ok('same branch ID in different businesses and separate branches stay isolated');
                                                                 ^
 
 TypeError: Cannot read properties of undefined (reading 'mini')
-    at file:///home/runner/work/chuckchuck/chuckchuck/scripts/check-start-guide-api.mjs:20:65
+    at file:///home/runner/work/chuckchuck/chuckchuck/scripts/check-start-guide-api.mjs:22:65
     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
 
 Node.js v22.23.3
