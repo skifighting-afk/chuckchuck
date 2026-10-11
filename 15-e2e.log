@@ -8,45 +8,46 @@
 
 [33m[INEFFECTIVE_DYNAMIC_IMPORT] [0mapp/att-device.ts is dynamically imported by app/schedule-extras.tsx but also statically imported by app/team.tsx, dynamic import will not move module into another chunk.
 
-화면 묶음: app.js 415KB, 필요할 때 받는 조각 31개 1440KB
-  team-SeVfBqfW.js 847KB
+화면 묶음: app.js 415KB, 필요할 때 받는 조각 31개 1448KB
+  team-sc4zQhBV.js 854KB
   team-model-l0mia2WH.js 139KB
-  attendance-scan-DX2N29nV.js 133KB
-  workspace-sfXjz0Ym.js 87KB
-  legal-page-C5Wi355m.js 38KB
-  capacity-dialog-B-wawfwI.js 33KB
-  admin-desk-58KX20Jm.js 28KB
-  staff-join-BTaYErzS.js 20KB
+  attendance-scan-E0fw9WDd.js 133KB
+  workspace-De5_hbAz.js 87KB
+  legal-page-DU5bFmz1.js 38KB
+  capacity-dialog-B4MkJqla.js 33KB
+  admin-desk-YDtw1z3N.js 28KB
+  staff-join-DIWUoT6K.js 20KB
 척척사장 화면·서버 함수 빌드 완료
-PASS 1. 사장님 가입 (약관 동의) (1537ms)
-PASS 2. 가게 만들기 (요금 고르기·처리위탁 동의·30일 체험) (2670ms)
-PASS 3. 가입용 근로조건 정하고 가입 링크 만들기 (1083ms)
-PASS 4. 직원이 링크로 가입하고 합류 신청 (휴대폰) (1819ms)
-PASS 5. 사장님이 합류 신청 수락 → 직원 화면 열림 (1032ms)
-PASS 6. 작업 048: 근무표 반복 등록 → 템플릿 저장 → 다음 주에 붙이기 (2809ms)
-PASS 7. 작업 050: 직원이 근무 가능 시간 제출 → 사장님 초안 화면에서 확인 (3453ms)
-PASS 8. 작업 096: 사장님 홈에 오늘 할 일 (2079ms)
-PASS 9. 가이드 52: 계산기 결과를 이미지로 저장 (639ms)
-PASS 10. 가이드 97: 문의하기 (1074ms)
-PASS 11. 작업 100: 도움말 검색 (615ms)
-PASS 12. 매장 매뉴얼: 사장님이 사진과 함께 작성 → 직원이 바로 확인 (3231ms)
-PASS 13. 매장 QR로 출근·퇴근 (QR 없이 누르면 기록 안 됨) (4202ms)
-PASS 14. 직원 출퇴근 정정 요청 (275ms)
-PASS 15. 사장님 정정 승인 → 이력 기록 (1015ms)
-PASS 16. 작업 052: 안드로이드 휴대폰에서 매장 QR 사진으로 출근·퇴근 (3844ms)
-PASS 17. 급여 확정 (지급일·확인 체크) (1958ms)
-PASS 18. 명세서 보내기 → 직원이 열어 봄 (확인 기록) (2171ms)
-PASS 19. 근로계약서: 사장님 서명 → 직원 서명 → 사본 (3359ms)
-PASS 20. 작업 044: 30초마다 바뀌는 QR 화면 (2465ms)
-PASS 21. 작업 051: 어제 퇴근 누락 → 직원 화면 안내 → 정정 요청 (1037ms)
-PASS 22. 작업 054: 직원 여러 명 붙여넣기 등록 (1314ms)
-PASS 23. 가져오기 동명이인·이름 빈 줄 → 원본 확인·직접 연결·명시적 제외 (2215ms)
-PASS 24. 가져오기 직접 연결·제외 초기화 → 재확인 전 저장 차단 (119ms)
-PASS 25. 직원당 공개 요금 0·1·5명 · 320/390/768/1440 화면 (987ms)
-PASS 26. 서버 과금 인원 · 기존 유료 전환 동의 · 견적 연결 실패 재시도 (859ms)
-PASS 27. 0원 이용 시작 · 공급자 창 없음 · 새로고침 후 기록 유지 (1577ms)
-PASS 28. 시작 안내 · 두 기기 숨김과 다시 열기 · 마지막 단계 복원 (7471ms)
-PASS 29. 시작 안내 · 매장과 다른 계정 분리 · 320/390/768/1440 · 키보드 (4354ms)
-PASS 30. 시작 안내 · 연결 실패 재시도와 다른 기기 충돌 · 업무 화면 유지 (1213ms)
-PASS 31. 매니저 안내 · 위임 업무만 표시 · 단계 복원 · 권한 회수 (3759ms)
-FAIL 업무 가시성 · 비서 기본 닫힘 · 키보드 열기와 복귀: first employee net amount visible on mobile: {"bottom":805.90625,"viewport":844}
+PASS 1. 사장님 가입 (약관 동의) (1376ms)
+PASS 2. 가게 만들기 (요금 고르기·처리위탁 동의·30일 체험) (2805ms)
+PASS 3. 가입용 근로조건 정하고 가입 링크 만들기 (1523ms)
+PASS 4. 직원이 링크로 가입하고 합류 신청 (휴대폰) (1788ms)
+PASS 5. 사장님이 합류 신청 수락 → 직원 화면 열림 (1006ms)
+PASS 6. 작업 048: 근무표 반복 등록 → 템플릿 저장 → 다음 주에 붙이기 (3183ms)
+PASS 7. 작업 050: 직원이 근무 가능 시간 제출 → 사장님 초안 화면에서 확인 (3427ms)
+PASS 8. 작업 096: 사장님 홈에 오늘 할 일 (2119ms)
+PASS 9. 가이드 52: 계산기 결과를 이미지로 저장 (684ms)
+PASS 10. 가이드 97: 문의하기 (947ms)
+PASS 11. 작업 100: 도움말 검색 (614ms)
+PASS 12. 매장 매뉴얼: 사장님이 사진과 함께 작성 → 직원이 바로 확인 (3262ms)
+PASS 13. 매장 QR로 출근·퇴근 (QR 없이 누르면 기록 안 됨) (3448ms)
+PASS 14. 직원 출퇴근 정정 요청 (196ms)
+PASS 15. 사장님 정정 승인 → 이력 기록 (1002ms)
+PASS 16. 작업 052: 안드로이드 휴대폰에서 매장 QR 사진으로 출근·퇴근 (3922ms)
+PASS 17. 급여 확정 (지급일·확인 체크) (1922ms)
+PASS 18. 명세서 보내기 → 직원이 열어 봄 (확인 기록) (2114ms)
+PASS 19. 근로계약서: 사장님 서명 → 직원 서명 → 사본 (3556ms)
+PASS 20. 작업 044: 30초마다 바뀌는 QR 화면 (3239ms)
+PASS 21. 작업 051: 어제 퇴근 누락 → 직원 화면 안내 → 정정 요청 (1011ms)
+PASS 22. 작업 054: 직원 여러 명 붙여넣기 등록 (1287ms)
+PASS 23. 안내 막대: 입력 창 안에서도 누를 수 있고 창은 그대로 · 다른 탭이면 돌아갈 탭을 짚음 (2574ms)
+PASS 24. 가져오기 동명이인·이름 빈 줄 → 원본 확인·직접 연결·명시적 제외 (2223ms)
+PASS 25. 가져오기 직접 연결·제외 초기화 → 재확인 전 저장 차단 (103ms)
+PASS 26. 직원당 공개 요금 0·1·5명 · 320/390/768/1440 화면 (988ms)
+PASS 27. 서버 과금 인원 · 기존 유료 전환 동의 · 견적 연결 실패 재시도 (825ms)
+PASS 28. 0원 이용 시작 · 공급자 창 없음 · 새로고침 후 기록 유지 (1520ms)
+PASS 29. 시작 안내 · 두 기기 숨김과 다시 열기 · 마지막 단계 복원 (6809ms)
+PASS 30. 시작 안내 · 매장과 다른 계정 분리 · 320/390/768/1440 · 키보드 (4302ms)
+PASS 31. 시작 안내 · 연결 실패 재시도와 다른 기기 충돌 · 업무 화면 유지 (1236ms)
+PASS 32. 매니저 안내 · 위임 업무만 표시 · 단계 복원 · 권한 회수 (3796ms)
+FAIL 업무 가시성 · 비서 기본 닫힘 · 키보드 열기와 복귀: first employee net amount visible on mobile: {"bottom":862.09375,"viewport":844}
