@@ -138,3 +138,14 @@ body{font-family:'ChukAppSans','Pretendard','Apple SD Gothic Neo','Malgun Gothic
 /* Owner reading preference wins over the shared default hierarchy. */
 .cheok-large-text .t-work .page-heading h1,.cheok-large-text .t-work h1{font-size:2.25rem}
 .cheok-large-text .t-work h2{font-size:1.75rem}.cheok-large-text .t-work h3{font-size:1.375rem}
+/* Shared owner/employee evidence: no dependence on colour or hover. */
+.attendance-evidence{min-width:0;max-width:36rem;white-space:normal;overflow-wrap:anywhere;word-break:keep-all}
+.attendance-evidence-status{display:flex;flex-wrap:wrap;gap:.35rem}
+.attendance-evidence p,.att-table td .attendance-evidence p{font-size:14px;line-height:1.65;color:#405c50;margin:.5rem 0 0;max-width:42em}
+.att-table .attendance-evidence{min-width:16rem}
+.att-table td,.att-table th{font-variant-numeric:tabular-nums}
+.staff-attendance-today{padding:16px 20px;border-bottom:1px solid #d4dfd2}
+.staff-attendance-today h3{margin:0 0 .65rem}
+.t-staff .attendance-evidence{margin-top:.65rem}
+body.cheok-large-text .attendance-evidence p{font-size:18px}
+@media(max-width:600px){.att-table .attendance-evidence{min-width:13rem}.staff-attendance-today{padding:16px}.t-staff .t-row:has(.attendance-evidence){flex-wrap:wrap}.t-staff .t-row:has(.attendance-evidence) .t-grow{flex-basis:100%}}
