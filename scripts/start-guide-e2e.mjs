@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
-import {normalizeTeam} from '../lib/team-model.ts';
+import {normalizeTeam} from '../dist/server/team-model.js';
 export async function startGuideE2E({owner,srv,step,browser,watch,credentials}){
  const row=await srv.db.q('SELECT owner,data FROM stores LIMIT 1').first(),original=JSON.parse(row.data),state=await owner.context().storageState();
  const c1=await browser.newContext({storageState:state,serviceWorkers:'block',viewport:{width:1280,height:900}}),c2=await browser.newContext({serviceWorkers:'block',viewport:{width:390,height:844}}),a=await c1.newPage(),b=await c2.newPage();watch(a);watch(b);
