@@ -4,12 +4,10 @@
 // - 키보드: → 다음, ← 이전, Esc 닫기. 화면 낭독기: 대화상자로 읽히고 단계 글이 바로 읽힌다.
 import {useCallback,useEffect,useLayoutEffect,useRef,useState} from 'react';
 import {TOURS,type TourRole,type TourStep} from '../lib/tour-steps';
+import {useStartGuide} from './start-guide-store';
 
-const KEY=(role:TourRole)=>`cc-tour-${role}-v1`;
-export const tourSeen=(role:TourRole)=>{try{return localStorage.getItem(KEY(role))==='done'}catch{return true}};
-const markSeen=(role:TourRole)=>{try{localStorage.setItem(KEY(role),'done')}catch{}};
 /** 다른 화면에서 가이드를 다시 열 때 */
-export const startTour=(role:TourRole)=>{try{localStorage.removeItem(KEY(role))}catch{};window.dispatchEvent(new CustomEvent('cc-tour',{detail:role}))};
+export const startTour=(role:TourRole)=>{window.dispatchEvent(new CustomEvent('cc-tour',{detail:role}))};
 
 function findTarget(step:TourStep):HTMLElement|null{
  const mobile=window.innerWidth<768;
@@ -18,16 +16,19 @@ function findTarget(step:TourStep):HTMLElement|null{
 }
 
 export function Tour({role,go,auto=true}:{role:TourRole,go?:(page:string)=>void,auto?:boolean}){
+ const guide=useStartGuide(),restored=useRef(false);
  const steps=TOURS[role],[i,setI]=useState(-1),[rect,setRect]=useState<DOMRect|null>(null),card=useRef<HTMLDivElement>(null),lastFocus=useRef<HTMLElement|null>(null);
  const open=i>=0,step=open?steps[i]:null;
- const close=useCallback((done:boolean)=>{markSeen(role);setI(-1);setRect(null);if(done)try{window.dispatchEvent(new CustomEvent('cc-tour-done',{detail:role}))}catch{};lastFocus.current?.focus?.()},[role]);
+ useEffect(()=>{if(!guide.data||restored.current)return;restored.current=true;const a=guide.data.preferences.active;if(a?.questId==='tour')setI(Math.min(a.step,steps.length-1))},[guide.data,steps.length]);
+ useEffect(()=>{if(i<0||!guide.data)return;const t=setTimeout(()=>void guide.client?.patch({active:{questId:'tour',step:i}}),400);return()=>clearTimeout(t)},[i,guide.client,!!guide.data]);
+ const close=useCallback((done:boolean)=>{const p=guide.client?.getSnapshot().data?.preferences;void guide.client?.patch({active:null,...(done?{acknowledged:[...new Set([...(p?.acknowledged||[]),'tour'])]}:{})});setI(-1);setRect(null);if(done)try{window.dispatchEvent(new CustomEvent('cc-tour-done',{detail:role}))}catch{};lastFocus.current?.focus?.()},[role,guide.client]);
  // 처음 한 번 자동 · ?tour=1
  useEffect(()=>{
   const q=new URLSearchParams(location.search).get('tour')==='1';
   // 자동 열기는 사람이 쓸 때만(자동 점검 브라우저에서는 열지 않음)
-  if(!q&&!(auto&&!tourSeen(role)&&!(navigator as any).webdriver))return;
+  if(!guide.data||!q&&!(auto&&!guide.data.preferences.acknowledged.includes('tour')&&!(navigator as any).webdriver))return;
   const t=setTimeout(()=>{lastFocus.current=document.activeElement as HTMLElement;setI(0)},q?300:900);return()=>clearTimeout(t);
- },[role,auto]);
+ },[role,auto,!!guide.data]);
  // 다른 곳에서 startTour()로 다시 열기
  useEffect(()=>{const h=(e:Event)=>{if((e as CustomEvent).detail===role){lastFocus.current=document.activeElement as HTMLElement;setI(0)}};window.addEventListener('cc-tour',h);return()=>window.removeEventListener('cc-tour',h)},[role]);
  // 단계가 바뀌면: 필요한 화면으로 옮기고, 대상을 찾아 화면 가운데로

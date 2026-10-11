@@ -2,6 +2,7 @@ import {resolveStore} from './saas-api';
 import {digest} from '../lib/password';
 import {staffGone} from '../lib/staff-access';
 import {QUESTS} from '../lib/quests';
+import {TOURS} from '../lib/tour-steps';
 import {managerPermissions} from '../lib/manager-permissions';
 import {START_GUIDE_VERSION,defaultGuidePreferences,guideScopeKey,validateGuidePatch,type GuideIdentity,type GuideKind,type GuidePreferences} from '../lib/start-guide';
 import type {PgD1} from '../lib/pg-d1';
@@ -18,7 +19,8 @@ function identity(uid:string,owner:string,d:any,branch:string,kind:GuideKind){
  const qs=QUESTS[own?'owner':'staff'];
  const ids=kind==='management'?managerPermissions(d,self).permissions.filter(p=>['schedule','attendance','leave','notices'].includes(p)).map(p=>'manager-'+p):qs.map(q=>q.id);
  const ack=kind==='management'?['tour']:qs.filter(q=>q.doneSel||q.doneOnLastClick).map(q=>q.id).concat('tour');
- return {scope:{userId:uid,owner,branchId:branch,role,kind,guideVersion:START_GUIDE_VERSION} as GuideIdentity,ids:[...ids,'tour'],ack,steps:kind==='management'?managementSteps:Object.fromEntries(qs.map(q=>[q.id,q.steps.length]))};
+ const steps:Record<string,number>={...(kind==='management'?managementSteps:Object.fromEntries(qs.map(q=>[q.id,q.steps.length]))),tour:kind==='management'?1:TOURS[own?'owner':'staff'].length};
+ return {scope:{userId:uid,owner,branchId:branch,role,kind,guideVersion:START_GUIDE_VERSION} as GuideIdentity,ids:[...ids,'tour'],ack,steps};
 }
 const where='user_id=? AND owner=? AND branch_id=? AND role=? AND guide_kind=? AND guide_version=?';
 const args=(s:GuideIdentity)=>[s.userId,s.owner,s.branchId,s.role,s.kind,s.guideVersion];

@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+const {GuideClient}=await import('../lib/start-guide-client.ts');
+const p=()=>({mini:false,hideAll:false,deferredUntil:null,active:null,acknowledged:[]});
+const dto=(key,revision=0,preferences=p())=>({scope:{key,branchId:'branch-main',role:'owner',kind:'personal',guideVersion:'v'},revision,preferences,availableQuestIds:['store','tour']});
+let n=0;const ok=s=>{n++;console.log('PASS: '+s)};
+let state=dto('A'),calls=[],fail=false;
+const send=async(url,init)=>{calls.push(init);if(fail)throw Error('offline');if(init?.method==='PATCH'){const b=JSON.parse(init.body);if(b.revision!==state.revision)return {ok:false,status:409,json:async()=>({code:'GUIDE_CHANGED',latest:state,error:'다른 기기'})};state=dto('A',state.revision+1,{...state.preferences,...b.patch})}return {ok:true,status:200,json:async()=>state}};
+const a=new GuideClient('/api/start-guide?branchId=branch-main',send);assert.equal(a.getSnapshot().data,null);await a.load();assert.equal(a.getSnapshot().data.scope.key,'A');ok('new scope starts empty then loads server settings');
+await Promise.all([a.patch({mini:true}),a.patch({hideAll:true})]);assert.equal(state.revision,2);assert.equal(state.preferences.mini,true);assert.equal(state.preferences.hideAll,true);ok('rapid actions serialize with latest confirmed revision');
+fail=true;await a.patch({mini:false});assert.equal(a.getSnapshot().data.preferences.mini,true);assert.equal(a.getSnapshot().status,'error');const failed=JSON.parse(calls.at(-1).body);fail=false;await a.retry();assert.equal(a.getSnapshot().data.preferences.mini,false);assert.deepEqual(JSON.parse(calls.at(-1).body),failed);ok('failed save keeps confirmed state and retries exact original request');
+state=dto('A',state.revision+1,{...state.preferences,mini:true});await a.patch({hideAll:false});assert.equal(a.getSnapshot().status,'conflict');assert.equal(a.getSnapshot().data.preferences.mini,true);assert.equal(a.getSnapshot().data.preferences.hideAll,true);ok('other-device conflict shows latest state without reapplying stale patch');
+const b=new GuideClient('/other',async()=>({ok:true,status:200,json:async()=>dto('B')}));assert.equal(b.getSnapshot().data,null);await b.load();assert.equal(b.getSnapshot().data.preferences.mini,false);assert.equal(a.getSnapshot().data.preferences.mini,true);ok('other account has no prior account preference flash');
+let finish;const c=new GuideClient('/slow',()=>new Promise(r=>finish=r));const loading=c.load();c.dispose();finish({ok:true,status:200,json:async()=>dto('old')});await loading;assert.equal(c.getSnapshot().data,null);ok('unmounted scope ignores delayed response');
+console.log(`start guide client: ${n} passed`);

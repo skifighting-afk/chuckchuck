@@ -1,4 +1,5 @@
 import {same} from '../lib/same';
+import {digest} from '../lib/password';
 import {managerPermissions} from '../lib/manager-permissions';
 import {correctionError} from '../lib/attendance-review';
 import {resolveStore} from './saas-api';
@@ -26,7 +27,7 @@ export async function managerApi(request:Request,env:{DB:D1Database}){
   if(permissions.includes('laborCost')||permissions.includes('payroll'))try{const t=normalizeTeam({...d,attendance:mine});const rows=calculate(t,month).filter(r=>ids.has(r.employeeId));extra.month=month;extra.laborTotal={gross:rows.reduce((n,r)=>n+r.gross,0),hours:Math.round(rows.reduce((n,r)=>n+r.hours,0)*10)/10,people:rows.length};if(permissions.includes('payroll'))extra.payroll=rows.map(r=>({name:r.name,hours:r.hours,gross:r.gross,net:r.net}));}catch{}
  }
  if(permissions.includes('contacts'))extra.contacts=staff.map(e=>({id:e.id,name:e.name,phone:e.phone,role:e.role}));
- if(request.method==='GET')return json({...extra,acting,version:link.row.version,permissions,branchId:self.branchId,branchName:d.branches.find((b)=>b.id===self.branchId)?.name,employees:staff.map((e)=>({id:e.id,name:e.name})),shifts:permissions.includes('schedule')?d.shifts.filter((s)=>ids.has(s.employeeId)):[],corrections:permissions.includes('attendance')?d.requests.filter((r)=>ids.has(r.before.employeeId)&&r.status==='승인 대기'&&r.actor.id!==uid&&r.before.employeeId!==self.id):[],leaves:permissions.includes('leave')?ops.leaves.filter((l)=>ids.has(l.employeeId)&&l.employeeId!==self.id&&l.status==='승인 대기'):[]});
+ if(request.method==='GET')return json({...extra,guideContext:await digest(JSON.stringify([uid,link.owner,'manager'])),acting,version:link.row.version,permissions,branchId:self.branchId,branchName:d.branches.find((b)=>b.id===self.branchId)?.name,employees:staff.map((e)=>({id:e.id,name:e.name})),shifts:permissions.includes('schedule')?d.shifts.filter((s)=>ids.has(s.employeeId)):[],corrections:permissions.includes('attendance')?d.requests.filter((r)=>ids.has(r.before.employeeId)&&r.status==='승인 대기'&&r.actor.id!==uid&&r.before.employeeId!==self.id):[],leaves:permissions.includes('leave')?ops.leaves.filter((l)=>ids.has(l.employeeId)&&l.employeeId!==self.id&&l.status==='승인 대기'):[]});
  if(request.method!=='POST'||request.headers.get('origin')!==new URL(request.url).origin)return json({error:'요청을 읽지 못했어요. 새로고침한 뒤 다시 시도해 주세요.'},403);
  const raw=await request.text();if(raw.length>10000)return json({error:'입력 용량 초과'},413);const b=JSON.parse(raw);
  const permission=({saveShift:'schedule',reviewCorrection:'attendance',reviewLeave:'leave',postNotice:'notices'} as any)[b.action];
