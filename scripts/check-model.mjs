@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import {seed,duration,hours,payroll,stateSchema} from '../lib/model.ts';
 const s=seed();assert.equal(stateSchema.safeParse(s).success,true);
 await import('./check-document-overview.mjs');
+await import('./check-client-assets.mjs');
+await import('./check-fetch-client-assets.mjs');
 assert.equal(duration('22:00','06:00',60),7);
 assert.equal(duration('10:00','18:00',30),7.5);
 s.attendance=[{id:'boundary',employeeId:'e0',start:'2026-08-31T15:30:00.000Z',end:'2026-08-31T17:30:00.000Z',breakMinutes:30,breakStart:null}];
