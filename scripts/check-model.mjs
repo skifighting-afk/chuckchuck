@@ -1,4 +1,6 @@
 import './check-task-navigation.mjs';
+import './check-work-context.mjs';
+import './check-work-context-fixture.mjs';
 import assert from 'node:assert/strict';
 await import('./check-home-first-work.mjs');
 import {seed,duration,hours,payroll,stateSchema} from '../lib/model.ts';
