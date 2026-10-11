@@ -5,12 +5,13 @@
 PASS: overnight duration, breaks, Korean month boundaries and wage validation.
 
 ── check-home-seo
-(node:2962) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(node:3031) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
 (Use `node --trace-warnings ...` to show where the warning was created)
 PASS: homepage search/social metadata, visible FAQ/prices, canonical domains and private app indexing boundary
 
 ── check-home-controls
 PASS: homepage play/pause survives focus-before-click and other controls pause autoplay
+PASS: current and planned feature availability precedes experience actions
 
 ── check-app-recovery
 PASS: normal workspace remains intact; lazy-load failure has accessible recovery without raw errors.
@@ -1832,6 +1833,7 @@ PASS: 체험 화면 숫자(급여·명세서·임금대장 합계).
 다음 행동이 없는 오류 문구:
 billing-confirm.ts: 주문을 찾을 수 없어요.
 billing-confirm.ts: 주문 금액과 달라 승인하지 않았어요.
+reels-tick-api.ts: 릴스 자동 올리기 전용 주소예요.
 start-guide-api.ts: 지원하지 않는 요청이에요.
 start-guide-api.ts: 안내 설정이 너무 길어요.
 start-guide-api.ts: 이미 처리한 요청의 내용이 바뀌었어요.
