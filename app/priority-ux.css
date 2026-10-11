@@ -4,7 +4,7 @@
 .app-recovery button{display:block;min-height:48px;padding:12px 20px;margin:24px 0 16px;border-radius:12px;background:#185b45;color:#fff;font:inherit;font-weight:700}
 .app-recovery a{text-decoration:underline;text-underline-offset:4px}
 .app-recovery button:focus-visible,.app-recovery a:focus-visible{outline:3px solid #185b45;outline-offset:4px}
-.t-work .notice,.t-work .footnote,.t-dialog .notice,.t-panelbody p{font-size:.875rem;line-height:1.65}
+.t-work .notice,.t-work .footnote,.t-dialog .notice{font-size:.875rem;line-height:1.65}
 .t-work h1{font-size:clamp(24px,3vw,32px);line-height:1.3;word-break:keep-all}
 .t-field{font-size:.875rem}.t-field>span{font-weight:600}
 .payroll-overview td[data-label]{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
