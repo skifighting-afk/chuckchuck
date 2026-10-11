@@ -4,6 +4,7 @@ import {checkDay} from '@/lib/attendance-check';
 import {todayBoard,budgetStatus,homeAlerts} from '@/lib/close-check';
 import {JoinInbox} from './join-inbox';
 import {QuestBoard} from './quests';
+import {DailyBoard} from './daily';
 // 가이드 34 → 시작 퀘스트: 실제로 해 봐야 깨지는 미션 보드(app/quests.tsx)
 export function HomeOverview({state,branch,onPayroll,onAttendance,onSchedule,onEmployees,onRegister,onJoin,children,assistant,demo=false,onChanged}:{assistant?:import('react').ReactNode;demo?:boolean;onChanged?:()=>void;children?:import('react').ReactNode;state:Team;branch:string;onPayroll:()=>void;onAttendance:()=>void;onSchedule:()=>void;onEmployees:()=>void;onRegister:()=>void;onJoin?:()=>void}){
  const employees=state.employees.filter(e=>e.branchId===branch),ids=new Set(employees.map(e=>e.id)),month=today().slice(0,7),run=state.payrollRuns[month+':'+branch];
@@ -18,7 +19,7 @@ export function HomeOverview({state,branch,onPayroll,onAttendance,onSchedule,onE
  const groups=[{key:'working',label:'일하는 중',n:count(['working','late','extra'])},{key:'late',label:'그중 늦게 출근',n:count(['late'])},{key:'noshow',label:'출근 기록 없음',n:count(['noshow','missed'])},{key:'planned',label:'출근 전',n:count(['planned'])},{key:'done',label:'퇴근',n:count(['done'])}].filter(g=>g.n>0);
  const ticks=Array.from({length:5},(_,i)=>board.lo+Math.round(span*i/4));
  const shown=board.rows.slice(0,10);
- return <div className="home-overview">{!demo&&<JoinInbox onChanged={onChanged||(()=>location.reload())}/>}{checklist}
+ return <div className="home-overview">{!demo&&<JoinInbox onChanged={onChanged||(()=>location.reload())}/>}<DailyBoard role="owner" state={state} branch={branch} demo={demo}/>{checklist}
   {alerts.length>0&&<section className="home-alerts" aria-labelledby="home-alerts-title"><h2 id="home-alerts-title">알림 <b>{alerts.length}</b></h2><ul>{alerts.slice(0,5).map(a=><li key={a.key} className={a.tone}><div><b>{a.title}</b><span>{a.detail}</span></div><button type="button" onClick={onAttendance}>확인</button></li>)}</ul>{alerts.length>5&&<button type="button" className="home-alerts-more" onClick={onAttendance}>알림 {alerts.length-5}건 더 보기</button>}</section>}
   {(()=>{const t=todayLabor(employees as any,here as any,today(),Date.now());return <p className="home-today-cost" aria-label="오늘 인건비"><span>오늘 인건비 지금까지</span><b>약 {won(t.cost)}원</b><small>{t.hours}시간 · 시급×일한 시간, 월급은 하루치</small></p>})()}<button type="button" className="home-pay" onClick={onPayroll}><span className="home-pay-k">{Number(month.slice(5))}월 {run?.locked?'확정':'예상'} 급여</span><span className="home-pay-v">{won(total)}<small>원</small></span><span className="home-pay-note">{run?.locked?'확정된 실수령 합계예요. 송금 내역은 아니에요.':'지금까지 입력된 근무·수당·공제로 계산했어요. 확정 전이에요.'}</span>{budget&&<span className={'home-pay-budget'+(budget.over?' over':budget.near?' near':'')}><i style={{width:Math.min(100,Math.round(budget.ratio*100))+'%'}}/><em>인건비 예산 {Math.round(budget.ratio*100)}% · 근무표 기준 {won(budget.planned)}원 / {won(budget.budget)}원</em></span>}<span className="home-pay-go">급여 자세히 보기</span></button>
   <section className="today-now" aria-labelledby="today-now-title">

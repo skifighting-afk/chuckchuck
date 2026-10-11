@@ -19,6 +19,8 @@ function useQuestStore(role:QuestRole,demo:boolean):[Store,(p:Store)=>void]{
 }
 /** 보드·도움말에서 퀘스트 시작 */
 export const startQuest=(role:QuestRole,id:string)=>{try{window.dispatchEvent(new CustomEvent('cc-quest-start',{detail:{role,id}}))}catch{}};
+/** 하루 일과 등에서 짚기만 빌려 쓰기: 화면을 옮기고(page) 칸을 짚는다(steps). 마지막 단계를 누르면 끝난다 */
+export const startGuide=(role:QuestRole,g:{id:string,emoji:string,title:string,page?:string,steps?:any[]})=>{try{window.dispatchEvent(new CustomEvent('cc-quest-start',{detail:{role,id:g.id,guide:g}}))}catch{}};
 /** 기기·설정상 못 하는 퀘스트(needs 요소가 화면에 없음). 한 번이라도 보이면 계속 보인다 */
 const present=new Set<string>();
 function useSkip(role:QuestRole){
@@ -78,7 +80,7 @@ export function QuestHost({role,state,branch,selfId='',demo=false,go}:{role:Ques
   return()=>clearInterval(t);
  },[role,doneKey,ping]);// eslint-disable-line
  // 보드에서 시작
- useEffect(()=>{const h=(e:Event)=>{const d=(e as CustomEvent).detail;if(d?.role!==role)return;const q=QUESTS[role].find(x=>x.id===d.id);if(!q)return;setParty(null);setActive(q);setIdx(0);setLost(false);if(q.page&&go)go(q.page)};addEventListener('cc-quest-start',h);return()=>removeEventListener('cc-quest-start',h)},[role,go]);
+ useEffect(()=>{const h=(e:Event)=>{const d=(e as CustomEvent).detail;if(d?.role!==role)return;const g=d.guide,q:Quest|undefined=g?{id:'guide:'+g.id,chapter:0,emoji:g.emoji,title:g.title,why:'',xp:0,minutes:1,badge:{emoji:'',name:''},page:g.page,steps:g.steps||[],guideOnly:true} as any:QUESTS[role].find(x=>x.id===d.id);if(!q)return;if(!q.steps.length){if(q.page&&go)go(q.page);return}setParty(null);setActive(q);setIdx(0);setLost(false);if(q.page&&go)go(q.page)};addEventListener('cc-quest-start',h);return()=>removeEventListener('cc-quest-start',h)},[role,go]);
  // 짚을 칸 따라가기
  useEffect(()=>{
   if(!active)return;let miss=0;
@@ -94,7 +96,7 @@ export function QuestHost({role,state,branch,selfId='',demo=false,go}:{role:Ques
   tick();const t=setInterval(tick,250);raf=requestAnimationFrame(follow);
   const owner=(target:EventTarget|null)=>{const q=active;if(!(target instanceof Node))return -1;for(let k=q.steps.length-1;k>=0;k--){const el=stepEl(q,k);if(el&&(el===target||el.contains(target)))return k}return -1};
   const advance=(k:number)=>{const n=active.steps.length;const to=Math.min(n-1,k+1);idxRef.current=to;setIdx(to)};
-  const onClick=(e:Event)=>{const k=owner(e.target);if(k<0)return;const st=active.steps[k];if(st.kind==='click'){if(k===active.steps.length-1&&active.doneOnLastClick)ping(active.id);advance(k)}else if(k>idxRef.current){idxRef.current=k;setIdx(k)}};
+  const onClick=(e:Event)=>{const k=owner(e.target);if(k<0)return;const st=active.steps[k];if(st.kind==='click'){if(k===active.steps.length-1&&active.doneOnLastClick)ping(active.id);if(k===active.steps.length-1&&(active as any).guideOnly){setTimeout(()=>{setActive(null);setRect(null)},600);return}advance(k)}else if(k>idxRef.current){idxRef.current=k;setIdx(k)}};
   const onFocus=(e:Event)=>{const k=owner(e.target);if(k>idxRef.current&&active.steps[k].kind!=='click'){idxRef.current=k;setIdx(k)}};
   const onChange=(e:Event)=>{const k=owner(e.target);if(k<0||k!==idxRef.current)return;const st=active.steps[k];if((st.kind==='fill'||st.kind==='pick')&&filled(e.target as Element))advance(k)};
   const onBlur=(e:Event)=>{const k=owner(e.target);if(k<0||k!==idxRef.current)return;const st=active.steps[k];if(st.kind==='pick'||(st.kind==='fill'&&filled(e.target as Element)))advance(k)};

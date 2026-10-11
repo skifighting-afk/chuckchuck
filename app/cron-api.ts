@@ -6,6 +6,7 @@ import {trialNotice} from '../lib/plans';
 import {notifyUser} from './push-api';
 import {processDeletions} from './withdraw-api';
 import {alertsFor} from '../lib/alert-sweep';
+import {routineReminder} from '../lib/daily-routine';
 import {punctuality,lateMemoRule,nextWeekReminder,budgetAlert,workAlerts,scheduleAckReminders,visaAlerts,minWageNotice,digestFilter,dailyDigest} from '../lib/improve2';
 import {dailyBrief,weeklyBrief,staleRequests} from '../lib/briefing';
 import {weekStartOf,plus as plusD} from '../lib/schedule-rules';
@@ -103,6 +104,8 @@ export async function alertSweep(env:any,now=Date.now(),notify=(uid:string,m:any
   // 개선 2차: B005 휴게 끝·B006 휴게 없이 4시간·B014 16시간 열린 기록 · B035 근무표 미확인 · B090 체류 기간 · B058 12월 내년 최저임금
   list.push(...nextWeekReminder(d,now),...budgetAlert(d,now),...workAlerts(d,now),...scheduleAckReminders(d,now),...(new Date(now+9*3600000).getUTCHours()>=9?visaAlerts(d,now):[]));
   {const k=new Date(now+9*3600000);if(k.getUTCHours()>=9){const ny=k.getUTCFullYear()+1,nm=hasRatesFor(ny)?ratesFor(ny).minimumWage:undefined;list.push(...minWageNotice(d,now,nm))}}
+  // 하루 일과: 마감 시각에 남은 일과(출근 누락·요청함·퇴근 누락·내일 빈 근무·근무표 공개·급여 확정)를 한 번
+  list.push(...routineReminder({...d,approvedLeaves:[...(d.approvedLeaves||[]),...leaves]},now,({lenient:10,normal:5,strict:0} as any)[d.settings?.attendanceTolerance||'normal']??5));
   // B015 하루 요약: 켜 두면 사장님 낱개 미출근·퇴근 누락 알림을 빼고 저녁 9시에 한 번
   {const on=!!d.settings?.more?.digest;if(on){const kept=digestFilter(list,true);list.length=0;list.push(...kept);const k=new Date(now+9*3600000);if(k.getUTCHours()===21){const tol=({lenient:10,normal:5,strict:0} as any)[d.settings?.attendanceTolerance||'normal'];const g=dailyDigest(d,now,tol);if(g)list.push(g)}}}
   // B043 명세서를 보낸 지 24시간이 지나도 안 연 직원에게 한 번(72시간 지나면 그만)
