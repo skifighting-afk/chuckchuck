@@ -2,7 +2,7 @@ TAP version 13
 # Subtest: 배포 HTML은 내용이 바뀔 때 새 주소로 JS·CSS를 요청한다
 ok 1 - 배포 HTML은 내용이 바뀔 때 새 주소로 JS·CSS를 요청한다
   ---
-  duration_ms: 35.101593
+  duration_ms: 24.82337
   type: 'test'
   ...
 1..1
@@ -13,11 +13,12 @@ ok 1 - 배포 HTML은 내용이 바뀔 때 새 주소로 JS·CSS를 요청한다
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 97.573932
+# duration_ms 69.806245
 
 > chuckchuck@0.1.0 test
 > node scripts/check-model.mjs
 
+PASS: server-owned schedule change state; current pending linked recipients, retired/store exclusion and per-person hourly reminder limit.
 PASS: one task list retains all work and targets without counting detailed clockout alerts twice.
 PASS: all permitted task pages appear exactly once; recent pages are valid, unique and capped at three.
 PASS: exact selected periods, Sunday/Monday weeks, leap/year boundaries; raw/break/credited/unfinished/finalized record states.
@@ -34,7 +35,7 @@ Client asset generations: a, legacy-8ccc391ba81423f2
 PASS: retain two previous asset generations, bootstrap Pages artifacts, reject integrity/path violations and preserve current HTML.
 PASS: actual publication selection, failed-smoke publication, paginated history, legacy fallback and fail-closed errors.
 PASS: connected payroll example, clear scope/section order and stable manual/autoplay controls.
-(node:2969) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(node:2735) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
 (Use `node --trace-warnings ...` to show where the warning was created)
 PASS: four crawlable feature pages, unique content/metadata, canonical/internal links/sitemap, shared CSS and honest availability.
 PASS: clear audience, actual owner steps, employee entry and honest post-trial record/edit distinction.
@@ -2632,6 +2633,7 @@ PASS: 메일 없이 비밀번호 찾기.
 23. PASS web dir
 24. PASS capacitor versions pinned (no ^ ~)
 25. PASS entry allows app origins
+PASS: real reminder API owner permission, optimistic version, exact linked pending recipients, preserved acknowledgments, one-hour guard and personal privacy.
 
 > chuckchuck@0.1.0 check:function
 > node scripts/check-supabase-function.mjs
