@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+await import('./check-home-first-work.mjs');
 import {seed,duration,hours,payroll,stateSchema} from '../lib/model.ts';
 const s=seed();assert.equal(stateSchema.safeParse(s).success,true);
 await import('./check-document-overview.mjs');
