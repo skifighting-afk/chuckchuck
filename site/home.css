@@ -656,3 +656,15 @@ html.anim .hero{height:160vh}.exp-extra{font-size:15px;color:#64795f;line-height
 .exp-disclaimer,.exp-chapter-note{font-size:14px;line-height:1.65}
 .exp-pay-table td,.exp-pay-summary b{font-variant-numeric:tabular-nums}
 .exp-availability{margin:0 auto 16px;max-width:760px;padding:12px 16px;border:1px solid #cbd8c6;border-radius:10px;background:#f1f5e9;color:#234d3c;font-size:14px;line-height:1.65;word-break:keep-all}
+
+/* Keep the decision together: product, employee price, trial and action. */
+@media(max-width:600px){
+ .hero-pin,html.anim .hero-pin{padding-top:88px;gap:24px;padding-bottom:32px}
+ .hero h1,html.anim .hero h1{font-size:clamp(30px,8.6vw,44px);line-height:1.2;letter-spacing:-.045em}
+ .hero-price-note{margin-top:12px}
+ .hero .lede,html.anim .hero .lede{font-size:16px;line-height:1.65;margin-top:16px}
+ .hero .cta-row{grid-template-columns:1fr;gap:8px;margin-top:20px}
+ .hero .cta-row .btn{min-height:52px;font-size:16px}
+ .hero .cta-row .btn-ghost{min-height:44px;background:transparent;border-color:transparent;text-decoration:underline;text-underline-offset:4px}
+ .hero .fine,html.anim .hero .hero-copy .fine{margin-top:8px;font-size:14px}
+}
