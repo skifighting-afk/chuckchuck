@@ -24,6 +24,10 @@ body:has(.ast-dock) .month-undo{left:50%}
 .ast-scrim{display:block;position:fixed;inset:0;z-index:39;background:rgba(16,37,27,.3)}
 @media(prefers-reduced-motion:reduce){.ast-dock.open{animation:none}}
 @media(max-width:1199px){
+ .topbar,.demo-shell .topbar{height:auto;min-height:60px;padding:8px 16px;gap:8px;flex-wrap:wrap}
+ .topbar>.t-inline{min-width:0;gap:8px}.topbar>.t-inline:first-child{flex:1 1 100%}
+ .topbar>.t-inline:last-child{flex:1 1 100%;justify-content:flex-end;flex-wrap:wrap}
+ .topbar .gsearch{flex:1;min-width:0}.topbar .gsearch input{width:100%;min-width:0}
  #owner-assistant-launcher .ast-fab{position:static;box-shadow:none;min-height:44px;padding:4px 10px;gap:6px;font-size:.875rem}
  #owner-assistant-launcher .ast-fab img{width:28px;height:28px}
 }
