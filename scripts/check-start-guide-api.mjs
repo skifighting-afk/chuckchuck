@@ -4,6 +4,7 @@ import {api} from '../dist/server/index.js';
 import {authedTest} from './test-auth.mjs';
 import {closeAll} from './test-db.mjs';
 const T=await authedTest(),{q,id,env}=T;
+env.START_GUIDE_TEST_DIAGNOSTICS=true;
 const call=async(user,branch='branch-main',body,kind='personal',context)=>{const r=await api(new Request('https://test.local/api/start-guide?branchId='+branch+'&kind='+kind+(context?'&context='+encodeURIComponent(context):''),{method:body?'PATCH':'GET',headers:{origin:'https://test.local',...await T.headersFor(user)},...(body?{body:JSON.stringify(body)}:{})}),env);return {status:r.status,data:await r.json()}};
 const raw=async owner=>JSON.parse((await q('SELECT data FROM stores WHERE owner=?',id(owner)).first()).data);
 const save=async(owner,d)=>q('UPDATE stores SET data=?,version=version+1 WHERE owner=?',JSON.stringify(d),id(owner)).run();
