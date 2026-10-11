@@ -2055,6 +2055,26 @@ PASS: 가불·선지급.
 56. PASS other staff sees no messages
 PASS: 매장 일지·할 일·서명 서류.
 
+── check-history-matching
+1. PASS ambiguous normalized names never select the last employee
+2. PASS an explicit in-scope employee selection resolves only the chosen row
+3. PASS a stale or foreign manual selection cannot fall back to a name
+4. PASS a stable employee ID preserves a match after the employee name changes
+5. PASS an unknown file employee ID never silently falls back to a matching name
+6. PASS a branch column disambiguates equal names without merging people
+7. PASS an explicit ID that conflicts with the file branch needs review
+8. PASS ID-only files can identify the correct employee
+9. PASS payroll import uses the same matching guard as schedule import
+10. PASS unique-name legacy files retain their existing import result
+11. PASS a row is excluded only after an explicit exclusion choice
+12. PASS duplicate employee IDs are not silently resolved
+13. PASS a nonempty record without identity stays unresolved until mapped or excluded
+14. PASS original values remain available to distinguish equal-name records
+15. PASS legacy descriptive name headers still match without confusing employee ID
+16. PASS CSV references preserve physical lines across blanks and quoted newlines
+17. PASS XLSX references preserve source worksheet row numbers
+PASS: 17/17 history matching regression cases.
+
 ── check-history
 1. PASS excel serial date
 2. PASS dotted date
