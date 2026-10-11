@@ -1,19 +1,19 @@
-PASS public-home · 이전과 0% 다름
+PASS public-home · 이전과 11.12% 다름
 PASS public-start · 이전과 0% 다름
 PASS public-login · 이전과 0% 다름
 PASS public-signup · 이전과 0% 다름
 PASS public-calculator · 이전과 0% 다름
 PASS public-help · 이전과 0% 다름
-PASS public-refund · 이전과 0% 다름
-PASS public-terms · 이전과 0% 다름
-PASS public-pricing · 이전과 0% 다름
-PASS public-status · 이전과 0.1% 다름
+PASS public-refund · 이전과 13.78% 다름
+PASS public-terms · 이전과 20.35% 다름
+PASS public-pricing · 이전과 20.88% 다름
+PASS public-status · 이전과 0.05% 다름
 PASS public-privacy · 이전과 0% 다름
 PASS public-policy · 이전과 0% 다름
 PASS public-news · 이전과 0% 다름
 PASS public-privacy-request · 이전과 0% 다름
 PASS public-accessibility · 이전과 0% 다름
-PASS demo-home · 이전과 0.03% 다름
+PASS demo-home · 이전과 0% 다름
 PASS demo-employees · 이전과 0% 다름
 PASS demo-attendance · 이전과 0% 다름
 PASS demo-schedule · 이전과 0% 다름
@@ -25,92 +25,3 @@ PASS demo-operations · 이전과 0% 다름
 PASS demo-manual · 이전과 0% 다름
 PASS demo-reports · 이전과 0% 다름
 PASS demo-stores · 이전과 0% 다름
-PASS demo-settings · 이전과 0% 다름
-PASS demo-guide · 이전과 0% 다름
-PASS demo-staff · 이전과 13.99% 다름
-PASS hr-hiring-owner · 이전과 0% 다름
-PASS hr-hiring-employee · 이전과 0% 다름
-PASS hr-hiring-manager · 이전과 0% 다름
-PASS hr-training-owner · 이전과 0% 다름
-PASS hr-training-employee · 이전과 0% 다름
-PASS hr-training-manager · 이전과 0% 다름
-PASS hr-staffing-owner · 이전과 0% 다름
-PASS hr-staffing-employee · 이전과 0% 다름
-PASS hr-staffing-manager · 이전과 0% 다름
-PASS hr-meetings-owner · 이전과 0% 다름
-PASS hr-meetings-employee · 이전과 0% 다름
-PASS hr-meetings-manager · 이전과 0% 다름
-PASS hr-cases-owner · 이전과 0% 다름
-PASS hr-cases-employee · 이전과 0% 다름
-PASS hr-cases-manager · 이전과 0% 다름
-PASS hr-pulse-owner · 이전과 0% 다름
-PASS hr-pulse-employee · 이전과 0% 다름
-PASS hr-pulse-manager · 이전과 0% 다름
-PASS hr-items-owner · 이전과 0% 다름
-PASS hr-items-employee · 이전과 0% 다름
-PASS hr-items-manager · 이전과 0% 다름
-PASS hr-settings-owner · 이전과 0% 다름
-PASS hr-settings-employee · 이전과 0% 다름
-PASS hr-settings-manager · 이전과 0% 다름
-PASS hr-export-owner · 이전과 0% 다름
-PASS hr-export-employee · 이전과 0% 다름
-PASS hr-export-manager · 이전과 0% 다름
-PASS public-home (큰 글씨)
-PASS public-start (큰 글씨)
-PASS public-login (큰 글씨)
-PASS public-signup (큰 글씨)
-PASS public-calculator (큰 글씨)
-PASS public-help (큰 글씨)
-PASS public-refund (큰 글씨)
-PASS public-terms (큰 글씨)
-PASS public-pricing (큰 글씨)
-PASS public-status (큰 글씨)
-PASS public-privacy (큰 글씨)
-PASS public-policy (큰 글씨)
-PASS public-news (큰 글씨)
-PASS public-privacy-request (큰 글씨)
-PASS public-accessibility (큰 글씨)
-PASS demo-home (큰 글씨)
-PASS demo-employees (큰 글씨)
-PASS demo-attendance (큰 글씨)
-PASS demo-schedule (큰 글씨)
-PASS demo-payroll (큰 글씨)
-PASS demo-contracts (큰 글씨)
-PASS demo-retirement (큰 글씨)
-PASS demo-outbox (큰 글씨)
-PASS demo-operations (큰 글씨)
-PASS demo-manual (큰 글씨)
-PASS demo-reports (큰 글씨)
-PASS demo-stores (큰 글씨)
-PASS demo-settings (큰 글씨)
-PASS demo-guide (큰 글씨)
-PASS demo-staff (큰 글씨)
-PASS hr-hiring-owner (큰 글씨)
-PASS hr-hiring-employee (큰 글씨)
-PASS hr-hiring-manager (큰 글씨)
-PASS hr-training-owner (큰 글씨)
-PASS hr-training-employee (큰 글씨)
-PASS hr-training-manager (큰 글씨)
-PASS hr-staffing-owner (큰 글씨)
-PASS hr-staffing-employee (큰 글씨)
-PASS hr-staffing-manager (큰 글씨)
-PASS hr-meetings-owner (큰 글씨)
-PASS hr-meetings-employee (큰 글씨)
-PASS hr-meetings-manager (큰 글씨)
-PASS hr-cases-owner (큰 글씨)
-PASS hr-cases-employee (큰 글씨)
-PASS hr-cases-manager (큰 글씨)
-PASS hr-pulse-owner (큰 글씨)
-PASS hr-pulse-employee (큰 글씨)
-PASS hr-pulse-manager (큰 글씨)
-PASS hr-items-owner (큰 글씨)
-PASS hr-items-employee (큰 글씨)
-PASS hr-items-manager (큰 글씨)
-PASS hr-settings-owner (큰 글씨)
-PASS hr-settings-employee (큰 글씨)
-PASS hr-settings-manager (큰 글씨)
-PASS hr-export-owner (큰 글씨)
-PASS hr-export-employee (큰 글씨)
-PASS hr-export-manager (큰 글씨)
-이전 실행과 2% 넘게 달라진 화면: demo-staff 13.99%
-390px 화면 57개(보통·큰 글씨): 가로 넘침 없음

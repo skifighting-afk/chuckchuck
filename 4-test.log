@@ -699,6 +699,57 @@ PASS 11. missing camera has phone fallback
 PASS 12. busy camera explains retry
 12/12 passed
 
+── check-employee-pricing
+PASS 1. VAT-included employee monthly amounts, including zero
+PASS 2. invalid counts and plans are rejected rather than silently clamped
+PASS 3. unlinked employees and equal names remain separate people
+PASS 4. the same authenticated account across stores is counted once
+PASS 5. nonactive employees, owner and protected test IDs are excluded
+PASS 6. stale inactive account links do not affect active employees
+PASS 7. corrupt duplicate employee IDs or conflicting account links stop the quote
+PASS 8. employee and account IDs have separate identity namespaces
+PASS 9. snapshots pin current count, prices and timestamp without exposing account IDs
+PASS 10. quote identity digest is stable under row order but changes when identities change
+PASS 11. snapshots reject an invalid count timestamp
+PASS 12. refund estimates use original payment amount, period bounds and accumulated refunds
+PASS 13. scheduled cancellation survives next-period activation when its end is later
+PASS: employee pricing 13 cases.
+
+── check-pricing-ui
+PASS: public pricing renders 0 employees with both actual monthly amounts
+PASS: public pricing renders 1 employees with both actual monthly amounts
+PASS: public pricing renders 5 employees with both actual monthly amounts
+PASS: public pricing metadata matches employee prices
+
+── check-billing-quotes
+PASS: new account has employee pricing, monthly period, 50 stores and 0 employee estimate
+PASS: account estimate follows server employment, account deduplication, owner and test exclusions
+PASS: additive migration preserves legacy 6/12 month amounts and period bounds
+PASS: legacy subscription shows original amount separately; reads never convert or extend it
+PASS: direct plan change cannot overwrite a paid legacy subscription
+PASS: quote snapshots are server-only with RLS and revoked public privileges
+PASS: staff and coowners cannot obtain billing quotes
+PASS: server quote ignores client amount, count and test exclusions, expires in 15 minutes and hides auth IDs
+PASS: conversion consent, immutable prepared order and quote retry are protected
+PASS: expired quotes, changed employees and changed account plan require reconfirmation
+PASS: unrelated edits keep quote valid and simultaneous prepare creates one order
+PASS: zero employees creates and fulfills one internal no-charge order without supplier calls
+PASS: billing snapshots and legacy protection 12/12.
+
+── check-billing-recovery
+PASS 1: Korean month-end, leap year and year boundary clamp
+PASS 2: lost approval response recovers through lookup without a second approval request
+PASS 3: supplier idempotency processing response remains recoverable
+PASS 4: parallel and sequential confirmed retries apply entitlement once
+PASS 5: approved payment survives transactional entitlement failure and resumes without paying again
+PASS 6: simultaneous first confirms approve and fulfill one order
+PASS 7: mismatched supplier order ID never grants access, valid recheck recovers
+PASS 8: paid legacy period stays intact; next period activates through common permission resolution
+PASS 9: repeated 0-price quotes cannot stockpile free future periods before hiring
+PASS 10: uncertain refund preserves the original intent and idempotency key
+PASS 11: pre-migration paid legacy transaction never extends an already applied historical period
+PASS: billing recovery 11/11.
+
 ── check-saas
 PASS: 연차 자동 계산 반영.
 PASS: approved leave blocks shifts; overlapping shifts blocked.
@@ -1697,7 +1748,9 @@ PASS 36. 2026-03-31: no clock-in or clock-out in the future (A1·A3)
 PASS: 체험 화면 숫자(급여·명세서·임금대장 합계).
 
 ── check-error-messages
-PASS: 오류 문구 598개 모두 다음 행동 안내 포함.
+다음 행동이 없는 오류 문구:
+billing-confirm.ts: 주문을 찾을 수 없어요.
+billing-confirm.ts: 주문 금액과 달라 승인하지 않았어요.
 PASS: 오류 번호·로그 개인정보 제거.
 
 ── check-attendance-table
