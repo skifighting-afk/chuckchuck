@@ -109,12 +109,12 @@ export async function homeResultE2E({browser,step}){
    for(const width of [320,390,768,1024,1440]){
     await page.setViewportSize({width,height:900});
     await page.evaluate(()=>scrollTo({top:0,behavior:'instant'}));
-    await page.waitForFunction(()=>document.getElementById('hero-title').getBoundingClientRect().top>=document.getElementById('nav').getBoundingClientRect().bottom+10);
+    try{await page.waitForFunction(()=>document.getElementById('hero-title').getBoundingClientRect().top>=document.getElementById('nav').getBoundingClientRect().bottom+10)}catch(e){throw Error('hero clearance width='+width+' '+JSON.stringify(await page.evaluate(()=>({top:document.getElementById('hero-title').getBoundingClientRect().top,navBottom:document.getElementById('nav').getBoundingClientRect().bottom,scrollY})))+' '+e.message)}
     const contents=width<=1100?page.getByRole('navigation',{name:'페이지 목차',exact:true}):page.getByRole('navigation',{name:'홈페이지 메뉴',exact:true});
     assert(await contents.isVisible(),'contents available '+width);
     for(const id of ['tour','benefits-title','pricing','start-roadmap']){
      const link=contents.locator('a[href="#'+id+'"]');await link.focus();await page.keyboard.press('Enter');
-     await page.waitForFunction(id=>{const t=document.getElementById(id),nav=document.getElementById('nav');return t.getBoundingClientRect().top>=nav.getBoundingClientRect().bottom+10&&t.getBoundingClientRect().top<nav.getBoundingClientRect().bottom+40},id);
+     try{await page.waitForFunction(id=>{const t=document.getElementById(id),nav=document.getElementById('nav');return t.getBoundingClientRect().top>=nav.getBoundingClientRect().bottom+10&&t.getBoundingClientRect().top<nav.getBoundingClientRect().bottom+40},id)}catch(e){await page.screenshot({path:'ci-logs/home-anchor-failure.png'});throw Error('anchor '+id+' width='+width+' '+JSON.stringify(await page.evaluate(id=>({top:document.getElementById(id).getBoundingClientRect().top,navBottom:document.getElementById('nav').getBoundingClientRect().bottom,margin:getComputedStyle(document.getElementById(id)).scrollMarginTop,scrollY,expChapter:document.querySelector('.experience').dataset.chapter}),id))+' '+e.message)}
      await page.waitForFunction(id=>document.querySelector('#nav a[href="#'+id+'"][aria-current="location"]'),id);
      assert.equal(await contents.locator('[aria-current="location"]').count(),1);
     }
