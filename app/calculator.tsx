@@ -1,3 +1,4 @@
+import {durationLabel} from '../lib/payroll-display';
 // 작업 032: 로그인 없이 쓰는 주휴수당·인건비 계산기
 import {useMemo,useState} from 'react';
 import {estimateLabor} from '../lib/labor-estimate';
@@ -27,7 +28,7 @@ export function Calculator(){
     <div className="calc-big"><span>직원 1명 월 급여</span><strong>{won(e.month.gross)}원</strong></div>
     <dl>
      <div><dt>주 근로시간</dt><dd>{e.weeklyHours}시간</dd></div>
-     <div><dt>주휴수당</dt><dd>{e.juhuEligible?`주 ${won(e.week.juhu)}원 (${e.juhuHours.toFixed(1)}시간분)`:'없음 · 주 15시간 미만'}</dd></div>
+     <div><dt>주휴수당</dt><dd>{e.juhuEligible?`주 ${won(e.week.juhu)}원 (${durationLabel(e.juhuHours)} 기준)`:'없음 · 주 15시간 미만'}</dd></div>
      {five&&<div><dt>연장·야간 가산(주)</dt><dd>{won(e.week.overtime+e.week.night)}원</dd></div>}
      <div><dt>주급 합계</dt><dd>{won(e.week.total)}원</dd></div>
      <div><dt>직원 공제(월)</dt><dd>{won(e.month.employeeDeduction)}원</dd></div>
