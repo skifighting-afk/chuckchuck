@@ -1,5 +1,7 @@
 {
- "at": "2026-10-11T11:22:32.132Z",
+ "at": "2026-10-11T11:30:24.297Z",
  "changedPercent": {},
- "failures": []
+ "failures": [
+  "demo-payroll(큰 글씨): 가로 넘침 div.actions 460px, fieldset.pc-bulk-who 460px, label 445px, input 445px, label 445px"
+ ]
 }
