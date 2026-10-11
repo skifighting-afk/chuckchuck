@@ -25,7 +25,9 @@ ok('unrelated user sees nothing',(await call('stranger','/api/account')).body.tr
 ok('wrong account cannot accept',(await call('stranger','/api/account',{action:'transferAccept',owner:id('boss'),password:TEST_PASSWORD})).status,404);
 ok('owner of another store cannot accept',(await call('other','/api/account',{action:'transferAccept',owner:id('boss'),password:TEST_PASSWORD})).status,409);
 ok('heir password checked',(await call('heir','/api/account',{action:'transferAccept',owner:id('boss'),password:'nope'})).status,400);
+await q("INSERT INTO start_guide_preferences(user_id,owner,branch_id,role,guide_kind,guide_version,preferences) VALUES(?,?,'branch-main','owner','personal','test',?::text::jsonb)",id('boss'),id('boss'),JSON.stringify({mini:true})).run();
 r=await call('heir','/api/account',{action:'transferAccept',owner:id('boss'),password:TEST_PASSWORD});ok('heir accepts',r.status,200);
+ok('existing guide preferences follow representative transfer',(await q('SELECT owner,preferences FROM start_guide_preferences WHERE user_id=?',id('boss')).first()),{owner:id('heir'),preferences:{mini:true}});
 const st=await call('heir','/api/store');ok('heir now owns store with staff',[st.status,st.body.access,st.body.state.employees.length],[200,'owner',1]);
 ok('shift mirror moved',Number((await q('SELECT count(*) AS n FROM shift_records WHERE owner=?',id('boss')).first()).n)===0&&Number((await q('SELECT shift_mirror_drift(?) AS n',id('heir')).first()).n)===0);
 ok('attendance moved',Number((await q('SELECT count(*) AS n FROM attendance_records WHERE owner=?',id('heir')).first()).n),1);

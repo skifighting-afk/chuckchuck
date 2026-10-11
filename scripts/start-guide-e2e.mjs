@@ -27,7 +27,10 @@ export async function startGuideE2E({owner,srv,step,browser,watch}){
    await mkdir('ci-logs',{recursive:true});await b.screenshot({path:'ci-logs/start-guide-mobile.png',fullPage:true});
   });
   await step('시작 안내 · 연결 실패 재시도와 다른 기기 충돌 · 업무 화면 유지',async()=>{
-   await a.route('**/start-guide?*',route=>route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'합성 안내 연결 실패'})}));await go(a);await a.getByRole('alert').getByText('합성 안내 연결 실패',{exact:false}).waitFor();await a.getByRole('heading',{name:'우리 가게',exact:false}).first().waitFor();
+   const guideRequests=[];const trace=r=>{if(r.url().includes('/start-guide'))guideRequests.push({url:r.url(),status:r.status()})};a.on('response',trace);
+   await a.route('**/start-guide?*',route=>route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'합성 안내 연결 실패'})}));await go(a);
+   try{await a.getByRole('alert').getByText('합성 안내 연결 실패',{exact:false}).waitFor()}catch(e){await mkdir('ci-logs',{recursive:true});await a.screenshot({path:'ci-logs/start-guide-failure.png',fullPage:true});console.error('Guide failure diagnostics',JSON.stringify({requests:guideRequests,alerts:await a.getByRole('alert').allTextContents(),page:await a.locator('body').innerText()}));throw e}finally{a.off('response',trace)}
+   await a.getByRole('heading',{name:'우리 가게',exact:false}).first().waitFor();
    await a.unroute('**/start-guide?*');await a.getByRole('button',{name:'안내 다시 시도'}).click();await folded(a);await save(a,()=>a.locator('.qb-mini').filter({hasText:'사장님 퀘스트'}).click());await full(a);
    await srv.db.q('UPDATE start_guide_preferences SET revision=revision+1 WHERE owner=? AND branch_id=?',row.owner,original.branches[0].id).run();
    await a.locator('.qb-head').getByRole('button',{name:'접기',exact:true}).click();await a.getByRole('alert').getByText('다른 기기에서 안내를 바꿨어요.',{exact:false}).waitFor();await a.getByRole('button',{name:'최신 안내 확인'}).click();await full(a);
