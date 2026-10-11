@@ -5,6 +5,7 @@ import {passwordApi} from './password-api';
 import {shareApi} from './share-api';
 import {supportApi} from './support-api';
 import {cronApi} from './cron-api';
+import {reelsTickApi} from './reels-tick-api';
 import {recordServerError} from '../lib/ops-alert';
 import {documentsApi} from './documents-api';
 import {serverError,reportError} from '../lib/errors';
@@ -66,6 +67,7 @@ async function route(request:Request,env:Env){
  // 작업 056: 기한이 지난 탈퇴 예약을 로그인·계정 요청 때 조금씩 마무리한다.
  if(path==='/api/auth'||path==='/api/account')await processDeletions(env).catch(e=>{reportError('withdraw-purge',e);return 0});
  if(path==='/api/cron')return cronApi(request,env);
+ if(path==='/api/reels-tick')return reelsTickApi(request,env);
  // 가이드 98: 서비스 상태(로그인 없이). DB 연결과 최근 서비스 안내 제목만 알려 준다.
  if(path==='/api/status'){const t0=Date.now();let db=false;try{db=!!(await env.DB.prepare('SELECT 1 AS ok').first())}catch{}
   const notices=db?(await env.DB.prepare('SELECT kind,title,effective_at FROM service_notices ORDER BY created_at DESC LIMIT 5').all<any>().catch(()=>({results:[]}))).results:[];
