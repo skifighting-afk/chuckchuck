@@ -83,6 +83,8 @@ body{font-family:'ChukAppSans','Pretendard','Apple SD Gothic Neo','Malgun Gothic
  .payroll-work .page-heading .actions:empty{display:none}
  .payroll-overview td[data-label="실수령액"]{grid-column:1/-1;grid-row:2;display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e3ebe6}
  .payroll-overview td[data-label="실수령액"] b{font-size:20px}
+ /* 휴대폰: 이름 바로 아래 실수령액이 보이게, 주의 문구·소득 구분은 금액 칸들 뒤로(주의가 많아도 첫 화면에 금액이 보임) */
+ .payroll-overview td:first-child{display:contents}.payroll-overview td:first-child>*{grid-column:1/-1}.payroll-overview td:first-child>b{grid-row:1}.payroll-overview td:first-child>small{order:20}.payroll-overview td:last-child{order:30}
  .pc-bulk-body,.pc-bulk-who{min-width:0;max-width:100%}
  .pc-bulk-who>label:not(.t-check){min-width:0;max-width:100%;flex:1 1 180px}
  .pc-bulk-who input:not([type=checkbox]):not([type=radio]),.pc-bulk-who select{width:100%;min-width:0;max-width:100%}
