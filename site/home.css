@@ -836,3 +836,17 @@ html.large-text .feature-difference dt,html.large-text .feature-story .feature-p
  .feature-detail-layout>.feature-visual{max-width:600px;padding:20px 15px}
  .feature-detail-main h2{font-size:1.5rem}
 }
+
+/* Short section navigation: one reading marker, with room below the fixed header. */
+.nav .page-sections{display:none}
+.nav nav a[aria-current=location]{color:var(--ink);text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:7px;font-weight:800}
+#tour,#benefits-title,#pricing,#start-roadmap{scroll-margin-top:var(--header-clearance,115px)}
+@media(max-width:1100px){
+ .nav>nav:not(.page-sections){display:none}
+ .nav{flex-wrap:wrap;gap:8px 16px;padding-bottom:0;background:var(--paper)}
+ .nav .page-sections{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));flex-basis:100%;gap:0;margin:0;border-top:1px solid var(--line)}
+ .nav .page-sections a{display:flex;align-items:center;justify-content:center;min-height:44px;padding:8px 2px;font-size:.875rem;line-height:1.3;text-align:center;text-decoration:none;border-bottom:3px solid transparent}
+ .nav .page-sections a[aria-current=location]{background:var(--sheet);border-color:var(--green)}
+ .hero-pin{padding-top:calc(var(--header-clearance,128px) + 12px)}
+ html.large-text .nav .page-sections a{font-size:1rem}
+}

@@ -2,6 +2,7 @@ import {} from './experience';
 // 척척사장 홈페이지 동작. 글과 숫자는 HTML에 이미 다 있고(자바스크립트가 없어도 읽힌다), 여기서는 움직임과 계산만 붙인다.
 import {} from './result-flow';
 import {trackPageView} from '../app/meta-pixel';
+import {currentSectionIndex} from './section-navigation';
 
 // 0. 앱으로 가야 할 주소(/?invite=…, 로그인 메일의 되돌아오기 주소)는 앱 도메인으로 넘긴다. 광고 꼬리표(utm·fbclid)만 있으면 그대로 둔다.
 {
@@ -34,6 +35,28 @@ prefMotion.addEventListener('click', () => { store.set(MOTION_KEY, reduce ? '0' 
 const nav = $('#nav');
 const onNav = () => nav.classList.toggle('solid', scrollY > 24);
 addEventListener('scroll', onNav, {passive: true}); onNav();
+
+// A short contents bar stays available on mobile; the active section follows reading.
+const sectionIds = ['tour', 'benefits-title', 'pricing', 'start-roadmap'];
+const sectionTargets = sectionIds.map(id => document.getElementById(id)!);
+const sectionLinks = $$<HTMLAnchorElement>('#nav nav a[href^="#"]');
+let navFrame = 0;
+const updateSections = () => {
+  navFrame = 0;
+  const height = nav.getBoundingClientRect().height;
+  root.style.setProperty('--header-clearance', `${Math.ceil(height + 20)}px`);
+  const active = currentSectionIndex(sectionTargets.map(el => el.getBoundingClientRect().top), height + 72);
+  sectionLinks.forEach(link => {
+    if (active >= 0 && link.hash === '#' + sectionIds[active]) link.setAttribute('aria-current', 'location');
+    else link.removeAttribute('aria-current');
+  });
+};
+const scheduleSections = () => { if (!navFrame) navFrame = requestAnimationFrame(updateSections); };
+addEventListener('scroll', scheduleSections, {passive: true});
+addEventListener('resize', scheduleSections, {passive: true});
+new ResizeObserver(scheduleSections).observe(nav);
+document.fonts.ready.then(scheduleSections);
+updateSections();
 
 // 9. 실제 앱 시연: 누르면 크게 보기, 다시 누르거나 Esc로 닫기
 $$<HTMLButtonElement>('.gif-zoom').forEach(b => b.addEventListener('click', () => {
