@@ -177,7 +177,7 @@ export function QuestBoard({role,state,branch,selfId='',demo=false}:{role:QuestR
   return <section className="qb qb-all" aria-label="퀘스트 완료"><span className="qb-trophy" aria-hidden="true">🏆</span><div><b>모든 퀘스트 완료 · Lv.{lv.level} {lv.title}</b><small>배지 {sum.list.length}개를 다 모았어요. {sum.list.map(q=>q.badge.emoji).join(' ')}</small></div><button type="button" className="qb-text" onClick={()=>save({hideAll:true})}>닫기</button></section>;
  }
  const next=sum.next!;
- if(store.mini)return <button type="button" className="qb-mini" onClick={()=>save({mini:false})} aria-label={`${who} 퀘스트 펼치기`}><span aria-hidden="true">🎮</span><b>{who} 퀘스트 {sum.count}/{sum.list.length}</b><span className="qb-mini-lv">Lv.{lv.level} {lv.title}</span><span className="qb-mini-next">다음: {next.emoji} {next.title} ▸</span></button>;
+ if(store.mini)return <button type="button" className="qb-mini" onClick={()=>save({mini:false})} aria-expanded={false}><span aria-hidden="true">🎮</span><b>{who} 퀘스트 {sum.count}/{sum.list.length}</b><span className="qb-mini-lv">Lv.{lv.level} {lv.title}</span><span className="qb-mini-next">다음: {next.emoji} {next.title} ▸</span></button>;
  const ch=sum.chapters.findIndex(c=>c.quests.includes(next));
  return <section className="qb" aria-labelledby="qb-title">
   <div className="qb-head">
@@ -201,10 +201,10 @@ export function QuestBoard({role,state,branch,selfId='',demo=false}:{role:QuestR
   </div>
   <ol className="qb-map">{sum.chapters.map((c,i)=><li key={c.name} className={c.done?'done':''}>
    <span className="qb-ch">{c.done?'✓ ':''}{i+1}장 · {c.name}</span>
-   <div className="qb-nodes">{c.quests.map(q=>{const d=!!done[q.id],now=q===next;return <button type="button" key={q.id} className={'qb-node'+(d?' done':now?' now':'')} onClick={()=>startQuest(role,q.id)} aria-label={`${q.title} ${d?'완료':'도전하기'} · ${q.xp} XP`}>
-    <span className="qb-node-ic" aria-hidden="true">{d?'✓':q.emoji}</span><span className="qb-node-t">{q.title}</span><span className="qb-node-xp">{d?'완료':'+'+q.xp}</span></button>})}</div>
+   <div className="qb-nodes">{c.quests.map(q=>{const d=!!done[q.id],now=q===next;return <button type="button" key={q.id} className={'qb-node'+(d?' done':now?' now':'')} onClick={()=>startQuest(role,q.id)}>
+    <span className="qb-node-ic" aria-hidden="true">{d?'✓':q.emoji}</span><span className="qb-node-t">{q.title}</span><span className="qb-node-xp">{d?'완료':'+'+q.xp}<span className="sr-only">{d?'':' XP 도전하기'}</span></span></button>})}</div>
   </li>)}</ol>
-  <div className="qb-badges" aria-label={`배지 ${sum.count}/${sum.list.length}`}><small>배지 {sum.count}/{sum.list.length}</small>{sum.list.map(q=><span key={q.id} className={'qb-badge'+(done[q.id]?' got':'')} title={done[q.id]?q.badge.name:`${q.title}을(를) 깨면 열려요`}>{done[q.id]?q.badge.emoji:'？'}</span>)}</div>
+  <div className="qb-badges" role="group" aria-label={`배지 ${sum.count}/${sum.list.length}`}><small>배지 {sum.count}/{sum.list.length}</small>{sum.list.map(q=><span key={q.id} className={'qb-badge'+(done[q.id]?' got':'')} title={done[q.id]?q.badge.name:`${q.title}을(를) 깨면 열려요`}>{done[q.id]?q.badge.emoji:'？'}</span>)}</div>
   <p className="qb-foot">시작을 누르면 해당 화면으로 옮겨서 <b>어디를 누르고 어디에 입력하는지</b> 하나씩 짚어 드려요. <button type="button" className="qb-text" onClick={()=>startTour(role)}>🧭 화면 둘러보기</button></p>
  </section>;
 }
