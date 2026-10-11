@@ -8,6 +8,7 @@ export async function priorityUxE2E({owner,staff,srv,step,browser}){
  try{
   const {taskNavigationE2E}=await import('./task-navigation-e2e.mjs');await taskNavigationE2E({page,srv,step});
   const {workContextE2E}=await import('./work-context-e2e.mjs');await workContextE2E({page,staff,browser,srv,step});
+  const {schedulePublicationE2E}=await import('./schedule-publication-e2e.mjs');await schedulePublicationE2E({page,staff,srv,step});
   await step('업무 가시성 · 비서 기본 닫힘 · 키보드 열기와 복귀',async()=>{
    await page.goto(srv.ORIGIN+'/app?screen=payroll',{waitUntil:'networkidle'});
    const trigger=page.locator('#owner-assistant-launcher .ast-fab'),dialog=page.getByRole('dialog',{name:'척척 비서'});
