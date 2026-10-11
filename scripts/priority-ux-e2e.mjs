@@ -73,6 +73,11 @@ export async function priorityUxE2E({owner,staff,srv,step,browser}){
     await employee.locator('.attendance-evidence p').filter({hasText:expected}).first().waitFor();
     for(const width of [320,390,768]){await employee.setViewportSize({width,height:844});assert(await employee.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'personal attendance evidence overflow '+width)}
     await employee.setViewportSize({width:390,height:844});await mkdir('ci-logs',{recursive:true});await employee.screenshot({path:'ci-logs/staff-attendance-evidence.png',fullPage:true});
+    const receipt=employee.getByRole('region',{name:'최근 저장된 출퇴근 기록',exact:true}),savedClock=await receipt.locator('time').first().getAttribute('datetime');
+    data.branches.push({...data.branches[0],id:'ux-transfer-branch',name:'이동 후 매장'});data.employees.find(e=>e.id===employeeId).branchId='ux-transfer-branch';
+    await srv.db.q('UPDATE stores SET data=? WHERE owner=?',JSON.stringify(data),saved.owner).run();await employee.reload({waitUntil:'networkidle'});
+    await receipt.getByText(/현재 소속 매장: 이동 후 매장/).waitFor();assert.match(await receipt.innerText(),/기록 당시 매장을 뜻하지 않아요/);
+    assert.equal(await receipt.locator('time').first().getAttribute('datetime'),savedClock,'moving store does not relabel the saved clock time');
    }finally{await employeeCtx.close()}
    }finally{await srv.db.q('UPDATE stores SET data=? WHERE owner=?',saved.data,saved.owner).run();await srv.db.q('DELETE FROM attendance_records WHERE id=?',fixtureId).run()}
   });

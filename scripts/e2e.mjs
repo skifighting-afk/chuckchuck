@@ -133,8 +133,21 @@ await step('작업 052: 안드로이드 휴대폰에서 매장 QR 사진으로 �
  await a.click('text=내 직원 화면 열기 →');await a.getByText(`안녕하세요, ${STAFF.name}님`).waitFor();
  await a.getByRole('button',{name:/^(다시 )?출근( |$)/}).click(); // 자정이 지나면 '출근', 같은 날이면 '다시 출근'await a.getByText('출근 전에 매장 QR을 찍어 주세요').waitFor();
  await a.setInputFiles('input[type=file]',{name:'qr.png',mimeType:'image/png',buffer:qrPng});
- await a.getByText('QR을 읽었어요.').waitFor();await a.click('text=출근 기록하기');await a.getByText('근무 중입니다.').waitFor();
+ await a.getByText('QR을 읽었어요.').waitFor();
+ const qrFailure='QR을 찍은 지 1분이 지났어요. 매장 화면의 QR을 다시 찍고 바로 기록해 주세요.';
+ const rejectQr=async route=>{if(route.request().method()==='POST')await route.fulfill({status:403,contentType:'application/json',body:JSON.stringify({error:qrFailure,code:'QR_REQUIRED'})});else await route.continue()};
+ await a.route('**/api/store',rejectQr);await a.click('text=출근 기록하기');
+ const scanner=a.getByRole('region',{name:'매장 QR 확인',exact:true});await scanner.getByRole('alert').filter({hasText:qrFailure}).waitFor();
+ if(await scanner.getByRole('button',{name:'출근 기록하기',exact:true}).count())throw Error('실패한 QR 확인이 성공 상태로 남았어요');
+ await a.unroute('**/api/store',rejectQr);await a.setInputFiles('input[type=file]',{name:'qr.png',mimeType:'image/png',buffer:qrPng});
+ await a.click('text=출근 기록하기');await a.getByText('근무 중입니다.').waitFor();
+ const receipt=a.getByRole('region',{name:'최근 저장된 출퇴근 기록',exact:true});await receipt.getByRole('heading',{name:new RegExp(STAFF.name)}).waitFor();
+ const loaded=await a.evaluate(async()=>{const response=await fetch('/api/store');if(!response.ok)throw Error('저장된 출퇴근 조회 실패');return response.json()}),saved=loaded.state.attendance.filter(x=>x.employeeId===loaded.selfId).sort((x,y)=>Date.parse(y.start)-Date.parse(x.start))[0];
+ if(await receipt.locator('time').first().getAttribute('datetime')!==saved.start)throw Error('확인 화면 시각이 실제 저장 시각과 달라요');
+ if(!(await receipt.innerText()).includes('현재 소속 매장: '+loaded.state.branches.find(b=>b.id===loaded.state.employees.find(e=>e.id===loaded.selfId).branchId).name))throw Error('현재 소속과 기록 당시 매장이 구분되지 않아요');
+ for(const width of [320,390,768,1440]){await a.setViewportSize({width,height:900});if(await a.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1))throw Error('출퇴근 기록 확인 가로 넘침 '+width)}
  await a.click('button:has-text("퇴근")');await a.setInputFiles('input[type=file]',{name:'qr.png',mimeType:'image/png',buffer:qrPng});await a.click('text=퇴근 기록하기');await a.getByText('오늘 근무를 마쳤어요.').waitFor();
+ await receipt.locator('time').nth(1).waitFor();await a.setViewportSize({width:390,height:844});await receipt.scrollIntoViewIfNeeded();await a.screenshot({path:'ci-logs/staff-clock-receipt-mobile.png'});
  await ctx.close();
 });
 await step('급여 확정 (지급일·확인 체크)',async()=>{
