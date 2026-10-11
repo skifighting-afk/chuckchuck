@@ -56,6 +56,13 @@ export async function documentsApi(request:Request,env:{DB:D1Database}&PushEnv){
  const id=b.id||url.searchParams.get('id'),kind=b.kind||url.searchParams.get('kind')||'payslip';
  if(!['contract','payslip'].includes(kind))return json({error:'문서 종류를 확인해 주세요.'},400);
  const linked=await resolveStore(env.DB,uid),state=linked?JSON.parse(linked.row.data):null,ownerKey=linked?.access==='owner'?linked.owner:uid;
+ if(!id&&request.method==='GET'&&url.searchParams.get('summary')==='1'){
+  if(linked?.access!=='owner')return json({error:'직원별 명세서 현황은 사장님만 볼 수 있어요.'},403);
+  const runKey=url.searchParams.get('runKey')||'';
+  if(!/^\d{4}-(0[1-9]|1[0-2]):.{1,200}$/.test(runKey))return json({error:'급여 월과 매장을 선택해 주세요.'},400);
+  const rows=await env.DB.prepare(`SELECT DISTINCT ON (p.employee_id) p.employee_id,p.run_key,p.revision,${ACTIVITY} FROM payslip_documents p LEFT JOIN document_activity a ON a.kind='payslip' AND a.document_id=p.id WHERE p.owner_id=? AND p.run_key=? ORDER BY p.employee_id,p.revision DESC,p.created_at DESC`).bind(ownerKey,runKey).all<any>();
+  return json({documents:rows.results.map(r=>({...r,activity:asObject(r.activity),state:payslipState(state,r)}))});
+ }
  if(!id&&request.method==='GET'){
   if(kind!=='payslip')return json({error:'계약서 목록은 계약서 화면에서 확인해 주세요.'},400);
   const rows=await env.DB.prepare(`SELECT p.*,${ACTIVITY} FROM payslip_documents p LEFT JOIN document_activity a ON a.kind='payslip' AND a.document_id=p.id WHERE p.owner_id=? OR p.employee_user_id=? ORDER BY p.created_at DESC LIMIT 500`).bind(ownerKey,uid).all<any>();
