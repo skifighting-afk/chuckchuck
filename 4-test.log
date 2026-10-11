@@ -750,6 +750,17 @@ PASS 10: uncertain refund preserves the original intent and idempotency key
 PASS 11: pre-migration paid legacy transaction never extends an already applied historical period
 PASS: billing recovery 11/11.
 
+── check-billing-edgecases
+PASS: distinct simultaneous zero quotes cannot queue multiple free periods
+PASS: pre-send confirmation loss recovers from supplier missing
+PASS: pre-send confirmation loss recovers from supplier ready
+PASS: old uncertain confirmation never replays outside supplier idempotency window
+PASS: remaining prorated refund deducts all prior refunds
+PASS: purchasing Basic preserves remaining Pro trial and queues its month
+PASS: full refund removes queued entitlement without moving later paid periods or cancel boundary
+PASS: coowner store/export/backup cannot retrieve billing snapshot or billing audit
+Billing review regressions: 8 passed; 0 failed.
+
 ── check-saas
 PASS: 연차 자동 계산 반영.
 PASS: approved leave blocks shifts; overlapping shifts blocked.
@@ -2367,48 +2378,59 @@ PASS: 메일 없이 비밀번호 찾기.
 82. PASS quests: demo hides noDemo
 83. PASS quests: level edges
 84. PASS quests: parseFind
-85. PASS owner saves extra fields
-86. PASS extra kept
-87. PASS branch info kept
-88. PASS repeats kept
-89. PASS settings.more kept
-90. PASS staff does not see owner memo/tags/reviews
-91. PASS staff sees praise
-92. PASS staff sees wifi
-93. PASS staff sees today note only
-94. PASS staff sees events
-95. PASS setPref bad value blocked
-96. PASS setPref ok
-97. PASS pref saved, memo intact
-98. PASS dayOffWish past blocked
-99. PASS dayOffWish ok
-100. PASS owner sees wish
-101. PASS second tap removes wish
-102. PASS staff cannot memo
-103. PASS autoClose future blocked
-104. PASS autoClose ok
-105. PASS closed with flag
-106. PASS attMemo ok
-107. PASS memo saved
-108. PASS staff record hides memo
-109. PASS post notice with poll+pdf
-110. PASS staff sees poll + file
-111. PASS vote
-112. PASS bad vote
-113. PASS react
-114. PASS bad emoji
-115. PASS comment
-116. PASS owner sees counts
-117. PASS owner can delete comment
-118. PASS bad pdf rejected
-119. PASS save manual needPhoto
-120. PASS photo required
-121. PASS check with photo
-122. PASS left steps handed over
-123. PASS client error needs origin
-124. PASS scrubbed + deduped
-125. PASS non-HQ cannot read
-126. PASS B101 2h before alert with clock link
+85. PASS routine: owner tasks at noon (Thu)
+86. PASS routine: late staff found
+87. PASS routine: requests/clockout wait/tomorrow
+88. PASS routine: slot by hours
+89. PASS routine: evening — stale clock-out todo, rest done
+90. PASS routine: reminder at close hour only
+91. PASS routine: reminder lists left
+92. PASS routine: closed tomorrow ok, no staff → none
+93. PASS routine: payroll month task
+94. PASS routine: staff
+95. PASS routine: streak allows 1 rest day
+96. PASS owner saves extra fields
+97. PASS extra kept
+98. PASS branch info kept
+99. PASS repeats kept
+100. PASS settings.more kept
+101. PASS staff does not see owner memo/tags/reviews
+102. PASS staff sees praise
+103. PASS staff sees wifi
+104. PASS staff sees today note only
+105. PASS staff sees events
+106. PASS setPref bad value blocked
+107. PASS setPref ok
+108. PASS pref saved, memo intact
+109. PASS dayOffWish past blocked
+110. PASS dayOffWish ok
+111. PASS owner sees wish
+112. PASS second tap removes wish
+113. PASS staff cannot memo
+114. PASS autoClose future blocked
+115. PASS autoClose ok
+116. PASS closed with flag
+117. PASS attMemo ok
+118. PASS memo saved
+119. PASS staff record hides memo
+120. PASS post notice with poll+pdf
+121. PASS staff sees poll + file
+122. PASS vote
+123. PASS bad vote
+124. PASS react
+125. PASS bad emoji
+126. PASS comment
+127. PASS owner sees counts
+128. PASS owner can delete comment
+129. PASS bad pdf rejected
+130. PASS save manual needPhoto
+131. PASS photo required
+132. PASS check with photo
+133. PASS left steps handed over
+134. PASS client error needs origin
+135. PASS scrubbed + deduped
+136. PASS non-HQ cannot read
+137. PASS B101 2h before alert with clock link
 
 ── check-secrets
 1. PASS 비밀값 검사 완료
