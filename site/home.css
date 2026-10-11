@@ -735,6 +735,7 @@ html.large-text .price-examples caption{font-size:1.375rem}
 html.large-text .price-examples th,html.large-text .price-examples td,html.large-text .price-examples caption span,html.large-text .plan-contract,html.large-text .price-conditions,html.large-text .pricing-help,html.large-text .plan-attendance span{font-size:1.125rem}
 
 /* Core tasks have room; supporting tasks share one quiet, readable group. */
+.feature-detail-link{display:inline-flex;align-items:center;min-height:48px;margin-left:20px;font-size:1rem;text-underline-offset:4px}
 .experience{max-width:1440px;padding-inline:var(--gut)}
 .feature-stories-heading{padding-block:80px 48px}
 .feature-story{padding-block:88px;gap:clamp(32px,5vw,72px);align-items:center}
@@ -775,4 +776,48 @@ html.large-text .feature-difference dt,html.large-text .feature-story .feature-p
  .feature-story .feature-visual{padding:20px 15px}
  .feature-story .feature-points{font-size:.875rem}
  .feature-start{padding:24px 20px}
+}
+
+/* Feature guides use the same type and examples, with a real address per task. */
+.feature-detail-nav,.feature-detail-main,.feature-detail-footer{max-width:1280px;margin:auto;padding-inline:var(--gut)}
+.feature-detail-nav{display:flex;align-items:center;flex-wrap:wrap;gap:16px 28px;padding-block:20px;border-bottom:1px solid var(--line);font-size:1rem}
+.feature-detail-nav a{min-height:48px;display:inline-flex;align-items:center;text-underline-offset:4px}
+.feature-detail-brand{font-size:1.375rem;font-weight:800;text-decoration:none}
+.feature-detail-nav nav{display:flex;flex-wrap:wrap;gap:8px 20px;flex:1}
+.feature-detail-nav [aria-current=page]{font-weight:800;text-decoration-thickness:2px}
+.feature-detail-main{padding-block:36px 80px}
+.feature-breadcrumb{display:flex;align-items:center;gap:12px;font-size:.875rem;margin-bottom:36px}
+.feature-breadcrumb a{min-height:44px;display:inline-flex;align-items:center}
+.feature-detail-hero{max-width:880px;margin-bottom:80px}
+.feature-detail-hero h1{font-size:clamp(1.875rem,4vw,3rem);line-height:1.3;margin:16px 0 24px}
+.feature-detail-hero>p:last-of-type{max-width:42em;font-size:1.125rem;line-height:1.75;margin-bottom:28px}
+.feature-detail-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start;gap:56px}
+.feature-detail-main h2{font-size:1.75rem;line-height:1.4;margin-bottom:24px}
+.feature-detail-steps{padding-left:24px;margin:0;display:grid;gap:32px}
+.feature-detail-steps li{padding-left:8px}
+.feature-detail-steps li::marker{font-weight:800;color:var(--green)}
+.feature-detail-steps h3{font-size:1.25rem;line-height:1.5;margin-bottom:12px}
+.feature-detail-steps p,.feature-detail-scope p,.feature-detail-faq p{font-size:1rem;line-height:1.8;max-width:44em}
+.feature-detail-layout>.feature-visual{margin:0;width:100%;min-width:0;padding:24px}
+.feature-detail-scope,.feature-detail-faq,.feature-detail-next{padding-top:56px;margin-top:56px;border-top:1px solid var(--line)}
+.feature-detail-scope p+p{margin-top:16px}.feature-detail-scope a,.feature-detail-next a{display:inline-flex;min-height:48px;align-items:center;font-size:1rem;text-underline-offset:4px;margin-top:16px}
+.feature-detail-faq details{border-bottom:1px solid var(--line);padding:18px 0}
+.feature-detail-faq summary{min-height:48px;display:list-item;cursor:pointer;font-size:1.125rem;font-weight:700;line-height:1.6}
+.feature-detail-faq details p{padding:12px 0}
+.feature-detail-next nav{display:flex;gap:12px 28px;flex-wrap:wrap}
+.feature-detail-next p{font-size:.875rem;color:var(--muted);margin-top:24px}
+.feature-detail-footer{display:flex;flex-wrap:wrap;gap:12px 28px;padding-block:28px;border-top:1px solid var(--line);font-size:.875rem}
+.feature-detail-footer a{display:inline-flex;align-items:center;min-height:48px}
+@media(max-width:800px){
+ .feature-detail-layout{grid-template-columns:minmax(0,1fr);gap:40px}
+ .feature-detail-hero{margin-bottom:56px}
+ .feature-detail-hero .cta-row{display:grid;grid-template-columns:minmax(0,1fr)}
+ .feature-detail-hero .btn{font-size:1rem;padding-inline:16px}
+ .feature-detail-nav nav{order:3;flex-basis:100%}
+ .feature-detail-nav>a:last-child{margin-left:auto}
+ .feature-detail-main{padding-top:20px}
+ .feature-detail-nav{gap:8px 20px}
+ .feature-detail-nav nav a{font-size:.875rem}
+ .feature-detail-layout>.feature-visual{max-width:600px;padding:20px 15px}
+ .feature-detail-main h2{font-size:1.5rem}
 }
