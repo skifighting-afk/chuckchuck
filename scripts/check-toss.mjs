@@ -15,10 +15,12 @@ ok('error text known',T.tossErrorText('REJECT_CARD_PAYMENT').includes('다른 �
 // 서버
 const TT=await authedTest({domain:'example.invalid'}),{q,headersFor,id}=TT;
 const calls=[];let reply=()=>({status:'DONE',totalAmount:0,method:'카드',approvedAt:'2026-10-10T01:00:00+09:00',receipt:{url:'https://example.invalid/r'}});
-const mock=async(url,init)=>{calls.push({url,body:JSON.parse(init.body||'{}'),auth:init.headers.Authorization});const b=JSON.parse(init.body||'{}');const d=url.endsWith('/confirm')?{...reply(),totalAmount:b.amount}:{status:'CANCELED'};return new Response(JSON.stringify(d),{status:d.code?400:200,headers:{'content-type':'application/json'}})};
+const mock=async(url,init)=>{calls.push({url,body:JSON.parse(init.body||'{}'),auth:init.headers.Authorization});const b=JSON.parse(init.body||'{}');const d=url.endsWith('/confirm')?{...reply(),totalAmount:b.amount,orderId:b.orderId,paymentKey:b.paymentKey,approvedAt:reply().approvedAt||new Date().toISOString()}:{status:'CANCELED'};return new Response(JSON.stringify(d),{status:d.code?400:200,headers:{'content-type':'application/json'}})};
 const envOff=TT.env,env={...TT.env,TOSS_CLIENT_KEY:'test_ck_x',TOSS_SECRET_KEY:'test_sk_secret',TOSS_FETCH:mock,HQ_NATIVE_USER_ID:id('tossHq')};
 async function call(user,path,body,e=env){const r=await api(new Request('https://qa.local'+path,{method:body?'POST':'GET',headers:{origin:'https://qa.local',...(await headersFor(user))},...(body?{body:JSON.stringify(body)}:{})}),e);return {status:r.status,body:await r.json()}}
 await call('tossBoss','/api/account',{action:'onboard',storeName:'결제 검수',branchName:'본점',ownerName:'가상대표',plan:'basic',storeSlots:1,acknowledged:true,dpaAgreed:true});
+// Existing branch-price customers remain on their original contract until explicit conversion.
+{const d=JSON.parse((await q('SELECT data FROM stores WHERE owner=?',id('tossBoss')).first()).data);delete d._account.pricingVersion;d._account.storeSlots=1;d._account.months=1;await q('UPDATE stores SET data=? WHERE owner=?',JSON.stringify(d),id('tossBoss')).run();}
 ok('no keys → not ready',(await call('tossBoss','/api/billing',undefined,envOff)).body.ready,false);
 ok('no keys → prepare locked',(await call('tossBoss','/api/billing',{action:'prepare',plan:'pro',storeSlots:2,months:6,agreed:true},envOff)).status,503);
 const g=(await call('tossBoss','/api/billing')).body;ok('keys → ready + client key only',[g.ready,g.clientKey,JSON.stringify(g).includes('test_sk')],[true,'test_ck_x',false]);
@@ -43,7 +45,7 @@ reply=()=>({status:'DONE',method:'카드'});
 // 전자계약 요금
 ok('no contracts → nothing to pay',(await call('tossBoss','/api/billing',{action:'prepare',kind:'contracts',month:'2026-10',agreed:true})).status,400);
 // 환불
-ok('owner cannot refund',(await call('tossBoss','/api/billing',{action:'refund',orderId:pre2.orderId,reason:'x'})).status,403);
-const rf=await call('tossHq','/api/billing',{action:'refund',orderId:pre2.orderId,amount:1000,reason:'부분 환불 검사'});ok('HQ partial refund',[rf.status,rf.body.status,rf.body.refunded],[200,'partial_refund',1000]);
-ok('refund over balance blocked',(await call('tossHq','/api/billing',{action:'refund',orderId:pre2.orderId,amount:pre2.amount,reason:'x'})).status,400);
+ok('owner cannot refund',(await call('tossBoss','/api/billing',{action:'refund',requestId:crypto.randomUUID(),orderId:pre2.orderId,reason:'x'})).status,403);
+const rf=await call('tossHq','/api/billing',{action:'refund',requestId:crypto.randomUUID(),orderId:pre2.orderId,amount:1000,reason:'부분 환불 검사'});ok('HQ partial refund',[rf.status,rf.body.status,rf.body.refunded],[200,'partial_refund',1000]);
+ok('refund over balance blocked',(await call('tossHq','/api/billing',{action:'refund',requestId:crypto.randomUUID(),orderId:pre2.orderId,amount:pre2.amount,reason:'x'})).status,400);
 await closeAll();

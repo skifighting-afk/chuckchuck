@@ -185,6 +185,7 @@ await step('작업 054: 직원 여러 명 붙여넣기 등록',async()=>{
  await owner.getByText(/직원 1명을 '입사 준비'로 등록했어요/).waitFor();await owner.getByText('붙임직원').first().waitFor();
 });
 await (await import('./history-import-e2e.mjs')).historyImportE2E({owner,srv,step});
+await (await import('./billing-pricing-e2e.mjs')).billingPricingE2E({owner,srv,step});
 
 // Keep the existing PWA registration assertions above. HR fault-injection
 // needs isolated contexts: worker-owned GETs bypass page.route on this fixture.

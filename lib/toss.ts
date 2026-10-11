@@ -23,6 +23,40 @@ export function applyPlanPaid(account: any, p: {plan: string; storeSlots: number
 }
 
 /** 전자근로계약서 요금: 그 달 체결 건수 − 이미 결제한 건수 */
+/** Calendar month in Korea; clamp month ends rather than overflowing into the following month. */
+export function pricingPeriod(startMs:number){
+ const end=new Date(startMs+9*3600000),day=end.getUTCDate();end.setUTCDate(1);end.setUTCMonth(end.getUTCMonth()+1);
+ const last=new Date(Date.UTC(end.getUTCFullYear(),end.getUTCMonth()+1,0)).getUTCDate();end.setUTCDate(Math.min(day,last));
+ return {start:new Date(startMs).toISOString(),end:new Date(+end-9*3600000).toISOString()};
+}
+export function applyPricingPaid(account:any,p:{snapshot:any,orderId:string},now=Date.now()){
+ const previous=account||{},queue=previous.pendingSubscriptions||[previous.pendingSubscription].filter(Boolean);
+ const trialEnd=previous.status==='trialing'?(Date.parse(previous.trialEndsAt||'')||0):0;
+ const latest=queue.at(-1),start=Math.max(now,trialEnd,Date.parse(previous.paidUntil||'')||0,Date.parse(latest?.periodEnd||'')||0),period=pricingPeriod(start),s=p.snapshot;
+ if(!s||s.months!==1||!Number.isInteger(s.amount)||s.amount<0)throw Error('Invalid pricing snapshot');
+ const subscription={plan:s.plan,pricingVersion:s.version,pricingSnapshot:s,storeSlots:50,months:1,periodPrice:s.amount,periodStart:period.start,paidUntil:period.end,lastOrderId:p.orderId,status:'active'};
+ if(start>now){
+  const next={...subscription,periodEnd:period.end,orderId:p.orderId},pendingSubscriptions=[...queue,next];
+  return {account:{...previous,pendingSubscription:pendingSubscriptions[0],pendingSubscriptions},periodStart:period.start,periodEnd:period.end};
+ }
+ const {cancelAt,cancelRequestedAt,cancelReason,paymentFailedAt,pendingSubscription,pendingSubscriptions,...rest}=previous;
+ return {account:{...rest,...subscription},periodStart:period.start,periodEnd:period.end};
+}
+
+export function activatePendingSubscription(account:any,now=Date.now()){
+ const queue=[...(account?.pendingSubscriptions||[account?.pendingSubscription].filter(Boolean))];
+ if(!queue.length||Date.parse(queue[0].periodStart)>now)return account;
+ let current=account,changed=false;
+ while(queue.length&&Date.parse(queue[0].periodStart)<=now){
+  const {periodEnd,orderId,...subscription}=queue.shift();
+  const {cancelAt,cancelRequestedAt,cancelReason,paymentFailedAt,pendingSubscription,pendingSubscriptions,...rest}=current;
+  const keepCancel=cancelAt&&Date.parse(cancelAt)>Date.parse(subscription.periodStart)?{cancelAt,cancelRequestedAt,cancelReason}:{};
+  current={...rest,...subscription,...keepCancel};changed=true;
+ }
+ if(!changed)return account;
+ return queue.length?{...current,pendingSubscription:queue[0],pendingSubscriptions:queue}:current;
+}
+
 export function contractsDue(signedByMonth: Record<string, number>, paidByMonth: Record<string, number>, price: number) {
   return Object.keys(signedByMonth).sort().reverse().map(month => {
     const count = signedByMonth[month] || 0, paid = paidByMonth[month] || 0, due = Math.max(0, count - paid);

@@ -1,4 +1,5 @@
 import {authLimit} from './auth-api';
+import {sharedAccountView,sharedAuditView} from './billing-privacy';
 import {hrApi} from './hr/router';
 import {passwordApi} from './password-api';
 import {shareApi} from './share-api';
@@ -122,7 +123,7 @@ async function route(request:Request,env:Env){
  const actor={id:userId,name:self?.name||name,email:request.headers.get('oai-authenticated-user-email')||''};
  let freshPub:string[]=[];let freshOpen:any[]=[];let importResult:any=null;let kioskUrl:string|undefined;let trash:any[]=Array.isArray(raw?._trash)?raw._trash:[];let certReq:any=null;let askNotice:any=null; let inviteUrl:string|undefined;let attendanceQrUrl:string|undefined;
  const result=()=>{
-  if(access==='owner')return {links:{linked:members.map((m:any)=>m.employeeId),invited:Object.fromEntries(invitations.map((i:any)=>[i.employeeId,i.expires]))},state,version:version+1,audit,outbox,actor,emailConnected:!!(env.RESEND_API_KEY&&env.EMAIL_FROM),access,selfId:null,inviteUrl,attendanceQrUrl,qrModes:raw?._attendanceQrMode||{},plan:raw?._account||null,qrRequired:hasFeature(raw?._account,'qr'),...(importResult?{importResult}:{}),...(kioskUrl!==undefined?{kioskUrl}:{}),trash:trash.filter((t:any)=>t.at>=new Date(Date.now()-30*86400000).toISOString()).slice(-200).reverse().map((t:any)=>({id:t.id,kind:t.kind,at:t.at,by:t.by,label:t.kind==='shift'?`${state.employees.find(e=>e.id===t.item.employeeId)?.name||'직원'} ${t.item.date} ${t.item.start}–${t.item.end}`:t.item.name}))};
+  if(access==='owner')return {links:{linked:members.map((m:any)=>m.employeeId),invited:Object.fromEntries(invitations.map((i:any)=>[i.employeeId,i.expires]))},state,version:version+1,audit:linked.coowner?sharedAuditView(audit):audit,outbox,actor,emailConnected:!!(env.RESEND_API_KEY&&env.EMAIL_FROM),access,selfId:null,inviteUrl,attendanceQrUrl,qrModes:raw?._attendanceQrMode||{},plan:linked.coowner?sharedAccountView(raw?._account):raw?._account||null,qrRequired:hasFeature(raw?._account,'qr'),...(importResult?{importResult}:{}),...(kioskUrl!==undefined?{kioskUrl}:{}),trash:trash.filter((t:any)=>t.at>=new Date(Date.now()-30*86400000).toISOString()).slice(-200).reverse().map((t:any)=>({id:t.id,kind:t.kind,at:t.at,by:t.by,label:t.kind==='shift'?`${state.employees.find(e=>e.id===t.item.employeeId)?.name||'직원'} ${t.item.date} ${t.item.start}–${t.item.end}`:t.item.name}))};
   const filtered=personalTeam(state,self!.id);
   return {state:filtered,version:version+1,audit:[],outbox:[],actor,emailConnected:false,access,selfId:self!.id,plan:raw?._account?{plan:raw._account.plan}:null,qrRequired:hasFeature(raw?._account,'qr')};
  };
