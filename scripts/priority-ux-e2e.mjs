@@ -5,7 +5,7 @@ export async function priorityUxE2E({owner,srv,step,browser}){
  try{
   await step('업무 가시성 · 비서 기본 닫힘 · 키보드 열기와 복귀',async()=>{
    await page.goto(srv.ORIGIN+'/app?screen=payroll',{waitUntil:'networkidle'});
-   const trigger=page.getByRole('button',{name:/척척 비서/}),dialog=page.getByRole('dialog',{name:'척척 비서'});
+   const trigger=page.locator('#owner-assistant-launcher .ast-fab'),dialog=page.getByRole('dialog',{name:'척척 비서'});
    await trigger.waitFor();assert.equal(await dialog.isVisible(),false);
    assert.equal(await page.evaluate(()=>getComputedStyle(document.body).paddingRight),'0px');
    await trigger.click();await dialog.waitFor();assert.equal(await page.locator('#ast-q').evaluate(el=>document.activeElement===el),true);
@@ -24,7 +24,7 @@ export async function priorityUxE2E({owner,srv,step,browser}){
     await failed.getByRole('alert').getByRole('heading',{name:'화면을 다시 불러와 주세요.'}).waitFor();
     await failed.getByRole('link',{name:'서비스 상태 확인'}).waitFor();
     await failed.unroute('**/chunks/team-*.js');await failed.getByRole('button',{name:'화면 다시 불러오기',exact:true}).click();
-    await failed.getByRole('button',{name:/척척 비서/}).waitFor();
+    await failed.locator('#owner-assistant-launcher .ast-fab').waitFor();
    }finally{await failed.close()}
   });
  }finally{await ctx.close()}
