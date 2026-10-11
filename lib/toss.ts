@@ -31,7 +31,8 @@ export function pricingPeriod(startMs:number){
 }
 export function applyPricingPaid(account:any,p:{snapshot:any,orderId:string},now=Date.now()){
  const previous=account||{},queue=previous.pendingSubscriptions||[previous.pendingSubscription].filter(Boolean);
- const latest=queue.at(-1),start=Math.max(now,Date.parse(latest?.periodEnd||previous.paidUntil||'')||0),period=pricingPeriod(start),s=p.snapshot;
+ const trialEnd=previous.status==='trialing'?(Date.parse(previous.trialEndsAt||'')||0):0;
+ const latest=queue.at(-1),start=Math.max(now,trialEnd,Date.parse(previous.paidUntil||'')||0,Date.parse(latest?.periodEnd||'')||0),period=pricingPeriod(start),s=p.snapshot;
  if(!s||s.months!==1||!Number.isInteger(s.amount)||s.amount<0)throw Error('Invalid pricing snapshot');
  const subscription={plan:s.plan,pricingVersion:s.version,pricingSnapshot:s,storeSlots:50,months:1,periodPrice:s.amount,periodStart:period.start,paidUntil:period.end,lastOrderId:p.orderId,status:'active'};
  if(start>now){

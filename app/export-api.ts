@@ -3,6 +3,7 @@
 import {resolveStore} from './saas-api';
 import {loadAttendance} from './attendance-store';
 import {serverError} from '../lib/errors';
+import {redactBillingData} from './billing-privacy';
 
 const json = (v: unknown, status = 200) => Response.json(v, {status, headers: {'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff'}});
 // 화면 동작용 비밀값(출퇴근 QR 토큰, 초대 링크 해시)은 내보내지 않는다.
@@ -18,11 +19,11 @@ export async function exportApi(request: Request, env: {DB: D1Database}) {
     // 지시서 147: 매주 자동 백업 목록·내려받기
     const bw = new URL(request.url).searchParams.get('backup');
     if (bw === 'list') return json({backups: (await env.DB.prepare('SELECT week,bytes,created_at FROM store_backups WHERE owner=? ORDER BY week DESC').bind(linked.owner).all<any>()).results});
-    if (bw) { const b = await env.DB.prepare('SELECT data FROM store_backups WHERE owner=? AND week=?').bind(linked.owner, bw).first<any>(); if (!b) return json({error: '그 주 백업이 없어요. 목록을 새로고침해 주세요.'}, 404); return new Response(b.data, {headers: {'Content-Type': 'application/json; charset=utf-8', 'Content-Disposition': `attachment; filename="chukchuk-backup-${bw}.json"`, 'Cache-Control': 'no-store'}}); }
-    const data = JSON.parse(linked.row.data);
+    if (bw) { const b = await env.DB.prepare('SELECT data FROM store_backups WHERE owner=? AND week=?').bind(linked.owner, bw).first<any>(); if (!b) return json({error: '그 주 백업이 없어요. 목록을 새로고침해 주세요.'}, 404);const data=JSON.parse(b.data);if(linked.coowner)for(const k of INTERNAL)delete data[k];return new Response(linked.coowner?JSON.stringify(redactBillingData(data)):b.data, {headers: {'Content-Type': 'application/json; charset=utf-8', 'Content-Disposition': `attachment; filename="chukchuk-backup-${bw}.json"`, 'Cache-Control': 'no-store'}}); }
+    const original = JSON.parse(linked.row.data),data=linked.coowner?redactBillingData(original):original;
     for (const k of INTERNAL) delete data[k];
     // 작업 045: 화면용으로 붙인 최근 기록 대신 보관 중인 출퇴근 기록 전체
-    data.attendance = await loadAttendance(env.DB, uid);
+    data.attendance = await loadAttendance(env.DB, linked.owner);
     delete data._attendanceFrom;
     const contracts = (await env.DB.prepare('SELECT * FROM contract_envelopes WHERE owner_id=? ORDER BY created_at').bind(linked.owner).all<any>()).results;
     const events = (await env.DB.prepare('SELECT e.envelope_id,e.version,e.status,e.recorded_at,e.record_json FROM contract_events e JOIN contract_envelopes c ON c.id=e.envelope_id WHERE c.owner_id=? ORDER BY e.id').bind(linked.owner).all<any>()).results;

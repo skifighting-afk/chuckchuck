@@ -125,8 +125,8 @@ export function refundFromPayment(p:{amount:number,period_start:string,period_en
  const start=Date.parse(p.period_start),end=Date.parse(p.period_end),refunded=p.refunded_amount||0;
  if(!Number.isFinite(start)||!Number.isFinite(end)||end<=start||!Number.isInteger(p.amount)||p.amount<0||!Number.isInteger(refunded)||refunded<0)return null;
  const total=Math.max(1,Math.ceil((end-start)/DAY)),used=Math.max(0,Math.min(total,Math.ceil((now-start)/DAY)));
- const refund=Math.max(0,Math.min(p.amount-refunded,Math.floor((p.amount-p.amount*used/total)/10)*10));
- return {usedDays:used,totalDays:total,refund,formula:`${money(p.amount)}원 − ${used}일/${total}일 사용분 · 누적 환불 ${money(refunded)}원 반영`};
+ const refund=Math.max(0,Math.floor((p.amount-p.amount*used/total-refunded)/10)*10);
+ return {usedDays:used,totalDays:total,refund,formula:`${money(p.amount)}원 − ${used}일/${total}일 사용분 − 누적 환불 ${money(refunded)}원 = ${money(refund)}원`};
 }
 /** 작업 069: 사업자등록번호 검증(국세청 검증식) */
 export function validBizNo(v:string){

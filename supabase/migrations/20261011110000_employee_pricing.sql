@@ -17,6 +17,7 @@ alter table billing_quotes add column if not exists context jsonb not null defau
 alter table payments add column if not exists pricing_version text;
 alter table payments add column if not exists pricing_snapshot jsonb;
 alter table payments add column if not exists fulfilled_at timestamptz;
+alter table payments add column if not exists confirmation_started_at timestamptz;
 
 create table if not exists payment_refunds (
   id text primary key,

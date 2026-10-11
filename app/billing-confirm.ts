@@ -17,28 +17,38 @@ export async function confirmPayment(env:Env,owner:string,b:any){
   try{const result=await fulfillPlanOrder(env.DB,p.order_id);return json({ok:true,already,orderId:p.order_id,amount:p.amount,receiptUrl:p.receipt_url,fulfilled:true,paidUntil:result.periodEnd})}catch{return pending(p,true)}
  };
  if(['paid','no_charge'].includes(p.status))return finish(true);
- const claimed=await env.DB.prepare("UPDATE payments SET status='confirming',payment_key=? WHERE order_id=? AND status='ready'").bind(b.paymentKey,p.order_id).run();
+ const startedAt=new Date().toISOString();
+ const claimed=await env.DB.prepare("UPDATE payments SET status='confirming',payment_key=?,confirmation_started_at=? WHERE order_id=? AND status='ready'").bind(b.paymentKey,startedAt,p.order_id).run();
  const call=env.TOSS_FETCH||fetch,headers={Authorization:tossAuth(env.TOSS_SECRET_KEY!),'Content-Type':'application/json'};
- let response:Response,details:any;
+ let response:Response,details:any,approvalAttempted=false;
+ const approve=async()=>{
+  approvalAttempted=true;
+  response=await call(`${TOSS_API}/v1/payments/confirm`,{method:'POST',headers:{...headers,'Idempotency-Key':'confirm-'+p.order_id},body:JSON.stringify({paymentKey:b.paymentKey,orderId:p.order_id,amount:p.amount})});
+  details=await response.json().catch(()=>({}));
+ };
+ const lookup=async()=>{response=await call(`${TOSS_API}/v1/payments/orders/${encodeURIComponent(p.order_id)}`,{method:'GET',headers});details=await response.json().catch(()=>({}))};
  try{
   if(claimed.meta.changes){
-   response=await call(`${TOSS_API}/v1/payments/confirm`,{method:'POST',headers:{...headers,'Idempotency-Key':'confirm-'+p.order_id},body:JSON.stringify({paymentKey:b.paymentKey,orderId:p.order_id,amount:p.amount})});
-   details=await response.json().catch(()=>({}));
-   if(details.code==='IDEMPOTENT_REQUEST_PROCESSING'||[408,429].includes(response.status))return pending(p);
-   if(!response.ok&&details.code!=='ALREADY_PROCESSED_PAYMENT'){
-    // Only explicit supplier declines are terminal. Timeouts/server errors remain recoverable.
-    if(response.status>=400&&response.status<500){await env.DB.prepare("UPDATE payments SET status='failed',fail_reason=? WHERE order_id=? AND status='confirming'").bind(String(details.code||'TOSS_DECLINED').slice(0,60),p.order_id).run();return json({error:tossErrorText(details.code,details.message),code:details.code||'TOSS_DECLINED'},402)}
-    return pending(p);
-   }
-   if(!response.ok){response=await call(`${TOSS_API}/v1/payments/orders/${encodeURIComponent(p.order_id)}`,{method:'GET',headers});details=await response.json().catch(()=>({}))}
+   await approve();
   }else{
    p=await env.DB.prepare('SELECT * FROM payments WHERE order_id=? AND owner=?').bind(b.orderId,owner).first<any>();
    if(['paid','no_charge'].includes(p.status))return finish(true);
    if(p.status!=='confirming')return json({error:'종료된 주문이에요. 내역을 확인해 주세요.'},409);
-   response=await call(`${TOSS_API}/v1/payments/orders/${encodeURIComponent(p.order_id)}`,{method:'GET',headers});details=await response.json().catch(()=>({}));
+   await lookup();
+   const notApproved=response!.status===404&&details.code==='NOT_FOUND_PAYMENT'||response!.ok&&['READY','IN_PROGRESS'].includes(details.status)&&details.orderId===p.order_id&&details.paymentKey===b.paymentKey&&Number(details.totalAmount)===p.amount;
+   if(notApproved){
+    const age=Date.now()-Date.parse(p.confirmation_started_at||'');
+    if(!Number.isFinite(age)||age<0||age>14*86400000)return json({orderId:p.order_id,amount:p.amount,approved:false,fulfilled:false,code:'PAYMENT_REVIEW_REQUIRED',message:'오래된 승인 요청이라 자동 재전송을 멈췄어요. 고객센터에 주문번호를 알려 주세요. 새로 결제하지 마세요.'},202);
+    await approve();
+   }else if(response!.ok&&['CANCELED','PARTIAL_CANCELED','ABORTED','EXPIRED'].includes(details.status)&&details.orderId===p.order_id&&details.paymentKey===b.paymentKey){
+    await env.DB.prepare("UPDATE payments SET status='failed',fail_reason=? WHERE order_id=? AND status='confirming'").bind(details.status,p.order_id).run();return json({error:'취소되었거나 만료된 승인 요청이에요. 계정 화면에서 새 주문으로 다시 시작해 주세요.'},409);
+   }
   }
+  if(details.code==='IDEMPOTENT_REQUEST_PROCESSING'||[408,429].includes(response!.status))return pending(p);
+  if(!response!.ok&&details.code==='ALREADY_PROCESSED_PAYMENT')await lookup();
+  else if(!response!.ok&&response!.status>=400&&response!.status<500&&approvalAttempted){await env.DB.prepare("UPDATE payments SET status='failed',fail_reason=? WHERE order_id=? AND status='confirming'").bind(String(details.code||'TOSS_DECLINED').slice(0,60),p.order_id).run();return json({error:tossErrorText(details.code,details.message),code:details.code||'TOSS_DECLINED'},402)}
  }catch{return pending(p)}
- if(!response.ok||details.status!=='DONE'||details.orderId!==p.order_id||details.paymentKey!==b.paymentKey||Number(details.totalAmount)!==p.amount||!Number.isFinite(Date.parse(details.approvedAt||'')))return pending(p);
+ if(!response!.ok||details.status!=='DONE'||details.orderId!==p.order_id||details.paymentKey!==b.paymentKey||Number(details.totalAmount)!==p.amount||details.currency&&details.currency!=='KRW'||!Number.isFinite(Date.parse(details.approvedAt||'')))return pending(p);
  try{
   await env.DB.prepare("UPDATE payments SET status='paid',payment_key=?,method=?,receipt_url=?,paid_at=? WHERE order_id=? AND status='confirming'").bind(b.paymentKey,String(details.method||'').slice(0,20),details.receipt?.url||null,new Date(details.approvedAt).toISOString(),p.order_id).run();
   p.receipt_url=details.receipt?.url||null;

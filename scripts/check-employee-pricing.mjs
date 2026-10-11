@@ -54,7 +54,7 @@ await test('snapshots reject an invalid count timestamp',async()=>{
 await test('refund estimates use original payment amount, period bounds and accumulated refunds',async()=>{
  const payment={amount:10000,period_start:'2026-01-31T00:00:00+09:00',period_end:'2026-02-28T00:00:00+09:00',refunded_amount:0};
  assert.equal(P.refundFromPayment(payment,Date.parse('2026-02-14T00:00:00+09:00')).refund,5000);
- assert.equal(P.refundFromPayment({...payment,refunded_amount:8000},Date.parse('2026-02-14T00:00:00+09:00')).refund,2000);
+ assert.equal(P.refundFromPayment({...payment,refunded_amount:8000},Date.parse('2026-02-14T00:00:00+09:00')).refund,0);
  assert.equal(P.refundFromPayment(payment,Date.parse('2026-01-01T00:00:00+09:00')).refund,10000);
  assert.equal(P.refundFromPayment(payment,Date.parse('2026-03-01T00:00:00+09:00')).refund,0);
  assert.equal(P.refundFromPayment({...payment,period_end:'invalid'}),null);

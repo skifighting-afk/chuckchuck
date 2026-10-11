@@ -35,6 +35,17 @@ export async function refundPayment(env:Env,b:any){
   }
   if(!['CANCELED','PARTIAL_CANCELED'].includes(details.status)||details.orderId&&details.orderId!==p.order_id)return pending();
   if(p.refunded_amount!==current.previous_refunded)throw Error('Refund ledger conflict');
+  if(result.status==='refunded'&&p.kind==='plan'&&p.pricing_version){
+   const row=await tx.prepare('SELECT data FROM stores WHERE owner=? FOR UPDATE').bind(p.owner).first<any>();
+   if(!row)throw Error('Refund entitlement store missing');
+   const data=JSON.parse(row.data),a=data._account,queue=a.pendingSubscriptions||[a.pendingSubscription].filter(Boolean),remaining=queue.filter((x:any)=>x.orderId!==p.order_id);
+   if(remaining.length){a.pendingSubscriptions=remaining;a.pendingSubscription=remaining[0]}else{delete a.pendingSubscriptions;delete a.pendingSubscription}
+   if(a.lastOrderId===p.order_id){a.status='cancelled';a.paidUntil=now}
+   const lastEnd=Date.parse(remaining.at(-1)?.periodEnd||a.paidUntil||a.trialEndsAt||'');
+   if(a.cancelAt&&Number.isFinite(lastEnd)&&Date.parse(a.cancelAt)>lastEnd)a.cancelAt=new Date(lastEnd).toISOString();
+   data._audit=[...(data._audit||[]),{id:crypto.randomUUID(),at:now,actor:{name:'본사 관리자'},action:'요금 환불',target:p.order_id,before:null,after:{amount:refunded},reason:current.reason}].slice(-1000);
+   await tx.prepare('UPDATE stores SET data=?,version=version+1,updated_at=? WHERE owner=?').bind(JSON.stringify(data),now,p.owner).run();
+  }
   await tx.prepare('UPDATE payments SET refunded_amount=?,status=? WHERE order_id=?').bind(refunded,result.status,p.order_id).run();
   await tx.prepare("UPDATE payment_refunds SET status='complete',completed_at=? WHERE id=?").bind(now,current.id).run();return json(result);
  });

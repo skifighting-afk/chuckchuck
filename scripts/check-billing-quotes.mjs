@@ -99,7 +99,7 @@ try{
  const zeroQuote=(await billing('empty',{action:'quote',plan:'pro'})).data;
  const zero=await billing('empty',{action:'prepare',kind:'plan',quoteId:zeroQuote.quoteId,agreed:true});assert.equal(zero.status,200,JSON.stringify(zero.data));assert.equal(zero.data.noCharge,true);assert.equal(zero.data.amount,0);
  const zeroOrder=await q('SELECT * FROM payments WHERE order_id=?',zero.data.orderId).first();assert.equal(zeroOrder.provider,'internal');assert.equal(zeroOrder.status,'no_charge');assert.ok(zeroOrder.fulfilled_at);
- const zeroAcc=(await raw('empty'))._account;assert.equal(zeroAcc.status,'active');assert.equal(zeroAcc.plan,'pro');assert.equal(zeroAcc.periodPrice,0);
+ const zeroAcc=(await raw('empty'))._account;assert.equal(zeroAcc.status,'trialing');assert.equal(zeroAcc.pendingSubscription.plan,'pro');assert.equal(zeroAcc.pendingSubscription.periodPrice,0);assert.equal(zeroAcc.pendingSubscription.periodStart,zeroAcc.trialEndsAt);
  const repeatZero=await billing('empty',{action:'prepare',kind:'plan',quoteId:zeroQuote.quoteId,agreed:true});assert.equal(repeatZero.data.orderId,zero.data.orderId);assert.equal((await raw('empty'))._account.paidUntil,zeroAcc.paidUntil);assert.equal(providerCalls,0);
  ok('zero employees creates and fulfills one internal no-charge order without supplier calls');
  console.log(`PASS: billing snapshots and legacy protection ${passed}/${passed}.`);
