@@ -52,7 +52,8 @@ export async function priorityUxE2E({owner,staff,srv,step,browser}){
    await srv.db.q('UPDATE stores SET data=? WHERE owner=?',JSON.stringify(data),saved.owner).run();
    await srv.db.q('INSERT INTO attendance_records(owner,id,employee_id,start_at,record) VALUES(?,?,?,?,?)',saved.owner,fixtureId,employeeId,fixture.start,JSON.stringify(fixture)).run();
    try{
-   const response=await staff.request.get(srv.ORIGIN+'/api/store');assert(response.ok());const {state}=await response.json();
+   // Use the app's authenticated fetch adapter, which routes /api to the Edge Function.
+   const {state}=await staff.evaluate(async()=>{const response=await fetch('/api/store');if(!response.ok)throw Error('Staff store request failed: '+response.status);return response.json()});
    const record=state.attendance.find(a=>a.id===fixtureId);assert(record,'matched staff attendance fixture exists');
    const date=new Date(Date.parse(record.start)+9*3600000).toISOString().slice(0,10),tol=state.settings.attendanceTolerance||'normal',minutes={strict:0,normal:5,lenient:10}[tol];
    const row=dayRows(date,state.shifts,state.attendance,tol,Date.now(),state.approvedLeaves||[]).find(r=>r.records.some(a=>a.id===record.id));assert(row?.shift,'comparison fixture is matched to a shift');
