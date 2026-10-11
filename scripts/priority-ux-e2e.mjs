@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import {mkdir,readFile} from 'node:fs/promises';
-export async function priorityUxE2E({owner,srv,step,browser}){
+import {dayRows} from '../lib/attendance-check.ts';
+import {attendanceEvidence} from '../lib/attendance-display.ts';
+export async function priorityUxE2E({owner,staff,srv,step,browser}){
  const ctx=await browser.newContext({storageState:await owner.context().storageState(),serviceWorkers:'block',viewport:{width:1440,height:900}}),page=await ctx.newPage();
  try{
   await step('업무 가시성 · 비서 기본 닫힘 · 키보드 열기와 복귀',async()=>{
@@ -40,6 +42,39 @@ export async function priorityUxE2E({owner,srv,step,browser}){
    const [download]=await Promise.all([page.waitForEvent('download'),exports.getByRole('button',{name:'세무사 자료',exact:true}).click()]);
    const csv=await readFile(await download.path(),'utf8');assert(csv.startsWith('\uFEFF"성명","직원번호"'),'accountant CSV still downloads');assert(!csv.includes('</table>'),'CSV contains data, not source markup');
    await exports.getByText('급여 자료 내려받기',{exact:true}).click();await mkdir('ci-logs',{recursive:true});await page.screenshot({path:'ci-logs/priority-payroll-mobile.png',fullPage:true});
+  });
+  await step('사장님·직원 같은 출퇴근 근거 · 허용 기준 · 작은 화면',async()=>{
+   const saved=await srv.db.q('SELECT owner,data FROM stores LIMIT 1').first(),data=JSON.parse(saved.data),employeeId=data._members[0].employeeId;
+   const fixtureDate=new Date(Date.now()+9*3600000-86400000).toISOString().slice(0,10),fixtureId='evidence-shared-record';
+   data.shifts=data.shifts.filter(s=>s.employeeId!==employeeId||s.date!==fixtureDate);
+   data.shifts.push({id:'evidence-shared-shift',employeeId,branchId:data.employees.find(e=>e.id===employeeId).branchId,date:fixtureDate,start:'17:00',end:'22:00',breakMinutes:30});
+   const fixture={id:fixtureId,employeeId,start:fixtureDate+'T08:06:00Z',end:fixtureDate+'T12:58:00Z',breakMinutes:30,breakStart:null};
+   await srv.db.q('UPDATE stores SET data=? WHERE owner=?',JSON.stringify(data),saved.owner).run();
+   await srv.db.q('INSERT INTO attendance_records(owner,id,employee_id,start_at,record) VALUES(?,?,?,?,?)',saved.owner,fixtureId,employeeId,fixture.start,JSON.stringify(fixture)).run();
+   try{
+   // Use the app's authenticated fetch adapter, which routes /api to the Edge Function.
+   const {state}=await staff.evaluate(async()=>{const response=await fetch('/api/store');if(!response.ok)throw Error('Staff store request failed: '+response.status);return response.json()});
+   const record=state.attendance.find(a=>a.id===fixtureId);assert(record,'matched staff attendance fixture exists');
+   const date=new Date(Date.parse(record.start)+9*3600000).toISOString().slice(0,10),tol=state.settings.attendanceTolerance||'normal',minutes={strict:0,normal:5,lenient:10}[tol];
+   const row=dayRows(date,state.shifts,state.attendance,tol,Date.now(),state.approvedLeaves||[]).find(r=>r.records.some(a=>a.id===record.id));assert(row?.shift,'comparison fixture is matched to a shift');
+   const expected=attendanceEvidence(row,minutes);
+   await page.goto(srv.ORIGIN+'/app?screen=attendance',{waitUntil:'networkidle'});await page.getByLabel('근태 날짜',{exact:true}).fill(date);
+   const ownerRecord=page.locator('.att-table tbody tr').filter({has:page.getByText(state.employees.find(e=>e.id===employeeId).name,{exact:true})});
+   await ownerRecord.locator('.attendance-evidence p').filter({hasText:expected}).waitFor();
+   const size=await page.locator('.att-table .attendance-evidence p').first().evaluate(el=>parseFloat(getComputedStyle(el).fontSize));assert(size>=14);
+   await page.locator('.owner-display-settings summary').click();await page.getByRole('button',{name:'글씨 더 크게 보기',exact:true}).click();
+   assert(await page.locator('.att-table .attendance-evidence p').first().evaluate(el=>parseFloat(getComputedStyle(el).fontSize))>size);
+   for(const width of [320,390,768,1440]){await page.setViewportSize({width,height:900});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'attendance evidence overflow '+width)}
+   await page.getByRole('button',{name:'기본 글씨로 보기',exact:true}).click();
+   const employeeCtx=await browser.newContext({storageState:await staff.context().storageState(),viewport:{width:390,height:844},serviceWorkers:'block'}),employee=await employeeCtx.newPage();
+   try{
+    await employee.goto(srv.ORIGIN+'/app?screen=attendance',{waitUntil:'networkidle'});
+    const more=employee.getByRole('button',{name:/지난 기록 더 보기/});if(await more.count())await more.click();
+    await employee.locator('.attendance-evidence p').filter({hasText:expected}).first().waitFor();
+    for(const width of [320,390,768]){await employee.setViewportSize({width,height:844});assert(await employee.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'personal attendance evidence overflow '+width)}
+    await employee.setViewportSize({width:390,height:844});await mkdir('ci-logs',{recursive:true});await employee.screenshot({path:'ci-logs/staff-attendance-evidence.png',fullPage:true});
+   }finally{await employeeCtx.close()}
+   }finally{await srv.db.q('UPDATE stores SET data=? WHERE owner=?',saved.data,saved.owner).run();await srv.db.q('DELETE FROM attendance_records WHERE id=?',fixtureId).run()}
   });
   await step('직원별 서류 · 검색 · 월 선택 · 연결 실패와 복구',async()=>{
    await page.goto(srv.ORIGIN+'/app?screen=contracts',{waitUntil:'networkidle'});

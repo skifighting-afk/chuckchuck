@@ -12,6 +12,7 @@ export function personalTeam(state:Team,selfId:string):Team{
   // 개선 2차: 사장님 전용 메모·평가·태그·퇴사 사유는 빼고, 직원이 고른 알림 시간만
   employees:[{...self,notes:'',...((self as any).extra?{extra:{...((self as any).extra.beforeMin!=null?{beforeMin:(self as any).extra.beforeMin}:{}),...((self as any).extra.praise?{praise:(self as any).extra.praise}:{})}}:{})} as any],
   shifts:state.shifts.filter(s=>s.employeeId===selfId),
+  approvedLeaves:((state as any).approvedLeaves||[]).filter((l:any)=>l.employeeId===selfId).map((l:any)=>({employeeId:l.employeeId,start:l.start,end:l.end})),
   attendance:state.attendance.filter(a=>a.employeeId===selfId).map(({memo,...a}:any)=>a),
   adjustments:Object.fromEntries(Object.entries(state.adjustments).filter(([key])=>key.endsWith(':'+selfId))),
   payrollRuns:Object.fromEntries(Object.entries(state.payrollRuns)
@@ -31,6 +32,6 @@ export function personalTeam(state:Team,selfId:string):Team{
   ...((state as any).dayOffWishes?{dayOffWishes:(state as any).dayOffWishes.filter((x:any)=>x.employeeId===selfId)}:{}),
   // 지시서 028: 내 매장에서 모집 중인 빈 근무(누가 맡았는지는 빼고)
   ...((state as any).openShifts?{openShifts:(state as any).openShifts.filter((o:any)=>(o.branchId===self.branchId||o.anyBranch)&&(o.status==='모집 중'||o.assignedTo===selfId)).map(({assignedTo,...o}:any)=>assignedTo===selfId?{...o,assignedTo}:o)}:{}),
-  settings:{accountantName:'',accountantEmail:'',autoPayslip:false,autoContract:false,autoAccountant:false,employerName:'',fivePlus:!!state.settings.fivePlus,...((state.settings as any).weekStart?{weekStart:(state.settings as any).weekStart}:{}),...((state.settings as any).attendanceRule?{attendanceRule:(state.settings as any).attendanceRule}:{}),...((state.settings as any).staffPayEstimate===false?{staffPayEstimate:false}:{}),...(typeof (state.settings as any).availabilityDue==='number'?{availabilityDue:(state.settings as any).availabilityDue}:{}),...((state.settings as any).more?{more:{...((state.settings as any).more.todayNote?{todayNote:(state.settings as any).more.todayNote}:{}),...(typeof (state.settings as any).more.scheduleDue==='number'?{scheduleDue:(state.settings as any).more.scheduleDue}:{})}}:{})} as any
+  settings:{...(['lenient','normal','strict'].includes((state.settings as any).attendanceTolerance)?{attendanceTolerance:(state.settings as any).attendanceTolerance}:{}),accountantName:'',accountantEmail:'',autoPayslip:false,autoContract:false,autoAccountant:false,employerName:'',fivePlus:!!state.settings.fivePlus,...((state.settings as any).weekStart?{weekStart:(state.settings as any).weekStart}:{}),...((state.settings as any).attendanceRule?{attendanceRule:(state.settings as any).attendanceRule}:{}),...((state.settings as any).staffPayEstimate===false?{staffPayEstimate:false}:{}),...(typeof (state.settings as any).availabilityDue==='number'?{availabilityDue:(state.settings as any).availabilityDue}:{}),...((state.settings as any).more?{more:{...((state.settings as any).more.todayNote?{todayNote:(state.settings as any).more.todayNote}:{}),...(typeof (state.settings as any).more.scheduleDue==='number'?{scheduleDue:(state.settings as any).more.scheduleDue}:{})}}:{})} as any
  };
 }
