@@ -2567,4 +2567,22 @@ PASS: 메일 없이 비밀번호 찾기.
 > chuckchuck@0.1.0 check:function
 > node scripts/check-supabase-function.mjs
 
-PASS: Supabase 함수 — CORS·출처 차단, 가입·로그인·로그아웃, 신원 헤더 위조 차단, 매장 등록, 비밀번호 재설정, 직원 역할, 본사 권한, 동시 요청·유휴 연결 반환·재연결.
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: one edge worker uses one connection
+
+3 !== 1
+
+    at file:///home/runner/work/chuckchuck/chuckchuck/scripts/check-supabase-function.mjs:96:34
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 3,
+  expected: 1,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v22.23.3
