@@ -20,6 +20,7 @@ import {checkShift} from '../lib/schedule-rules';
 import {sendAlimtalk} from '../lib/alimtalk-send';
 import {teamSchema,normalizeTeam,calculate,contractText,kdate,attendanceSchema,newMember,applyClock,applyCredit} from '../lib/team-model';
 import {managerApi} from './manager-api';
+import {startGuideApi} from './start-guide-api';
 import {staffJoinApi} from './staff-join-api';
 import {accountApi,resolveStore} from './saas-api';
 import {plans,trialStatus,isPlan,canWrite,capacityError,hasFeature} from '../lib/plans';
@@ -86,6 +87,7 @@ async function route(request:Request,env:Env){
  if(path==='/api/documents')return documentsApi(request,env);
  if(path==='/api/contracts')return contractsApi(request,env);
  if(path==='/api/manager')return managerApi(request,env);
+ if(path==='/api/start-guide')return startGuideApi(request,env);
  if(path==='/api/staff-join')return staffJoinApi(request,env);
  if(path==='/api/account')return accountApi(request,env);
  if(path==='/api/evidence')return evidenceApi(request,env);
@@ -120,12 +122,13 @@ async function route(request:Request,env:Env){
  const self=state.employees.find(e=>e.id===members.find(m=>m.userId===userId)?.employeeId),access=linked.access==='owner'?'owner':self?.access==='중간관리자'?'manager':'employee';
  if(linked.access!=='owner'&&(!self||staffGone(self)))return json({error:'이 가게를 볼 권한이 없어요. 사장님께 연결을 요청해 주세요.'},403);
  let name=request.headers.get('oai-authenticated-user-full-name')||request.headers.get('oai-authenticated-user-email')||'사장님';try{if(request.headers.get('oai-authenticated-user-full-name-encoding')==='percent-encoded-utf-8')name=decodeURIComponent(name)}catch{}
+ const guideContext=await hashToken(JSON.stringify([userId,owner,access]));
  const actor={id:userId,name:self?.name||name,email:request.headers.get('oai-authenticated-user-email')||''};
  let freshPub:string[]=[];let freshOpen:any[]=[];let importResult:any=null;let kioskUrl:string|undefined;let trash:any[]=Array.isArray(raw?._trash)?raw._trash:[];let certReq:any=null;let askNotice:any=null; let inviteUrl:string|undefined;let attendanceQrUrl:string|undefined;
  const result=()=>{
-  if(access==='owner')return {links:{linked:members.map((m:any)=>m.employeeId),invited:Object.fromEntries(invitations.map((i:any)=>[i.employeeId,i.expires]))},state,version:version+1,audit:linked.coowner?sharedAuditView(audit):audit,outbox,actor,emailConnected:!!(env.RESEND_API_KEY&&env.EMAIL_FROM),access,selfId:null,inviteUrl,attendanceQrUrl,qrModes:raw?._attendanceQrMode||{},plan:linked.coowner?sharedAccountView(raw?._account):raw?._account||null,qrRequired:hasFeature(raw?._account,'qr'),...(importResult?{importResult}:{}),...(kioskUrl!==undefined?{kioskUrl}:{}),trash:trash.filter((t:any)=>t.at>=new Date(Date.now()-30*86400000).toISOString()).slice(-200).reverse().map((t:any)=>({id:t.id,kind:t.kind,at:t.at,by:t.by,label:t.kind==='shift'?`${state.employees.find(e=>e.id===t.item.employeeId)?.name||'직원'} ${t.item.date} ${t.item.start}–${t.item.end}`:t.item.name}))};
+  if(access==='owner')return {guideContext,links:{linked:members.map((m:any)=>m.employeeId),invited:Object.fromEntries(invitations.map((i:any)=>[i.employeeId,i.expires]))},state,version:version+1,audit:linked.coowner?sharedAuditView(audit):audit,outbox,actor,emailConnected:!!(env.RESEND_API_KEY&&env.EMAIL_FROM),access,selfId:null,inviteUrl,attendanceQrUrl,qrModes:raw?._attendanceQrMode||{},plan:linked.coowner?sharedAccountView(raw?._account):raw?._account||null,qrRequired:hasFeature(raw?._account,'qr'),...(importResult?{importResult}:{}),...(kioskUrl!==undefined?{kioskUrl}:{}),trash:trash.filter((t:any)=>t.at>=new Date(Date.now()-30*86400000).toISOString()).slice(-200).reverse().map((t:any)=>({id:t.id,kind:t.kind,at:t.at,by:t.by,label:t.kind==='shift'?`${state.employees.find(e=>e.id===t.item.employeeId)?.name||'직원'} ${t.item.date} ${t.item.start}–${t.item.end}`:t.item.name}))};
   const filtered=personalTeam(state,self!.id);
-  return {state:filtered,version:version+1,audit:[],outbox:[],actor,emailConnected:false,access,selfId:self!.id,plan:raw?._account?{plan:raw._account.plan}:null,qrRequired:hasFeature(raw?._account,'qr')};
+  return {guideContext,state:filtered,version:version+1,audit:[],outbox:[],actor,emailConnected:false,access,selfId:self!.id,plan:raw?._account?{plan:raw._account.plan}:null,qrRequired:hasFeature(raw?._account,'qr')};
  };
  if(request.method==='GET')return json({...result(),version,updatedAt:row?.updated_at});
  if(raw?._account?.deletion)return json({error:'탈퇴를 예약해 가게가 읽기 전용이에요. 계정 화면에서 예약을 취소하면 다시 저장할 수 있어요.',code:'WITHDRAW_PENDING'},403);

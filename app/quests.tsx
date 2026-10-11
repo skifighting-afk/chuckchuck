@@ -6,24 +6,21 @@
 import {useCallback,useEffect,useLayoutEffect,useRef,useState} from 'react';
 import {QUESTS,questDone,questSummary,levelOf,parseFind,type Quest,type QuestRole} from '../lib/quests';
 import {startTour} from './tour';
+import {useStartGuide} from './start-guide-store';
 
 type Store={pings?:string[];seenBy?:Record<string,string[]>;mini?:boolean;hideAll?:boolean};
-const mem:Record<string,Store>={};
-const keyOf=(role:QuestRole,demo:boolean)=>`cc-quest-${role}${demo?'-demo':''}-v1`;
-function getStore(k:string,demo:boolean):Store{if(!mem[k]){let v:Store={};if(!demo)try{v=JSON.parse(localStorage.getItem(k)||'{}')||{}}catch{}mem[k]=v}return mem[k]}
-function setStore(k:string,demo:boolean,patch:Store){mem[k]={...getStore(k,demo),...patch};if(!demo)try{localStorage.setItem(k,JSON.stringify(mem[k]))}catch{};try{window.dispatchEvent(new CustomEvent('cc-quest-store',{detail:k}))}catch{}}
-function useQuestStore(role:QuestRole,demo:boolean):[Store,(p:Store)=>void]{
- const k=keyOf(role,demo),[s,setS]=useState<Store>(()=>getStore(k,demo));
- useEffect(()=>{const h=(e:Event)=>{if((e as CustomEvent).detail===k)setS({...getStore(k,demo)})};addEventListener('cc-quest-store',h);return()=>removeEventListener('cc-quest-store',h)},[k,demo]);
- return [s,useCallback((p:Store)=>setStore(k,demo,p),[k,demo])];
+function useQuestStore(_role:QuestRole,_demo:boolean):[Store,(p:Store)=>void]{
+ const g=useStartGuide(),[seenBy,setSeen]=useState<Record<string,string[]>>({});
+ const save=useCallback((p:Store)=>{if(p.seenBy)setSeen(p.seenBy);const patch:any={};if(p.pings)patch.acknowledged=p.pings;if(p.mini!==undefined)patch.mini=p.mini;if(p.hideAll!==undefined)patch.hideAll=p.hideAll;if(Object.keys(patch).length)void g.client?.patch(patch)},[g.client]);
+ return [{...g.data?.preferences,pings:g.data?.preferences.acknowledged||[],seenBy},save];
 }
 /** 보드·도움말에서 퀘스트 시작 */
 export const startQuest=(role:QuestRole,id:string)=>{try{window.dispatchEvent(new CustomEvent('cc-quest-start',{detail:{role,id}}))}catch{}};
 /** 하루 일과 등에서 짚기만 빌려 쓰기: 화면을 옮기고(page) 칸을 짚는다(steps). 마지막 단계를 누르면 끝난다 */
 export const startGuide=(role:QuestRole,g:{id:string,emoji:string,title:string,page?:string,steps?:any[]})=>{try{window.dispatchEvent(new CustomEvent('cc-quest-start',{detail:{role,id:g.id,guide:g}}))}catch{}};
 /** 기기·설정상 못 하는 퀘스트(needs 요소가 화면에 없음). 한 번이라도 보이면 계속 보인다 */
-const present=new Set<string>();
 function useSkip(role:QuestRole){
+ const found=useRef(new Set<string>()),present=found.current;
  const [skip,setSkip]=useState<string[]>([]);
  useEffect(()=>{const check=()=>{const m:string[]=[];for(const q of QUESTS[role])if(q.needs){if(document.querySelector(q.needs))present.add(q.id);if(!present.has(q.id))m.push(q.id)}setSkip(o=>o.join()===m.join()?o:m)};const t=setTimeout(check,700),i=setInterval(check,2500);return()=>{clearTimeout(t);clearInterval(i)}},[role]);
  return skip;
@@ -54,26 +51,31 @@ const filled=(el:Element)=>{const v=(el as HTMLInputElement).value;return typeof
 
 // ── 퀘스트 진행(모든 화면에 한 번 둔다) ──
 export function QuestHost({role,state,branch,selfId='',demo=false,go}:{role:QuestRole,state:any,branch:string,selfId?:string,demo?:boolean,go?:(page:string)=>void}){
+ const guide=useStartGuide(),restored=useRef(false);
  const [store,save]=useQuestStore(role,demo);
  const done=questDone(role,state,branch,selfId,store.pings||[]),skip=useSkip(role);
  const [active,setActive]=useState<Quest|null>(null),[idx,setIdx]=useState(0),[rect,setRect]=useState<DOMRect|null>(null),[lost,setLost]=useState(false);
  const [party,setParty]=useState<{q:Quest,prevXp:number}|null>(null),[toast,setToast]=useState<Quest|null>(null);
  const idxRef=useRef(0);idxRef.current=idx;
  const activeRef=useRef<Quest|null>(null);activeRef.current=active;
- const ping=useCallback((id:string)=>{const p=getStore(keyOf(role,demo),demo).pings||[];if(!p.includes(id))save({pings:[...p,id]})},[role,demo,save]);
+ useEffect(()=>{if(guide.status==='scope-changed'){setActive(null);setRect(null);setParty(null);setToast(null);restored.current=false}},[guide.status]);
+ const ping=useCallback((id:string)=>{const p=guide.client?.getSnapshot().data?.preferences.acknowledged||[];if(!p.includes(id))save({pings:[...p,id]})},[guide.client,save]);
+ useEffect(()=>{if(!guide.data||restored.current)return;restored.current=true;const a=guide.data.preferences.active;if(!a||a.questId==='tour')return;const q=QUESTS[role].find(q=>q.id===a.questId);if(q&&!done[q.id]){setActive(q);setIdx(Math.min(a.step,q.steps.length-1));if(q.page&&go)go(q.page)}},[guide.data,role,go]);
+ useEffect(()=>{if(!active||(active as any).guideOnly||!guide.data)return;const t=setTimeout(()=>void guide.client?.patch({active:{questId:active.id,step:idx}}),400);return()=>clearTimeout(t)},[active,idx,guide.client,!!guide.data]);
  // 처음: 이미 끝난 퀘스트는 축하하지 않고 본 것으로
  const doneKey=Object.keys(done).filter(k=>done[k]).sort().join(',');
  const seenKey=role==='owner'?branch:selfId||'me';
  useEffect(()=>{
-  const all=getStore(keyOf(role,demo),demo).seenBy||{},seen=all[seenKey];
+  if(!guide.data)return;
+  const all=store.seenBy||{},seen=all[seenKey];
   if(!seen){save({seenBy:{...all,[seenKey]:doneKey?doneKey.split(','):[]}});return}// 이 지점·이 사람은 처음: 축하 없이 기억만
   const fresh=QUESTS[role].filter(q=>done[q.id]&&!seen.includes(q.id));if(!fresh.length)return;
   save({seenBy:{...all,[seenKey]:[...seen,...fresh.map(q=>q.id)]}});
   const xpNow=QUESTS[role].filter(q=>done[q.id]).reduce((n,q)=>n+q.xp,0);
   const mine=fresh.find(q=>q.id===activeRef.current?.id);
-  if(mine){setActive(null);setRect(null);setParty({q:mine,prevXp:xpNow-fresh.reduce((n,q)=>n+q.xp,0)})}
+  if(mine){setActive(null);void guide.client?.patch({active:null});setRect(null);setParty({q:mine,prevXp:xpNow-fresh.reduce((n,q)=>n+q.xp,0)})}
   else if(!robot()){setToast(fresh[0]);setTimeout(()=>setToast(t=>t===fresh[0]?null:t),4200)}
- },[doneKey,seenKey]);// eslint-disable-line
+ },[doneKey,seenKey,!!guide.data]);// eslint-disable-line
  // 기록에 안 남는 퀘스트: 화면에 보이면 완료
  useEffect(()=>{
   const t=setInterval(()=>{for(const q of QUESTS[role])if(q.doneSel&&!done[q.id]&&q.doneSel.some(f=>findEl(f)))ping(q.id)},800);
@@ -105,7 +107,7 @@ export function QuestHost({role,state,branch,selfId='',demo=false,go}:{role:Ques
  },[active,ping]);
  // 단계가 바뀌면 칸이 화면 밖이면 가운데로
  useEffect(()=>{if(!active)return;const t=setTimeout(()=>{const el=stepEl(active,idx);if(!el)return;const r=el.getBoundingClientRect();if(r.top<70||r.bottom>innerHeight-90)el.scrollIntoView({block:'center',behavior:reduced()?'auto':'smooth'})},120);return()=>clearTimeout(t)},[active,idx]);
- const stop=()=>{setActive(null);setRect(null)};
+ const stop=()=>{setActive(null);setRect(null);void guide.client?.patch({active:null})};
  const xp=QUESTS[role].filter(q=>done[q.id]).reduce((n,q)=>n+q.xp,0);
  return <>
   {active&&<QuestPointer q={active} i={idx} rect={rect}/>}
@@ -171,9 +173,12 @@ function QuestParty({skip,role,q,prevXp,xp,done,demo,onClose,onNext}:{skip:strin
 
 // ── 퀘스트 보드(홈) ──
 export function QuestBoard({role,state,branch,selfId='',demo=false}:{role:QuestRole,state:any,branch:string,selfId?:string,demo?:boolean}){
+ const guide=useStartGuide();
  const [store,save]=useQuestStore(role,demo);
  const skip=useSkip(role),done=questDone(role,state,branch,selfId,store.pings||[]),sum=questSummary(role,done,demo,skip),lv=sum.level;
  const who=role==='owner'?'사장님':'크루';
+ if(!guide.data)return <p className="start-guide-loading" role="status">{guide.error?'시작 안내 연결을 기다리고 있어요. 업무는 바로 이용할 수 있어요.':'내 매장 시작 안내를 불러오고 있어요…'}</p>;
+ if(store.hideAll||Date.parse(guide.data.preferences.deferredUntil||'')>Date.now())return <button type="button" className="qb-mini" onClick={()=>void guide.client?.patch({hideAll:false,mini:false,deferredUntil:null})}>시작 안내 다시 열기</button>;
  if(sum.all){
   if(store.hideAll)return null;
   return <section className="qb qb-all" aria-label="퀘스트 완료"><span className="qb-trophy" aria-hidden="true">🏆</span><div><b>모든 퀘스트 완료 · Lv.{lv.level} {lv.title}</b><small>배지 {sum.list.length}개를 다 모았어요. {sum.list.map(q=>q.badge.emoji).join(' ')}</small></div><button type="button" className="qb-text" onClick={()=>save({hideAll:true})}>닫기</button></section>;
@@ -189,7 +194,7 @@ export function QuestBoard({role,state,branch,selfId='',demo=false}:{role:QuestR
     <p><b>{lv.title}</b> · {lv.max?'최고 레벨':`다음 레벨까지 ${(lv.next||0)-sum.xp} XP`}</p>
     <div className="qb-xpbar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={lv.pct} aria-label={`경험치 ${sum.xp} XP`}><i style={{width:lv.pct+'%'}}/></div>
    </div>
-   <button type="button" className="qb-text" onClick={()=>save({mini:true})}>접기</button>
+   <button type="button" className="qb-text" onClick={()=>save({mini:true})}>접기</button><button type="button" className="qb-text" onClick={()=>void guide.client?.patch({deferredUntil:new Date(Date.now()+86400000).toISOString()})}>내일 할게요</button>
   </div>
   <div className="qb-next">
    <span className="qb-next-emoji" aria-hidden="true">{next.emoji}</span>
