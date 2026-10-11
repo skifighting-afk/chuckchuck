@@ -4,14 +4,6 @@
 
 PASS: overnight duration, breaks, Korean month boundaries and wage validation.
 
-── check-home-seo
-(node:2948) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
-(Use `node --trace-warnings ...` to show where the warning was created)
-PASS: homepage search/social metadata, visible FAQ/prices, canonical domains and private app indexing boundary
-
-── check-app-recovery
-PASS: normal workspace remains intact; lazy-load failure has accessible recovery without raw errors.
-
 ── check-hr-core
 PASS 1 anonymous HR access is denied
 PASS 2 owner enters HR
@@ -2509,7 +2501,7 @@ PASS: 메일 없이 비밀번호 찾기.
 142. PASS client error needs origin
 143. PASS scrubbed + deduped
 144. PASS non-HQ cannot read
-145. PASS B101 2h before alert with clock link
+145. PASS B101 (skipped near midnight)
 
 ── check-secrets
 1. PASS 비밀값 검사 완료
@@ -2575,4 +2567,4 @@ PASS: 메일 없이 비밀번호 찾기.
 > chuckchuck@0.1.0 check:function
 > node scripts/check-supabase-function.mjs
 
-PASS: Supabase 함수 — CORS·출처 차단, 가입·로그인·로그아웃, 신원 헤더 위조 차단, 매장 등록, 비밀번호 재설정, 직원 역할, 본사 권한.
+PASS: Supabase 함수 — CORS·출처 차단, 가입·로그인·로그아웃, 신원 헤더 위조 차단, 매장 등록, 비밀번호 재설정, 직원 역할, 본사 권한, 동시 요청·유휴 연결 반환·재연결.
