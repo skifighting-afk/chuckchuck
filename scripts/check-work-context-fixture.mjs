@@ -8,4 +8,6 @@ const own=personalTeam(data,self.id);
 assert.equal(own.payrollRuns[key]?.locked,true,'finalized browser fixture survives the real employee authorization filter');
 assert.deepEqual(own.payrollRuns[key].rows.map(row=>row.employeeId),[self.id]);
 assert.equal(typeof own.payrollRuns[key].rows[0].net,'number');
+const stored={...data};delete stored.attendance;
+assert.equal(lockedSelfRun(stored,self).rows[0].employeeId,self.id,'database JSON omits separately stored attendance');
 console.log('PASS: calculated self snapshot reaches the authorized employee finalized view.');
