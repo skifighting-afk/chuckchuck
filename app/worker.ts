@@ -50,7 +50,7 @@ import {same} from '../lib/same';
 import {findShiftConflict} from '../lib/schedule-tools';
 import {reopenRun,finalizeHistory,markPaid} from '../lib/payroll-close';
 import {staffGone} from '../lib/staff-access';
-import {mergePublished,ackWeek,keyWeek,keyBranch} from '../lib/schedule-publish';
+import {mergePublished,ackWeek,keyWeek,keyBranch,scheduleReminderTargets} from '../lib/schedule-publish';
 import {geoCheck} from '../lib/att-extras';
 import {toRecord} from '../lib/history-import';
 const esc=(s:any)=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
@@ -126,7 +126,7 @@ async function route(request:Request,env:Env){
  let name=request.headers.get('oai-authenticated-user-full-name')||request.headers.get('oai-authenticated-user-email')||'사장님';try{if(request.headers.get('oai-authenticated-user-full-name-encoding')==='percent-encoded-utf-8')name=decodeURIComponent(name)}catch{}
  const guideContext=await hashToken(JSON.stringify([userId,owner,access]));
  const actor={id:userId,name:self?.name||name,email:request.headers.get('oai-authenticated-user-email')||''};
- let freshPub:string[]=[];let freshOpen:any[]=[];let importResult:any=null;let kioskUrl:string|undefined;let trash:any[]=Array.isArray(raw?._trash)?raw._trash:[];let certReq:any=null;let askNotice:any=null; let inviteUrl:string|undefined;let attendanceQrUrl:string|undefined;
+ let remindPub:{key:string;ids:string[]}|null=null;let freshPub:string[]=[];let freshOpen:any[]=[];let importResult:any=null;let kioskUrl:string|undefined;let trash:any[]=Array.isArray(raw?._trash)?raw._trash:[];let certReq:any=null;let askNotice:any=null; let inviteUrl:string|undefined;let attendanceQrUrl:string|undefined;
  const result=()=>{
   if(access==='owner')return {guideContext,links:{linked:members.map((m:any)=>m.employeeId),invited:Object.fromEntries(invitations.map((i:any)=>[i.employeeId,i.expires]))},state,version:version+1,audit:linked.coowner?sharedAuditView(audit):audit,outbox,actor,emailConnected:!!(env.RESEND_API_KEY&&env.EMAIL_FROM),access,selfId:null,inviteUrl,attendanceQrUrl,qrModes:raw?._attendanceQrMode||{},plan:linked.coowner?sharedAccountView(raw?._account):raw?._account||null,qrRequired:hasFeature(raw?._account,'qr'),...(importResult?{importResult}:{}),...(kioskUrl!==undefined?{kioskUrl}:{}),trash:trash.filter((t:any)=>t.at>=new Date(Date.now()-30*86400000).toISOString()).slice(-200).reverse().map((t:any)=>({id:t.id,kind:t.kind,at:t.at,by:t.by,label:t.kind==='shift'?`${state.employees.find(e=>e.id===t.item.employeeId)?.name||'직원'} ${t.item.date} ${t.item.start}–${t.item.end}`:t.item.name}))};
   const filtered=personalTeam(state,self!.id);
@@ -169,7 +169,7 @@ async function route(request:Request,env:Env){
   if(!same(state.adjustments,next.adjustments))log('급여 항목 변경','급여',state.adjustments,next.adjustments);
   {const before=new Set(((state as any).certificates||[]).map((c:any)=>c.id));for(const c of ((next as any).certificates||[]))if(!before.has(c.id))log('증명서 발급',state.employees.find(e=>e.id===c.employeeId)?.name||'',null,{kind:c.kind,issuedAt:c.issuedAt});}
   // 지시서 3주차 023: 근무표 공개. 확인 기록은 서버 것만 쓰고, 근무가 바뀐 직원의 확인은 푼다
-  {const m=mergePublished((state as any).publishedWeeks,(next as any).publishedWeeks,state.shifts,next.shifts);(next as any).publishedWeeks=Object.keys(m.published).length?m.published:undefined;freshPub=m.fresh;for(const k of m.fresh)log('근무표 공개','근무 스케줄',null,{week:keyWeek(k)});}
+  {const m=mergePublished((state as any).publishedWeeks,(next as any).publishedWeeks,state.shifts,next.shifts,[...state.employees,...next.employees]);(next as any).publishedWeeks=Object.keys(m.published).length?m.published:undefined;freshPub=m.fresh;for(const k of m.fresh)log('근무표 공개','근무 스케줄',null,{week:keyWeek(k)});}
   // 지시서 099: 지운 근무·직원은 30일 동안 휴지통에 남긴다(되살리기 가능)
   {const at=new Date().toISOString(),keepFrom=new Date(Date.now()-30*86400000).toISOString(),nextIds=new Set(next.shifts.map(x=>x.id)),nextEmp=new Set(next.employees.map(x=>x.id));
    const gone=[...state.shifts.filter(x=>!nextIds.has(x.id)).map(x=>({kind:'shift',item:x})),...state.employees.filter(x=>!nextEmp.has(x.id)).map(x=>({kind:'employee',item:x}))];
@@ -210,6 +210,14 @@ async function route(request:Request,env:Env){
   if(!self)fail('직원 계정에서만 요청할 수 있어요. 직원으로 로그인해 주세요.');if(!['재직','경력'].includes(b.kind))fail('증명서 종류를 골라 주세요.');if(b.kind==='재직'&&self!.status==='퇴사')fail('퇴사한 뒤에는 경력증명서를 요청해 주세요.');
   const day=kdate(new Date().toISOString());if(audit.some((x:any)=>x.action==='증명서 요청'&&x.actor?.id===actor.id&&kdate(x.at)===day))fail('오늘 이미 요청했어요. 사장님이 확인할 때까지 기다려 주세요.');
   log('증명서 요청',self!.name,null,{kind:b.kind,purpose:String(b.purpose||'').slice(0,60)});certReq={name:self!.name,kind:b.kind,purpose:String(b.purpose||'').slice(0,60)};break;}
+ case 'remindWeek':{const key=String(b.key||'');
+  if(!(state as any).publishedWeeks?.[key])fail('공개된 근무표를 먼저 골라 주세요.');
+  const ws=(state.settings as any).weekStart==='sun'?'sun':'mon';
+  const current=kdate(new Date().toISOString()),n=new Date(current+'T00:00:00Z').getUTCDay(),start=new Date(Date.parse(current+'T00:00:00Z')-(ws==='sun'?n:(n+6)%7)*86400000).toISOString().slice(0,10);
+  if(keyWeek(key)<start)fail('지난 주에는 확인 알림을 다시 보내지 않아요. 이번 주 이후를 골라 주세요.');
+  const targets=scheduleReminderTargets((state as any).publishedWeeks,key,state.employees,members,audit,Date.now());
+  if(!targets.ids.length)fail('지금 다시 알릴 미확인 직원이 없어요. 가입 연결과 최근 1시간 내 요청 여부를 확인해 주세요.');
+  remindPub={key,ids:targets.ids};log('근무표 미확인 알림 요청','근무 스케줄',null,{key,ids:targets.ids});break;}
  case 'ackWeek':{if(!self)fail('직원 계정에서만 확인할 수 있어요. 직원으로 로그인해 주세요.');const r=ackWeek((state as any).publishedWeeks,String(b.key||''),self!.id,self!.branchId,new Date().toISOString());if(r.error)fail(r.error);(state as any).publishedWeeks=r.published;log('근무표 확인',self!.name,null,{week:keyWeek(String(b.key))});break;}
  case 'takeOpenShift':{// 지시서 028: 빈 근무 선착순 지원 — 먼저 누른 직원에게 바로 배정(겹침·연소자 제한은 막음)
   if(!self)fail('직원 계정에서만 지원할 수 있어요. 직원으로 로그인해 주세요.');const o:any=((state as any).openShifts||[]).find((x:any)=>x.id===b.id);
@@ -286,6 +294,7 @@ async function route(request:Request,env:Env){
 if(!m||!['발송 대기','발송 실패','결과 확인 필요'].includes(m.status))fail('발송 대기·실패 건만 보낼 수 있어요.');m.retries=(m.retries||0)+(m.status==='발송 대기'?0:1);if(m.retries>5)fail('다섯 번 넘게 실패했어요. 수신 주소를 확인해 주세요.');if(!env.RESEND_API_KEY||!env.EMAIL_FROM)fail('발신 이메일 서비스가 연결되지 않았습니다.');if(!m.to)fail('수신 주소가 없습니다.');m.status='발송 처리 중';m.attemptedAt=new Date().toISOString();log('이메일 발송 요청',m.to,null,{id:m.id,subject:m.subject});break;}
  default:fail('지원하지 않는 작업입니다.');
  }
+ if(request.method==='POST'&&!same(raw?.shifts||[],state.shifts))(state as any).publishedWeeks=mergePublished(raw?.publishedWeeks,(state as any).publishedWeeks,raw?.shifts||[],state.shifts,[...(raw?.employees||[]),...state.employees]).published;
  delete (state as any).approvedLeaves;const checked=teamSchema.safeParse(state);if(!checked.success)return json({error:checked.error.issues[0].message},400);
  // 지시서 3주차 127: 새로 넣거나 바꾼 근무가 연소자 제한(밤·하루 7시간·주 35시간)에 걸리면 저장하지 않는다
  {const prevById=new Map((raw?.shifts||[]).map((x:any)=>[x.id,JSON.stringify([x.employeeId,x.date,x.start,x.end,x.breakMinutes])]));for(const sh of checked.data.shifts){if(prevById.get(sh.id)===JSON.stringify([sh.employeeId,sh.date,sh.start,sh.end,sh.breakMinutes]))continue;const block=checkShift(sh,checked.data.shifts,checked.data.employees.find(e=>e.id===sh.employeeId) as any,(checked.data.settings as any).weekStart||'mon').find(c=>c.level==='block');if(block)return json({error:block.text},400)}}
@@ -306,6 +315,8 @@ if(!m||!['발송 대기','발송 실패','결과 확인 필요'].includes(m.stat
  // 지시서 090: 웹훅(출퇴근·급여 확정)
  if(raw?._webhooks?.length){if(b.action==='attendance'&&['in','out'].includes(b.kind)){const a=checked.data.attendance.filter((x:any)=>x.employeeId===b.employeeId).sort((x:any,y:any)=>x.start.localeCompare(y.start)).at(-1);if(a)await sendWebhooks(raw,'attendance.clock',{kind:b.kind,employeeId:a.employeeId,name:checked.data.employees.find((e:any)=>e.id===a.employeeId)?.name,start:a.start,end:a.end}).catch(()=>null)}
   if(b.action==='finalize'){const run:any=checked.data.payrollRuns[b.month+':'+b.branch];if(run)await sendWebhooks(raw,'payroll.finalized',{month:run.month,branch:b.branch,payDate:run.payDate,revision:run.revision,people:run.rows.length,gross:run.rows.reduce((n:number,x:any)=>n+x.gross,0),net:run.rows.reduce((n:number,x:any)=>n+x.net,0)}).catch(()=>null)}}
+ // Recheck server-owned pending recipients above; optimistic store save makes concurrent reminders conflict.
+ if(remindPub){const sent=new Set<string>();for(const id of remindPub.ids){const uid=(members||[]).find((m:any)=>m.employeeId===id)?.userId;if(uid&&!sent.has(uid)){sent.add(uid);await notifyUser(env,uid,{title:'근무표 확인을 부탁드려요',body:keyWeek(remindPub.key)+'부터 일주일 근무표를 확인하고 확인했어요를 눌러 주세요.',url:'/app?screen=schedule',kind:'schedule'})}}}
  // 지시서 3주차 023: 공개한 주의 직원에게 알림
  for(const k of freshPub){const br=keyBranch(k),w=keyWeek(k);for(const e of checked.data.employees.filter((x:any)=>x.branchId===br&&x.status!=='퇴사')){const uid=(members||[]).find((m:any)=>m.employeeId===e.id)?.userId;if(uid)await notifyUser(env,uid,{title:'근무표가 공개됐어요',body:`${Number(w.slice(5,7))}월 ${Number(w.slice(8))}일부터 일주일 근무표를 확인하고 '확인했어요'를 눌러 주세요.`,url:'/app?screen=schedule',kind:'schedule'}).catch(()=>null)}}
  // 작업 092: 출퇴근 정정 결과를 요청한 사람에게 알림
