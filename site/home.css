@@ -681,7 +681,7 @@ html.large-text .start-roadmap h3{font-size:1.46rem}html.large-text .start-roadm
  .hero .lede,html.anim .hero .lede{font-size:16px;line-height:1.65;margin-top:16px}
  .hero .cta-row{grid-template-columns:1fr;gap:8px;margin-top:20px}
  .hero .cta-row .btn{min-height:52px;font-size:16px}
- .hero .cta-row .btn-ghost{min-height:44px;background:transparent;border-color:transparent;text-decoration:underline;text-underline-offset:4px}
+ .hero .cta-row .btn-ghost{min-height:48px;background:transparent;border-color:transparent;text-decoration:underline;text-underline-offset:4px}
  .hero .fine,html.anim .hero .hero-copy .fine{margin-top:8px;font-size:14px}
 }
 
