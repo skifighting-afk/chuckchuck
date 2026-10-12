@@ -53,6 +53,10 @@ export async function buildHome({out, site = HOME_ORIGIN, app = APP_ORIGIN, pixe
     WORRIES: R.worriesHtml(app), NOT_DOING: R.NOT_DOING.map(x => `<li>${R.esc(x)}</li>`).join(''), FOOTER: R.footerHtml(), PLAN_CARDS: R.planCardsHtml(app), PRICE_EXAMPLES: R.priceExamplesHtml(),
     PRICE_START: R.money(R.employeeMonthlyPrice('basic', 1)), CONTRACT_FEE: R.esc(R.contractFeeText()), MINWAGE: minWage, MINWAGE_TEXT: minWage,
   };
+  // 문구는 site/content.json에서 읽는다(고칠 때는 이 파일만). 빈 값이면 빌드를 멈춘다.
+  const C = JSON.parse(await readFile('site/content.json', 'utf8'));
+  for (const k of ['heroLine1', 'heroLine2', 'lede']) if (!String(C[k] || '').trim()) throw Error('site/content.json: 빈 값 ' + k);
+  Object.assign(vars, {HERO_LINE1: R.esc(C.heroLine1), HERO_LINE2: R.esc(C.heroLine2), LEDE: R.esc(C.lede)});
   let tpl = await readFile('site/index.html', 'utf8');
   tpl = tpl.replace(/\{\{(\w+)\}\}/g, (m, k) => { if (!(k in vars)) throw Error('site/index.html: 채울 값이 없어요 ' + m); return vars[k]; });
   const cut = (name) => { const m = tpl.match(new RegExp(`<!--@${name}-->([\\s\\S]*?)<!--@/${name}-->`)); if (!m) throw Error('표시 없음: ' + name); return m[1]; };
