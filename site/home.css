@@ -901,3 +901,17 @@ html.large-text .feature-difference dt,html.large-text .feature-story .feature-p
 }
 .feature-photo{margin:0 0 18px;aspect-ratio:4/5;border-radius:18px;overflow:hidden;background:var(--line)}
 .feature-photo img{width:100%;height:100%;object-fit:cover;display:block}
+/* 기능 섹션 1차 정리: 글자 키우고, 여백·사진 높이를 줄임 */
+.feature-story{padding-block:56px}
+.feature-story-secondary{padding-block:40px}
+.feature-story h3{font-size:clamp(1.9rem,3.6vw,2.9rem);line-height:1.22;margin-bottom:16px}
+.feature-story .feature-description{font-size:1.25rem;line-height:1.6;margin-block:0 18px}
+.feature-difference{gap:10px;margin:0 0 18px}
+.feature-difference dt{font-size:1rem}
+.feature-difference dd{font-size:1.25rem;font-weight:650}
+.feature-story .feature-points{font-size:1.125rem;line-height:1.6;gap:8px;margin:18px 0 22px}
+.feature-story .feature-link{font-size:1.125rem}
+.feature-photo{aspect-ratio:4/3;margin-bottom:14px}
+.feature-photo img{animation:photoIn 1.2s ease both}
+@keyframes photoIn{from{opacity:0;transform:scale(1.05)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.feature-photo img{animation:none}}
