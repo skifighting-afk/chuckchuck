@@ -13,6 +13,7 @@ await import('./check-ops-request-display.mjs');
 await import('./check-client-assets.mjs');
 await import('./check-fetch-client-assets.mjs');
 await import('./check-home-result.mjs');
+await import('./check-home-readability.mjs');
 await import('./check-home-feature-pages.mjs');
 await import('./check-home-start.mjs');
 await import('./check-home-navigation.mjs');

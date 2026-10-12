@@ -167,6 +167,32 @@ export async function homeResultE2E({browser,step}){
    await page.setViewportSize({width:390,height:844});await chooser.selectOption('2');await exp.locator('.exp-pay-mobile').scrollIntoViewIfNeeded();await page.screenshot({path:'ci-logs/home-experience-payroll-mobile.png'});
    assert.deepEqual(errors,[]);
   });
+  await step('보조 안내 대비 · 주요 조작 48px · 메뉴 간격8px',async()=>{
+   const exp=page.locator('.experience'),chooser=page.getByLabel('어떤 기능이 궁금하세요?',{exact:true});
+   const contrastFailures=async()=>page.locator('.experience .exp-person small,.experience .exp-panel p,.experience .exp-phone-card p,.experience .exp-row span,.exp-disclaimer,#exp-count,.exp-sign,.exp-flow span,.exp-step-number,.feature-visual figcaption,.story-segments span:not(.active),.store-proof-date').evaluateAll(els=>{
+    const lum=c=>{const a=c.slice(0,3).map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4});return .2126*a[0]+.7152*a[1]+.0722*a[2]};
+    return els.filter(e=>e.getClientRects().length&&getComputedStyle(e).visibility!=='hidden').flatMap(e=>{let bg=[255,255,255];for(let p=e;p;p=p.parentElement){const c=getComputedStyle(p).backgroundColor.match(/[\d.]+/g)?.map(Number);if(c&&(c.length===3||c[3]===1)){bg=c;break}}const color=getComputedStyle(e).color.match(/[\d.]+/g).map(Number),a=lum(color),b=lum(bg),ratio=(Math.max(a,b)+.05)/(Math.min(a,b)+.05);return ratio<4.5?[{text:e.textContent.slice(0,45),ratio,color,bg}]:[]});
+   });
+   for(const large of [false,true]){
+    await page.goto(url,{waitUntil:'networkidle'});
+    if((await page.locator('html').evaluate(el=>el.classList.contains('large-text')))!==large)await page.locator('#pref-text').click();
+    for(const width of [320,390,768,1440]){
+     await page.setViewportSize({width,height:900});
+     for(const button of await page.locator('#nav a,.cta-row .btn,.prefs button,.faq summary').all())if(await button.isVisible())assert((await button.boundingBox()).height>=47.5,'main target '+await button.innerText());
+     if(width<=1100)assert(await page.locator('#nav .page-sections').evaluate(el=>parseFloat(getComputedStyle(el).gap)>=8),'section menu target gap');
+     assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'readable control overflow '+width);
+     for(let chapter=0;chapter<8;chapter++){
+      if(width<=800)await chooser.selectOption(String(chapter));else await exp.locator(`[data-chapter="${chapter}"]`).click();
+      const count=await exp.locator('#exp-steps button').count();
+      for(let stepIndex=0;stepIndex<count;stepIndex++){
+       await exp.locator('#exp-steps button').nth(stepIndex).click();
+       assert.deepEqual(await contrastFailures(),[],'secondary text contrast chapter='+chapter+' step='+stepIndex+' width='+width);
+       for(const button of await exp.getByRole('button').all())if(await button.isVisible()){const r=await button.boundingBox();assert(r.height>=47.5&&r.width>=47.5,'tour target '+await button.innerText())}
+      }
+     }
+    }
+   }
+  });
   await step('움직임 줄이기에서도 기록 흐름을 직접 확인',async()=>{
    const reduced=await browser.newContext({reducedMotion:'reduce',viewport:{width:390,height:844}});
    try{const p=await reduced.newPage();await p.goto(url,{waitUntil:'networkidle'});const flow=p.locator('#hero-record-flow'),play=flow.locator('#hero-flow-play');assert(await play.isDisabled());assert.equal(await play.getAttribute('aria-pressed'),'false');await flow.locator('[data-record-step="1"]').click();assert.equal(await flow.locator('[data-record-step="1"]').getAttribute('aria-pressed'),'true')}finally{await reduced.close()}
