@@ -899,3 +899,5 @@ html.large-text .feature-difference dt,html.large-text .feature-story .feature-p
  .hero-pin,html.anim .hero-pin{padding-top:calc(var(--header-clearance,128px) + 12px)}
  html.large-text .nav .page-sections a{font-size:1rem}
 }
+.feature-photo{margin:0 0 18px;aspect-ratio:4/5;border-radius:18px;overflow:hidden;background:var(--line)}
+.feature-photo img{width:100%;height:100%;object-fit:cover;display:block}
