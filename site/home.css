@@ -569,7 +569,13 @@ html.anim .hero{height:160vh}.exp-extra{font-size:15px;color:#64795f;line-height
 .record-intro-copy>p:last-child{font-size:17px;color:var(--muted);line-height:1.95}
 .record-questions{align-self:center;border-top:1px solid var(--line)}
 .record-questions p{padding:24px 0;border-bottom:1px solid var(--line);font-size:clamp(16px,1.5vw,21px);font-weight:650;line-height:1.55}
-.record-questions span{display:block;font-size:12px;color:var(--muted);font-weight:500;margin-bottom:7px}
+.record-questions span{display:block;font-size:15px;color:var(--green);font-weight:700;margin-bottom:8px}
+.mid-cta{max-width:1440px;margin:0 auto;padding:64px var(--gut);background:var(--green);color:#f5efe3;display:flex;flex-direction:column;gap:14px;align-items:flex-start}
+.mid-cta-kicker{font-size:17px;font-weight:700;opacity:.9}
+.mid-cta h2{font-size:clamp(32px,4.4vw,56px);line-height:1.2;margin:0}
+.mid-cta-note{font-size:17px;line-height:1.7;opacity:.92;max-width:640px}
+.mid-cta .btn{background:#f5efe3;color:var(--green);margin-top:10px}
+@media(max-width:550px){.mid-cta{padding:44px 22px}.mid-cta h2{font-size:32px}}
 .record-answer{grid-column:1/-1;display:flex;gap:28px;align-items:flex-start;margin-top:10px;padding:40px 0 0;border-top:2px solid var(--ink)}
 .record-check{font-size:40px;font-weight:900;color:var(--green);letter-spacing:-14px;padding-right:16px;line-height:1.25}
 .record-answer h3{font-size:clamp(24px,2.8vw,38px);line-height:1.4}.record-answer p{margin-top:18px;color:var(--muted);font-size:16px;line-height:1.9}
