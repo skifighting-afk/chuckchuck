@@ -26,3 +26,12 @@ assert.match(element('exp-screen').innerHTML,/사진·설명 매뉴얼은 이용
 assert.match(element('exp-screen').innerHTML,/영상 매뉴얼은 추가 예정/);
 assert(element('exp-screen').innerHTML.indexOf('영상 매뉴얼은 추가 예정')<element('exp-screen').innerHTML.indexOf('data-advance'),'video status appears before manual actions');
 console.log('PASS: current and planned feature availability precedes experience actions');
+
+const selector=element('exp-chapter-select');
+assert.equal((selector.innerHTML.match(/<option /g)||[]).length,8,'compact selector exposes all eight features');
+assert.equal(selector.value,'6','selector follows the current chapter after desktop navigation');
+listeners.get('change')({target:{id:'exp-chapter-select',value:'2'}});
+assert.equal(host.dataset.chapter,'2');assert.equal(host.dataset.step,'0');assert.match(element('exp-screen').innerHTML,/총 실수령액/);
+assert.equal(selector.value,'2','manual change keeps selector synchronized');
+listeners.get('change')({target:{id:'exp-chapter-select',value:'99'}});assert.equal(host.dataset.chapter,'2','invalid selection does not leave the current feature');
+listeners.get('change')({target:{id:'exp-chapter-select',value:'0'}});
