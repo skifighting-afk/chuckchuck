@@ -48,7 +48,7 @@ jobs:
           ls restore
           ver=$(cat restore/schema.sql restore/data.sql | grep -m1 -oE 'Dumped from database version [0-9]+' | grep -oE '[0-9]+$' || echo 15)
           echo "PG_MAJOR=$ver" >> "$GITHUB_ENV"
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@v3
         with:
           version: latest
       - name: 빈 로컬 DB 켜기 (운영과 같은 Postgres 버전)
